@@ -10,7 +10,6 @@ pub struct Settings {
     pub last_path: Option<String>,
     pub unit_status_new: bool, // citadel_unit_status_use_new autoexec block
     pub fov: u32,              // per-user draft FOV 70..=120, applied on install
-    pub reflex_mode: u8,       // 0: default/off, 1: on, 2: on+boost
     pub fps_max: u32,          // 0: uncapped
     pub vsync: bool,           // false
     pub reduce_flash: bool,    // true
@@ -28,7 +27,6 @@ impl Default for Settings {
             last_path: None,
             unit_status_new: false,
             fov: 90,
-            reflex_mode: 1,
             fps_max: 0,
             vsync: false,
             reduce_flash: true,
@@ -44,7 +42,6 @@ impl Settings {
     pub fn validate(&self) -> Result<(), String> {
         if !["fa", "en"].contains(&self.lang.as_str()) { return Err("lang must be fa or en".into()); }
         if !(70..=120).contains(&self.fov) || self.fov % 5 != 0 { return Err("fov must be 70..120 in steps of 5".into()); }
-        if self.reflex_mode > 2 { return Err("reflex_mode must be 0..2".into()); }
         if self.fps_max > 1000 { return Err("fps_max must be 0..1000".into()); }
         if ![0, 4, 6, 8, 10].contains(&self.texture_bias) { return Err("invalid texture_bias".into()); }
         if self.custom_autoexec.len() > 65536 || self.custom_autoexec.contains('\0') { return Err("invalid custom_autoexec".into()); }
@@ -157,7 +154,7 @@ mod tests {
         let tmp = std::env::temp_dir().join("dlpb_settings_validation");
         crate::backup::rm_ro(&tmp);
         let mut s = Settings::default();
-        s.reflex_mode = 3;
+        s.fov = 65; // < 70 is invalid
         assert!(save_to(&tmp, &s).is_err());
         std::fs::create_dir_all(&tmp).unwrap();
         std::fs::write(tmp.join("settings.json"), "bad json").unwrap();
@@ -175,7 +172,6 @@ mod tests {
         assert!(!s.unlocked);
         assert!(s.last_path.is_none());
         assert!(!s.unit_status_new);
-        assert_eq!(s.reflex_mode, 1);
         assert_eq!(s.fps_max, 0);
         assert!(!s.vsync);
         assert!(s.reduce_flash);
@@ -195,7 +191,6 @@ mod tests {
             last_path: Some("D:\\SteamLibrary\\steamapps\\common\\Deadlock".into()),
             unit_status_new: true,
             fov: 110,
-            reflex_mode: 2,
             fps_max: 165,
             vsync: true,
             reduce_flash: false,
@@ -210,7 +205,6 @@ mod tests {
         assert!(s2.unlocked);
         assert_eq!(s2.last_path.as_deref(), Some("D:\\SteamLibrary\\steamapps\\common\\Deadlock"));
         assert!(s2.unit_status_new);
-        assert_eq!(s2.reflex_mode, 2);
         assert_eq!(s2.fps_max, 165);
         assert!(s2.vsync);
         assert!(!s2.reduce_flash);

@@ -37,7 +37,6 @@ const state = {
   selectedMode: null,
   running: false,
   unitStatusNew: false,
-  reflexMode: 1,
   fpsMax: 0,
   vsync: false,
   reduceFlash: true,
@@ -144,7 +143,6 @@ async function boot() {
   state.unlocked = !!s.unlocked;
   state.lastPath = s.last_path || null;
   state.unitStatusNew = !!s.unit_status_new;
-  state.reflexMode = s.reflex_mode ?? 1;
   state.fpsMax = s.fps_max ?? 0;
   state.vsync = !!s.vsync;
   state.reduceFlash = s.reduce_flash !== false;
@@ -190,10 +188,6 @@ function syncSettingsToUi() {
   if (inpFps) inpFps.value = state.fpsMax;
   document.querySelectorAll('#chips-fps .chip-btn').forEach((btn) => {
     btn.classList.toggle('active', Number(btn.dataset.val) === state.fpsMax);
-  });
-
-  document.querySelectorAll('#seg-reflex .seg-btn').forEach((btn) => {
-    btn.classList.toggle('active', Number(btn.dataset.val) === state.reflexMode);
   });
 
   const renderer = state.renderer || 'default';
@@ -745,7 +739,6 @@ async function doResetSettings() {
     state.lang = s.lang;
     state.unlocked = s.unlocked;
     state.fov = s.fov;
-    state.reflexMode = s.reflex_mode;
     state.fpsMax = s.fps_max;
     state.vsync = s.vsync;
     state.reduceFlash = s.reduce_flash;
@@ -1523,16 +1516,6 @@ function init() {
         call('set_settings', { patch: { ragdoll_gib_limit: state.ragdollGibLimit } }).catch(() => {});
       };
     }
-
-    // Latency controls: Reflex
-    document.querySelectorAll('#seg-reflex .seg-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#seg-reflex .seg-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        state.reflexMode = Number(btn.dataset.val);
-        call('set_settings', { patch: { reflex_mode: state.reflexMode } }).catch(() => {});
-      });
-    });
 
     // Latency controls: FPS cap
     const inpFps = document.getElementById('inp-fps-max');

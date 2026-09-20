@@ -40,7 +40,6 @@ Deadlock is actively developed on the Source 2 engine. Many players experience a
 - Advanced telemetry: average latency, jitter calculation, packet loss percentage, and overall stability scoring.
 
 #### ⏱️ Engine & Latency Optimization
-- **NVIDIA Reflex Low Latency:** Off / On / On + Boost for minimal click-to-response input lag.
 - **Framerate Limit (FPS Cap):** Match your monitor refresh rate (60, 144, 165, 240, 360) or uncap (0).
 - **Vertical Sync (V-Sync):** Toggle for tear-free gaming or lowest input delay.
 - **Texture Streaming Mip Bias:** Adjust texture streaming resolution for maximum GPU throughput.
@@ -111,7 +110,6 @@ Deadlock is actively developed on the Source 2 engine. Many players experience a
 - تله‌متری پیشرفته: نمایش میانگین پینگ، نوسان (Jitter)، درصد پکت‌لاس و امتیاز پایداری مسیر.
 
 #### ⏱️ تنظیمات تخصصی موتور و کاهش تاخیر
-- **کاهش تاخیر ورودی (NVIDIA Reflex):** در ۳ حالت خاموش / روشن / روشن + بوست برای حداقل تاخیر کلیک تا شلیک.
 - **محدودیت نرخ فریم (FPS Cap):** قفل فریم متناسب با مانیتور یا حالت نامحدود (0).
 - **همگام‌سازی عمودی (V-Sync):** خاموش برای کمترین تاخیر ورودی یا روشن برای حذف پارگی تصویر.
 - **کاهش کیفیت بافت‌ها (Texture Mip Bias):** تنظیم استریم تکسچرها جهت افزایش راندمان کارت گرافیک.

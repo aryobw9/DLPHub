@@ -964,38 +964,6 @@ button.btn-apply, button.btn-reset { font-family: 'Vazirmatn', sans-serif; }
   color: var(--text-main);
 }
 
-/* Segmented Control (Reflex) */
-.segmented-control {
-  display: inline-flex;
-  background: rgba(10, 16, 27, 0.8);
-  border: 1px solid var(--card-border);
-  border-radius: 6px;
-  padding: 2px;
-  gap: 2px;
-}
-.seg-btn {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--text-secondary);
-  font-family: 'Vazirmatn', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 700;
-  padding: 6px 14px;
-  border-radius: 4px;
-  cursor: var(--cur-pointer);
-  transition: all 0.2s;
-  transform: none !important;
-}
-.seg-btn:hover {
-  color: var(--text-main);
-}
-.seg-btn.active {
-  background: var(--deadlock-orange);
-  color: #fff;
-  border-color: var(--deadlock-orange);
-  box-shadow: 0 0 10px var(--deadlock-orange-glow);
-}
-
 /* Chip Group (FPS Cap) */
 .chip-group {
   display: inline-flex;

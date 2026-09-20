@@ -160,7 +160,6 @@ pub struct SettingsDto {
     pub last_path: Option<String>,
     pub unit_status_new: bool,
     pub fov: u32,
-    pub reflex_mode: u8,
     pub fps_max: u32,
     pub vsync: bool,
     pub reduce_flash: bool,
@@ -178,7 +177,6 @@ impl From<settings::Settings> for SettingsDto {
             last_path: s.last_path,
             unit_status_new: s.unit_status_new,
             fov: s.fov,
-            reflex_mode: s.reflex_mode,
             fps_max: s.fps_max,
             vsync: s.vsync,
             reduce_flash: s.reduce_flash,
@@ -197,7 +195,6 @@ pub struct SettingsPatch {
     pub last_path: Option<String>,
     pub unit_status_new: Option<bool>,
     pub fov: Option<u32>,
-    pub reflex_mode: Option<u8>,
     pub fps_max: Option<u32>,
     pub vsync: Option<bool>,
     pub reduce_flash: Option<bool>,
@@ -243,9 +240,6 @@ pub fn set_settings(patch: SettingsPatch) -> Result<SettingsDto, String> {
     if let Some(fov) = patch.fov { s.fov = fov; }
     if let Some(u) = patch.unit_status_new {
         s.unit_status_new = u;
-    }
-    if let Some(rm) = patch.reflex_mode {
-        s.reflex_mode = rm;
     }
     if let Some(fm) = patch.fps_max {
         s.fps_max = fm;
@@ -293,8 +287,8 @@ pub fn get_diagnostics() -> String {
     diag.push_str(&format!("Log Path: {:?}\n", dlp_core::logger::log_path(&data_dir)));
 
     let s = settings::load();
-    diag.push_str(&format!("Settings: lang={}, unlocked={}, last_path={:?}, fov={}, reflex={}, fps_max={}, vsync={}, unit_status={}\n",
-        s.lang, s.unlocked, s.last_path, s.fov, s.reflex_mode, s.fps_max, s.vsync, s.unit_status_new
+    diag.push_str(&format!("Settings: lang={}, unlocked={}, last_path={:?}, fov={}, fps_max={}, vsync={}, unit_status={}\n",
+        s.lang, s.unlocked, s.last_path, s.fov, s.fps_max, s.vsync, s.unit_status_new
     ));
 
     let detected = discovery::find_game();

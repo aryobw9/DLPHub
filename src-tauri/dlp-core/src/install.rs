@@ -197,9 +197,6 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
 
     let s = crate::settings::load_from(data_dir);
     let mut patches: Vec<(&str, String)> = Vec::new();
-    if s.reflex_mode > 0 {
-        patches.push(("setting.r_low_latency", s.reflex_mode.to_string()));
-    }
     if s.fps_max > 0 {
         patches.push(("setting.fps_max", s.fps_max.to_string()));
     }
