@@ -2,7 +2,7 @@
 // merge_video: user's identity values (first occurrence wins) override template
 // lines; all other lines byte-identical to template.
 // set_fov: replace "r_aspectratio" "<num>" line, 6 tabs indent, no BOM.
-pub const IDENTITY_KEYS: [&str; 7] = [
+pub const IDENTITY_KEYS: [&str; 13] = [
     "Version",
     "VendorID",
     "DeviceID",
@@ -10,6 +10,12 @@ pub const IDENTITY_KEYS: [&str; 7] = [
     "setting.defaultresheight",
     "setting.recommendedheight",
     "setting.refreshrate_numerator",
+    "setting.refreshrate_denominator",
+    "setting.monitor_index",
+    "setting.fullscreen",
+    "setting.nowindowborder",
+    "setting.aspectratiomode",
+    "setting.coop_fullscreen",
 ];
 
 /// Strip UTF-8 BOM (detect.ps1 parity).
@@ -113,11 +119,21 @@ pub fn set_fov(gi_content: &str, ar: &str) -> String {
 /// Managed autoexec block. File = user's own content untouched, plus one marked
 /// block we own. enabled=false removes the block; user content always preserved.
 pub fn upsert_autoexec(existing: &str, enabled: bool) -> String {
-    upsert_autoexec_custom(existing, enabled, "")
+    upsert_autoexec_full(existing, enabled, "", "")
 }
 
 /// Managed autoexec block with optional custom cvars.
 pub fn upsert_autoexec_custom(existing: &str, enabled_unit_status: bool, custom_commands: &str) -> String {
+    upsert_autoexec_full(existing, enabled_unit_status, "", custom_commands)
+}
+
+/// Managed autoexec block with tier commands (e.g. from t1 autoexec.cfg) and custom commands.
+pub fn upsert_autoexec_full(
+    existing: &str,
+    enabled_unit_status: bool,
+    tier_commands: &str,
+    custom_commands: &str,
+) -> String {
     const BEGIN: &str = "// DLP BEGIN";
     const END: &str = "// DLP END";
     let text = strip_bom(existing);
@@ -136,8 +152,9 @@ pub fn upsert_autoexec_custom(existing: &str, enabled_unit_status: bool, custom_
             user_lines.push(line);
         }
     }
+    let has_tier = tier_commands.lines().any(|l| !l.trim().is_empty());
     let has_custom = custom_commands.lines().any(|l| !l.trim().is_empty());
-    if !enabled_unit_status && !has_custom {
+    if !enabled_unit_status && !has_tier && !has_custom {
         let mut s = user_lines.join("\n");
         if !s.is_empty() && (text.ends_with('\n') || s.contains('\n')) {
             s.push('\n');
@@ -153,6 +170,14 @@ pub fn upsert_autoexec_custom(existing: &str, enabled_unit_status: bool, custom_
     s.push('\n');
     if enabled_unit_status {
         s.push_str("\tcitadel_unit_status_use_new \"true\"\n");
+    }
+    for line in tier_commands.lines() {
+        let trimmed = line.trim();
+        if !trimmed.is_empty() {
+            s.push('\t');
+            s.push_str(trimmed);
+            s.push('\n');
+        }
     }
     for line in custom_commands.lines() {
         let trimmed = line.trim();
@@ -295,6 +320,16 @@ mod tests {
         assert!(out.contains("citadel_unit_status_use_new \"true\""));
         assert!(out.contains("\tfps_max 165\n"));
         assert!(out.contains("\tsensitivity 1.2\n"));
+    }
+
+    #[test]
+    fn autoexec_tier_commands_and_custom() {
+        let existing = "// base\n";
+        let out = upsert_autoexec_full(existing, true, "r_drawviewmodel 0\nmat_viewportscale 0.8", "fps_max 165");
+        assert!(out.contains("citadel_unit_status_use_new \"true\""));
+        assert!(out.contains("\tr_drawviewmodel 0\n"));
+        assert!(out.contains("\tmat_viewportscale 0.8\n"));
+        assert!(out.contains("\tfps_max 165\n"));
     }
 
     #[test]

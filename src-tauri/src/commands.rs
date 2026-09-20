@@ -118,6 +118,10 @@ pub struct RestoreReportDto {
 
 #[tauri::command]
 pub fn do_restore(name: String, path: String) -> Result<RestoreReportDto, String> {
+    let running = guard::game_running();
+    if !running.is_empty() {
+        return Err(format!("game running: {} — close Deadlock first", running.join(", ")));
+    }
     let deadlock = resolve_path(&path)?;
     let cit = std::path::Path::new(&deadlock).join("game").join("citadel");
     backup::restore(&cit, &settings::data_dir(), &name).map(|r| RestoreReportDto {
@@ -130,6 +134,10 @@ pub fn do_restore(name: String, path: String) -> Result<RestoreReportDto, String
 
 #[tauri::command]
 pub fn revert_original_cmd(path: String) -> Result<RestoreReportDto, String> {
+    let running = guard::game_running();
+    if !running.is_empty() {
+        return Err(format!("game running: {} — close Deadlock first", running.join(", ")));
+    }
     let deadlock = resolve_path(&path)?;
     let cit = std::path::Path::new(&deadlock).join("game").join("citadel");
     backup::revert_original(&cit).map(|r| RestoreReportDto {

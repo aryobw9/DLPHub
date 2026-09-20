@@ -82,10 +82,10 @@ mod tests {
     #[test]
     fn payload_contains_tiers_and_addons() {
         let pkg = extract().unwrap();
-        for d in ["gi_tier1", "gi_tier2", "gi_tier3", "potato", "addons"] {
+        for d in ["t1", "t2", "t3", "potato", "addons"] {
             assert!(pkg.join(d).is_dir(), "missing {d}");
         }
-        assert!(pkg.join("gi_tier1").join("gameinfo.gi").is_file());
+        assert!(pkg.join("t1").join("gameinfo.gi").is_file());
         assert!(pkg.join("addons").join("pak04_dir.vpk").is_file());
         crate::backup::rm_ro(&pkg);
     }

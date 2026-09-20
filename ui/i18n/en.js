@@ -76,7 +76,7 @@ window.I18N_EN = {
   currentUnknown: "MODIFIED / UNKNOWN",
   currentMissing: "NO GAMEINFO.GI",
   guardTitle: "Deadlock is running",
-  guardBody: "Files may be overwritten when the game exits. Close the game and continue anyway?",
+  guardBody: "Deadlock is currently running. Please close the game before applying configs or restoring to prevent file corruption.",
   guardKeep: "Continue anyway",
   guardCancel: "Cancel",
   doneTitle: "INSTALL COMPLETE",

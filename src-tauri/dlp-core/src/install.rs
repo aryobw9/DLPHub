@@ -21,16 +21,14 @@ pub enum Mode {
 impl Mode {
     pub fn tier_dir(self) -> &'static str {
         match self {
-            Mode::T1 | Mode::T1Mods => "gi_tier1",
-            Mode::T2 | Mode::T2Mods => "gi_tier2",
-            Mode::T3 | Mode::Potato => "gi_tier3",
+            Mode::T1 | Mode::T1Mods => "t1",
+            Mode::T2 | Mode::T2Mods => "t2",
+            Mode::T3 => "t3",
+            Mode::Potato => "potato",
         }
     }
     pub fn video_dir(self) -> &'static str {
-        match self {
-            Mode::Potato => "potato",
-            other => other.tier_dir(),
-        }
+        self.tier_dir()
     }
     /// addons.ps1 -Only / -Exclude per install.bat:
     /// tiers 1-3 exclude the look-changing 01/02/03; potato gets ONLY those;
@@ -81,19 +79,21 @@ pub fn write_test(citadel: &Path) -> Result<(), String> {
 
 fn snapshot_original(citadel: &Path) -> Result<Vec<StepLog>, String> {
     let mut log = vec![];
-    for (src, bak) in [
-        (citadel.join("gameinfo.gi"), citadel.join("gameinfo.gi.dlp.bak")),
-        (citadel.join("cfg").join("video.txt"), citadel.join("cfg").join("video.txt.dlp.bak")),
-    ] {
-        if !bak.exists() {
-            if src.exists() {
-                std::fs::copy(&src, &bak).map_err(|e| e.to_string())?;
-            } else if src.file_name().unwrap() == "gameinfo.gi" {
-                std::fs::write(&src, b"").map_err(|e| e.to_string())?; // console: copy nul
-                std::fs::copy(&src, &bak).map_err(|e| e.to_string())?;
-            }
-            log.push(StepLog { step: "backup".into(), detail: format!("snapshot {}", bak.file_name().unwrap().to_string_lossy()), skipped: false });
-        }
+    let gi = citadel.join("gameinfo.gi");
+    let gi_bak = citadel.join("gameinfo.gi.dlp.bak");
+    if !gi.is_file() || std::fs::metadata(&gi).map(|m| m.len()).unwrap_or(0) == 0 {
+        return Err("gameinfo.gi missing or empty in game folder — please verify Deadlock files in Steam first".into());
+    }
+    if !gi_bak.exists() {
+        std::fs::copy(&gi, &gi_bak).map_err(|e| e.to_string())?;
+        log.push(StepLog { step: "backup".into(), detail: "snapshot gameinfo.gi.dlp.bak".into(), skipped: false });
+    }
+
+    let vd = citadel.join("cfg").join("video.txt");
+    let vd_bak = citadel.join("cfg").join("video.txt.dlp.bak");
+    if vd.is_file() && !vd_bak.exists() {
+        std::fs::copy(&vd, &vd_bak).map_err(|e| e.to_string())?;
+        log.push(StepLog { step: "backup".into(), detail: "snapshot video.txt.dlp.bak".into(), skipped: false });
     }
     Ok(log)
 }
@@ -114,17 +114,29 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
     // Preflight every required template and user encoding before mutation.
     let tpl = std::fs::read_to_string(pkg.join(mode.tier_dir()).join("gameinfo.gi")).map_err(|e| format!("preflight gameinfo template: {e}"))?;
     let tpl_v = std::fs::read_to_string(pkg.join(mode.video_dir()).join("video.txt")).map_err(|e| format!("preflight video template: {e}"))?;
-    let user_v = std::fs::read_to_string(citadel.join("cfg/video.txt")).map_err(|e| format!("preflight current video: {e}"))?;
+    let user_v = match std::fs::read_to_string(citadel.join("cfg/video.txt")) {
+        Ok(s) => s,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => return Err(format!("preflight current video: {e}")),
+    };
     let existing = match std::fs::read_to_string(citadel.join("cfg/autoexec.cfg")) {
         Ok(s) => s,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
         Err(e) => return Err(format!("preflight autoexec: {e}")),
     };
-    for entry in std::fs::read_dir(pkg.join("addons")).map_err(|e| format!("preflight addons: {e}"))? {
-        let entry = entry.map_err(|e| e.to_string())?;
-        if entry.path().extension().is_some_and(|e| e == "vpk") {
-            let mut file = std::fs::File::open(entry.path()).map_err(|e| format!("preflight addon: {e}"))?;
-            std::io::copy(&mut file, &mut std::io::sink()).map_err(|e| format!("preflight addon: {e}"))?;
+    let tier_ae = match std::fs::read_to_string(pkg.join(mode.tier_dir()).join("autoexec.cfg")) {
+        Ok(s) => s,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => return Err(format!("preflight tier autoexec: {e}")),
+    };
+    let addons_dir = pkg.join("addons");
+    if addons_dir.is_dir() {
+        for entry in std::fs::read_dir(&addons_dir).map_err(|e| format!("preflight addons: {e}"))? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            if entry.path().extension().is_some_and(|e| e.eq_ignore_ascii_case("vpk")) {
+                let mut file = std::fs::File::open(entry.path()).map_err(|e| format!("preflight addon: {e}"))?;
+                std::io::copy(&mut file, &mut std::io::sink()).map_err(|e| format!("preflight addon: {e}"))?;
+            }
         }
     }
 
@@ -176,10 +188,11 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
 
     // 6) video merge with read-only dance
     let vd = citadel.join("cfg").join("video.txt");
-    if !vd.exists() {
-        return Err("cfg\\video.txt missing - wrong folder?".into());
+    if vd.exists() {
+        set_readonly(&vd, false).map_err(|e| e.to_string())?;
+    } else {
+        std::fs::create_dir_all(vd.parent().unwrap()).map_err(|e| e.to_string())?;
     }
-    set_readonly(&vd, false).map_err(|e| e.to_string())?;
     let merged = kvedit::merge_video(&user_v, &tpl_v);
 
     let s = crate::settings::load_from(data_dir);
@@ -210,7 +223,7 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
     let cfg_dir = citadel.join("cfg");
     std::fs::create_dir_all(&cfg_dir).map_err(|e| e.to_string())?;
     let ae = cfg_dir.join("autoexec.cfg");
-    let new_ae = kvedit::upsert_autoexec_custom(&existing, s.unit_status_new, &s.custom_autoexec);
+    let new_ae = kvedit::upsert_autoexec_full(&existing, s.unit_status_new, &tier_ae, &s.custom_autoexec);
     let after_revert = match std::fs::read_to_string(&ae) {
         Ok(text) => text,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
@@ -220,7 +233,7 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
         std::fs::write(&ae, new_ae).map_err(|e| e.to_string())?;
         log.push(StepLog {
             step: "autoexec.cfg".into(),
-            detail: if s.unit_status_new || !s.custom_autoexec.trim().is_empty() {
+            detail: if s.unit_status_new || !tier_ae.trim().is_empty() || !s.custom_autoexec.trim().is_empty() {
                 "managed block written".into()
             } else {
                 "managed block removed".into()
@@ -289,7 +302,7 @@ mod tests {
         let (cit, data, pkg) = sandbox("preflight");
         let root = cit.parent().unwrap().parent().unwrap();
         let original = std::fs::read(cit.join("gameinfo.gi")).unwrap();
-        std::fs::remove_file(pkg.join("gi_tier1/video.txt")).unwrap();
+        std::fs::remove_file(pkg.join("t1/video.txt")).unwrap();
         assert!(install(Mode::T1, 90, root.to_str().unwrap(), &pkg, &data).is_err());
         assert_eq!(std::fs::read(cit.join("gameinfo.gi")).unwrap(), original);
         assert!(!cit.join("gameinfo.gi.dlp.bak").exists());
@@ -319,8 +332,8 @@ mod tests {
         assert_eq!(man.lines().count(), 6);
         // video.txt merged with user identity + read-only
         let v = std::fs::read_to_string(cit.join("cfg").join("video.txt")).unwrap();
-        assert!(v.contains("\"Version\"		\"11\""), "Version kept: {v}");
-        assert!(v.contains("\"setting.defaultres\" \"2560\""));
+        assert!(v.contains("\"Version\"\t\t\"11\""), "Version kept: {v}");
+        assert!(v.contains("\"setting.defaultres\"\t\t\"2560\"") || v.contains("\"setting.defaultres\" \"2560\""));
         assert!(std::fs::metadata(cit.join("cfg").join("video.txt")).unwrap().permissions().readonly());
         crate::backup::rm_ro(cit.parent().unwrap().parent().unwrap());
     }

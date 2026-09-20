@@ -535,11 +535,8 @@ async function doInstall() {
   try {
     const running = await call('check_running');
     if (running.length > 0) {
-      const keep = await showModal(t('guardTitle'), t('guardBody'), [
-        { label: t('guardKeep'), value: true, kind: 'apply' },
-        { label: t('guardCancel'), value: false },
-      ]);
-      if (!keep) return;
+      showModal(t('guardTitle'), t('guardBody'), [{ label: t('ok') }]);
+      return;
     }
   } catch (e) { /* guard check failed — backend re-checks anyway */ }
 
@@ -609,8 +606,15 @@ async function renderBackups() {
     btnRestore.className = 'btn-apply btn-restore';
     btnRestore.textContent = t('restore');
     btnRestore.onclick = async () => {
+      try {
+        const running = await call('check_running');
+        if (running.length > 0) {
+          showModal(t('guardTitle'), t('guardBody'), [{ label: t('ok') }]);
+          return;
+        }
+      } catch (e) { /* non-fatal */ }
       const go = await showModal(t('restore'), t('confirmRestore'), [
-        { label: t('guardKeep'), value: true, kind: 'apply' },
+        { label: t('restore'), value: true, kind: 'apply' },
         { label: t('guardCancel'), value: false },
       ]);
       if (!go) return;
@@ -684,6 +688,13 @@ async function doRevertVanilla() {
     showModal(t('revertVanilla'), t('noGame'), [{ label: t('ok') }]);
     return;
   }
+  try {
+    const running = await call('check_running');
+    if (running.length > 0) {
+      showModal(t('guardTitle'), t('guardBody'), [{ label: t('ok') }]);
+      return;
+    }
+  } catch (e) { /* non-fatal */ }
   const confirm = await showModal(t('revertVanilla'), t('confirmRevertVanilla'), [
     { label: t('btnRevertVanilla'), value: true, kind: 'apply' },
     { label: t('guardCancel'), value: false },

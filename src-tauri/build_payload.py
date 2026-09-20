@@ -4,14 +4,14 @@ import os
 import tempfile
 import zipfile
 
-SRC = Path(r"D:\Claude\ddlock")
+SRC = Path(r"D:\Claude\DeadlockConfigs")
 OUT = Path(__file__).with_name('payload.zip')
-FOLDERS = ('gi_tier1', 'gi_tier2', 'gi_tier3', 'potato', 'addons')
+FOLDERS = ('t1', 't2', 't3', 'potato', 'addons')
 
 
 def build_payload(source=SRC, output=OUT):
     source, output = Path(source), Path(output)
-    required = [source / tier / 'gameinfo.gi' for tier in FOLDERS[:3]]
+    required = [source / tier / 'gameinfo.gi' for tier in FOLDERS[:4]]
     required += [source / tier / 'video.txt' for tier in FOLDERS[:4]]
     for path in required:
         if not path.is_file():

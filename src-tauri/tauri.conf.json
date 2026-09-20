@@ -11,7 +11,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "DLPHub \u2014 Deadlock FPS",
+        "title": "DLPHub",
         "width": 1200,
         "height": 800,
         "minWidth": 960,
