@@ -10,7 +10,7 @@ pub struct Settings {
     pub last_path: Option<String>,
     pub unit_status_new: bool, // citadel_unit_status_use_new autoexec block
     pub fov: u32,              // per-user draft FOV 70..=120, applied on install
-    pub fps_max: u32,          // 0: uncapped
+    pub fps_max: Option<u32>,  // None: default (untouched), Some(0): uncapped, Some(n): limit
     pub custom_autoexec: String, // custom user lines
     pub renderer: String,        // "default" | "dx11" | "vulkan"
 }
@@ -23,7 +23,7 @@ impl Default for Settings {
             last_path: None,
             unit_status_new: false,
             fov: 90,
-            fps_max: 0,
+            fps_max: None,
             custom_autoexec: String::new(),
             renderer: "default".into(),
         }
@@ -34,7 +34,9 @@ impl Settings {
     pub fn validate(&self) -> Result<(), String> {
         if !["fa", "en"].contains(&self.lang.as_str()) { return Err("lang must be fa or en".into()); }
         if !(70..=120).contains(&self.fov) || self.fov % 5 != 0 { return Err("fov must be 70..120 in steps of 5".into()); }
-        if self.fps_max > 1000 { return Err("fps_max must be 0..1000".into()); }
+        if let Some(fps) = self.fps_max {
+            if fps > 1000 { return Err("fps_max must be 0..1000".into()); }
+        }
         if self.custom_autoexec.len() > 65536 || self.custom_autoexec.contains('\0') { return Err("invalid custom_autoexec".into()); }
         if !["default", "dx11", "vulkan"].contains(&self.renderer.as_str()) { return Err("renderer must be default, dx11, or vulkan".into()); }
         Ok(())
@@ -163,7 +165,7 @@ mod tests {
         assert!(!s.unlocked);
         assert!(s.last_path.is_none());
         assert!(!s.unit_status_new);
-        assert_eq!(s.fps_max, 0);
+        assert_eq!(s.fps_max, None);
         assert!(s.custom_autoexec.is_empty());
         crate::backup::rm_ro(&tmp);
     }
@@ -178,7 +180,7 @@ mod tests {
             last_path: Some("D:\\SteamLibrary\\steamapps\\common\\Deadlock".into()),
             unit_status_new: true,
             fov: 110,
-            fps_max: 165,
+            fps_max: Some(165),
             custom_autoexec: "bind f6 kill".into(),
             renderer: "vulkan".into(),
         };
@@ -188,7 +190,7 @@ mod tests {
         assert!(s2.unlocked);
         assert_eq!(s2.last_path.as_deref(), Some("D:\\SteamLibrary\\steamapps\\common\\Deadlock"));
         assert!(s2.unit_status_new);
-        assert_eq!(s2.fps_max, 165);
+        assert_eq!(s2.fps_max, Some(165));
         assert_eq!(s2.custom_autoexec, "bind f6 kill");
         assert_eq!(s2.renderer, "vulkan");
         crate::backup::rm_ro(&tmp);

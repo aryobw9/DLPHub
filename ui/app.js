@@ -104,6 +104,7 @@ function applyLang() {
   if (p) p.placeholder = t('pathPlaceholder');
   renderBackups();
   if (state.lastValvePings) renderValvePings(state.lastValvePings);
+  setTimeout(updateRendererGlider, 20);
 }
 
 function setLang(lang) {
@@ -111,6 +112,8 @@ function setLang(lang) {
   call('set_settings', { patch: { lang } }).catch(() => {});
   applyLang();
 }
+
+window.addEventListener('resize', updateRendererGlider);
 
 // ---------- fatal-error surface (never silent) ----------
 function fatal(err) {
@@ -140,7 +143,7 @@ async function boot() {
   state.unlocked = !!s.unlocked;
   state.lastPath = s.last_path || null;
   state.unitStatusNew = !!s.unit_status_new;
-  state.fpsMax = s.fps_max ?? 0;
+  state.fpsMax = s.fps_max; // null if None (default)
   state.customAutoexec = s.custom_autoexec || '';
   state.renderer = s.renderer || 'default';
 
@@ -165,24 +168,51 @@ function syncSettingsToUi() {
   const swUnit = document.getElementById('sw-unit-status');
   if (swUnit) swUnit.checked = !!state.unitStatusNew;
 
-  const fps = state.fpsMax ?? 0;
+  const fps = state.fpsMax;
   document.querySelectorAll('#fps-radio-group .renderer-pill').forEach((btn) => {
-    btn.classList.toggle('active', Number(btn.dataset.fps) === fps);
+    if (fps === null || fps === undefined || fps === 'DEFAULT') {
+      btn.classList.toggle('active', btn.dataset.fps === 'DEFAULT');
+    } else {
+      btn.classList.toggle('active', btn.dataset.fps === String(fps));
+    }
   });
 
   const renderer = state.renderer || 'default';
   document.querySelectorAll('#renderer-radio-group .renderer-pill').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.renderer === renderer);
   });
+  updateRendererGlider();
+}
+
+function updateRendererGlider() {
+  const group = document.getElementById('renderer-radio-group');
+  const glider = document.getElementById('renderer-glider');
+  if (!group || !glider) return;
+  const activeBtn = group.querySelector('.renderer-pill.active');
+  if (!activeBtn) {
+    glider.style.opacity = '0';
+    return;
+  }
+  glider.style.opacity = '1';
+  glider.style.width = `${activeBtn.offsetWidth}px`;
+  glider.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
 }
 
 function selectFps(val) {
-  const num = Number(val) || 0;
-  state.fpsMax = num;
-  document.querySelectorAll('#fps-radio-group .renderer-pill').forEach((btn) => {
-    btn.classList.toggle('active', Number(btn.dataset.fps) === num);
-  });
-  call('set_settings', { patch: { fps_max: num } }).catch(() => {});
+  if (val === 'DEFAULT' || val === null || val === undefined || val === '') {
+    state.fpsMax = null;
+    document.querySelectorAll('#fps-radio-group .renderer-pill').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.fps === 'DEFAULT');
+    });
+    call('set_settings', { patch: { fps_max: -1 } }).catch(() => {});
+  } else {
+    const num = Number(val) || 0;
+    state.fpsMax = num;
+    document.querySelectorAll('#fps-radio-group .renderer-pill').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.fps === String(num));
+    });
+    call('set_settings', { patch: { fps_max: num } }).catch(() => {});
+  }
 }
 
 function selectRenderer(mode) {
@@ -190,7 +220,34 @@ function selectRenderer(mode) {
   document.querySelectorAll('#renderer-radio-group .renderer-pill').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.renderer === mode);
   });
+  updateRendererGlider();
   call('set_settings', { patch: { renderer: mode } }).catch(() => {});
+}
+
+async function copyLaunchOptions() {
+  const text = '-high | -dx11 | -vulkan';
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    const icon = document.getElementById('copy-launch-icon');
+    const label = document.getElementById('copy-launch-text');
+    if (icon) icon.className = 'fa-solid fa-check';
+    if (label) label.textContent = t('copied') || 'کپی شد!';
+    setTimeout(() => {
+      if (icon) icon.className = 'fa-solid fa-copy';
+      if (label) label.textContent = t('copyText') || 'کپی';
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy launch options:', err);
+  }
 }
 
 async function refreshGame() {
@@ -728,7 +785,7 @@ async function doResetSettings() {
     state.lang = s.lang;
     state.unlocked = s.unlocked;
     state.fov = s.fov;
-    state.fpsMax = s.fps_max ?? 0;
+    state.fpsMax = s.fps_max; // null if None (default)
     state.unitStatusNew = s.unit_status_new;
     state.customAutoexec = s.custom_autoexec;
     state.renderer = s.renderer || 'default';

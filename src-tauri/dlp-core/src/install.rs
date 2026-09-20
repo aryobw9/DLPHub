@@ -197,7 +197,9 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
 
     let s = crate::settings::load_from(data_dir);
     let mut patches: Vec<(&str, String)> = Vec::new();
-    patches.push(("setting.fps_max", s.fps_max.to_string()));
+    if let Some(fps) = s.fps_max {
+        patches.push(("setting.fps_max", fps.to_string()));
+    }
     let patch_refs: Vec<(&str, &str)> = patches.iter().map(|(k, v)| (*k, v.as_str())).collect();
     let final_video = kvedit::patch_video_kv(&merged, &patch_refs);
 
@@ -213,7 +215,9 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
     if !full_tier_cmds.is_empty() && !full_tier_cmds.ends_with('\n') {
         full_tier_cmds.push('\n');
     }
-    full_tier_cmds.push_str(&format!("fps_max {}\n", s.fps_max));
+    if let Some(fps) = s.fps_max {
+        full_tier_cmds.push_str(&format!("fps_max {}\n", fps));
+    }
     let new_ae = kvedit::upsert_autoexec_full(&existing, s.unit_status_new, &full_tier_cmds, &s.custom_autoexec);
     let after_revert = match std::fs::read_to_string(&ae) {
         Ok(text) => text,

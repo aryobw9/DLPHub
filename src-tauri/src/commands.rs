@@ -160,7 +160,7 @@ pub struct SettingsDto {
     pub last_path: Option<String>,
     pub unit_status_new: bool,
     pub fov: u32,
-    pub fps_max: u32,
+    pub fps_max: Option<u32>,
     pub custom_autoexec: String,
     pub renderer: String,
 }
@@ -187,7 +187,7 @@ pub struct SettingsPatch {
     pub last_path: Option<String>,
     pub unit_status_new: Option<bool>,
     pub fov: Option<u32>,
-    pub fps_max: Option<u32>,
+    pub fps_max: Option<i32>, // -1: None (default/untouched), >=0: Some(n)
     pub custom_autoexec: Option<String>,
     pub renderer: Option<String>,
 }
@@ -230,7 +230,7 @@ pub fn set_settings(patch: SettingsPatch) -> Result<SettingsDto, String> {
         s.unit_status_new = u;
     }
     if let Some(fm) = patch.fps_max {
-        s.fps_max = fm;
+        s.fps_max = if fm < 0 { None } else { Some(fm as u32) };
     }
     if let Some(ca) = patch.custom_autoexec {
         s.custom_autoexec = ca;

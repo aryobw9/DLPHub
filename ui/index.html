@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="vendor/fontawesome/css/regular.min.css" />
   <link rel="stylesheet" href="vendor/fontawesome/css/brands.min.css" />
   <link rel="stylesheet" href="vendor/animate.css/animate.min.css" />
-  <link rel="stylesheet" href="style.css?v=7" />
+  <link rel="stylesheet" href="style.css?v=8" />
 </head>
 <body>
 
@@ -164,8 +164,8 @@
               </div>
             </div>
 
-            <!-- Settings Duo for side-by-side layout -->
-            <div class="settings-duo">
+            <!-- Settings Row 1: CAMERA, HUD, RENDERER -->
+            <div class="settings-duo settings-row-3">
               <!-- CAMERA box (FOV) -->
               <div class="setting-box">
                 <div class="fov-box-header">
@@ -193,29 +193,6 @@
                   <span data-i18n="fovWide">WIDE</span>
                 </div>
                 <input type="hidden" id="fov-number" value="90" />
-              </div>
-
-              <!-- FPS LIMIT box -->
-              <div class="setting-box" style="justify-content: space-between;">
-                <div class="fov-box-header">
-                  <div class="fov-box-title-wrap">
-                    <i class="fa-solid fa-gauge-high" style="font-size:14px"></i>
-                    <span class="fov-box-title" data-i18n="fpsLimitTitle">FPS LIMIT</span>
-                  </div>
-                  <div class="hint-trigger">
-                    <i class="fa-solid fa-circle-question"></i>
-                    <div class="hint-tooltip" data-i18n="fpsHint">Sets fps_max in video.txt and autoexec.cfg. Does not alter your monitor's native refresh rate.</div>
-                  </div>
-                </div>
-                <div class="renderer-radio-group" id="fps-radio-group" style="margin: auto 0;">
-                  <button type="button" class="renderer-pill active" data-fps="0" onclick="selectFps(0)" data-i18n="fpsMaxPill">MAX (0)</button>
-                  <button type="button" class="renderer-pill" data-fps="144" onclick="selectFps(144)">144</button>
-                  <button type="button" class="renderer-pill" data-fps="165" onclick="selectFps(165)">165</button>
-                  <button type="button" class="renderer-pill" data-fps="240" onclick="selectFps(240)">240</button>
-                </div>
-                <div class="renderer-desc" data-i18n="fpsLimitDesc" style="font-size:0.62rem; color:var(--text-muted); text-align:center; margin-bottom:2px;">
-                  Target framerate limit (0 = uncapped)
-                </div>
               </div>
 
               <!-- HUD box (New Health bars) -->
@@ -269,12 +246,64 @@
                   </div>
                 </div>
                 <div class="renderer-radio-group" id="renderer-radio-group" style="margin: auto 0;">
+                  <span class="renderer-glider" id="renderer-glider"></span>
                   <button type="button" class="renderer-pill" data-renderer="dx11" onclick="selectRenderer('dx11')">DX 11</button>
                   <button type="button" class="renderer-pill active" data-renderer="default" onclick="selectRenderer('default')" data-i18n="rendererDefault">DEFAULT</button>
                   <button type="button" class="renderer-pill" data-renderer="vulkan" onclick="selectRenderer('vulkan')">VULKAN</button>
                 </div>
                 <div class="renderer-desc" data-i18n="rendererDesc" style="font-size:0.62rem; color:var(--text-muted); text-align:center; margin-bottom:2px;">
                   DirectX 11 / Vulkan switch
+                </div>
+              </div>
+            </div>
+
+            <!-- Settings Row 2: FPS LIMIT + LAUNCH OPTIONS -->
+            <div class="settings-bottom-row">
+              <!-- FPS LIMIT box -->
+              <div class="setting-box fps-box-bottom">
+                <div class="fov-box-header">
+                  <div class="fov-box-title-wrap">
+                    <i class="fa-solid fa-gauge-high" style="font-size:14px"></i>
+                    <span class="fov-box-title" data-i18n="fpsLimitTitle">FPS LIMIT</span>
+                  </div>
+                  <div class="hint-trigger">
+                    <i class="fa-solid fa-circle-question"></i>
+                    <div class="hint-tooltip" data-i18n="fpsHint">Sets fps_max in video.txt and autoexec.cfg. Does not alter your monitor's native refresh rate.</div>
+                  </div>
+                </div>
+                <div class="fps-pill-grid" id="fps-radio-group">
+                  <button type="button" class="renderer-pill active" data-fps="DEFAULT" onclick="selectFps('DEFAULT')" data-i18n="fpsDefaultPill">DEFAULT</button>
+                  <button type="button" class="renderer-pill" data-fps="45" onclick="selectFps('45')">45</button>
+                  <button type="button" class="renderer-pill" data-fps="60" onclick="selectFps('60')">60</button>
+                  <button type="button" class="renderer-pill" data-fps="75" onclick="selectFps('75')">75</button>
+                  <button type="button" class="renderer-pill" data-fps="90" onclick="selectFps('90')">90</button>
+                  <button type="button" class="renderer-pill" data-fps="144" onclick="selectFps('144')">144</button>
+                  <button type="button" class="renderer-pill" data-fps="165" onclick="selectFps('165')">165</button>
+                  <button type="button" class="renderer-pill" data-fps="245" onclick="selectFps('245')">245</button>
+                  <button type="button" class="renderer-pill" data-fps="320" onclick="selectFps('320')">320</button>
+                  <button type="button" class="renderer-pill" data-fps="0" onclick="selectFps('0')" title="Unlimited / نامحدود" aria-label="Unlimited"><i class="fa-solid fa-infinity"></i></button>
+                </div>
+              </div>
+
+              <!-- LAUNCH OPTIONS INFO box -->
+              <div class="setting-box launch-options-box">
+                <div class="fov-box-header">
+                  <div class="fov-box-title-wrap">
+                    <i class="fa-brands fa-steam" style="font-size:14px;color:var(--deadlock-cyan);"></i>
+                    <span class="fov-box-title" data-i18n="launchOptionsTitle">LAUNCH OPTIONS</span>
+                  </div>
+                  <button type="button" class="btn-copy-launch" id="btn-copy-launch-opts" onclick="copyLaunchOptions()" title="کپی متن / Copy">
+                    <i class="fa-solid fa-copy" id="copy-launch-icon"></i>
+                    <span id="copy-launch-text" data-i18n="copyText">کپی</span>
+                  </button>
+                </div>
+                <div class="launch-options-content">
+                  <div class="launch-options-desc" data-i18n="launchOptionsDesc">
+                    برای فعالسازی تنظیمات Launch option وارد استیم شوید و از مسیر Properties → Launch Options متن کپی‌شده را در قسمت Launch Options قرار دهید. پس از وارد کردن متن، هربار بازی را اجرا کنید با این تنظیمات اجرا میشود. 🚀<br />⚠️ توجه: متن را دقیقاً همانطور که در زیر نوشته کپی کنید و هیچ بخشی از آن را تغییر ندهید.
+                  </div>
+                  <div class="launch-code-row">
+                    <code class="launch-code-badge" id="launch-code-badge" onclick="copyLaunchOptions()" title="کلیک برای کپی / Click to copy">-high | -dx11 | -vulkan</code>
+                  </div>
                 </div>
               </div>
             </div>
@@ -437,7 +466,7 @@
   <script src="vendor/motion/motion.js"></script>
   <script src="i18n/fa.js"></script>
   <script src="i18n/en.js"></script>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
   <script>
     // expose opener global (withGlobalTauri injects plugin APIs lazily via plugins object)
     window.addEventListener('DOMContentLoaded', () => {
