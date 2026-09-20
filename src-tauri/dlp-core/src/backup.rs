@@ -47,6 +47,53 @@ pub fn backups_root(data_dir: &Path) -> std::path::PathBuf {
     data_dir.join("backups")
 }
 
+pub const MAX_BACKUPS: usize = 15;
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct BackupEntry {
+    pub name: String,
+    pub size_bytes: u64,
+}
+
+pub fn dir_size(dir: &Path) -> u64 {
+    let mut total = 0;
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let p = entry.path();
+            if p.is_dir() {
+                total += dir_size(&p);
+            } else if let Ok(m) = entry.metadata() {
+                total += m.len();
+            }
+        }
+    }
+    total
+}
+
+/// All backup folder names with their calculated disk sizes, sorted newest first.
+pub fn list_backups_with_details(data_dir: &Path) -> Vec<BackupEntry> {
+    let names = list_backups(data_dir);
+    let root = backups_root(data_dir);
+    names
+        .into_iter()
+        .map(|name| {
+            let bdir = root.join(&name);
+            let size_bytes = dir_size(&bdir);
+            BackupEntry { name, size_bytes }
+        })
+        .collect()
+}
+
+pub fn enforce_retention(data_dir: &Path) {
+    let backups = list_backups(data_dir);
+    if backups.len() > MAX_BACKUPS {
+        for old in &backups[MAX_BACKUPS..] {
+            let p = backups_root(data_dir).join(old);
+            rm_ro(&p);
+        }
+    }
+}
+
 /// All backup folder names, sorted newest first.
 pub fn list_backups(data_dir: &Path) -> Vec<String> {
     let root = backups_root(data_dir);
@@ -104,6 +151,8 @@ pub fn do_backup(citadel: &Path, data_dir: &Path) -> Result<String, String> {
         Ok(())
     })();
     if let Err(e) = result { rm_ro(&stage); return Err(e.to_string()); }
+    enforce_retention(data_dir);
+    crate::logger::log(data_dir, "INFO", &format!("Backup created: {name}"));
     Ok(name)
 }
 

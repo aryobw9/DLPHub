@@ -39,6 +39,8 @@ pub fn run() {
             commands::revert_original_cmd,
             commands::get_settings,
             commands::set_settings,
+            commands::reset_settings_cmd,
+            commands::get_diagnostics,
             commands::launch_game,
             commands::running_from_pkg,
             commands::ping_valve_servers,

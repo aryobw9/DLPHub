@@ -242,6 +242,7 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
         });
     }
 
+    crate::logger::log(data_dir, "INFO", &format!("Successfully installed mode: {:?}", mode));
     Ok(log)
 }
 

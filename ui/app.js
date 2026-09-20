@@ -579,25 +579,52 @@ async function doBackupNow() {
   }
 }
 
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
 async function renderBackups() {
   const list = document.getElementById('backup-list');
   if (!list) return;
-  let names = [];
-  try { names = (await call('list_backups')).map((b) => b.name); } catch (e) { return; }
+  let items = [];
+  try { items = await call('list_backups'); } catch (e) { return; }
   list.innerHTML = '';
-  if (names.length === 0) {
+  if (!items || items.length === 0) {
     const d = document.createElement('div');
     d.className = 'option-detail';
     d.textContent = t('noBackups');
     list.appendChild(d);
     return;
   }
-  for (const n of names) {
+  for (const b of items) {
+    const n = b.name;
     const row = document.createElement('div');
     row.className = 'backup-row';
+
+    const info = document.createElement('div');
+    info.className = 'backup-meta';
+    info.style.display = 'flex';
+    info.style.alignItems = 'center';
+    info.style.gap = '8px';
+
     const name = document.createElement('span');
     name.className = 'backup-name';
     name.textContent = n;
+    info.appendChild(name);
+
+    if (b.size_bytes !== undefined && b.size_bytes > 0) {
+      const size = document.createElement('span');
+      size.className = 'backup-size';
+      size.style.fontSize = '0.7rem';
+      size.style.color = 'var(--text-muted)';
+      size.style.direction = 'ltr';
+      size.textContent = `(${formatBytes(b.size_bytes)})`;
+      info.appendChild(size);
+    }
 
     const actions = document.createElement('div');
     actions.className = 'backup-actions';
@@ -654,7 +681,7 @@ async function renderBackups() {
 
     actions.appendChild(btnRestore);
     actions.appendChild(btnDel);
-    row.appendChild(name);
+    row.appendChild(info);
     row.appendChild(actions);
     list.appendChild(row);
   }
@@ -668,7 +695,13 @@ async function checkForUpdates() {
     if (window.__TAURI__ && window.__TAURI__.updater && typeof window.__TAURI__.updater.check === 'function') {
       const update = await window.__TAURI__.updater.check();
       if (update && update.available) {
-        showModal(t('updateTitle'), `${t('updateAvailable')}: ${update.version}`, [{ label: t('ok'), kind: 'apply' }]);
+        const go = await showModal(t('updateTitle'), `${t('updateAvailable')}: ${update.version}`, [
+          { label: t('ok'), value: true, kind: 'apply' },
+          { label: t('guardCancel'), value: false },
+        ]);
+        if (go && window.__OPEN_URL__) {
+          window.__OPEN_URL__('https://github.com/aryobw9/DLPHub/releases/latest');
+        }
       } else {
         showModal(t('updateTitle'), t('updateLatest'), [{ label: t('ok') }]);
       }
@@ -679,6 +712,61 @@ async function checkForUpdates() {
     showModal(t('updateTitle'), t('updateLatest'), [{ label: t('ok') }]);
   } finally {
     if (icon) icon.classList.remove('fa-spin');
+  }
+}
+
+async function doResetSettings() {
+  const confirm = await showModal(t('btnResetSettings'), t('confirmResetSettings'), [
+    { label: t('btnResetSettings'), value: true, kind: 'danger' },
+    { label: t('guardCancel'), value: false },
+  ]);
+  if (!confirm) return;
+
+  setBusyCursor(true, 'advanced');
+  try {
+    const s = await call('reset_settings_cmd');
+    state.lang = s.lang;
+    state.unlocked = s.unlocked;
+    state.fov = s.fov;
+    state.reflexMode = s.reflex_mode;
+    state.fpsMax = s.fps_max;
+    state.vsync = s.vsync;
+    state.reduceFlash = s.reduce_flash;
+    state.textureBias = s.texture_bias;
+    state.ragdollGibLimit = s.ragdoll_gib_limit;
+    state.customAutoexec = s.custom_autoexec;
+
+    const fovSlider = document.getElementById('fov-slider');
+    if (fovSlider) fovSlider.value = s.fov;
+    const fovCurrent = document.getElementById('fov-current');
+    if (fovCurrent) fovCurrent.textContent = s.fov + '°';
+    const swUnit = document.getElementById('sw-unit-status');
+    if (swUnit) swUnit.checked = s.unit_status_new;
+
+    showModal(t('btnResetSettings'), t('settingsResetDone'), [{ label: t('ok'), kind: 'apply' }]);
+  } catch (e) {
+    showModal(t('btnResetSettings'), String(e), [{ label: t('ok') }]);
+  } finally {
+    setBusyCursor(false, 'advanced');
+  }
+}
+
+async function doCopyDiagnostics() {
+  try {
+    const diag = await call('get_diagnostics');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(diag);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = diag;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    showModal(t('btnCopyDiag'), t('diagCopied'), [{ label: t('ok'), kind: 'apply' }]);
+  } catch (e) {
+    showModal(t('btnCopyDiag'), String(e), [{ label: t('ok') }]);
   }
 }
 
@@ -1339,6 +1427,8 @@ window.doInstall = doInstall;
 window.doBackupNow = doBackupNow;
 window.doRevertVanilla = doRevertVanilla;
 window.doUnlock = doUnlock;
+window.doResetSettings = doResetSettings;
+window.doCopyDiagnostics = doCopyDiagnostics;
 window.setFov = setFov;
 
 // ---------- wire everything ----------
@@ -1381,6 +1471,10 @@ function init() {
     document.getElementById('btn-backup').onclick = doBackupNow;
     document.getElementById('btn-revert-vanilla').onclick = doRevertVanilla;
     document.getElementById('btn-unlock').onclick = doUnlock;
+    const btnResetSettings = document.getElementById('btn-reset-settings');
+    if (btnResetSettings) btnResetSettings.onclick = doResetSettings;
+    const btnCopyDiag = document.getElementById('btn-copy-diag');
+    if (btnCopyDiag) btnCopyDiag.onclick = doCopyDiagnostics;
 
     // options & switches
     const swUnit = document.getElementById('sw-unit-status');

@@ -11,5 +11,6 @@ pub mod fov;
 pub mod guard;
 pub mod install;
 pub mod kvedit;
+pub mod logger;
 pub mod payload;
 pub mod settings;

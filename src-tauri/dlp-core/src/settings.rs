@@ -122,6 +122,16 @@ pub fn save(s: &Settings) -> std::io::Result<()> {
     save_to(&data_dir(), s)
 }
 
+pub fn reset() -> std::io::Result<Settings> {
+    let s = Settings::default();
+    let dir = data_dir();
+    std::fs::create_dir_all(&dir)?;
+    let tmp = dir.join("settings.json.tmp");
+    std::fs::write(&tmp, serde_json::to_string_pretty(&s)?)?;
+    std::fs::rename(&tmp, dir.join("settings.json"))?;
+    Ok(s)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -285,6 +285,18 @@
                 </button>
               </div>
 
+              <!-- Actions Row: Reset Settings & Diagnostics -->
+              <div class="adv-card adv-actions-row" style="flex: 0 0 auto; display: flex; flex-direction: row; gap: 8px; padding: 8px 12px;">
+                <button class="btn-reset" id="btn-reset-settings" onclick="doResetSettings()" style="flex: 1; height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.75rem; border-radius: 6px;">
+                  <i class="fa-solid fa-rotate-left" style="color:var(--deadlock-cyan)"></i>
+                  <span data-i18n="btnResetSettings">ریست تنظیمات برنامه</span>
+                </button>
+                <button class="btn-apply btn-sm" id="btn-copy-diag" onclick="doCopyDiagnostics()" style="flex: 1; height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.75rem; border-radius: 6px;">
+                  <i class="fa-solid fa-clipboard-list" style="color:var(--deadlock-orange)"></i>
+                  <span data-i18n="btnCopyDiag">کپی گزارش عیب‌یابی</span>
+                </button>
+              </div>
+
               <!-- Support Note Box (Same size as revert all changes) -->
               <div class="adv-card adv-support-card adv-revert-only">
                 <div class="adv-support-content">

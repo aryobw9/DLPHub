@@ -78,6 +78,7 @@ fn resolve_path(path: &str) -> Result<String, String> {
 #[derive(Serialize)]
 pub struct BackupInfo {
     pub name: String,
+    pub size_bytes: u64,
 }
 
 #[tauri::command]
@@ -89,9 +90,12 @@ pub fn do_backup_cmd(path: String) -> Result<String, String> {
 
 #[tauri::command]
 pub fn list_backups() -> Vec<BackupInfo> {
-    backup::list_backups(&settings::data_dir())
+    backup::list_backups_with_details(&settings::data_dir())
         .into_iter()
-        .map(|name| BackupInfo { name })
+        .map(|b| BackupInfo {
+            name: b.name,
+            size_bytes: b.size_bytes,
+        })
         .collect()
 }
 
@@ -260,6 +264,53 @@ pub fn set_settings(patch: SettingsPatch) -> Result<SettingsDto, String> {
     }
     settings::save(&s).map_err(|e| e.to_string())?;
     Ok(s.into())
+}
+
+#[tauri::command]
+pub fn reset_settings_cmd() -> Result<SettingsDto, String> {
+    let s = settings::reset().map_err(|e| format!("Failed to reset settings: {e}"))?;
+    dlp_core::logger::log(&settings::data_dir(), "INFO", "Settings reset to defaults by user");
+    Ok(s.into())
+}
+
+#[tauri::command]
+pub fn get_diagnostics() -> String {
+    let data_dir = settings::data_dir();
+    let mut diag = String::new();
+    diag.push_str("=== DLPHub Diagnostics Report ===\n");
+    diag.push_str(&format!("OS: {}\n", std::env::consts::OS));
+    diag.push_str(&format!("Arch: {}\n", std::env::consts::ARCH));
+    diag.push_str(&format!("Data Dir: {:?}\n", data_dir));
+    diag.push_str(&format!("Log Path: {:?}\n", dlp_core::logger::log_path(&data_dir)));
+
+    let s = settings::load();
+    diag.push_str(&format!("Settings: lang={}, unlocked={}, last_path={:?}, fov={}, reflex={}, fps_max={}, vsync={}, unit_status={}\n",
+        s.lang, s.unlocked, s.last_path, s.fov, s.reflex_mode, s.fps_max, s.vsync, s.unit_status_new
+    ));
+
+    let detected = discovery::find_game();
+    diag.push_str(&format!("Deadlock Detected: {:?}\n", detected));
+
+    let running = guard::game_running();
+    diag.push_str(&format!("Game Running: {:?}\n", running));
+
+    let backups = backup::list_backups_with_details(&data_dir);
+    diag.push_str(&format!("Backups Count: {}\n", backups.len()));
+    for b in backups {
+        diag.push_str(&format!("  - {}: {} bytes\n", b.name, b.size_bytes));
+    }
+
+    diag.push_str("\n=== Recent Logs (Last 50 lines) ===\n");
+    let logs = dlp_core::logger::recent_logs(&data_dir, 50);
+    if logs.is_empty() {
+        diag.push_str("(No logs recorded yet)\n");
+    } else {
+        for line in logs {
+            diag.push_str(&line);
+            diag.push('\n');
+        }
+    }
+    diag
 }
 
 // ---------- misc ----------
