@@ -2859,17 +2859,79 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   box-shadow: 0 0 10px var(--deadlock-orange-glow);
 }
 
-.info-hint {
-  font-size: 11px;
+/* Modern Sleek Hint Tooltip */
+.hint-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
   color: var(--text-muted);
   cursor: var(--cur-help);
-  margin-left: 4px;
-  opacity: 0.75;
-  transition: opacity 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
-.info-hint:hover {
-  opacity: 1;
+.hint-trigger i {
+  font-size: 13px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease, filter 0.2s ease;
+}
+.hint-trigger:hover {
   color: var(--deadlock-cyan);
+}
+.hint-trigger:hover i {
+  transform: scale(1.18);
+  filter: drop-shadow(0 0 6px var(--deadlock-blue-glow));
+}
+.hint-tooltip {
+  position: absolute;
+  bottom: calc(100% + 9px);
+  right: -6px;
+  width: 240px;
+  padding: 8px 12px;
+  background: rgba(10, 16, 28, 0.96);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 16px rgba(56, 189, 248, 0.2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--text-main);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.45;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px) scale(0.96);
+  transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.18s;
+  z-index: 99999;
+  text-align: left;
+  direction: ltr;
+}
+body.lang-fa .hint-tooltip {
+  font-family: 'Vazirmatn', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-align: right;
+  direction: rtl;
+}
+.hint-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  right: 11px;
+  width: 8px;
+  height: 8px;
+  background: rgba(10, 16, 28, 0.96);
+  border-right: 1px solid rgba(56, 189, 248, 0.35);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.35);
+  transform: rotate(45deg);
+}
+.hint-trigger:hover .hint-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
 }
 
 /* FOV internals compacted: smaller readout + tighter slider block so the BOX is short */
