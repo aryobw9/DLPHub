@@ -41,43 +41,26 @@ pub fn install_addons(src: &Path, dst: &Path, only: &str, exclude: &str) -> std:
 
     let mut rep = AddonReport::default();
 
-    // 1) Automatically remove excluded addons if they match our package files
-    // (e.g. switching from Potato to T1/T2/T3 cleans up pak01..pak03 potato mods)
-    for fname in &excl_list {
-        let target = dst.join(fname);
-        if target.exists() {
-            let src_file = src.join(fname);
-            let is_ours = if let (Ok(s_meta), Ok(d_meta)) = (src_file.metadata(), target.metadata()) {
-                s_meta.len() == d_meta.len()
-            } else {
-                false
-            };
-            if is_ours {
-                let _ = std::fs::remove_file(&target);
-                rep.removed.push(fname.clone());
+    let man = dst.parent().unwrap_or(dst).join("addons_manifest.txt");
+    let mut owned = match std::fs::read_to_string(&man) {
+        Ok(s) => s.lines().map(str::to_string).collect::<Vec<_>>(),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => vec![],
+        Err(e) => return Err(e),
+    };
+    for fname in owned.clone() {
+        if excl_list.contains(&fname) || (!only_list.is_empty() && !only_list.contains(&fname)) {
+            if fname.contains(['/', '\\', ':']) || fname.contains("..") {
+                return Err(std::io::Error::other("invalid addon manifest"));
             }
+            match std::fs::remove_file(dst.join(&fname)) {
+                Ok(()) => rep.removed.push(fname.clone()),
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => (),
+                Err(e) => return Err(e),
+            }
+            owned.retain(|n| n != &fname);
         }
     }
-
-    // 2) If only_list is restricted (e.g. Potato mode), remove our non-potato addons
-    if !only_list.is_empty() {
-        if let Ok(src_entries) = std::fs::read_dir(src) {
-            for entry in src_entries.flatten() {
-                let fname = entry.file_name().to_string_lossy().into_owned();
-                if fname.ends_with(".vpk") && !only_list.contains(&fname) {
-                    let target = dst.join(&fname);
-                    if target.exists() {
-                        if let (Ok(s_meta), Ok(d_meta)) = (entry.metadata(), target.metadata()) {
-                            if s_meta.len() == d_meta.len() {
-                                let _ = std::fs::remove_file(&target);
-                                rep.removed.push(fname);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    if man.exists() { std::fs::write(&man, owned.join("\n") + "\n")?; }
 
     // ceiling: highest pak number in destination OR source
     let mut max_n = 0u32;
@@ -90,7 +73,6 @@ pub fn install_addons(src: &Path, dst: &Path, only: &str, exclude: &str) -> std:
         }
     }
 
-    let man = dst.parent().unwrap_or(dst).join("addons_manifest.txt");
     let mut installed: Vec<String> = Vec::new();
 
     let mut srcs: Vec<std::fs::DirEntry> = std::fs::read_dir(src)?.flatten().collect();
@@ -117,7 +99,7 @@ pub fn install_addons(src: &Path, dst: &Path, only: &str, exclude: &str) -> std:
             continue;
         }
         let dst_len = std::fs::metadata(&target)?.len();
-        if dst_len == src_len {
+        if dst_len == src_len && std::fs::read(&target)? == std::fs::read(entry.path())? {
             rep.skipped.push(fname);
             continue;
         }
@@ -163,6 +145,20 @@ mod tests {
         std::fs::create_dir_all(&src).unwrap();
         std::fs::create_dir_all(&dst).unwrap();
         (src, dst)
+    }
+
+    #[test]
+    fn equal_size_user_addons_are_never_owned_or_identical() {
+        let (src, dst) = setup("ownership");
+        std::fs::write(src.join("pak01_dir.vpk"), "ours").unwrap();
+        std::fs::write(dst.join("pak01_dir.vpk"), "user").unwrap();
+        install_addons(&src, &dst, "", "pak01_dir.vpk").unwrap();
+        assert_eq!(std::fs::read(dst.join("pak01_dir.vpk")).unwrap(), b"user");
+        let rep = install_addons(&src, &dst, "", "").unwrap();
+        assert!(rep.skipped.is_empty());
+        assert_eq!(rep.renumbered.len(), 1);
+        assert_eq!(std::fs::read(dst.join("pak01_dir.vpk")).unwrap(), b"user");
+        crate::backup::rm_ro(src.parent().unwrap());
     }
 
     #[test]

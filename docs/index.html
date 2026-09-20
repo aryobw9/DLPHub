@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DLPHub — Deadlock FPS/Graphics Optimizer & Network Tools</title>
+  <meta name="description" content="Boost Deadlock FPS, reduce input latency, customize FOV, and test Valve server ping with DLPHub by Deadlock Persian." />
+  <link rel="icon" type="image/png" href="assets/app_icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Vazirmatn:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    :root {
+      --bg-dark: #070c14;
+      --bg-card: rgba(14, 23, 38, 0.7);
+      --border-card: rgba(59, 130, 246, 0.18);
+      --orange: #f97316;
+      --orange-glow: rgba(249, 115, 22, 0.35);
+      --cyan: #38bdf8;
+      --cyan-glow: rgba(56, 189, 248, 0.35);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* Background atmospheric glows & characters */
+    .bg-glow-1 {
+      position: fixed;
+      top: -150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(249, 115, 22, 0.12) 0%, rgba(56, 189, 248, 0.05) 50%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Navbar */
+    header.site-nav {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(7, 12, 20, 0.8);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .brand img {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px var(--orange-glow));
+    }
+
+    .brand-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .brand-tag {
+      font-size: 0.65rem;
+      background: rgba(249, 115, 22, 0.2);
+      color: var(--orange);
+      border: 1px solid rgba(249, 115, 22, 0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-github {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-github:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 70px 0 50px;
+      position: relative;
+    }
+
+    .hero-icon {
+      width: 140px;
+      height: 140px;
+      object-fit: contain;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 30px var(--orange-glow));
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--cyan);
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+
+    .hero-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 700;
+      line-height: 1.1;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      background: linear-gradient(180deg, #FFFFFF 30%, #94A3B8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 32px;
+    }
+
+    .hero-subtitle-fa {
+      font-family: 'Vazirmatn', sans-serif;
+      font-size: 1.05rem;
+      color: var(--orange);
+      direction: rtl;
+      margin-top: 6px;
+    }
+
+    .cta-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.05rem;
+      box-shadow: 0 4px 20px var(--orange-glow);
+      transition: all 0.2s ease;
+    }
+
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 28px rgba(249, 115, 22, 0.5);
+      filter: brightness(1.08);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 24px;
+      border-radius: 8px;
+      background: rgba(14, 23, 38, 0.85);
+      border: 1px solid var(--border-card);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(22, 36, 58, 0.9);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    /* Feature Grid */
+    .features-section {
+      padding: 60px 0;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 44px;
+    }
+
+    .section-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      transition: all 0.25s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(56, 189, 248, 0.45);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid rgba(249, 115, 22, 0.35);
+      color: var(--orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .feature-icon.cyan {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: rgba(56, 189, 248, 0.35);
+      color: var(--cyan);
+    }
+
+    .feature-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Community / Socials */
+    .community-section {
+      background: rgba(10, 16, 28, 0.7);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 50px 0;
+      margin-top: 50px;
+      text-align: center;
+    }
+
+    .social-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .social-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      background: rgba(14, 23, 38, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .social-btn:hover {
+      border-color: var(--orange);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px var(--orange-glow);
+    }
+
+    /* Footer */
+    footer.site-footer {
+      padding: 30px 0;
+      text-align: center;
+      color: #64748b;
+      font-size: 0.85rem;
+    }
+
+    footer.site-footer a {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2.5rem; }
+      .hero-subtitle { font-size: 1rem; }
+      .cta-group { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow-1"></div>
+
+  <!-- Navbar -->
+  <header class="site-nav">
+    <div class="container" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+      <a href="#" class="brand">
+        <img src="assets/app_icon.png" alt="DLPHub" />
+        <span class="brand-title">DLPHub</span>
+        <span class="brand-tag">v0.1 BETA</span>
+      </a>
+      <div class="nav-actions">
+        <a href="https://github.com/aryobw9/DLPHub" class="btn-github" target="_blank" rel="noopener">
+          <i class="fa-brands fa-github"></i>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <img src="assets/app_icon.png" alt="DLPHub" class="hero-icon" />
+      <div>
+        <div class="badge-pill">
+          <i class="fa-brands fa-windows"></i>
+          <span>Windows 10 / 11 · 64-bit</span>
+        </div>
+      </div>
+      <h1 class="hero-title">DEADLOCK PERFORMANCE HUB</h1>
+      <p class="hero-subtitle">
+        Custom FPS boost configuration, per-user FOV slider, Valve server latency diagnostics, and one-click data restoration.
+      </p>
+      <p class="hero-subtitle-fa">
+        تنظیمات اختصاصی افزایش فریم، زاویه دید (FOV)، تست زنده پینگ سرورهای ولو و بازگردانی اطلاعات ددلاک
+      </p>
+
+      <div class="cta-group">
+        <a href="https://github.com/aryobw9/DLPHub/releases" class="btn-download" target="_blank" rel="noopener">
+          <i class="fa-solid fa-download"></i>
+          <span>Download DLPHub (.exe)</span>
+        </a>
+        <a href="https://github.com/aryobw9/DLPHub" class="btn-secondary" target="_blank" rel="noopener">
+          <i class="fa-solid fa-code-branch"></i>
+          <span>Source Code</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section class="features-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">ENGINEERED FOR DEADLOCK</h2>
+        <p class="section-desc">Everything you need to optimize visual performance and match connection quality.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-gauge-high"></i></div>
+          <h3 class="feature-title">FPS Boost Presets</h3>
+          <p class="feature-desc">
+            Carefully tuned Tier 1, Tier 2, Tier 3, and Potato presets designed to maximize framerate and eliminate frame drops during heavy teamfights.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon cyan"><i class="fa-solid fa-eye"></i></div>
+          <h3 class="feature-title">Custom FOV Controller</h3>
+          <p class="feature-desc">
+            Adjust field of view between 70° and 120° with automatic aspect-ratio compensation, maintaining pristine visual clarity without camera distortion.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
+          <h3 class="feature-title">Valve Relay Ping Diagnostics</h3>
+          <p class="feature-desc">
+            Direct real-time latency ping to Valve’s Steam Datagram Relay network across Frankfurt, Vienna, Dubai, Stockholm, Warsaw, Amsterdam, London, and US East.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon cyan"><i class="fa-solid fa-shield-halved"></i></div>
+          <h3 class="feature-title">Zero-Risk Safe Mode</h3>
+          <p class="feature-desc">
+            Permanent <code>.dlp.bak</code> snapshots protect your stock files before any changes are written. Revert back to vanilla Deadlock with a single click.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-language"></i></div>
+          <h3 class="feature-title">Bilingual Interface</h3>
+          <p class="feature-desc">
+            Full native English and Persian (فارسی) localization with instant dynamic switching and tailored typography.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon cyan"><i class="fa-solid fa-heart-pulse"></i></div>
+          <h3 class="feature-title">HUD & Visual Customization</h3>
+          <p class="feature-desc">
+            Toggle updated health bar visuals and manage custom autoexec cvars without manually editing game configuration files.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Community Section -->
+  <section class="community-section">
+    <div class="container">
+      <h2 class="section-title">JOIN DEADLOCK PERSIAN</h2>
+      <p class="section-desc">Connect with the Deadlock Persian community for updates, guides, and tournaments.</p>
+      <div class="social-links">
+        <a href="https://t.me/deadlock_persian" class="social-btn" target="_blank" rel="noopener">
+          <i class="fa-brands fa-telegram"></i>
+          <span>Telegram</span>
+        </a>
+        <a href="https://www.youtube.com/@Deadlock_persian" class="social-btn" target="_blank" rel="noopener">
+          <i class="fa-brands fa-youtube"></i>
+          <span>YouTube</span>
+        </a>
+        <a href="https://deadlockpersian.ir" class="social-btn" target="_blank" rel="noopener">
+          <i class="fa-solid fa-globe"></i>
+          <span>Website</span>
+        </a>
+        <a href="https://www.instagram.com/DeadlockPersian" class="social-btn" target="_blank" rel="noopener">
+          <i class="fa-brands fa-instagram"></i>
+          <span>Instagram</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <p>DLPHub v0.1 BETA • Developed by <a href="https://github.com/aryobw9" target="_blank" rel="noopener">aryobw9</a> for Deadlock Persian.</p>
+      <p style="margin-top:4px; font-size:0.75rem; color:#475569;">Deadlock is a registered trademark of Valve Corporation. DLPHub is an independent community utility.</p>
+    </div>
+  </footer>
+</body>
+</html>

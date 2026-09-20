@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DLP Booster — Deadlock FPS</title>
+  <title>DLPHub — Deadlock FPS</title>
   <link rel="stylesheet" href="vendor/fontawesome/css/fontawesome.min.css" />
   <link rel="stylesheet" href="vendor/fontawesome/css/solid.min.css" />
   <link rel="stylesheet" href="vendor/fontawesome/css/regular.min.css" />
   <link rel="stylesheet" href="vendor/fontawesome/css/brands.min.css" />
   <link rel="stylesheet" href="vendor/animate.css/animate.min.css" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
 
@@ -23,8 +23,8 @@
   <!-- Windows App Shell Titlebar -->
   <header class="app-titlebar" data-tauri-drag-region>
     <div class="brand-meta" data-tauri-drag-region>
-      <span class="brand-badge" data-i18n="brand">ددلاک پرشین</span>
-      <span data-i18n="brandTagline">ابزار بهینه‌سازی گرافیک و کانفیگ</span>
+      <span class="brand-badge" data-tauri-drag-region data-i18n="brand">ددلاک پرشین</span>
+      <span data-tauri-drag-region data-i18n="brandTagline">ابزار بهینه‌سازی گرافیک و کانفیگ</span>
     </div>
     <div class="titlebar-drag-spacer" data-tauri-drag-region style="flex:1; height:100%;"></div>
     <div class="window-controls" data-tauri-drag-region="false">
@@ -56,9 +56,10 @@
 
       <!-- Hero Header -->
     <header class="header-hero">
+      <img src="assets/app_icon.png?v=1" class="hero-app-icon" alt="DLPHub" />
       <div class="header-title-en" data-i18n="heroEn">DEADLOCK</div>
-      <div class="header-subtitle-accent" data-i18n="heroAccent">GRAPHICS CONFIG</div>
-      <div class="header-title-fa" data-i18n="heroFa">پیکربندی اختصاصی و افزایش اف‌پی‌اس برای بازیکنان ددلاک</div>
+      <div class="header-subtitle-accent">GRAPHICS CONFIG</div>
+      <div class="header-title-fa">تنظیمات اختصاصی افزایش فریم برای ددلاک</div>
     </header>
 
     <!-- No-game state -->
@@ -114,10 +115,13 @@
       <!-- Selected Tab Content Panel -->
       <section class="content-viewport">
         <div class="content-header">
-          <div class="content-header-title">
-            <i class="fa-solid fa-desktop" id="section-icon" style="font-size:13px;color:var(--deadlock-orange)"></i>
-            <span id="section-title">تنظیمات گرافیکی</span>
-          </div>
+        <div class="content-header-title">
+          <i class="fa-solid fa-desktop" id="section-icon" style="font-size:13px;color:var(--deadlock-orange)"></i>
+          <span id="section-title">تنظیمات گرافیکی</span>
+        </div>
+        <button class="btn-refresh-ping-top" id="btn-refresh-ping" onclick="refreshValvePings()" style="display:none" title="تست پینگ / Test Ping">
+          <i class="fa-solid fa-wave-square refresh-icon"></i>
+        </button>
         </div>
 
         <!-- GRAPHIC SETTING: 4 Tiers + Long FOV Box -->
@@ -200,7 +204,7 @@
                     <span class="fov-box-title" data-i18n="hudTitle">HUD CONFIGURATION</span>
                   </div>
                 </div>
-                <label class="hud-switch-wrap" title="New Health bars" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin:auto 0; cursor:pointer;">
+                <label class="hud-switch-wrap" title="New Health bars" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin:auto 0;">
                   <div style="display:flex; flex-direction:column; gap:4px;">
                     <span class="hud-switch-label" data-i18n="unitStatus" style="font-weight:700; font-size:0.85rem; color:var(--text-main);">New Health Bars</span>
                     <span data-i18n="hudSwitchDesc" style="font-size:0.65rem; color:var(--text-muted);">Show updated health bar visuals</span>
@@ -233,17 +237,7 @@
         <!-- LATENCY: Valve relay network instrument -->
         <div class="panel" id="panel-latency" style="display:none">
           <div class="valve-ping-view" style="flex:1;min-height:0">
-<div class="ping-view-header">
-              <div class="ping-header-left">
-                <span class="net-label">NETWORK</span>
-                <span class="ping-view-title" data-i18n="cardLatency">تاخیر شبکه</span>
-              </div>
-              <button class="btn-apply btn-sm" id="btn-refresh-ping" onclick="refreshValvePings()">
-                <i class="fa-solid fa-wave-square refresh-icon"></i>
-                <span data-i18n="btnTestRelays">TEST ALL RELAYS</span>
-              </button>
-            </div>
-            <!-- BEST ROUTE + relays + footer: one scrollable page -->
+<!-- BEST ROUTE + relays + footer: one scrollable page -->
             <div class="latency-scroll">
               <div id="best-route-slot"></div>
               <div class="ping-grid" id="ping-grid">
@@ -283,6 +277,22 @@
                 <div id="tester-modes" style="display:none;" class="tester-modes-bar">
                   <div class="tier-card-sm preset" data-mode="T1MODS"><span class="border-beam"><span class="beam"></span></span><span class="tier-name" data-i18n="temp1">T1 + MODS</span><div class="tier-pick"></div></div>
                   <div class="tier-card-sm preset" data-mode="T2MODS"><span class="border-beam"><span class="beam"></span></span><span class="tier-name" data-i18n="temp2">T2 + MODS</span><div class="tier-pick"></div></div>
+                </div>
+              </div>
+
+              <!-- Check For Updates Box (Same size as revert all changes) -->
+              <div class="adv-card adv-update-card adv-revert-only">
+                <button class="btn-apply btn-check-updates" id="btn-check-updates" onclick="checkForUpdates()">
+                  <i class="fa-solid fa-arrows-rotate" style="font-size:15px;color:var(--deadlock-cyan)"></i>
+                  <span data-i18n="btnCheckUpdates">بروزرسانی اپ</span>
+                </button>
+              </div>
+
+              <!-- Support Note Box (Same size as revert all changes) -->
+              <div class="adv-card adv-support-card adv-revert-only">
+                <div class="adv-support-content">
+                  <i class="fa-solid fa-headset" style="font-size:16px;color:var(--deadlock-orange);flex-shrink:0;"></i>
+                  <span class="adv-support-text" data-i18n="supportNote">در صورت بروز هرگونه مشکل، جهت پشتیبانی از طریق وبسایت یا تلگرام اقدام کنید</span>
                 </div>
               </div>
             </div>
@@ -351,6 +361,13 @@
     </div>
   </div>
 
+  <!-- App Version & Author Badge: bottom-right corner -->
+  <div class="app-version-badge" id="app-version-badge" dir="ltr">
+    <span class="ver-tag">V0.1 <span class="ver-beta">BETA</span></span>
+    <span class="ver-sep">•</span>
+    <span class="ver-by">by <span class="ver-author">aryobw9</span></span>
+  </div>
+
   <!-- Modal -->
   <div class="modal-overlay" id="modal" style="display:none">
     <div class="modal-box">
@@ -363,7 +380,7 @@
   <script src="vendor/motion/motion.js"></script>
   <script src="i18n/fa.js"></script>
   <script src="i18n/en.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=6"></script>
   <script>
     // expose opener global (withGlobalTauri injects plugin APIs lazily via plugins object)
     window.addEventListener('DOMContentLoaded', () => {

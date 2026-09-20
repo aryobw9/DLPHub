@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { background:#06090e; margin:0; padding:40px; font-family:sans-serif; color:#94a3b8; }
+  h1 { color:#f8fafc; font-size:18px; }
+  p { max-width:680px; line-height:1.5; }
+  .row { display:flex; flex-wrap:wrap; gap:24px; }
+  .cell { width:170px; text-align:center; }
+  .pad { height:130px; display:flex; align-items:center; justify-content:center;
+         border:1px dashed #1e293b; border-radius:8px; }
+  .cell span { display:block; margin-top:6px; font-size:12px; }
+  /* hotspot coordinates come from ui/assets/cursors/cursors.json */
+  .c-default { cursor: url('../ui/assets/cursors/default.png') 19 16, default; }
+  .c-pointer { cursor: url('../ui/assets/cursors/pointer.png') 16 19, pointer; }
+  .c-click { cursor: url('../ui/assets/cursors/click.png') 24 21, pointer; }
+  .c-click_right { cursor: url('../ui/assets/cursors/click_right.png') 18 21, pointer; }
+  .c-grab { cursor: url('../ui/assets/cursors/grab.png') 32 35, grab; }
+  .c-text { cursor: url('../ui/assets/cursors/text.png') 34 35, text; }
+  .c-link { cursor: url('../ui/assets/cursors/link.png') 14 24, pointer; }
+  .c-help { cursor: url('../ui/assets/cursors/help.png') 18 8, help; }
+  .c-busy { cursor: url('../ui/assets/cursors/busy.png') 34 30, progress; }
+  .c-nwse { cursor: url('../ui/assets/cursors/nwse-resize.png') 20 17, nwse-resize; }
+  .c-nesw { cursor: url('../ui/assets/cursors/nesw-resize.png') 14 17, nesw-resize; }
+  .c-ns { cursor: url('../ui/assets/cursors/ns-resize.png') 24 21, ns-resize; }
+  .c-ew { cursor: url('../ui/assets/cursors/ew-resize.png') 32 24, ew-resize; }
+  .c-move { cursor: url('../ui/assets/cursors/move.png') 28 33, move; }
+</style>
+</head>
+<body>
+  <h1>Flame-hand cursor preview — hover each box</h1>
+  <p>The red cross on <a href="cursor-contact.png">cursor-contact.png</a> marks each
+     hotspot. Move slowly onto a pad; the fingertip/pinch/caret must sit exactly
+     under the pointer position.</p>
+  <div class="row">
+    <div class="cell"><div class="pad c-default"></div><span>default (NORMAL)</span></div>
+    <div class="cell"><div class="pad c-pointer"></div><span>pointer (HOVER)</span></div>
+    <div class="cell"><div class="pad c-click"></div><span>click (LEFT)</span></div>
+    <div class="cell"><div class="pad c-click_right"></div><span>click_right (RIGHT)</span></div>
+    <div class="cell"><div class="pad c-grab"></div><span>grab (DRAG)</span></div>
+    <div class="cell"><div class="pad c-text"></div><span>text (TEXT)</span></div>
+    <div class="cell"><div class="pad c-link"></div><span>link (LINK)</span></div>
+    <div class="cell"><div class="pad c-help"></div><span>help (HELP)</span></div>
+    <div class="cell"><div class="pad c-busy"></div><span>busy (BUSY)</span></div>
+    <div class="cell"><div class="pad c-nwse"></div><span>nwse-resize</span></div>
+    <div class="cell"><div class="pad c-nesw"></div><span>nesw-resize</span></div>
+    <div class="cell"><div class="pad c-ns"></div><span>ns-resize</span></div>
+    <div class="cell"><div class="pad c-ew"></div><span>ew-resize</span></div>
+    <div class="cell"><div class="pad c-move"></div><span>move (MOVE)</span></div>
+  </div>
+</body>
+</html>

@@ -104,10 +104,27 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
 
     // 1) guard (BACKUP/RESTORE exempt — those go through backup.rs, not here).
     // Sandbox tests also count: any DLPB sandbox install dir is not a real game.
-    if std::env::var("DLPB_NOGUARD").as_deref() != Ok("1") && std::env::var("DLPB_TEST_SANDBOX").as_deref() != Ok("1") {
+    if !cfg!(test) {
         let running = crate::guard::game_running();
         if !running.is_empty() {
             return Err(format!("game running: {} — close Deadlock first", running.join(", ")));
+        }
+    }
+
+    // Preflight every required template and user encoding before mutation.
+    let tpl = std::fs::read_to_string(pkg.join(mode.tier_dir()).join("gameinfo.gi")).map_err(|e| format!("preflight gameinfo template: {e}"))?;
+    let tpl_v = std::fs::read_to_string(pkg.join(mode.video_dir()).join("video.txt")).map_err(|e| format!("preflight video template: {e}"))?;
+    let user_v = std::fs::read_to_string(citadel.join("cfg/video.txt")).map_err(|e| format!("preflight current video: {e}"))?;
+    let existing = match std::fs::read_to_string(citadel.join("cfg/autoexec.cfg")) {
+        Ok(s) => s,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => return Err(format!("preflight autoexec: {e}")),
+    };
+    for entry in std::fs::read_dir(pkg.join("addons")).map_err(|e| format!("preflight addons: {e}"))? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        if entry.path().extension().is_some_and(|e| e == "vpk") {
+            let mut file = std::fs::File::open(entry.path()).map_err(|e| format!("preflight addon: {e}"))?;
+            std::io::copy(&mut file, &mut std::io::sink()).map_err(|e| format!("preflight addon: {e}"))?;
         }
     }
 
@@ -118,44 +135,22 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
     // 3) .dlp.bak snapshots (permanent restore points, never deleted)
     log.extend(snapshot_original(&citadel)?);
 
-    // Initial backup into %APPDATA% if none exists yet
-    if crate::backup::list_backups(data_dir).is_empty() {
-        if let Ok(b_name) = crate::backup::do_backup(&citadel, data_dir) {
-            log.push(StepLog {
-                step: "backup".into(),
-                detail: format!("initial full backup saved ({b_name})"),
-                skipped: false,
-            });
-        }
-    }
+    // Every mutation keeps a complete current-state recovery point.
+    let b_name = crate::backup::do_backup(&citadel, data_dir).map_err(|e| format!("backup: {e}"))?;
+    log.push(StepLog { step: "backup".into(), detail: format!("full backup saved ({b_name})"), skipped: false });
 
     // 3b) REVERT FIRST: wipe our previous install (manifest vpks, patched
     // gameinfo.gi/video.txt, managed autoexec) so every apply starts from the
-    // user's original files — no incremental drift between modes.
-    match crate::backup::revert_original(&citadel) {
-        Ok(rep) => {
-            log.push(StepLog {
-                step: "revert".into(),
-                detail: format!(
-                    "cleaned previous install ({} addons removed)",
-                    rep.removed_addons.len()
-                ),
-                skipped: false,
-            });
-        }
-        Err(_) => {
-            log.push(StepLog {
-                step: "revert".into(),
-                detail: "no previous install found - nothing to revert".into(),
-                skipped: true,
-            });
-        }
+    // user's original files — no incremental drift between modes. The backup
+    // above already captured this state, so a failed revert is fatal.
+    let rep = crate::backup::revert_original(&citadel)?;
+    match rep.removed_addons.len() {
+        0 => log.push(StepLog { step: "revert".into(), detail: "no previous install found - nothing to revert".into(), skipped: true }),
+        n => log.push(StepLog { step: "revert".into(), detail: format!("cleaned previous install ({n} addons removed)"), skipped: false }),
     }
 
     // 4) tier gameinfo.gi with per-user FOV swapped in
     let ar = crate::fov::aspect_ratio(fov);
-    let src_gi = pkg.join(mode.tier_dir()).join("gameinfo.gi");
-    let tpl = std::fs::read_to_string(&src_gi).map_err(|e| e.to_string())?;
     let staged = kvedit::set_fov(&tpl, ar);
     let dst_gi = citadel.join("gameinfo.gi");
     let current = std::fs::read(&dst_gi).unwrap_or_default();
@@ -185,11 +180,9 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
         return Err("cfg\\video.txt missing - wrong folder?".into());
     }
     set_readonly(&vd, false).map_err(|e| e.to_string())?;
-    let user_v = std::fs::read_to_string(&vd).map_err(|e| e.to_string())?;
-    let tpl_v = std::fs::read_to_string(pkg.join(mode.video_dir()).join("video.txt")).map_err(|e| e.to_string())?;
     let merged = kvedit::merge_video(&user_v, &tpl_v);
 
-    let s = crate::settings::load();
+    let s = crate::settings::load_from(data_dir);
     let mut patches: Vec<(&str, String)> = Vec::new();
     if s.reflex_mode > 0 {
         patches.push(("setting.r_low_latency", s.reflex_mode.to_string()));
@@ -217,9 +210,13 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
     let cfg_dir = citadel.join("cfg");
     std::fs::create_dir_all(&cfg_dir).map_err(|e| e.to_string())?;
     let ae = cfg_dir.join("autoexec.cfg");
-    let existing = std::fs::read_to_string(&ae).unwrap_or_default();
     let new_ae = kvedit::upsert_autoexec_custom(&existing, s.unit_status_new, &s.custom_autoexec);
-    if new_ae != existing {
+    let after_revert = match std::fs::read_to_string(&ae) {
+        Ok(text) => text,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => return Err(format!("autoexec after cleanup: {e}")),
+    };
+    if after_revert != new_ae {
         std::fs::write(&ae, new_ae).map_err(|e| e.to_string())?;
         log.push(StepLog {
             step: "autoexec.cfg".into(),
@@ -250,9 +247,54 @@ mod tests {
         std::fs::write(cit.join("cfg").join("video.txt"), "\"Version\" \"11\"\n\"setting.defaultres\" \"2560\"\n\"setting.defaultresheight\" \"1440\"\n\"setting.refreshrate_numerator\" \"165\"\n").unwrap();
         let data = base.join("data");
         std::fs::create_dir_all(&data).unwrap();
-        std::env::set_var("DLPB_TEST_SANDBOX", "1"); // process-wide, once is enough
         let pkg = crate::payload::extract_to(&base.join("pkg")).unwrap();
         (cit, data, pkg)
+    }
+
+    #[test]
+    fn install_reads_only_explicit_settings_directory() {
+        let (cit, data, pkg) = sandbox("settings_isolation");
+        let root = cit.parent().unwrap().parent().unwrap();
+        std::fs::write(data.join("settings.json"), "{\"custom_autoexec\":\"echo isolated-settings\"}").unwrap();
+        install(Mode::T1, 90, root.to_str().unwrap(), &pkg, &data).unwrap();
+        assert!(std::fs::read_to_string(cit.join("cfg/autoexec.cfg")).unwrap().contains("echo isolated-settings"));
+        crate::backup::rm_ro(root);
+    }
+
+    #[test]
+    fn failed_revert_stops_install() {
+        let (cit, data, pkg) = sandbox("revert_fail");
+        let root = cit.parent().unwrap().parent().unwrap();
+        std::fs::write(cit.join("addons_manifest.txt"), "blocked\n").unwrap();
+        std::fs::create_dir(cit.join("addons/blocked")).unwrap();
+        let result = install(Mode::T1, 90, root.to_str().unwrap(), &pkg, &data);
+        assert!(result.is_err());
+        assert!(cit.join("addons_manifest.txt").is_file());
+        crate::backup::rm_ro(root);
+    }
+
+    #[test]
+    fn failed_backup_stops_install() {
+        let (cit, data, pkg) = sandbox("backup_fail");
+        let root = cit.parent().unwrap().parent().unwrap();
+        std::fs::write(data.join("backups"), "block directory").unwrap();
+        let gi = std::fs::read(cit.join("gameinfo.gi")).unwrap();
+        assert!(install(Mode::T1, 90, root.to_str().unwrap(), &pkg, &data).is_err());
+        assert!(std::fs::read(cit.join("gameinfo.gi")).unwrap() == gi);
+        crate::backup::rm_ro(root);
+    }
+
+    #[test]
+    fn missing_template_cannot_mutate_game() {
+        let (cit, data, pkg) = sandbox("preflight");
+        let root = cit.parent().unwrap().parent().unwrap();
+        let original = std::fs::read(cit.join("gameinfo.gi")).unwrap();
+        std::fs::remove_file(pkg.join("gi_tier1/video.txt")).unwrap();
+        assert!(install(Mode::T1, 90, root.to_str().unwrap(), &pkg, &data).is_err());
+        assert_eq!(std::fs::read(cit.join("gameinfo.gi")).unwrap(), original);
+        assert!(!cit.join("gameinfo.gi.dlp.bak").exists());
+        assert_eq!(std::fs::read_dir(cit.join("addons")).unwrap().count(), 0);
+        crate::backup::rm_ro(root);
     }
 
     #[test]
@@ -324,6 +366,20 @@ mod tests {
         assert!(cit.join("gameinfo.gi.dlp.bak").is_file());
         assert!(cit.join("cfg").join("video.txt.dlp.bak").is_file());
         crate::backup::rm_ro(cit.parent().unwrap().parent().unwrap());
+    }
+
+    #[test]
+    fn reapply_preserves_enabled_hud_block() {
+        let (cit, data, pkg) = sandbox("hud_reapply");
+        let root = cit.parent().unwrap().parent().unwrap();
+        std::fs::write(data.join("settings.json"), r#"{"unit_status_new":true}"#).unwrap();
+        install(Mode::T1, 90, root.to_str().unwrap(), &pkg, &data).unwrap();
+        let expected = std::fs::read_to_string(cit.join("cfg/autoexec.cfg")).unwrap();
+        assert!(expected.contains("citadel_unit_status_use_new"));
+        install(Mode::T1, 90, root.to_str().unwrap(), &pkg, &data).unwrap();
+        let actual = std::fs::read_to_string(cit.join("cfg/autoexec.cfg")).unwrap();
+        crate::backup::rm_ro(root);
+        assert_eq!(actual, expected, "reapply must restore enabled HUD block after cleanup");
     }
 
     #[test]

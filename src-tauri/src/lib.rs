@@ -1,5 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod commands;
+mod native_cursor;
 mod webview_check;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -17,6 +18,14 @@ pub fn run() {
         // Updater: silent-tolerant on 404 (no release yet) — endpoint errors
         // surface only when a check is requested.
         .plugin(tauri_plugin_updater::Builder::new().build())
+        // Flame cursors on the native resize border (WM_SETCURSOR subclass).
+        .setup(|app| {
+            use tauri::Manager;
+            if let Some(win) = app.get_webview_window("main") {
+                native_cursor::install(&win);
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             commands::find_game,
             commands::pick_game,
@@ -25,6 +34,7 @@ pub fn run() {
             commands::install_mode,
             commands::do_backup_cmd,
             commands::list_backups,
+            commands::delete_backup_cmd,
             commands::do_restore,
             commands::revert_original_cmd,
             commands::get_settings,

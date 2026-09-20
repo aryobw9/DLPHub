@@ -1,0 +1,72 @@
+{
+  "default": {
+    "file": "default.png",
+    "x": 19,
+    "y": 16
+  },
+  "pointer": {
+    "file": "pointer.png",
+    "x": 16,
+    "y": 19
+  },
+  "click": {
+    "file": "click.png",
+    "x": 24,
+    "y": 21
+  },
+  "click_right": {
+    "file": "click_right.png",
+    "x": 18,
+    "y": 21
+  },
+  "grab": {
+    "file": "grab.png",
+    "x": 32,
+    "y": 35
+  },
+  "text": {
+    "file": "text.png",
+    "x": 34,
+    "y": 35
+  },
+  "link": {
+    "file": "link.png",
+    "x": 14,
+    "y": 24
+  },
+  "help": {
+    "file": "help.png",
+    "x": 18,
+    "y": 8
+  },
+  "busy": {
+    "file": "busy.png",
+    "x": 34,
+    "y": 30
+  },
+  "nwse-resize": {
+    "file": "nwse-resize.png",
+    "x": 20,
+    "y": 17
+  },
+  "nesw-resize": {
+    "file": "nesw-resize.png",
+    "x": 14,
+    "y": 17
+  },
+  "ns-resize": {
+    "file": "ns-resize.png",
+    "x": 24,
+    "y": 21
+  },
+  "ew-resize": {
+    "file": "ew-resize.png",
+    "x": 32,
+    "y": 24
+  },
+  "move": {
+    "file": "move.png",
+    "x": 28,
+    "y": 33
+  }
+}

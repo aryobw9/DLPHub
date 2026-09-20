@@ -1,12 +1,12 @@
-# DLPBooster
+# DLPHub
 
-GUI for the DeadlockBoost console payload: performance tier installs, POTATO mode,
-backup/restore, per-user FOV, FA/EN interface, tester TEMP modes, auto-updater.
+GUI for Deadlock performance optimization: performance tier installs, POTATO mode,
+backup/restore, per-user FOV, FA/EN interface, and network latency diagnostics.
 
 ## Download
 
-Get `DLP Booster_0.1.0_x64-setup.exe` from the
-[Releases page](https://github.com/Aryobw9-H/DLPBooster/releases) (bare exe in a
+Get `DLPHub_0.1.0_x64-setup.exe` from the
+[Releases page](https://github.com/aryobw9/DLPHub/releases) (bare exe in a
 zip also works — the app is self-contained).
 
 **SmartScreen note:** the exe is unsigned in early releases. Windows may show a
@@ -31,10 +31,11 @@ with signed releases later.
   `addons_manifest.txt`) and keeps your own mods.
 - **TEMP modes** (tester code required): tier config with ALL 9 mods including
   the look-changing ones. Ask for a code.
-- **Guard**: refuses to modify files while Deadlock is running (popup lets you
-  continue at your own risk).
-- **Auto-updater**: the app checks GitHub Releases for `latest.json` on startup.
-  404 (no release yet) is silently ignored.
+- **Guard**: close Deadlock and its mod manager before applying or restoring files.
+  There is no user-facing override for live game writes.
+- **Updates**: manual downloads only. The updater plugin is registered but no
+  startup check/download/install flow is implemented; automatic updates and
+  signed updater artifacts are not enabled in the current build.
 
 ## For developers
 
@@ -44,8 +45,17 @@ with signed releases later.
 - Tests: `cargo test -p dlp-core` (payload, discovery, fov, merge goldens,
   detect fixtures, addon collision matrix, backup/restore roundtrip, install
   sandbox e2e).
-- Build: `npm install && npm run tauri build`. Signed updater artifacts need
-  `TAURI_SIGNING_PRIVATE_KEY` (see `.tauri/dlpbooster.key` — keep it secret, it
-  is the release identity).
-- Release uploads need the private key + `latest.json` pointing at the release
-  assets (Task 13, on hold until Aryo says go).
+- Build: `npm run build` regenerates the payload before Tauri builds. Direct
+  `npm run tauri build` or `cargo build` requires first running
+  `python src-tauri/build_payload.py` from the project root.
+- Payload packer check: `python src-tauri/test_build_payload.py` (temporary files only).
+- Custom cursors: `ui/assets/cursors/*.png` are sliced from
+  `tools/cursor-sheet.png` by `python tools/slice_cursors.py` (Pillow). Re-run
+  it after editing the sheet; hotspots regenerate into `cursors.json` and are
+  wired to CSS vars in `ui/style.css`.
+- Windows GNU builds require Winlibs and Cargo on PATH:
+  `export PATH="/d/mingw64/bin:$HOME/.cargo/bin:$PATH"`.
+- Portable packages require the matching `WebView2Loader.dll` and an installed
+  WebView2 Runtime. Refresh the portable ZIP after rebuilding the executable.
+- Publishing releases and enabling signed automatic updates are separate tasks;
+  neither is performed by the build command. Never commit signing keys.

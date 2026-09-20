@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "DLP Booster",
+  "productName": "DLPHub",
   "version": "0.1.0",
-  "identifier": "com.aryo.dlpbooster",
+  "identifier": "com.aryo.dlphub",
   "build": {
     "frontendDist": "../ui"
   },
@@ -11,7 +11,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "DLP Booster \u2014 Deadlock FPS",
+        "title": "DLPHub \u2014 Deadlock FPS",
         "width": 1200,
         "height": 800,
         "minWidth": 960,
@@ -47,7 +47,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU0QUMyQUEwRUMxMTAzOTgKUldTWUF4SHNvQ3FzNUJXVWlvSmRuQkJRNjZVaDRHdW5MaUY2ZER3TmtjRzlRT3JsSS9LQ2dkZ1IK",
       "endpoints": [
-        "https://github.com/Aryobw9-H/DLPBooster/releases/latest/download/latest.json"
+        "https://github.com/aryobw9/DLPHub/releases/latest/download/latest.json"
       ]
     }
   }

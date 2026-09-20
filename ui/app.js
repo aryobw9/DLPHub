@@ -45,9 +45,24 @@ const state = {
   ragdollGibLimit: true,
   customAutoexec: '',
   lastValvePings: null,
+  activeTab: 'graphic',
+  busyTab: null,
 };
 
 // FOV->aspect ratio map kept in backend (fov.rs); UI doesn't display it.
+
+const SECTION_TITLES = {
+  graphic: 'presetsTitle',
+  latency: 'cardLatency',
+  advanced: 'cardAdvanced',
+};
+const PANELS = ['graphic', 'latency', 'advanced'];
+
+const HERO_BY_TAB = {
+  graphic: { en: 'GRAPHICS CONFIG', fa: 'پیکربندی گرافیک', sub_en: 'Custom FPS boost configuration for deadlock', sub_fa: 'تنظیمات اختصاصی افزایش فریم برای ددلاک' },
+  latency: { en: 'NETWORK', fa: 'شبکه', sub_en: 'Server latency & connection diagnostics', sub_fa: 'تشخیص تأخیر و کیفیت اتصال' },
+  advanced: { en: 'ADVANCED', fa: 'پیشرفته', sub_en: 'Advanced settings & Data restoration', sub_fa: 'تنظیمات پیشرفته و بازگردانی اطلاعات' },
+};
 
 // ---------- i18n ----------
 function t(key) {
@@ -64,6 +79,24 @@ function applyLang() {
     el.textContent = t(el.dataset.i18n);
     el.classList.toggle('i18n-rtl', state.lang === 'fa');
   });
+
+  // Retain contextual hero & section title for currently active tab
+  const currentTab = state.activeTab || 'graphic';
+  const hero = HERO_BY_TAB[currentTab];
+  if (hero) {
+    const accent = document.querySelector('.header-subtitle-accent');
+    const sub = document.querySelector('.header-title-fa');
+    if (accent) accent.textContent = hero[state.lang === 'fa' ? 'fa' : 'en'];
+    if (sub) sub.textContent = state.lang === 'fa' ? hero.sub_fa : hero.sub_en;
+  }
+  const secTitle = document.getElementById('section-title');
+  if (secTitle) {
+    secTitle.textContent = t(SECTION_TITLES[currentTab] || 'presetsTitle');
+  }
+
+  // re-apply runtime states that own their labels (launch button shows
+  // GAME RUNNING while Deadlock is open, in the current language)
+  refreshRunning();
   const u = document.getElementById('unlock-input');
   const p = document.getElementById('path-input');
   const lbl = document.getElementById('lang-label');
@@ -71,7 +104,6 @@ function applyLang() {
   if (u) u.placeholder = t('unlockPlaceholder');
   if (p) p.placeholder = t('pathPlaceholder');
   renderBackups();
-  updateDetectBadge();
   if (state.lastValvePings) renderValvePings(state.lastValvePings);
 }
 
@@ -119,7 +151,8 @@ async function boot() {
 
   applyLang();
   syncSettingsToUi();
-  setFov(90);
+  // Restore last chosen FOV; falls back to 90 when unset.
+  setFov(typeof s.fov === 'number' && s.fov >= 70 && s.fov <= 120 ? s.fov : 90);
   selectCardByKey('graphic');
 
   if (state.unlocked) showTesterModes();
@@ -196,6 +229,7 @@ async function refreshRunning() {
     const btn = document.getElementById('btn-launch');
     if (btn) {
       btn.classList.toggle('running', running);
+      btn.dataset.running = running ? '1' : '';
       const label = btn.querySelector('[data-i18n="launch"]');
       if (label) label.textContent = running ? t('launchRunning') : t('launch');
     }
@@ -244,9 +278,9 @@ async function updateDetectBadge() {
   try { res = await call('detect_tier_cmd', { citadel: cit }); } catch (e) { return; }
   const apDot = document.getElementById('active-dot');
   const apLabel = document.getElementById('active-profile-label');
-    if (res === 'T1' || res === 'T2' || res === 'T3') {
+    if (res === 'T1' || res === 'T2' || res === 'T3' || res === 'POTATO' || res === 'T1MODS' || res === 'T2MODS') {
       if (apDot) { apDot.style.background = 'var(--deadlock-orange)'; apDot.style.color = 'var(--deadlock-orange)'; }
-      if (apLabel) apLabel.textContent = 'ACTIVE · ' + res;
+      if (apLabel) apLabel.textContent = t('activeProfile') + ' · ' + res;
     } else if (res === 'MISSING') {
       if (apDot) { apDot.style.background = 'var(--text-muted)'; apDot.style.color = 'var(--text-muted)'; }
       if (apLabel) apLabel.textContent = t('currentMissing');
@@ -264,6 +298,229 @@ function stepLine(text, cls) {
   if (cls) div.className = cls;
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
+}
+
+// ---------- cursor states & virtual cursor follower ----------
+// Chromium enforces a security restriction that forces any CSS cursor: url()
+// to revert to the system cursor whenever the cursor image intersects the window
+// boundary (edges/corners). The DOM follower below completely bypasses this
+// limitation by rendering right up to the 0th pixel of the viewport without ever
+// reverting to standard Windows cursors.
+const CURSOR_HOTSPOTS = {
+  default: { file: 'assets/cursors/default.png', x: 19, y: 16, w: 64, h: 64 },
+  pointer: { file: 'assets/cursors/pointer.png', x: 16, y: 19, w: 64, h: 64 },
+  click: { file: 'assets/cursors/click.png', x: 24, y: 21, w: 64, h: 64 },
+  click_right: { file: 'assets/cursors/click_right.png', x: 18, y: 21, w: 64, h: 64 },
+  grab: { file: 'assets/cursors/grab.png', x: 32, y: 35, w: 64, h: 64 },
+  text: { file: 'assets/cursors/text.png', x: 34, y: 35, w: 64, h: 64 },
+  link: { file: 'assets/cursors/link.png', x: 14, y: 24, w: 64, h: 64 },
+  help: { file: 'assets/cursors/help.png', x: 18, y: 8, w: 64, h: 64 },
+  busy: { file: 'assets/cursors/busy_full.png', x: 44, y: 44, w: 88, h: 88 },
+  'nwse-resize': { file: 'assets/cursors/nwse-resize.png', x: 20, y: 17, w: 64, h: 64 },
+  'nesw-resize': { file: 'assets/cursors/nesw-resize.png', x: 14, y: 17, w: 64, h: 64 },
+  'ns-resize': { file: 'assets/cursors/ns-resize.png', x: 24, y: 21, w: 64, h: 64 },
+  'ew-resize': { file: 'assets/cursors/ew-resize.png', x: 32, y: 24, w: 64, h: 64 },
+  move: { file: 'assets/cursors/move.png', x: 28, y: 33, w: 64, h: 64 }
+};
+
+let updateCursorFollower = () => {};
+
+(function setupCursorStates() {
+  const root = document.documentElement;
+
+  // Preload cursor assets
+  Object.values(CURSOR_HOTSPOTS).forEach((c) => {
+    const img = new Image();
+    img.src = c.file;
+  });
+
+  let cursorEl = document.getElementById('dlp-custom-cursor');
+  let cursorInner = document.getElementById('dlp-custom-cursor-inner');
+  if (!cursorEl) {
+    cursorEl = document.createElement('div');
+    cursorEl.id = 'dlp-custom-cursor';
+    cursorInner = document.createElement('div');
+    cursorInner.id = 'dlp-custom-cursor-inner';
+    cursorEl.appendChild(cursorInner);
+    const mount = () => {
+      if (!document.getElementById('dlp-custom-cursor') && document.body) {
+        document.body.appendChild(cursorEl);
+      }
+    };
+    if (document.body) mount();
+    else window.addEventListener('DOMContentLoaded', mount);
+  } else if (!cursorInner) {
+    cursorInner = document.createElement('div');
+    cursorInner.id = 'dlp-custom-cursor-inner';
+    cursorEl.appendChild(cursorInner);
+  }
+
+  let currentType = '';
+  let isMouseIn = false;
+  let lastX = -100, lastY = -100;
+  let rightTimer = null;
+
+  function setCursorType(type) {
+    if (!CURSOR_HOTSPOTS[type]) type = 'default';
+    if (currentType === type) return;
+    currentType = type;
+    const meta = CURSOR_HOTSPOTS[type];
+    cursorEl.style.width = (meta.w || 64) + 'px';
+    cursorEl.style.height = (meta.h || 64) + 'px';
+    cursorInner.style.backgroundImage = `url("${meta.file}")`;
+    if (type === 'busy') {
+      cursorEl.classList.add('is-spinning');
+    } else {
+      cursorEl.classList.remove('is-spinning');
+    }
+  }
+
+  function render(x, y) {
+    const meta = CURSOR_HOTSPOTS[currentType] || CURSOR_HOTSPOTS.default;
+    cursorEl.style.transform = `translate3d(${x - meta.x}px, ${y - meta.y}px, 0)`;
+  }
+
+  function isTargetInBusyScope(t) {
+    if (!state.busyTab) return false;
+    // If a tab is loading, only show busy inside that active visible tab and panel
+    if (state.activeTab && state.busyTab !== 'global' && state.activeTab !== state.busyTab) {
+      return false;
+    }
+    if (!(t instanceof Element)) return false;
+    if (state.busyTab === 'global') return true;
+    const panel = document.getElementById(`panel-${state.busyTab}`);
+    const card = document.getElementById(`card-${state.busyTab}`);
+    if (panel && panel.contains(t)) return true;
+    if (card && card.contains(t)) return true;
+    return false;
+  }
+
+  function determineCursor(t) {
+    if (root.classList.contains('right-click')) return 'click_right';
+
+    // 1) If currently in a loading tab: entire tab shows busy, except actual buttons which show pointer/click
+    if (isTargetInBusyScope(t)) {
+      if (t instanceof Element && t.closest('button, [role="button"], a, [data-url], .win-ctl, .btn-play, .lang-pill-btn, .btn-apply, .btn-reset, .btn-refresh-ping-top, .win-close')) {
+        return root.classList.contains('is-pressed') ? 'click' : 'pointer';
+      }
+      return 'busy';
+    }
+
+    // 2) Action footer at the bottom of the graphic tab: never resize, always idle or button pointer
+    if (t instanceof Element && t.closest('.action-footer, #action-footer, .active-profile, .step-log')) {
+      if (t.closest('button, [role="button"], .btn-apply, .btn-reset')) {
+        return root.classList.contains('is-pressed') ? 'click' : 'pointer';
+      }
+      return 'default';
+    }
+
+    // 3) Normal cursor states outside the busy scope
+    if (t instanceof Element) {
+      if (t.closest('input[type="range"]')) {
+        return root.classList.contains('is-pressed') ? 'grab' : 'pointer';
+      }
+      if (t.closest('input[type="text"], input[type="password"], textarea, .path-input, .step-log')) {
+        return 'text';
+      }
+      if (t.closest('.social-card, a, [data-url]')) {
+        return 'link';
+      }
+      if (t.closest('button, [role="button"], select, .option-item, .tier-card, .pro-card, .win-ctl, .btn-play, .lang-pill-btn, .neon-checkbox, .hud-switch-wrap, .btn-apply, .btn-reset, .btn-refresh-ping-top, .border-beam, [onclick]')) {
+        return root.classList.contains('is-pressed') ? 'click' : 'pointer';
+      }
+      if (t.closest('.app-titlebar, .titlebar-drag-spacer, .brand-meta, [data-tauri-drag-region]')) {
+        return 'move';
+      }
+      if (t.closest('[title]:not(button):not(a):not(input):not(.social-card):not(.win-ctl)')) {
+        return 'help';
+      }
+    }
+
+    if (root.classList.contains('is-pressed')) return 'click';
+
+    const edge = root.getAttribute('data-edge');
+    if (edge) {
+      if (edge === 'nw' || edge === 'se') return 'nwse-resize';
+      if (edge === 'ne' || edge === 'sw') return 'nesw-resize';
+      if (edge === 'n' || edge === 's') return 'ns-resize';
+      if (edge === 'w' || edge === 'e') return 'ew-resize';
+    }
+
+    return 'default';
+  }
+
+  updateCursorFollower = (target, x, y) => {
+    if (typeof x === 'number') { lastX = x; lastY = y; }
+    const type = determineCursor(target || (document.elementFromPoint ? document.elementFromPoint(lastX, lastY) : null));
+    setCursorType(type);
+    render(lastX, lastY);
+  };
+
+  window.addEventListener('mousemove', (e) => {
+    lastX = e.clientX;
+    lastY = e.clientY;
+    if (!isMouseIn) {
+      isMouseIn = true;
+      cursorEl.style.display = 'block';
+    }
+    const type = determineCursor(e.target);
+    setCursorType(type);
+    render(lastX, lastY);
+  }, { passive: true });
+
+  window.addEventListener('mousedown', (e) => {
+    lastX = e.clientX;
+    lastY = e.clientY;
+    if (e.button === 2) {
+      root.classList.add('right-click');
+      clearTimeout(rightTimer);
+      rightTimer = setTimeout(() => {
+        root.classList.remove('right-click');
+        updateCursorFollower(null, lastX, lastY);
+      }, 400);
+    } else if (e.button === 0) {
+      root.classList.add('is-pressed');
+    }
+    updateCursorFollower(e.target, lastX, lastY);
+  });
+
+  const release = (e) => {
+    root.classList.remove('is-pressed');
+    root.classList.remove('right-click');
+    if (e && typeof e.clientX === 'number') {
+      updateCursorFollower(e.target, e.clientX, e.clientY);
+    } else {
+      updateCursorFollower(null, lastX, lastY);
+    }
+  };
+
+  window.addEventListener('mouseup', release);
+  window.addEventListener('blur', () => {
+    release();
+    isMouseIn = false;
+    cursorEl.style.display = 'none';
+  });
+  document.addEventListener('mouseleave', () => {
+    release();
+    isMouseIn = false;
+    cursorEl.style.display = 'none';
+  });
+  document.addEventListener('mouseenter', () => {
+    isMouseIn = true;
+    cursorEl.style.display = 'block';
+  });
+  window.addEventListener('contextmenu', () => {
+    root.classList.remove('right-click');
+    updateCursorFollower(null, lastX, lastY);
+  });
+
+  setCursorType('default');
+})();
+
+function setBusyCursor(on, tabKey) {
+  state.busyTab = on ? (tabKey || state.activeTab || 'global') : null;
+  document.documentElement.classList.toggle('is-busy', !!on);
+  updateCursorFollower();
 }
 
 async function doInstall() {
@@ -288,6 +545,7 @@ async function doInstall() {
 
   const btn = document.getElementById('btn-install');
   btn.disabled = true;
+  setBusyCursor(true, 'graphic');
   document.getElementById('step-log').innerHTML = '';
   stepLine(t('working'));
   try {
@@ -305,18 +563,22 @@ async function doInstall() {
     const msg = String(e).includes('NeedsAdmin') ? t('needsAdmin') : String(e);
     showModal(t('guardTitle'), msg, [{ label: t('ok') }]);
   }
+  setBusyCursor(false, 'graphic');
   btn.disabled = false;
   updateDetectBadge();
 }
 
 // ---------- backup ----------
 async function doBackupNow() {
+  setBusyCursor(true, 'advanced');
   try {
     const name = await call('do_backup_cmd', { path: state.gamePath || '' });
     stepLine(`[${t('backupLog')}] ${name}`, 'ok');
     renderBackups();
   } catch (e) {
     showModal(t('advTitle'), String(e), [{ label: t('ok') }]);
+  } finally {
+    setBusyCursor(false, 'advanced');
   }
 }
 
@@ -339,26 +601,80 @@ async function renderBackups() {
     const name = document.createElement('span');
     name.className = 'backup-name';
     name.textContent = n;
-    const btn = document.createElement('button');
-    btn.className = 'btn-apply btn-restore';
-    btn.textContent = t('restore');
-    btn.onclick = async () => {
+
+    const actions = document.createElement('div');
+    actions.className = 'backup-actions';
+
+    const btnRestore = document.createElement('button');
+    btnRestore.className = 'btn-apply btn-restore';
+    btnRestore.textContent = t('restore');
+    btnRestore.onclick = async () => {
       const go = await showModal(t('restore'), t('confirmRestore'), [
         { label: t('guardKeep'), value: true, kind: 'apply' },
         { label: t('guardCancel'), value: false },
       ]);
       if (!go) return;
+      setBusyCursor(true, 'advanced');
       try {
         const rep = await call('do_restore', { name: n, path: state.gamePath || '' });
         stepLine(`[restore] ${n} — ${rep.removed_addons.length} ${t('addonsRemoved')}`, 'ok');
         updateDetectBadge();
       } catch (e) {
         showModal(t('restore'), String(e), [{ label: t('ok') }]);
+      } finally {
+        setBusyCursor(false, 'advanced');
       }
     };
+
+    const btnDel = document.createElement('button');
+    btnDel.className = 'btn-delete-backup';
+    btnDel.innerHTML = '<i class="fa-solid fa-trash"></i>';
+    btnDel.title = t('deleteBackup') || 'Delete';
+    btnDel.onclick = async () => {
+      const go = await showModal(t('deleteBackup'), t('confirmDeleteBackup'), [
+        { label: t('deleteBackup'), value: true, kind: 'danger' },
+        { label: t('guardCancel'), value: false },
+      ]);
+      if (!go) return;
+      setBusyCursor(true, 'advanced');
+      try {
+        await call('delete_backup_cmd', { name: n });
+        stepLine(`[${t('deleteBackup')}] ${n}`, 'ok');
+        renderBackups();
+      } catch (e) {
+        showModal(t('deleteBackup'), String(e), [{ label: t('ok') }]);
+      } finally {
+        setBusyCursor(false, 'advanced');
+      }
+    };
+
+    actions.appendChild(btnRestore);
+    actions.appendChild(btnDel);
     row.appendChild(name);
-    row.appendChild(btn);
+    row.appendChild(actions);
     list.appendChild(row);
+  }
+}
+
+async function checkForUpdates() {
+  const btn = document.getElementById('btn-check-updates');
+  const icon = btn ? btn.querySelector('i') : null;
+  if (icon) icon.classList.add('fa-spin');
+  try {
+    if (window.__TAURI__ && window.__TAURI__.updater && typeof window.__TAURI__.updater.check === 'function') {
+      const update = await window.__TAURI__.updater.check();
+      if (update && update.available) {
+        showModal(t('updateTitle'), `${t('updateAvailable')}: ${update.version}`, [{ label: t('ok'), kind: 'apply' }]);
+      } else {
+        showModal(t('updateTitle'), t('updateLatest'), [{ label: t('ok') }]);
+      }
+    } else {
+      showModal(t('updateTitle'), t('updateLatest'), [{ label: t('ok') }]);
+    }
+  } catch (err) {
+    showModal(t('updateTitle'), t('updateLatest'), [{ label: t('ok') }]);
+  } finally {
+    if (icon) icon.classList.remove('fa-spin');
   }
 }
 
@@ -376,6 +692,7 @@ async function doRevertVanilla() {
 
   const btn = document.getElementById('btn-revert-vanilla');
   if (btn) btn.disabled = true;
+  setBusyCursor(true, 'advanced');
   document.getElementById('step-log').innerHTML = '';
   stepLine(t('working'));
   try {
@@ -393,6 +710,7 @@ async function doRevertVanilla() {
     stepLine(String(e), 'skip');
     showModal(t('revertVanilla'), String(e), [{ label: t('ok') }]);
   }
+  setBusyCursor(false, 'advanced');
   if (btn) btn.disabled = false;
 }
 
@@ -460,11 +778,14 @@ function showModal(title, body, actions) {
 
 // ---------- FOV ----------
 function setFov(v) {
+  // Persist draft FOV so relaunching doesn't silently reset it to 90.
+  const persist = (snapped) => { if (window.__TAURI__) call('set_settings', { patch: { fov: snapped } }).catch(() => {}); };
   const slider = document.getElementById('fov-slider');
   const number = document.getElementById('fov-number');
   const current = document.getElementById('fov-current');
   const snapped = Math.min(120, Math.max(70, Math.round((v - 70) / 5) * 5 + 70));
   state.fov = snapped;
+  persist(snapped);
   if (slider) slider.value = snapped;
   if (number) number.value = snapped;
   if (current) current.textContent = snapped + '°';
@@ -662,6 +983,7 @@ async function refreshValvePings() {
   const spinIcon = btn ? btn.querySelector('.refresh-icon') : null;
   if (btn) btn.disabled = true;
   if (spinIcon) spinIcon.classList.add('spin');
+  setBusyCursor(true, 'latency');
 
   if (grid && (!state.lastValvePings || state.lastValvePings.length === 0)) {
     grid.innerHTML = `<div class="dlp-loading"><div class="dlp-loader"><div class="l1"><div class="l2"><div class="l3"></div></div></div></div><span class="dlp-load-label">${t('pingTesting')}</span></div>`;
@@ -677,27 +999,15 @@ async function refreshValvePings() {
       grid.innerHTML = `<div class="ping-loading-msg text-danger">${String(err)}</div>`;
     }
   } finally {
+    setBusyCursor(false, 'latency');
     if (btn) btn.disabled = false;
     if (spinIcon) spinIcon.classList.remove('spin');
     pingingActive = false;
   }
 }
 
-// ---------- tab switcher (CSP-safe: no inline onclick) ----------
-const SECTION_TITLES = {
-  graphic: 'presetsTitle',
-  latency: 'cardLatency',
-  advanced: 'cardAdvanced',
-};
-const PANELS = ['graphic', 'latency', 'advanced'];
-
-const HERO_BY_TAB = {
-  graphic: { en: 'FPS BOOST', fa: 'FPS BOOST', sub_en: 'Custom configuration & FPS boost for Deadlock players', sub_fa: 'پیکربندی اختصاصی و افزایش فریم برای بازیکنان ددلاک' },
-  latency: { en: 'NETWORK', fa: 'NETWORK', sub_en: 'Server latency & connection diagnostics', sub_fa: 'تشخیص تأخیر و کیفیت اتصال' },
-  advanced: { en: 'ADVANCED', fa: 'ADVANCED', sub_en: 'Backup, vanilla restore & game configuration', sub_fa: 'بکاپ، بازگردانی بازی اصلی و پیکربندی' },
-};
-
 function selectCardByKey(tabKey) {
+  state.activeTab = tabKey;
   const el = document.getElementById(`card-${tabKey}`);
   if (!el) return;
   // contextual hero
@@ -731,6 +1041,9 @@ function selectCardByKey(tabKey) {
   if (active && window.Motion) {
     Motion.animate(active, { opacity: [0, 1], transform: ['translateY(10px)', 'translateY(0px)'] }, { duration: 0.28, easing: 'ease-out' });
   }
+  const pingBtn = document.getElementById('btn-refresh-ping');
+  if (pingBtn) pingBtn.style.display = tabKey === 'latency' ? '' : 'none';
+  updateCursorFollower();
   if (tabKey === 'latency') refreshValvePings();
   if (tabKey === 'advanced') renderBackups();
 }
@@ -764,12 +1077,14 @@ async function handleWinMax() {
       const maxed = await w.isMaximized();
       if (maxed) await w.unmaximize();
       else await w.maximize();
+      await updateMaximizedState();
       setTimeout(updateScale, 50);
       setTimeout(updateScale, 200);
       return;
     } catch (e) {}
   }
   call('plugin:window|toggle_maximize', { label: 'main' }).catch(() => {});
+  setTimeout(updateMaximizedState, 100);
   setTimeout(updateScale, 50);
   setTimeout(updateScale, 200);
 }
@@ -782,12 +1097,179 @@ async function handleWinClose() {
   call('plugin:window|close', { label: 'main' }).catch(() => {});
 }
 
+// ---------- window edge zones (flame resize cursors) ----------
+// No overlay elements: a global mousemove classifies the pointer into a
+// non-overlapping edge zone by coordinates and sets html[data-edge], which the
+// CSS maps to the flame resize cursors. Zones cover the webview-accessible
+// band just inside the OS-owned native resize border. mousedown in a zone
+// delegates the drag to Tauri's startResizeDragging.
+const EDGE_ZONE = 20;          // px band along each side/bottom edge
+const EDGE_TOP = 12;           // px band along the top — the 40px titlebar lives
+                               // there, so the top grab strip stays thin (9px of
+                               // it is ours; the rest of the bar still drags)
+const EDGE_CORNER = 64;        // px square grab zone at each corner
+// The top 4px of the client area belong to tauri-runtime-wry's
+// `TAURI_DRAG_RESIZE_BORDERS` child, whose window region is exactly the top
+// strip (SetWindowRgn cut-out, 4px at 96dpi). It always answers HTTOP, so
+// Windows paints that strip and swallows the click — our zone starts below it.
+// Left/right/bottom insets are *outside* the client area entirely, so the
+// webview owns those edges and the flame cursors come from CSS; the 8px OS
+// band beyond them is covered by the WM_SETCURSOR subclass in
+// src-tauri/src/native_cursor.rs.
+const EDGE_TOP_NATIVE = 4;
+
+const RESIZE_DIR_NAMES = {
+  n: 'North', s: 'South', e: 'East', w: 'West',
+  nw: 'NorthWest', ne: 'NorthEast', sw: 'SouthWest', se: 'SouthEast',
+};
+
+function edgeZoneFor(x, y, w, h) {
+  // corners first (they win over plain edges). Corners need both axes inside
+  // the client area: x/y 0..3 on the top edge belongs to tao's native border.
+  if (x >= EDGE_TOP_NATIVE && x <= EDGE_CORNER && y >= EDGE_TOP_NATIVE && y <= EDGE_CORNER) return 'nw';
+  if (x >= w - EDGE_CORNER && y >= EDGE_TOP_NATIVE && y <= EDGE_CORNER) return 'ne';
+  if (x <= EDGE_CORNER && y >= h - EDGE_CORNER) return 'sw';
+  if (x >= w - EDGE_CORNER && y >= h - EDGE_CORNER) return 'se';
+  // edges, offset inward past the OS-owned native band
+  const nearN = y >= EDGE_TOP_NATIVE && y <= EDGE_TOP;
+  const nearS = y >= h - EDGE_ZONE;
+  const nearW = x <= EDGE_ZONE;
+  const nearE = x >= w - EDGE_ZONE;
+  if (nearN) return 'n';
+  if (nearS) return 's';
+  if (nearW) return 'w';
+  if (nearE) return 'e';
+  return null;
+}
+
+// The Tauri IPC (for delegating the actual resize drag) — absent in a plain
+// browser, where the zones still style the cursor but can't resize.
+const IN_TAURI = !!(window.__TAURI__ && (window.__TAURI__.webviewWindow || window.__TAURI__.window));
+
+function isEdgeZonesActive() {
+  // Zones are visual in every host; only actual resizing is Tauri-only.
+  // Never while maximized (nothing to resize then).
+  return !document.documentElement.classList.contains('is-maximized');
+}
+
+function updateEdgeZone(x, y, target) {
+  if (!isEdgeZonesActive()) return;
+  const root = document.documentElement;
+
+  // Buttons, titlebar controls, action footer, and titlebar drag region win over resize zones:
+  if (target && target.closest && target.closest('button, [role="button"], a, [data-url], input, select, textarea, .social-card, .win-ctl, .btn-play, .lang-pill-btn, .app-titlebar, [data-tauri-drag-region], [onclick], .action-footer, #action-footer, .active-profile, #active-profile, .step-log, #step-log, .app-version-badge, #app-version-badge, .social-cluster, #social-cluster')) {
+    if (root.hasAttribute('data-edge')) {
+      root.removeAttribute('data-edge');
+      updateCursorFollower(target, x, y);
+    }
+    return;
+  }
+
+  const dir = edgeZoneFor(x, y, window.innerWidth, window.innerHeight);
+  const oldDir = root.getAttribute('data-edge');
+  if (dir) {
+    if (oldDir !== dir) {
+      root.setAttribute('data-edge', dir);
+      updateCursorFollower(target, x, y);
+    }
+  } else if (oldDir) {
+    root.removeAttribute('data-edge');
+    updateCursorFollower(target, x, y);
+  }
+}
+
+async function updateMaximizedState() {
+  const w = getWin();
+  if (!w || typeof w.isMaximized !== 'function') return;
+  try {
+    const maxed = await w.isMaximized();
+    document.documentElement.classList.toggle('is-maximized', !!maxed);
+    if (maxed) document.documentElement.removeAttribute('data-edge');
+    const btnMax = document.getElementById('btn-max');
+    if (btnMax) {
+      btnMax.title = maxed ? 'Restore' : 'Maximize';
+      btnMax.setAttribute('aria-label', maxed ? 'Restore' : 'Maximize');
+      btnMax.innerHTML = maxed
+        ? '<i class="fa-regular fa-clone" style="font-size:10px"></i>'
+        : '<i class="fa-regular fa-square" style="font-size:10px"></i>';
+    }
+  } catch (e) { /* ignore */ }
+}
+
+// Edge-zone debug view: hold Alt+Shift+E to outline the live zones and show
+// the current classification. z-order is below the resize strips.
+function setupEdgeZoneDebug() {
+  const box = document.createElement('div');
+  box.id = 'edge-zone-debug';
+  box.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99998;display:none;';
+  const label = document.createElement('div');
+  label.style.cssText = 'position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#7ef29a;font:600 12px monospace;padding:6px 12px;border-radius:6px;border:1px solid #2f6f4a;white-space:nowrap;';
+  box.appendChild(label);
+  const zones = document.createElement('div');
+  zones.style.cssText = 'position:absolute;inset:0;';
+  const mk = (css) => { const d = document.createElement('div'); d.style.cssText = css + ';position:absolute;background:rgba(126,242,154,.16);border:1px solid rgba(126,242,154,.5);'; return d; };
+  const C = EDGE_CORNER, Z = EDGE_ZONE, T = EDGE_TOP, W = () => window.innerWidth, H = () => window.innerHeight;
+  const defs = [
+    [`top:0;left:0;width:${C}px;height:${C}px`, 'nw'], [`top:0;right:0;width:${C}px;height:${C}px`, 'ne'],
+    [`bottom:0;left:0;width:${C}px;height:${C}px`, 'sw'], [`bottom:0;right:0;width:${C}px;height:${C}px`, 'se'],
+    [`top:${EDGE_TOP_NATIVE}px;left:${C}px;right:${C}px;height:${T - EDGE_TOP_NATIVE}px`, 'n'],
+    [`bottom:0;left:${C}px;right:${C}px;height:${Z}px`, 's'],
+    [`left:0;top:${C}px;bottom:${C}px;width:${Z}px`, 'w'], [`right:0;top:${C}px;bottom:${C}px;width:${Z}px`, 'e'],
+  ];
+  for (const [css, dir] of defs) { const d = mk(css); d.dataset.dir = dir; zones.appendChild(d); }
+  box.appendChild(zones);
+  document.body.appendChild(box);
+  let on = false;
+  window.addEventListener('keydown', (e) => { if (e.altKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) { on = !on; box.style.display = on ? '' : 'none'; } });
+  window.addEventListener('mousemove', (e) => {
+    if (!on) return;
+    const dir = document.documentElement.getAttribute('data-edge') || '—';
+    label.textContent = `edge=${dir}  x=${e.clientX} y=${e.clientY}  ${window.innerWidth}x${window.innerHeight}`;
+    zones.querySelectorAll('[data-dir]').forEach((d) => { d.style.background = d.dataset.dir === dir ? 'rgba(126,242,154,.45)' : 'rgba(126,242,154,.16)'; });
+  }, { passive: true });
+}
+
+function setupResizeEdges() {
+  window.addEventListener('mousemove', (e) => updateEdgeZone(e.clientX, e.clientY, e.target), { passive: true });
+  window.addEventListener('mousedown', (e) => {
+    if (e.button !== 0 || !IN_TAURI) return;
+    const dir = edgeZoneFor(e.clientX, e.clientY, window.innerWidth, window.innerHeight);
+    if (!dir || !isEdgeZonesActive()) return;
+    // Buttons, inputs, and footer controls win over edge zones:
+    if (e.target.closest('button, input, select, textarea, a, [onclick], .action-footer, #action-footer, .active-profile, #active-profile, .step-log, #step-log, .app-version-badge, #app-version-badge, .social-cluster, #social-cluster')) return;
+    // Titlebar drag region wins over edge zones (drag window instead of resize):
+    if (e.target.closest('.app-titlebar, [data-tauri-drag-region]')) return;
+    e.preventDefault();
+    // Claim the event: Tauri's own drag.js (and setupTitlebarDrag) also listen
+    // for mousedown, and the top band overlaps the titlebar — without this the
+    // window would get start_dragging *and* start_resize_dragging at once.
+    e.stopImmediatePropagation();
+    const win = getWin();
+    if (win && typeof win.startResizeDragging === 'function') {
+      win.startResizeDragging(RESIZE_DIR_NAMES[dir]).catch(() => {});
+    } else {
+      call('plugin:window|start_resize_dragging', { label: 'main', direction: RESIZE_DIR_NAMES[dir] }).catch(() => {});
+    }
+  }, true);
+  window.addEventListener('blur', () => document.documentElement.removeAttribute('data-edge'));
+  document.addEventListener('mouseleave', () => document.documentElement.removeAttribute('data-edge'));
+  window.addEventListener('mouseup', updateMaximizedState);
+  window.addEventListener('resize', () => { clearTimeout(updateMaximizedState._t); updateMaximizedState._t = setTimeout(updateMaximizedState, 120); });
+  updateMaximizedState();
+  setupEdgeZoneDebug();
+}
+
 function setupTitlebarDrag() {
   const titlebar = document.querySelector('.app-titlebar');
   if (!titlebar) return;
   titlebar.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
     if (e.target.closest('button, input, select, textarea, [data-tauri-drag-region="false"]')) return;
+    // Double click on titlebar toggles maximize:
+    if (e.detail === 2) {
+      handleWinMax();
+      return;
+    }
     const w = getWin();
     if (w && typeof w.startDragging === 'function') {
       w.startDragging().catch(() => {});
@@ -807,7 +1289,7 @@ function updateScale() {
   const availW = window.innerWidth;
   const availH = window.innerHeight - 40; // titlebar is 40px
   const baseW = 920;
-  const baseH = 540;
+  const baseH = 790;
   // If window is at least base dimensions, keep native 1:1 scale (zero transform = 100% razor sharp native DirectWrite pixel grid)
   if (availW >= baseW && availH >= baseH) {
     wrapper.style.transform = 'none';
@@ -871,6 +1353,7 @@ function init() {
     const btnClose = document.getElementById('btn-close');
     if (btnClose) btnClose.onclick = handleWinClose;
     setupTitlebarDrag();
+    setupResizeEdges();
 
     // language switcher
     const btnLang = document.getElementById('btn-lang-toggle');
@@ -976,7 +1459,12 @@ function init() {
     }
     const btnFovReset = document.getElementById('btn-fov-reset');
     if (btnFovReset) {
-      btnFovReset.onclick = () => setFov(90);
+      btnFovReset.onclick = () => {
+        setFov(90);
+        btnFovReset.classList.remove('reset-pop');
+        void btnFovReset.offsetWidth; // restart animation
+        btnFovReset.classList.add('reset-pop');
+      };
     }
 
     // preset cards (single select, includes TEMP modes when visible)

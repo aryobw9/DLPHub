@@ -67,44 +67,43 @@ pub fn list_backups(data_dir: &Path) -> Vec<String> {
 /// Copy current state into a datestamped backup folder. Returns folder name.
 /// Errors (String) when nothing found to back up (console exit-4 parity).
 pub fn do_backup(citadel: &Path, data_dir: &Path) -> Result<String, String> {
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_err(|e| e.to_string())?;
-    let name = format!("backup_{}", crate::install::timestamp_utc(now.as_secs()));
-    let target = backups_root(data_dir).join(&name);
-    std::fs::create_dir_all(&target).map_err(|e| e.to_string())?;
-
-    let mut copied = 0usize;
-    let copy_one = |src: &Path, name: &str| -> usize {
-        if src.is_file() {
-            let _ = std::fs::copy(src, target.join(name));
-            1
-        } else {
-            0
-        }
-    };
-    copied += copy_one(&citadel.join("gameinfo.gi"), "gameinfo.gi");
-    copied += copy_one(&citadel.join("cfg").join("video.txt"), "video.txt");
-
-    let ad = citadel.join("addons");
-    if ad.is_dir() {
-        std::fs::create_dir_all(target.join("addons")).ok();
-        let mut n = 0usize;
-        for f in std::fs::read_dir(&ad).map_err(|e| e.to_string())?.flatten() {
-            if f.path().extension().map(|e| e == "vpk").unwrap_or(false) {
-                let _ = std::fs::copy(f.path(), target.join("addons").join(f.file_name()));
-                n += 1;
+    let root = backups_root(data_dir);
+    std::fs::create_dir_all(&root).map_err(|e| e.to_string())?;
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?;
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let name = format!("backup_{}_{:09}_{}_{}", crate::install::timestamp_utc(now.as_secs()), now.subsec_nanos(), std::process::id(), NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed));
+    let stage = root.join(format!(".stage_{name}"));
+    std::fs::create_dir(&stage).map_err(|e| e.to_string())?;
+    let result = (|| -> std::io::Result<()> {
+        let mut copied = 0;
+        for (source, name) in [("gameinfo.gi", "gameinfo.gi"), ("cfg/video.txt", "video.txt"), ("cfg/autoexec.cfg", "autoexec.cfg"), ("addons_manifest.txt", "addons_manifest.txt")] {
+            match std::fs::metadata(citadel.join(source)) {
+                Ok(_) => { std::fs::copy(citadel.join(source), stage.join(name))?; copied += 1; }
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => (),
+                Err(e) => return Err(e),
             }
         }
-        copied += n;
-        copied += copy_one(&citadel.join("addons_manifest.txt"), "addons_manifest.txt");
-    }
-
-    if copied == 0 {
-        // nothing found: remove the empty folder, mirror console exit 4
-        let _ = std::fs::remove_dir_all(&target);
-        return Err("nothing found to back up".into());
-    }
+        match std::fs::read_dir(citadel.join("addons")) {
+            Ok(entries) => {
+                std::fs::create_dir(stage.join("addons"))?;
+                for entry in entries {
+                    let entry = entry?;
+                    if entry.path().extension().is_some_and(|e| e.eq_ignore_ascii_case("vpk")) {
+                        std::fs::copy(entry.path(), stage.join("addons").join(entry.file_name()))?;
+                        copied += 1;
+                    }
+                }
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => (),
+            Err(e) => return Err(e),
+        }
+        if copied == 0 { return Err(std::io::Error::other("nothing found to back up")); }
+        // v2 records absent files too; old backups cannot assert absence.
+        std::fs::write(stage.join("complete_v2"), b"2")?;
+        std::fs::rename(&stage, root.join(&name))?;
+        Ok(())
+    })();
+    if let Err(e) = result { rm_ro(&stage); return Err(e.to_string()); }
     Ok(name)
 }
 
@@ -166,6 +165,17 @@ pub fn restore(citadel: &Path, data_dir: &Path, name: &str) -> Result<RestoreRep
             }
         }
     }
+    for (source, dest) in [("autoexec.cfg", "cfg/autoexec.cfg"), ("addons_manifest.txt", "addons_manifest.txt")] {
+        let target = citadel.join(dest);
+        if bdir.join(source).is_file() {
+            if target.exists() { set_readonly(&target, false).map_err(|e| e.to_string())?; }
+            std::fs::create_dir_all(target.parent().unwrap()).map_err(|e| e.to_string())?;
+            std::fs::copy(bdir.join(source), &target).map_err(|e| e.to_string())?;
+        } else if bdir.join("complete_v2").is_file() && target.exists() {
+            set_readonly(&target, false).map_err(|e| e.to_string())?;
+            std::fs::remove_file(&target).map_err(|e| e.to_string())?;
+        }
+    }
     Ok(rep)
 }
 
@@ -174,6 +184,13 @@ pub fn restore(citadel: &Path, data_dir: &Path, name: &str) -> Result<RestoreRep
 /// Managed autoexec block is also removed.
 /// Snapshots (.dlp.bak) are permanent and never deleted.
 pub fn revert_original(citadel: &Path) -> Result<RestoreReport, String> {
+    // Validate user text before touching any recovery target.
+    let ae = citadel.join("cfg/autoexec.cfg");
+    let existing_ae = match std::fs::read_to_string(&ae) {
+        Ok(s) => s,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => return Err(format!("autoexec preflight: {e}")),
+    };
     let mut rep = RestoreReport {
         restored_gi: false,
         restored_video: false,
@@ -201,33 +218,38 @@ pub fn revert_original(citadel: &Path) -> Result<RestoreReport, String> {
         rep.restored_video = true;
     }
 
-    // 3) addons from manifest
+    // 3) addons from manifest; failed removals and read/parse errors keep
+    // tracking until everything owned is gone.
     let man = citadel.join("addons_manifest.txt");
     if man.is_file() {
         let content = std::fs::read_to_string(&man).map_err(|e| e.to_string())?;
+        let mut failed: Vec<String> = vec![];
         for ln in content.lines() {
             let n = ln.trim();
-            if n.is_empty() {
-                continue;
-            }
+            if n.is_empty() { continue; }
             let p = citadel.join("addons").join(n);
             if p.is_file() {
-                let _ = std::fs::remove_file(&p);
-                rep.removed_addons.push(n.to_string());
+                if std::fs::remove_file(&p).is_ok() {
+                    rep.removed_addons.push(n.to_string());
+                } else {
+                    failed.push(n.to_string());
+                }
+            } else if p.exists() {
+                failed.push(n.to_string()); // directory or other non-file must remain tracked
             }
         }
-        let _ = std::fs::remove_file(&man);
+        if failed.is_empty() {
+            std::fs::remove_file(&man).map_err(|e| e.to_string())?;
+        } else {
+            return Err(format!("partial revert: cannot remove {}; manifest retained", failed.join(", ")));
+        }
     }
 
-    // 4) autoexec: strip managed block if present
-    let ae = citadel.join("cfg").join("autoexec.cfg");
-    if ae.is_file() {
-        if let Ok(existing) = std::fs::read_to_string(&ae) {
-            let stripped = crate::kvedit::upsert_autoexec(&existing, false);
-            if stripped != existing {
-                let _ = std::fs::write(&ae, stripped);
-            }
-        }
+    // 4) autoexec: strip managed block if present. Read/parse errors are fatal:
+    // an unreadable autoexec may hold the user's own commands — never overwrite.
+    let stripped = crate::kvedit::upsert_autoexec(&existing_ae, false);
+    if stripped != existing_ae {
+        std::fs::write(&ae, stripped).map_err(|e| format!("partial revert: autoexec: {e}"))?;
     }
 
     if !rep.restored_gi && !rep.restored_video && rep.removed_addons.is_empty() {
@@ -253,6 +275,40 @@ mod tests {
         std::fs::create_dir_all(cit.join("cfg")).unwrap();
         std::fs::create_dir_all(cit.join("addons")).unwrap();
         cit
+    }
+
+    #[test]
+    fn backup_failure_never_publishes_success() {
+        let cit = mkcit("failed_copy");
+        let data = cit.join("data");
+        std::fs::write(cit.join("gameinfo.gi"), "original").unwrap();
+        // A VPK-shaped directory cannot be copied as a file.
+        std::fs::create_dir(cit.join("addons/broken.vpk")).unwrap();
+        assert!(do_backup(&cit, &data).is_err());
+        assert!(list_backups(&data).is_empty());
+        rm_ro(&cit);
+    }
+
+    #[test]
+    fn restores_autoexec_and_manifest_with_absence_semantics() {
+        let cit = mkcit("autoexec_restore");
+        let data = cit.join("data");
+        std::fs::write(cit.join("gameinfo.gi"), "original").unwrap();
+        std::fs::write(cit.join("cfg/autoexec.cfg"), "user command").unwrap();
+        std::fs::write(cit.join("addons_manifest.txt"), "pak04_dir.vpk\n").unwrap();
+        std::fs::write(cit.join("addons/pak04_dir.vpk"), "owned").unwrap();
+        let name = do_backup(&cit, &data).unwrap();
+        std::fs::write(cit.join("cfg/autoexec.cfg"), "changed").unwrap();
+        restore(&cit, &data, &name).unwrap();
+        assert_eq!(std::fs::read_to_string(cit.join("cfg/autoexec.cfg")).unwrap(), "user command");
+        assert_eq!(std::fs::read_to_string(cit.join("addons_manifest.txt")).unwrap(), "pak04_dir.vpk\n");
+        std::fs::remove_file(cit.join("cfg/autoexec.cfg")).unwrap();
+        let absent = do_backup(&cit, &data).unwrap();
+        assert_ne!(name, absent);
+        std::fs::write(cit.join("cfg/autoexec.cfg"), "new").unwrap();
+        restore(&cit, &data, &absent).unwrap();
+        assert!(!cit.join("cfg/autoexec.cfg").exists());
+        rm_ro(&cit);
     }
 
     #[test]
@@ -324,6 +380,23 @@ mod tests {
         assert_eq!(v[0], "backup_2026-09-12_101010");
         assert_eq!(v[2], "backup_2026-01-01_000001");
         let _ = std::fs::remove_dir_all(&data);
+    }
+
+    #[test]
+    fn revert_failure_retains_tracking_and_rejects_unreadable_autoexec() {
+        let cit = mkcit("revert_failure");
+        std::fs::write(cit.join("addons_manifest.txt"), "pak04_dir.vpk\n").unwrap();
+        std::fs::create_dir(cit.join("addons/pak04_dir.vpk")).unwrap();
+        assert!(revert_original(&cit).is_err());
+        assert!(cit.join("addons_manifest.txt").is_file());
+        std::fs::remove_dir(cit.join("addons/pak04_dir.vpk")).unwrap();
+        std::fs::write(cit.join("addons_manifest.txt"), "pak04_dir.vpk\n").unwrap();
+        std::fs::write(cit.join("gameinfo.gi.dlp.bak"), "original").unwrap();
+        std::fs::write(cit.join("gameinfo.gi"), "current").unwrap();
+        std::fs::write(cit.join("cfg/autoexec.cfg"), [0xff]).unwrap();
+        assert!(revert_original(&cit).is_err());
+        assert_eq!(std::fs::read_to_string(cit.join("gameinfo.gi")).unwrap(), "current");
+        rm_ro(&cit);
     }
 
     #[test]

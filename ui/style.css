@@ -16,6 +16,59 @@
 
       --card-border: rgba(59, 130, 246, 0.22);
       --card-border-active: rgba(249, 115, 22, 0.75);
+
+      /* Custom Flame Cursors */
+      --cur-default: url('assets/cursors/default.png') 19 16, default;
+      --cur-pointer: url('assets/cursors/pointer.png') 16 19, pointer;
+      --cur-click: url('assets/cursors/click.png') 24 21, pointer;
+      --cur-click-right: url('assets/cursors/click_right.png') 18 21, pointer;
+      --cur-grab: url('assets/cursors/grab.png') 32 35, grab;
+      --cur-text: url('assets/cursors/text.png') 34 35, text;
+      --cur-link: url('assets/cursors/link.png') 14 24, pointer;
+      --cur-help: url('assets/cursors/help.png') 18 8, help;
+      --cur-busy: url('assets/cursors/busy.png') 34 30, wait;
+      --cur-nwse: url('assets/cursors/nwse-resize.png') 20 17, nwse-resize;
+      --cur-nesw: url('assets/cursors/nesw-resize.png') 14 17, nesw-resize;
+      --cur-ns: url('assets/cursors/ns-resize.png') 24 21, ns-resize;
+      --cur-ew: url('assets/cursors/ew-resize.png') 32 24, ew-resize;
+      --cur-move: url('assets/cursors/move.png') 28 33, move;
+    }
+
+    /* Virtual flame cursor follower: renders 100% scope right to window edges without OS reversion */
+    #dlp-custom-cursor {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 64px;
+      height: 64px;
+      pointer-events: none;
+      z-index: 2147483647;
+      will-change: transform;
+      transform: translate3d(-100px, -100px, 0);
+      display: none;
+    }
+
+    #dlp-custom-cursor-inner {
+      width: 100%;
+      height: 100%;
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-position: center;
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    #dlp-custom-cursor.is-spinning #dlp-custom-cursor-inner {
+      animation: dlp-cursor-spin 1.25s linear infinite;
+    }
+
+    @keyframes dlp-cursor-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    html, body, *, *::before, *::after {
+      cursor: none !important;
     }
 
     * {
@@ -23,6 +76,15 @@
       margin: 0;
       padding: 0;
       user-select: none;
+    }
+
+    /* Text inputs */
+    input[type="text"],
+    input[type="password"],
+    textarea,
+    .path-input,
+    .step-log {
+      user-select: text;
     }
 
     body {
@@ -111,6 +173,11 @@
       direction: ltr !important;
       user-select: none;
       white-space: nowrap;
+      cursor: var(--cur-move);
+    }
+
+    .brand-meta * {
+      pointer-events: none;
     }
 
     .brand-badge {
@@ -129,7 +196,7 @@
     .titlebar-drag-spacer {
       flex: 1;
       height: 100%;
-      cursor: default;
+      cursor: var(--cur-move);
     }
 
     .window-controls {
@@ -214,14 +281,25 @@
       text-align: center;
       margin-bottom: 8px;
       flex-shrink: 0;
-      height: 84px;
-      min-height: 84px;
-      max-height: 84px;
+      height: 256px;
+      min-height: 256px;
+      max-height: 256px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       direction: ltr !important;
+    }
+
+    .hero-app-icon {
+      width: 176px;
+      height: 176px;
+      object-fit: contain;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 24px rgba(249, 115, 22, 0.35));
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
     }
 
     .header-title-en {
@@ -311,7 +389,7 @@
       border: 1px solid rgba(59, 130, 246, 0.16);
       border-radius: 8px;
       backdrop-filter: blur(14px);
-      cursor: pointer;
+      cursor: var(--cur-pointer);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -540,7 +618,7 @@
 
     .slider {
       position: absolute;
-      cursor: pointer;
+      cursor: var(--cur-pointer);
       inset: 0;
       background-color: #1e293b;
       transition: .25s;
@@ -599,7 +677,7 @@
       max-height: 34px;
       padding: 0 18px;
       border-radius: 6px;
-      cursor: pointer;
+      cursor: var(--cur-pointer);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -634,7 +712,7 @@
       max-height: 34px;
       padding: 0 14px;
       border-radius: 6px;
-      cursor: pointer;
+      cursor: var(--cur-pointer);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -743,7 +821,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   border-radius: 0;
   transition: background 0.15s, color 0.15s;
   padding: 0;
@@ -770,7 +848,7 @@
 }
 .path-input:focus { border-color: var(--deadlock-cyan); box-shadow: 0 0 8px rgba(56,189,248,.25); }
 
-.option-item.preset { cursor: pointer; transition: all .2s; border: 1px solid transparent; }
+.option-item.preset { cursor: var(--cur-pointer); transition: all .2s; border: 1px solid transparent; }
 .option-item.preset:hover { background: var(--bg-card-hover); }
 .option-item.preset.selected { border-color: var(--card-border-active); box-shadow: 0 0 14px rgba(249,115,22,.2); }
 .preset-pick { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--text-muted); flex-shrink: 0; transition: all .15s; }
@@ -831,7 +909,7 @@
 .modal-actions .btn-apply, .modal-actions .btn-reset { padding: 9px 22px; }
 
 button.btn-apply, button.btn-reset { font-family: 'Vazirmatn', sans-serif; }
-.btn-apply:disabled { opacity: .45; cursor: not-allowed; }
+.btn-apply:disabled { opacity: .45; cursor: var(--cur-default); }
 
 /* Language Switcher */
 .lang-pill-btn {
@@ -850,7 +928,7 @@ button.btn-apply, button.btn-reset { font-family: 'Vazirmatn', sans-serif; }
   font-family: 'Vazirmatn', sans-serif;
   font-size: 0.82rem;
   font-weight: 700;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   margin-right: 8px;
   margin-left: 0;
   transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
@@ -877,7 +955,7 @@ button.btn-apply, button.btn-reset { font-family: 'Vazirmatn', sans-serif; }
   font-size: 0.9rem;
   font-weight: 600;
   outline: none;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   transition: all 0.2s;
 }
 .setting-select:focus {
@@ -907,7 +985,7 @@ button.btn-apply, button.btn-reset { font-family: 'Vazirmatn', sans-serif; }
   font-weight: 700;
   padding: 6px 14px;
   border-radius: 4px;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   transition: all 0.2s;
   transform: none !important;
 }
@@ -937,7 +1015,7 @@ button.btn-apply, button.btn-reset { font-family: 'Vazirmatn', sans-serif; }
   min-width: 48px;
   text-align: center;
   border-radius: 6px;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   transition: all 0.15s;
   transform: none !important;
 }
@@ -1052,7 +1130,7 @@ button:active,
   flex-direction: column;
   justify-content: space-between;
   align-items: flex-start;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   box-sizing: border-box;
   transition: all 0.2s ease;
   transform: none !important;
@@ -1255,7 +1333,7 @@ button:active,
   display: flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
 }
 
 .hud-switch-label {
@@ -1293,7 +1371,7 @@ button:active,
   flex: 1;
   accent-color: var(--deadlock-orange);
   height: 6px;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
 }
@@ -1654,7 +1732,7 @@ button:active,
   color: #fca5a5;
   border-radius: 8px;
   box-shadow: 0 0 16px rgba(239, 68, 68, 0.15);
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   transition: all 0.2s ease;
 }
 
@@ -1731,7 +1809,7 @@ button:active,
   align-items: center;
   justify-content: space-between;
   padding: 0 10px;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   font-size: 0.8rem;
   box-sizing: border-box;
   transition: all 0.15s ease;
@@ -1891,7 +1969,7 @@ button:active,
 .social-row { display: flex; gap: 3px; }
 .social-card {
   width: 40px; height: 40px;
-  outline: none; border: none; cursor: pointer;
+  outline: none; border: none; cursor: var(--cur-pointer);
   background: rgba(14, 23, 38, 0.75);
   display: flex; align-items: center; justify-content: center;
   padding: 0;
@@ -1926,6 +2004,14 @@ button:active,
 .social-card.bl { border-radius: 5px 5px 5px 40px; }
 .social-card.br { border-radius: 5px 5px 40px 5px; }
 
+/* A 40px radius on a 40px box clips the card's own hit area, but the brand
+   glyphs are not clipped (no overflow:hidden), so they overhang the rounded
+   corner. That overhang hit-tested to .social-row: default arrow instead of
+   the flame pointer, and the click landed on the row — the button felt dead
+   exactly on the icon. This transparent child restores the full 40x40 box. */
+.social-card { position: relative; }
+.social-card::before { content: ''; position: absolute; inset: 0; }
+
 .social-card:hover { box-shadow: 0 0 12px 1px var(--social-glow); }
 .social-card.tl:hover { transform: translate(-4px, -4px); }
 .social-card.tr:hover { transform: translate(4px, -4px); }
@@ -1958,7 +2044,7 @@ button:active,
   max-height: 28px;
   padding: 0 14px;
   border-radius: 6px;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2039,7 +2125,7 @@ button:active,
   position: relative;
   width: var(--size);
   height: var(--size);
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   -webkit-tap-highlight-color: transparent;
   display: inline-block;
   flex-shrink: 0;
@@ -2628,7 +2714,7 @@ button:active,
   color: var(--text-muted, #64748b);
 }
 .fov-reset-ghost {
-  background: none; border: none; cursor: pointer;
+  background: none; border: none; cursor: var(--cur-pointer);
   color: var(--text-muted, #64748b);
   font-size: 0.72rem; padding: 2px 4px;
   transition: color 0.15s ease, transform 0.3s ease;
@@ -2762,3 +2848,173 @@ body.lang-fa .hud-switch-label {
   font-family: 'Vazirmatn', sans-serif;
 }
 /* digits inside FA text stay readable (Vazirmatn has latin digits) */
+
+/* ===================== TOP-BAR PING BUTTON (icon-only, latency tab) ===================== */
+.btn-refresh-ping-top {
+  background: transparent;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 6px;
+  color: var(--deadlock-orange);
+  width: 30px;
+  height: 26px;
+  min-width: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: var(--cur-pointer);
+  font-size: 13px;
+}
+.btn-refresh-ping-top:hover:not(:disabled) { border-color: var(--deadlock-orange); background: rgba(249, 115, 22, 0.08); }
+.btn-refresh-ping-top:disabled { opacity: .45; cursor: var(--cur-default); }
+.btn-refresh-ping-top .refresh-icon { font-size: 13px; }
+.btn-refresh-ping-top .refresh-icon.spin { animation: dlp-spin 0.8s linear infinite; }
+@keyframes dlp-spin { to { transform: rotate(360deg); } }
+
+/* ===================== FOV RESET CLICK FEEL ===================== */
+#btn-fov-reset { transition: transform 0.15s ease, color 0.2s ease, box-shadow 0.25s ease; }
+#btn-fov-reset:active { transform: scale(0.88); }
+#btn-fov-reset.reset-pop { animation: dlp-reset-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes dlp-reset-pop {
+  0%   { transform: scale(1) rotate(0deg); }
+  30%  { transform: scale(0.82) rotate(-140deg); color: var(--deadlock-cyan); box-shadow: 0 0 12px rgba(56, 189, 248, 0.45); }
+  60%  { transform: scale(1.12) rotate(-260deg); color: var(--deadlock-cyan); }
+  100% { transform: scale(1) rotate(-360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #btn-fov-reset.reset-pop { animation: none; }
+  .btn-refresh-ping-top .refresh-icon.spin { animation: none; }
+}
+
+/* ===================== ADVANCED TAB CARDS (UPDATE & SUPPORT) ===================== */
+.adv-update-card {
+  border-color: rgba(56, 189, 248, 0.25);
+  background: rgba(14, 23, 38, 0.5);
+}
+.adv-update-card:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+}
+.adv-update-card #btn-check-updates {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  font-size: 0.88rem !important;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: var(--deadlock-cyan);
+  border-radius: 8px;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.15);
+  cursor: var(--cur-pointer);
+  transition: all 0.2s ease;
+}
+.adv-update-card #btn-check-updates:hover {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: var(--deadlock-cyan);
+  color: #fff;
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.35);
+}
+
+.adv-support-card {
+  border-color: rgba(249, 115, 22, 0.25);
+  background: rgba(26, 18, 14, 0.5);
+}
+.adv-support-card:hover {
+  border-color: rgba(249, 115, 22, 0.45);
+}
+.adv-support-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.adv-support-text {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #fed7aa;
+  line-height: 1.35;
+}
+
+/* ===================== DELETE BACKUP BUTTON ===================== */
+.backup-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-delete-backup {
+  padding: 0 10px;
+  height: 28px;
+  min-height: 28px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  cursor: var(--cur-pointer);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-delete-backup:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+/* ===================== APP VERSION BADGE ===================== */
+.app-version-badge {
+  position: fixed;
+  bottom: 12px;
+  right: 14px;
+  z-index: 99;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-family: 'Rajdhani', sans-serif;
+  pointer-events: none;
+}
+.app-version-badge .ver-tag {
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.app-version-badge .ver-beta {
+  background: rgba(249, 115, 22, 0.2);
+  color: var(--deadlock-orange);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+.app-version-badge .ver-sep {
+  color: #475569;
+  font-size: 0.7rem;
+}
+.app-version-badge .ver-by {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.app-version-badge .ver-author {
+  color: var(--deadlock-cyan);
+  font-weight: 700;
+}

@@ -29,7 +29,7 @@ pub fn pick_game(path: String) -> Option<FoundDto> {
 // ---------- detect ----------
 #[tauri::command]
 pub fn detect_tier_cmd(citadel: String) -> String {
-    let pkg_dir = payload::extract().unwrap_or_default();
+    let pkg_dir = payload::extract_cached().unwrap_or_default();
     let pkg = payload_dir_or(&pkg_dir);
     detect::detect_tier(std::path::Path::new(&citadel), &pkg).as_str().to_string()
 }
@@ -95,6 +95,19 @@ pub fn list_backups() -> Vec<BackupInfo> {
         .collect()
 }
 
+#[tauri::command]
+pub fn delete_backup_cmd(name: String) -> Result<(), String> {
+    if name.contains('/') || name.contains('\\') || name.contains("..") {
+        return Err("invalid backup name".into());
+    }
+    let bdir = backup::backups_root(&settings::data_dir()).join(&name);
+    if !bdir.is_dir() {
+        return Err(format!("backup not found: {name}"));
+    }
+    backup::rm_ro(&bdir);
+    Ok(())
+}
+
 #[derive(Serialize)]
 pub struct RestoreReportDto {
     pub restored_gi: bool,
@@ -134,6 +147,7 @@ pub struct SettingsDto {
     pub unlocked: bool,
     pub last_path: Option<String>,
     pub unit_status_new: bool,
+    pub fov: u32,
     pub reflex_mode: u8,
     pub fps_max: u32,
     pub vsync: bool,
@@ -150,6 +164,7 @@ impl From<settings::Settings> for SettingsDto {
             unlocked: s.unlocked,
             last_path: s.last_path,
             unit_status_new: s.unit_status_new,
+            fov: s.fov,
             reflex_mode: s.reflex_mode,
             fps_max: s.fps_max,
             vsync: s.vsync,
@@ -167,6 +182,7 @@ pub struct SettingsPatch {
     pub unlock_code: Option<String>,
     pub last_path: Option<String>,
     pub unit_status_new: Option<bool>,
+    pub fov: Option<u32>,
     pub reflex_mode: Option<u8>,
     pub fps_max: Option<u32>,
     pub vsync: Option<bool>,
@@ -202,6 +218,7 @@ pub fn set_settings(patch: SettingsPatch) -> Result<SettingsDto, String> {
     if let Some(p) = patch.last_path {
         s.last_path = if p.trim().is_empty() { None } else { Some(p) };
     }
+    if let Some(fov) = patch.fov { s.fov = fov; }
     if let Some(u) = patch.unit_status_new {
         s.unit_status_new = u;
     }
@@ -413,33 +430,47 @@ pub async fn ping_valve_servers() -> Result<Vec<ServerPing>, String> {
     let (tx, rx) = mpsc::channel();
     let mut handles = vec![];
 
-    const SAMPLES: u32 = 6;
+    const SAMPLES: u32 = 10;
     for s in VALVE_SERVERS {
         let tx = tx.clone();
         let s = s.clone();
         handles.push(thread::spawn(move || {
             let mut p = ServerPing::from_def(&s);
-            let mut ok: Vec<u32> = vec![];
-            for _ in 0..SAMPLES {
-                if let Some(ms) = ping_single_ip(s.ip, 1200) {
-                    ok.push(ms);
+            let mut probes: Vec<u32> = vec![];
+            for i in 0..SAMPLES {
+                if let Some(ms) = ping_single_ip(s.ip, 1500) {
+                    probes.push(ms);
                 }
-                std::thread::sleep(std::time::Duration::from_millis(20));
+                // Space probes ~150ms apart so ICMP rate-limiting and queue
+                // bursts don't distort consecutive samples.
+                if i + 1 < SAMPLES {
+                    std::thread::sleep(std::time::Duration::from_millis(130));
+                }
             }
-            p.loss_pct = ((SAMPLES - ok.len() as u32) as f32 / SAMPLES as f32) * 100.0;
-            if !ok.is_empty() {
-                let n = ok.len() as f32;
-                let avg = ok.iter().map(|&x| x as f32).sum::<f32>() / n;
-                let mad = ok.iter().map(|&x| (x as f32 - avg).abs()).sum::<f32>() / n;
+            p.loss_pct = ((SAMPLES - probes.len() as u32) as f32 / SAMPLES as f32) * 100.0;
+            if !probes.is_empty() {
+                // Drop the first reply (ARP/route warmup) when we have spares.
+                let used: Vec<u32> = if probes.len() > 2 { probes[1..].to_vec() } else { probes.clone() };
+                let mut sorted = used.clone();
+                sorted.sort_unstable();
+                // Trimmed mean: cut top/bottom 20% -> realistic avg, resists spikes.
+                let trim = (sorted.len() as f32 * 0.2).floor() as usize;
+                let core = if sorted.len() > trim * 2 { sorted[trim..sorted.len() - trim].to_vec() } else { sorted.clone() };
+                let n = core.len() as f32;
+                let avg = core.iter().map(|&x| x as f32).sum::<f32>() / n;
+                // Jitter: standard deviation of the trimmed set (IETF RFC 3550 style).
+                let var = core.iter().map(|&x| (x as f32 - avg).powi(2)).sum::<f32>() / n;
+                let jitter = var.sqrt();
                 p.avg_ms = Some(avg.round() as u32);
-                p.jitter_ms = Some(mad.round() as u32);
-                p.ping_ms = ok.iter().min().copied(); // best sample = connectable RTT
-                // stability: high when jitter is small relative to latency
-                let jitter_ratio = if avg > 0.0 { mad / avg } else { 1.0 };
+                p.jitter_ms = Some(jitter.round() as u32);
+                p.ping_ms = probes.iter().min().copied(); // best sample = connectable RTT
+                p.samples = probes;
+                let jitter_ratio = if avg > 0.0 { jitter / avg } else { 1.0 };
                 let score = (100.0 - (jitter_ratio * 140.0) - (p.loss_pct * 0.8)).round().clamp(0.0, 100.0);
                 p.stability = Some(score as u8);
+            } else {
+                p.samples = probes;
             }
-            p.samples = ok;
             let _ = tx.send(p);
         }));
     }
