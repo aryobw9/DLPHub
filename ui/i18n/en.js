@@ -161,7 +161,7 @@ window.I18N_EN = {
   perfBalanced: "BALANCED",
   perfMaxFps: "MAX FPS",
   perfPotato: "POTATO",
-  hudTitle: "HUD",
+  hudTitle: "HUD CONFIGURATION",
   graphicsProfile: "GRAPHICS PROFILE",
   secDisplay: "DISPLAY",
   secHud: "HUD",

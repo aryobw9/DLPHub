@@ -3111,10 +3111,7 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
 
 
 
-.setting-box:last-child { padding: 6px 12px; }
-.setting-box:last-child .hud-switch-wrap { margin: 0; }
-.setting-box:last-child .neon-checkbox { --size: 22px; }
-.setting-box:last-child .hud-switch-label { font-size: 0.78rem; }
+.neon-checkbox { --size: 20px; }
 
 /* ===================== FINAL BOX SIZING (single source of truth) ===================== */
 /* tier cards: strictly locked preset cards — IDENTICAL in FA and EN */
@@ -3231,6 +3228,7 @@ body.lang-fa .tier-name {
   max-height: 124px;
   box-sizing: border-box;
   overflow: visible !important;
+  padding: 6px 12px 8px !important;
 }
 
 /* ===================== CAMERA / FOV BOX (IDENTICAL IN EN AND FA) ===================== */
@@ -3375,6 +3373,7 @@ body.lang-fa .fov-default-tick {
   max-height: 128px;
   box-sizing: border-box;
   overflow: visible !important;
+  padding: 6px 12px 8px !important;
 }
 
 .setting-box {
@@ -3393,6 +3392,98 @@ body.lang-fa .fov-default-tick {
 .setting-box:hover {
   border-color: rgba(59, 130, 246, 0.28);
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35), var(--card-highlight-hover);
+}
+
+/* HUD Box & Switch Card */
+.hud-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between !important;
+}
+.hud-box .fov-box-header {
+  height: 22px;
+  min-height: 22px;
+  max-height: 22px;
+  flex-shrink: 0;
+}
+
+.hud-switch-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(10, 16, 27, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  margin: auto 0 !important;
+  cursor: var(--cur-pointer);
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+.hud-switch-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(15, 23, 42, 0.85);
+}
+.hud-switch-card:has(input:checked) {
+  border-color: rgba(249, 115, 22, 0.45);
+  background: rgba(249, 115, 22, 0.08);
+}
+
+.hud-switch-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.hud-switch-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.3px;
+}
+
+body.lang-fa .hud-switch-card {
+  direction: rtl;
+}
+
+body.lang-fa .hud-switch-label {
+  font-family: 'Vazirmatn', sans-serif !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.4 !important;
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+.hud-desc,
+body.lang-fa .hud-desc {
+  font-family: 'Vazirmatn', sans-serif !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  max-height: 16px !important;
+  line-height: 16px !important;
+  font-size: 0.64rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  color: var(--text-muted) !important;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  margin: 0 !important;
 }
 
 .renderer-box {

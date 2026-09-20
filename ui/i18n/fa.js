@@ -156,7 +156,7 @@ window.I18N_FA = {
   perfBalanced: "متعادل",
   perfMaxFps: "بیشترین فریم",
   perfPotato: "ذغالی",
-  hudTitle: "رابط بازی (HUD)",
+  hudTitle: "رابط کاربری (HUD)",
   graphicsProfile: "پروفایل گرافیک",
   secDisplay: "نمایش",
   secHud: "رابط کاربری",

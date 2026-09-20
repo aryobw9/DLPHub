@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="vendor/fontawesome/css/regular.min.css" />
   <link rel="stylesheet" href="vendor/fontawesome/css/brands.min.css" />
   <link rel="stylesheet" href="vendor/animate.css/animate.min.css" />
-  <link rel="stylesheet" href="style.css?v=27" />
+  <link rel="stylesheet" href="style.css?v=28" />
 </head>
 <body>
 
@@ -189,7 +189,7 @@
               </div>
 
               <!-- HUD box (New Health bars) -->
-              <div class="setting-box" style="justify-content: space-between;">
+              <div class="setting-box hud-box">
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
                     <i class="fa-solid fa-heart-pulse" style="font-size:14px"></i>
@@ -200,12 +200,11 @@
                     <div class="hint-tooltip" data-i18n="hudHint">Saves directly into your cfg\autoexec.cfg when clicking 'Apply to Deadlock'. Takes effect regardless of how you launch the game.</div>
                   </div>
                 </div>
-                <label class="hud-switch-wrap" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin:auto 0;">
-                  <div style="display:flex; flex-direction:column; gap:4px;">
-                    <span class="hud-switch-label" data-i18n="unitStatus" style="font-weight:700; font-size:0.85rem; color:var(--text-main);">New Health Bars</span>
-                    <span data-i18n="hudSwitchDesc" style="font-size:0.65rem; color:var(--text-muted);">Show updated health bar visuals</span>
+                <label class="hud-switch-card" for="sw-unit-status">
+                  <div class="hud-switch-info">
+                    <span class="hud-switch-label" data-i18n="unitStatus">New Health Bars</span>
                   </div>
-                  <label class="neon-checkbox" style="margin-left:auto;">
+                  <div class="neon-checkbox">
                     <input type="checkbox" id="sw-unit-status">
                     <div class="neon-checkbox__frame">
                       <div class="neon-checkbox__box">
@@ -221,9 +220,11 @@
                         <div class="neon-checkbox__sparks"><span></span><span></span><span></span><span></span></div>
                       </div>
                     </div>
-                  </label>
+                  </div>
                 </label>
-                <div style="height:12px;"></div>
+                <div class="hud-desc" data-i18n="hudSwitchDesc">
+                  Show updated health bar visuals
+                </div>
               </div>
 
               <!-- RENDERER box (DirectX 11 / Default / Vulkan) -->
