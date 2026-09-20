@@ -2750,10 +2750,29 @@ body.lang-fa .adv-card-desc,
 body.lang-fa .option-detail,
 body.lang-fa .modal-body,
 body.lang-fa .step-log,
-body.lang-fa .hud-switch-label,
-body.lang-fa .backup-row {
+body.lang-fa .hud-switch-label {
   direction: rtl;
   text-align: right;
+}
+/* Backup & Restore card: Always pure English / LTR */
+.adv-backup-card,
+.adv-backup-card .adv-card-title,
+.adv-backup-card .adv-card-desc,
+.backup-list-box,
+.backup-row,
+.backup-meta,
+.backup-actions {
+  direction: ltr !important;
+  text-align: left !important;
+}
+
+.backup-size {
+  font-family: 'Rajdhani', monospace;
+  font-size: 0.62rem !important;
+  font-weight: 600;
+  color: var(--text-muted);
+  direction: ltr !important;
+  letter-spacing: 0.3px;
 }
 /* but keep numeric/path content LTR even in FA */
 body.lang-fa .path-input,
@@ -3345,7 +3364,6 @@ body.lang-fa .btn-copy-launch {
   font-weight: 600;
 }
 body.lang-fa .step-log,
-body.lang-fa .backup-name,
 body.lang-fa .net-footer,
 body.lang-fa .active-profile-label,
 body.lang-fa .last-test,

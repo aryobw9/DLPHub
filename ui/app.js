@@ -726,10 +726,10 @@ async function renderBackups() {
     if (b.size_bytes !== undefined && b.size_bytes > 0) {
       const size = document.createElement('span');
       size.className = 'backup-size';
-      size.style.fontSize = '0.7rem';
+      size.style.fontSize = '0.62rem';
       size.style.color = 'var(--text-muted)';
       size.style.direction = 'ltr';
-      size.textContent = `(${formatBytes(b.size_bytes)})`;
+      size.textContent = formatBytes(b.size_bytes);
       info.appendChild(size);
     }
 
@@ -738,7 +738,7 @@ async function renderBackups() {
 
     const btnRestore = document.createElement('button');
     btnRestore.className = 'btn-apply btn-restore';
-    btnRestore.textContent = t('restore');
+    btnRestore.textContent = 'RESTORE';
     btnRestore.onclick = async () => {
       try {
         const running = await call('check_running');
@@ -747,8 +747,8 @@ async function renderBackups() {
           return;
         }
       } catch (e) { /* non-fatal */ }
-      const go = await showModal(t('restore'), t('confirmRestore'), [
-        { label: t('restore'), value: true, kind: 'apply' },
+      const go = await showModal('RESTORE', t('confirmRestore'), [
+        { label: 'RESTORE', value: true, kind: 'apply' },
         { label: t('guardCancel'), value: false },
       ]);
       if (!go) return;
@@ -758,7 +758,7 @@ async function renderBackups() {
         stepLine(`[restore] ${n} — ${rep.removed_addons.length} ${t('addonsRemoved')}`, 'ok');
         updateDetectBadge();
       } catch (e) {
-        showModal(t('restore'), String(e), [{ label: t('ok') }]);
+        showModal('RESTORE', String(e), [{ label: t('ok') }]);
       } finally {
         setBusyCursor(false, 'advanced');
       }
@@ -767,7 +767,7 @@ async function renderBackups() {
     const btnDel = document.createElement('button');
     btnDel.className = 'btn-delete-backup';
     btnDel.innerHTML = '<i class="fa-solid fa-trash"></i>';
-    btnDel.title = t('deleteBackup') || 'Delete';
+    btnDel.title = 'Delete';
     btnDel.onclick = async () => {
       const go = await showModal(t('deleteBackup'), t('confirmDeleteBackup'), [
         { label: t('deleteBackup'), value: true, kind: 'danger' },
