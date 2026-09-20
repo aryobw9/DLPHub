@@ -1,0 +1,56 @@
+name: Release Portable EXE
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build Portable EXE
+        env:
+          RUSTFLAGS: "-C link-arg=/OPT:REF -C link-arg=/OPT:ICF"
+        run: |
+          npm run tauri build
+          Copy-Item "src-tauri\target\release\dlpbooster.exe" -Destination "DLPHub.exe"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DLPHub-Portable
+          path: DLPHub.exe
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: DLPHub.exe
+          draft: false
+          prerelease: false
+          generate_release_notes: true

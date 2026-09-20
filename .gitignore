@@ -24,8 +24,6 @@ dist-ssr
 *.sw?
 .freebuff/
 
-# payload stays private, built from configs at build time
-src-tauri/payload.zip
 src-tauri/gen/schemas/
 
 # build scripts / generated
