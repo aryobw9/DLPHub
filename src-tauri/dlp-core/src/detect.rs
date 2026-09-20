@@ -8,6 +8,7 @@ pub enum Tier {
     T1,
     T2,
     T3,
+    Potato,
     Missing,
     Unknown,
 }
@@ -18,6 +19,7 @@ impl Tier {
             Tier::T1 => "T1",
             Tier::T2 => "T2",
             Tier::T3 => "T3",
+            Tier::Potato => "POTATO",
             Tier::Missing => "MISSING",
             Tier::Unknown => "UNKNOWN",
         }
@@ -63,7 +65,7 @@ fn norm_hash_file(p: &Path) -> Option<String> {
     Some(md5_hex(normalize(&text).as_bytes()))
 }
 
-/// Compare citadel\gameinfo.gi against pkg\gi_tier{1,2,3}\gameinfo.gi.
+/// Compare citadel\gameinfo.gi against pkg\{t1,t2,t3,potato}\gameinfo.gi.
 pub fn detect_tier(citadel: &Path, pkg: &Path) -> Tier {
     let gi = citadel.join("gameinfo.gi");
     if !gi.is_file() {
@@ -72,7 +74,12 @@ pub fn detect_tier(citadel: &Path, pkg: &Path) -> Tier {
     let Some(h) = norm_hash_file(&gi) else {
         return Tier::Unknown;
     };
-    for (tier, dir) in [(Tier::T1, "gi_tier1"), (Tier::T2, "gi_tier2"), (Tier::T3, "gi_tier3")] {
+    for (tier, dir) in [
+        (Tier::T1, "t1"),
+        (Tier::T2, "t2"),
+        (Tier::T3, "t3"),
+        (Tier::Potato, "potato"),
+    ] {
         let p = pkg.join(dir).join("gameinfo.gi");
         if p.is_file() && norm_hash_file(&p).as_deref() == Some(h.as_str()) {
             return tier;
@@ -100,7 +107,7 @@ mod tests {
     fn detect_bom_and_fov_insensitive() {
         let tmp = std::env::temp_dir().join("dlpb_detect_test");
         crate::backup::rm_ro(&tmp);
-        let tier1 = tmp.join("gi_tier1");
+        let tier1 = tmp.join("t1");
         std::fs::create_dir_all(&tier1).unwrap();
         let base = "\"Version\" \"13\"\n\"r_aspectratio\"\t\t\t\t\t\t\"2.15\"\n";
         std::fs::write(tier1.join("gameinfo.gi"), base).unwrap();

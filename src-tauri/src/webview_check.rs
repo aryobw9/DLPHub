@@ -77,12 +77,12 @@ mod imp {
                 ) -> isize;
             }
 
-            let msg = "DLP Booster needs the Microsoft WebView2 Runtime to render its interface.\n\n\
+            let msg = "DLPHub needs the Microsoft WebView2 Runtime to render its interface.\n\n\
 It is a small, official Microsoft component (already present on most Windows 10/11 systems).\n\n\
 Press OK to open the official Microsoft download page,\n\
-then install it and run DLP Booster again.";
+then install it and run DLPHub again.";
             let text = wide(msg);
-            let caption = wide("DLP Booster — Missing Component");
+            let caption = wide("DLPHub — Missing Component");
             let clicked = MessageBoxW(0, text.as_ptr(), caption.as_ptr(), 0x40 | 0x1); // INFO | OKCANCEL
 
             if clicked == 1 {

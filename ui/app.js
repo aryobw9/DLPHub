@@ -1,4 +1,4 @@
-// DLPBooster app.js — IPC wiring, i18n, FOV control, install flow.
+// DLPHub app.js — IPC wiring, i18n, FOV control, install flow.
 /* global I18N_FA, I18N_EN */
 // window.__TAURI__ is injected asynchronously; NEVER destructure it at
 // top level — one throw here kills every panel. Lazy access instead.

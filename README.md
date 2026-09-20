@@ -26,7 +26,7 @@ with signed releases later.
   never touched).
 - **Backup / Restore**: every install is preceded by automatic `.dlp.bak`
   snapshots (permanent, never deleted). Manual backups land in
-  `%APPDATA%\DLPBooster\backups\` and can be restored from the history list —
+  `%APPDATA%\DLPHub\backups\` and can be restored from the history list —
   restore removes exactly the addons this tool added (tracked in
   `addons_manifest.txt`) and keeps your own mods.
 - **TEMP modes** (tester code required): tier config with ALL 9 mods including
@@ -40,7 +40,7 @@ with signed releases later.
 ## For developers
 
 - `src-tauri/build_payload.py` zips the private console payload from
-  `D:\Claude\ddlock` into `src-tauri/payload.zip` before every build. That zip is
+  `D:\Claude\DeadlockConfigs` (or `$DEADLOCK_CONFIGS_DIR`) into `src-tauri/payload.zip` before every build. That zip is
   **never committed** (gitignored, stays private). Everything else is MIT.
 - Tests: `cargo test -p dlp-core` (payload, discovery, fov, merge goldens,
   detect fixtures, addon collision matrix, backup/restore roundtrip, install

@@ -1,4 +1,4 @@
-// Tauri commands: thin IPC layer over dlp-core. Task 9.
+// Tauri commands: IPC layer over dlp-core.
 use serde::{Deserialize, Serialize};
 
 use dlp_core::{backup, detect, discovery, guard, install, payload, settings};
@@ -35,7 +35,7 @@ pub fn detect_tier_cmd(citadel: String) -> String {
 }
 
 fn payload_dir_or(p: &std::path::Path) -> std::path::PathBuf {
-    if p.is_dir() { p.to_path_buf() } else { std::env::temp_dir().join("DLPBoosterPkg") }
+    if p.is_dir() { p.to_path_buf() } else { std::env::temp_dir().join("DLPHubPkg") }
 }
 
 // ---------- guard ----------
@@ -266,7 +266,8 @@ pub fn launch_game() -> Result<(), String> {
 pub fn running_from_pkg() -> bool {
     if let Ok(exe) = std::env::current_exe() {
         if let Some(parent) = exe.parent() {
-            return parent.starts_with(std::env::temp_dir().join("DLPBoosterPkg"));
+            let td = std::env::temp_dir();
+            return parent.starts_with(td.join("DLPHubPkg")) || parent.starts_with(td.join("DLPBoosterPkg"));
         }
     }
     false

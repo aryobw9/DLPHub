@@ -60,7 +60,7 @@ pub fn load_checked_from(dir: &std::path::Path) -> Result<Settings, String> {
     Ok(s)
 }
 
-/// Data root: %APPDATA%\DLPBooster (or $DLPB_DATA_DIR in tests).
+/// Data root: %APPDATA%\DLPHub (or $DLPB_DATA_DIR in tests).
 pub fn data_dir() -> PathBuf {
     if let Ok(d) = std::env::var("DLPB_DATA_DIR") {
         return PathBuf::from(d);
@@ -70,10 +70,23 @@ pub fn data_dir() -> PathBuf {
         let base = std::env::var("APPDATA").map(PathBuf::from).unwrap_or_else(|_| {
             dirs::home_dir().unwrap_or_else(std::env::temp_dir)
         });
-        base.join("DLPBooster")
+        let target = base.join("DLPHub");
+        let legacy = base.join("DLPBooster");
+        if !target.exists() && legacy.exists() {
+            let _ = std::fs::rename(&legacy, &target);
+        }
+        target
     }
     #[cfg(not(windows))]
-    dirs::home_dir().unwrap_or_else(std::env::temp_dir).join(".dlpbooster")
+    {
+        let base = dirs::home_dir().unwrap_or_else(std::env::temp_dir);
+        let target = base.join(".dlphub");
+        let legacy = base.join(".dlpbooster");
+        if !target.exists() && legacy.exists() {
+            let _ = std::fs::rename(&legacy, &target);
+        }
+        target
+    }
 }
 
 pub fn load_from(dir: &std::path::Path) -> Settings {

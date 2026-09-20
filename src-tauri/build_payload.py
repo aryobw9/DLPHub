@@ -4,7 +4,7 @@ import os
 import tempfile
 import zipfile
 
-SRC = Path(r"D:\Claude\DeadlockConfigs")
+SRC = Path(os.environ.get("DEADLOCK_CONFIGS_DIR", r"D:\Claude\DeadlockConfigs"))
 OUT = Path(__file__).with_name('payload.zip')
 FOLDERS = ('t1', 't2', 't3', 'potato', 'addons')
 

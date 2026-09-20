@@ -22,8 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.freebuff/
 
-# payload stays private, built from D:\Claude\ddlock at build time
+# payload stays private, built from configs at build time
 src-tauri/payload.zip
 src-tauri/gen/schemas/
 

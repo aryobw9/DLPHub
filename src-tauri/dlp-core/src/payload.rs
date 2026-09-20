@@ -5,7 +5,7 @@ pub static PAYLOAD_ZIP: &[u8] = include_bytes!("../../payload.zip");
 pub fn extract() -> std::io::Result<std::path::PathBuf> {
     static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(std::io::Error::other)?.as_nanos();
-    let dir = std::env::temp_dir().join(format!("DLPBoosterPkg_{}_{}_{}", std::process::id(), stamp, NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
+    let dir = std::env::temp_dir().join(format!("DLPHubPkg_{}_{}_{}", std::process::id(), stamp, NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
     match extract_to(&dir) {
         Ok(p) => Ok(p),
         Err(e) => { crate::backup::rm_ro(&dir); Err(e) }
@@ -32,7 +32,7 @@ pub fn extract_cached() -> std::io::Result<std::path::PathBuf> {
     if let Some(dir) = CACHE.get() {
         return Ok(dir.clone());
     }
-    let dir = std::env::temp_dir().join(format!("DLPBoosterPkg_cache_{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("DLPHubPkg_cache_{}", std::process::id()));
     let extracted = extract_to(&dir);
     match extracted {
         Ok(p) => { let _ = CACHE.set(p.clone()); Ok(p) }
