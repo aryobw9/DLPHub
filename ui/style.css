@@ -1888,17 +1888,18 @@ button:active,
 /* step-log status icons */
 .step-log .ok::before,
 .step-log .skip::before {
-  font-family: "Font Awesome 6 Free";
-  font-weight: 900;
+  font-family: var(--fa-style-family-classic, "Font Awesome 7 Free"), "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
   margin-inline-end: 6px;
+  display: inline-block;
 }
 .step-log .ok::before { content: "\f00c"; color: #4ade80; }        /* check */
-.step-log .skip::before { content: "\f12a"; color: #eab308; }      /* exclamation */
+.step-log .skip::before { content: "\f071"; color: #eab308; }      /* triangle-exclamation */
 
 /* modal title icon accent */
 .modal-title::before {
-  font-family: "Font Awesome 6 Free";
-  font-weight: 900;
+  font-family: var(--fa-style-family-classic, "Font Awesome 7 Free"), "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
   content: "\f0a1";   /* bullhorn */
   margin-inline-end: 8px;
   color: var(--deadlock-orange);
