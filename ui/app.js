@@ -248,30 +248,56 @@ function selectRenderer(mode) {
   call('set_settings', { patch: { renderer: mode } }).catch(() => {});
 }
 
-async function copyLaunchOptions() {
-  const text = '-high | -dx11 | -vulkan';
+async function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+}
+
+async function copyLaunchOpt(text, btn) {
   try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text);
-    } else {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
+    await copyToClipboard(text);
+    if (btn) {
+      const origHtml = btn.innerHTML;
+      btn.classList.add('copied');
+      btn.innerHTML = `<code><i class="fa-solid fa-check"></i> ${text}</code>`;
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = origHtml;
+      }, 1200);
     }
-    const icon = document.getElementById('copy-launch-icon');
-    const label = document.getElementById('copy-launch-text');
+  } catch (err) {
+    console.error('Failed to copy launch option:', err);
+  }
+}
+
+async function copyAllLaunchOpts() {
+  const allText = '-high -dx11 -nojoy -novid +citadel_unit_status_use_new true';
+  try {
+    await copyToClipboard(allText);
+    const icon = document.getElementById('copy-launch-all-icon');
+    const label = document.getElementById('copy-launch-all-text');
     if (icon) icon.className = 'fa-solid fa-check';
     if (label) label.textContent = t('copied') || 'کپی شد!';
     setTimeout(() => {
       if (icon) icon.className = 'fa-solid fa-copy';
-      if (label) label.textContent = t('copyText') || 'کپی';
-    }, 2000);
+      if (label) label.textContent = t('copyAll') || 'کپی همه';
+    }, 1500);
   } catch (err) {
-    console.error('Failed to copy launch options:', err);
+    console.error('Failed to copy all launch options:', err);
   }
+}
+
+async function copyLaunchOptions() {
+  return copyAllLaunchOpts();
 }
 
 async function refreshGame() {
@@ -1545,6 +1571,9 @@ window.doResetSettings = doResetSettings;
 window.doCopyDiagnostics = doCopyDiagnostics;
 window.selectRenderer = selectRenderer;
 window.setFov = setFov;
+window.copyLaunchOpt = copyLaunchOpt;
+window.copyAllLaunchOpts = copyAllLaunchOpts;
+window.copyLaunchOptions = copyLaunchOptions;
 
 // ---------- wire everything ----------
 function init() {

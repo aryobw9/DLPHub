@@ -122,8 +122,9 @@ window.I18N_FA = {
   fpsHint: "مقدار fps_max را در video.txt و autoexec.cfg تنظیم می‌کند. رفرش‌ریت اصلی مانیتور دست‌نخورده باقی می‌ماند.",
   fpsDefaultPill: "پیش‌فرض",
   launchOptionsTitle: "تنظیمات LAUNCH OPTIONS",
-  launchOptionsDesc: "برای فعالسازی تنظیمات Launch option وارد استیم شوید و از مسیر Properties → Launch Options متن کپی‌شده را در قسمت Launch Options قرار دهید. پس از وارد کردن متن، هربار بازی را اجرا کنید با این تنظیمات اجرا میشود. 🚀\n⚠️ توجه: متن را دقیقاً همانطور که در زیر نوشته کپی کنید و هیچ بخشی از آن را تغییر ندهید.",
+  launchOptionsDesc: "روی هر گزینه کلیک کنید تا کپی شود، سپس در مسیر Properties → Launch Options استیم قرار دهید:",
   copyText: "کپی",
+  copyAll: "کپی همه",
   copied: "کپی شد!",
   // Custom Autoexec
   customAutoexecTitle: "کدهای دلخواه فایل Autoexec",

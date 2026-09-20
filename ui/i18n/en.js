@@ -127,8 +127,9 @@ window.I18N_EN = {
   fpsHint: "Sets fps_max in video.txt and autoexec.cfg. Does not alter your monitor's native refresh rate.",
   fpsDefaultPill: "DEFAULT",
   launchOptionsTitle: "LAUNCH OPTIONS",
-  launchOptionsDesc: "To activate Launch Options, open Steam and go to Properties → Launch Options, then paste the copied text into Launch Options. Once added, the game launches with these settings every time. 🚀\n⚠️ Note: Copy the text exactly as written below without modifying any part of it.",
+  launchOptionsDesc: "Click any option to copy, then paste into Steam Properties → Launch Options:",
   copyText: "Copy",
+  copyAll: "Copy All",
   copied: "Copied!",
   // Custom Autoexec
   customAutoexecTitle: "Custom Autoexec Commands",

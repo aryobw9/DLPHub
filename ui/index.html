@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="vendor/fontawesome/css/regular.min.css" />
   <link rel="stylesheet" href="vendor/fontawesome/css/brands.min.css" />
   <link rel="stylesheet" href="vendor/animate.css/animate.min.css" />
-  <link rel="stylesheet" href="style.css?v=11" />
+  <link rel="stylesheet" href="style.css?v=12" />
 </head>
 <body>
 
@@ -171,11 +171,6 @@
                     <i class="fa-solid fa-eye" style="font-size:14px"></i>
                     <span class="fov-box-title" data-i18n="fovTitle">FIELD OF VIEW</span>
                   </div>
-                  <div class="fov-box-header-actions">
-                    <button class="btn-reset btn-sm" id="btn-fov-reset" onclick="setFov(90)">
-                      <i class="fa-solid fa-rotate-left"></i> <span data-i18n="btnFovReset">RESET</span>
-                    </button>
-                  </div>
                 </div>
                 <div class="fov-value-hero" style="text-align:center; margin: 4px 0 2px;">
                   <span class="fov-current" id="fov-current" style="font-size:1.6rem; font-weight:800; color:var(--deadlock-orange);">90°</span>
@@ -232,7 +227,7 @@
               </div>
 
               <!-- RENDERER box (DirectX 11 / Default / Vulkan) -->
-              <div class="setting-box" style="justify-content: space-between;">
+              <div class="setting-box renderer-box" style="justify-content: space-between;">
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
                     <i class="fa-solid fa-microchip" style="font-size:14px"></i>
@@ -291,17 +286,24 @@
                     <i class="fa-brands fa-steam" style="font-size:14px;color:var(--deadlock-cyan);"></i>
                     <span class="fov-box-title" data-i18n="launchOptionsTitle">LAUNCH OPTIONS</span>
                   </div>
-                  <button type="button" class="btn-copy-launch" id="btn-copy-launch-opts" onclick="copyLaunchOptions()" title="کپی متن / Copy">
-                    <i class="fa-solid fa-copy" id="copy-launch-icon"></i>
-                    <span id="copy-launch-text" data-i18n="copyText">کپی</span>
+                  <button type="button" class="btn-copy-launch" id="btn-copy-launch-all" onclick="copyAllLaunchOpts()" title="Copy All">
+                    <i class="fa-solid fa-copy" id="copy-launch-all-icon"></i>
+                    <span id="copy-launch-all-text" data-i18n="copyAll">کپی همه</span>
                   </button>
                 </div>
                 <div class="launch-options-content">
                   <div class="launch-options-desc" data-i18n="launchOptionsDesc">
-                    برای فعالسازی تنظیمات Launch option وارد استیم شوید و از مسیر Properties → Launch Options متن کپی‌شده را در قسمت Launch Options قرار دهید. پس از وارد کردن متن، هربار بازی را اجرا کنید با این تنظیمات اجرا میشود. 🚀<br />⚠️ توجه: متن را دقیقاً همانطور که در زیر نوشته کپی کنید و هیچ بخشی از آن را تغییر ندهید.
+                    روی هر گزینه کلیک کنید تا کپی شود، سپس در مسیر Properties → Launch Options استیم قرار دهید:
                   </div>
-                  <div class="launch-code-row">
-                    <code class="launch-code-badge" id="launch-code-badge" onclick="copyLaunchOptions()" title="کلیک برای کپی / Click to copy">-high | -dx11 | -vulkan</code>
+                  <div class="launch-buttons-grid">
+                    <div class="launch-buttons-row">
+                      <button type="button" class="launch-opt-btn" onclick="copyLaunchOpt('-dx11', this)" title="Click to copy -dx11"><code>-dx11</code></button>
+                      <button type="button" class="launch-opt-btn" onclick="copyLaunchOpt('-vulkan', this)" title="Click to copy -vulkan"><code>-vulkan</code></button>
+                      <button type="button" class="launch-opt-btn" onclick="copyLaunchOpt('-high', this)" title="Click to copy -high"><code>-high</code></button>
+                      <button type="button" class="launch-opt-btn" onclick="copyLaunchOpt('-nojoy', this)" title="Click to copy -nojoy"><code>-nojoy</code></button>
+                      <button type="button" class="launch-opt-btn" onclick="copyLaunchOpt('-novid', this)" title="Click to copy -novid"><code>-novid</code></button>
+                    </div>
+                    <button type="button" class="launch-opt-btn launch-opt-wide" onclick="copyLaunchOpt('+citadel_unit_status_use_new true', this)" title="Click to copy +citadel_unit_status_use_new true"><code>+citadel_unit_status_use_new true</code></button>
                   </div>
                 </div>
               </div>
@@ -465,7 +467,7 @@
   <script src="vendor/motion/motion.js"></script>
   <script src="i18n/fa.js"></script>
   <script src="i18n/en.js"></script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
   <script>
     // expose opener global (withGlobalTauri injects plugin APIs lazily via plugins object)
     window.addEventListener('DOMContentLoaded', () => {
