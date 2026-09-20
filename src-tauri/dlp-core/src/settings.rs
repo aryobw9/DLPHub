@@ -17,6 +17,7 @@ pub struct Settings {
     pub texture_bias: u8,      // 0 = preset default, 4 = heavy, 6 = med, 8 = light, 10 = potato
     pub ragdoll_gib_limit: bool, // true
     pub custom_autoexec: String, // custom user lines
+    pub renderer: String,        // "default" | "dx11" | "vulkan"
 }
 
 impl Default for Settings {
@@ -34,6 +35,7 @@ impl Default for Settings {
             texture_bias: 0,
             ragdoll_gib_limit: true,
             custom_autoexec: String::new(),
+            renderer: "default".into(),
         }
     }
 }
@@ -46,6 +48,7 @@ impl Settings {
         if self.fps_max > 1000 { return Err("fps_max must be 0..1000".into()); }
         if ![0, 4, 6, 8, 10].contains(&self.texture_bias) { return Err("invalid texture_bias".into()); }
         if self.custom_autoexec.len() > 65536 || self.custom_autoexec.contains('\0') { return Err("invalid custom_autoexec".into()); }
+        if !["default", "dx11", "vulkan"].contains(&self.renderer.as_str()) { return Err("renderer must be default, dx11, or vulkan".into()); }
         Ok(())
     }
 }
@@ -199,6 +202,7 @@ mod tests {
             texture_bias: 4,
             ragdoll_gib_limit: false,
             custom_autoexec: "bind f6 kill".into(),
+            renderer: "vulkan".into(),
         };
         save_to(&tmp, &s).unwrap();
         let s2 = load_from(&tmp);
@@ -213,6 +217,7 @@ mod tests {
         assert_eq!(s2.texture_bias, 4);
         assert!(!s2.ragdoll_gib_limit);
         assert_eq!(s2.custom_autoexec, "bind f6 kill");
+        assert_eq!(s2.renderer, "vulkan");
         crate::backup::rm_ro(&tmp);
     }
 

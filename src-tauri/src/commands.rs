@@ -167,6 +167,7 @@ pub struct SettingsDto {
     pub texture_bias: u8,
     pub ragdoll_gib_limit: bool,
     pub custom_autoexec: String,
+    pub renderer: String,
 }
 
 impl From<settings::Settings> for SettingsDto {
@@ -184,6 +185,7 @@ impl From<settings::Settings> for SettingsDto {
             texture_bias: s.texture_bias,
             ragdoll_gib_limit: s.ragdoll_gib_limit,
             custom_autoexec: s.custom_autoexec,
+            renderer: s.renderer,
         }
     }
 }
@@ -202,6 +204,7 @@ pub struct SettingsPatch {
     pub texture_bias: Option<u8>,
     pub ragdoll_gib_limit: Option<bool>,
     pub custom_autoexec: Option<String>,
+    pub renderer: Option<String>,
 }
 
 fn verify_vip_code(input: &str) -> bool {
@@ -262,6 +265,12 @@ pub fn set_settings(patch: SettingsPatch) -> Result<SettingsDto, String> {
     if let Some(ca) = patch.custom_autoexec {
         s.custom_autoexec = ca;
     }
+    if let Some(r) = patch.renderer {
+        if !["default", "dx11", "vulkan"].contains(&r.as_str()) {
+            return Err("renderer must be default, dx11, or vulkan".into());
+        }
+        s.renderer = r;
+    }
     settings::save(&s).map_err(|e| e.to_string())?;
     Ok(s.into())
 }
@@ -316,7 +325,13 @@ pub fn get_diagnostics() -> String {
 // ---------- misc ----------
 #[tauri::command]
 pub fn launch_game() -> Result<(), String> {
-    open::that("steam://rungameid/1422450").map_err(|e| e.to_string())
+    let s = settings::load();
+    let uri = match s.renderer.as_str() {
+        "dx11" => "steam://run/1422450//-dx11/",
+        "vulkan" => "steam://run/1422450//-vulkan/",
+        _ => "steam://rungameid/1422450",
+    };
+    open::that(uri).map_err(|e| e.to_string())
 }
 
 /// Guard: refuse to run if we're executing from the extracted temp package.

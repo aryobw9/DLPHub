@@ -148,6 +148,7 @@ async function boot() {
   state.textureBias = s.texture_bias ?? 0;
   state.ragdollGibLimit = s.ragdoll_gib_limit !== false;
   state.customAutoexec = s.custom_autoexec || '';
+  state.renderer = s.renderer || 'default';
 
   applyLang();
   syncSettingsToUi();
@@ -191,6 +192,19 @@ function syncSettingsToUi() {
   document.querySelectorAll('#seg-reflex .seg-btn').forEach((btn) => {
     btn.classList.toggle('active', Number(btn.dataset.val) === state.reflexMode);
   });
+
+  const renderer = state.renderer || 'default';
+  document.querySelectorAll('#renderer-radio-group .renderer-pill').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.renderer === renderer);
+  });
+}
+
+function selectRenderer(mode) {
+  state.renderer = mode;
+  document.querySelectorAll('#renderer-radio-group .renderer-pill').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.renderer === mode);
+  });
+  call('set_settings', { patch: { renderer: mode } }).catch(() => {});
 }
 
 async function refreshGame() {
@@ -742,6 +756,11 @@ async function doResetSettings() {
     if (fovCurrent) fovCurrent.textContent = s.fov + '°';
     const swUnit = document.getElementById('sw-unit-status');
     if (swUnit) swUnit.checked = s.unit_status_new;
+
+    state.renderer = s.renderer || 'default';
+    document.querySelectorAll('#renderer-radio-group .renderer-pill').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.renderer === state.renderer);
+    });
 
     showModal(t('btnResetSettings'), t('settingsResetDone'), [{ label: t('ok'), kind: 'apply' }]);
   } catch (e) {
@@ -1429,6 +1448,7 @@ window.doRevertVanilla = doRevertVanilla;
 window.doUnlock = doUnlock;
 window.doResetSettings = doResetSettings;
 window.doCopyDiagnostics = doCopyDiagnostics;
+window.selectRenderer = selectRenderer;
 window.setFov = setFov;
 
 // ---------- wire everything ----------

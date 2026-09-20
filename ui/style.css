@@ -2812,8 +2812,8 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
 /* tier cards: taller than 8px-padding version */
 .tier-card { padding: 14px 12px; gap: 4px; }
 
-/* FOV + HUD row: HUD defines the height, FOV shrinks to match */
-.settings-duo { display: grid; grid-template-columns: 1.6fr 1fr; gap: 10px; align-items: stretch; }
+/* FOV + HUD + Renderer row: 3 boxes */
+.settings-duo { display: grid; grid-template-columns: 1.25fr 1fr 1.15fr; gap: 10px; align-items: stretch; }
 .setting-box {
   background: rgba(11, 19, 33, 0.7);
   border: 1px solid rgba(59, 130, 246, 0.16);
@@ -2823,6 +2823,40 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   flex-direction: column;
   gap: 6px;
   box-sizing: border-box;
+}
+
+.renderer-radio-group {
+  display: flex;
+  background: rgba(10, 16, 27, 0.7);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 3px;
+}
+.renderer-pill {
+  flex: 1;
+  height: 26px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: var(--cur-pointer);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.renderer-pill:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+.renderer-pill.active {
+  background: var(--deadlock-orange);
+  color: #fff;
+  box-shadow: 0 0 10px var(--deadlock-orange-glow);
 }
 
 /* FOV internals compacted: smaller readout + tighter slider block so the BOX is short */

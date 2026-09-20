@@ -228,6 +228,24 @@
                 </label>
                 <div style="height:12px;"></div>
               </div>
+
+              <!-- RENDERER box (DirectX 11 / Default / Vulkan) -->
+              <div class="setting-box" style="justify-content: space-between;">
+                <div class="fov-box-header">
+                  <div class="fov-box-title-wrap">
+                    <i class="fa-solid fa-microchip" style="font-size:14px"></i>
+                    <span class="fov-box-title" data-i18n="rendererTitle">RENDERING API</span>
+                  </div>
+                </div>
+                <div class="renderer-radio-group" id="renderer-radio-group" style="margin: auto 0;">
+                  <button type="button" class="renderer-pill" data-renderer="dx11" onclick="selectRenderer('dx11')">DX 11</button>
+                  <button type="button" class="renderer-pill active" data-renderer="default" onclick="selectRenderer('default')" data-i18n="rendererDefault">DEFAULT</button>
+                  <button type="button" class="renderer-pill" data-renderer="vulkan" onclick="selectRenderer('vulkan')">VULKAN</button>
+                </div>
+                <div class="renderer-desc" data-i18n="rendererDesc" style="font-size:0.62rem; color:var(--text-muted); text-align:center; margin-bottom:2px;">
+                  DirectX 11 / Vulkan switch
+                </div>
+              </div>
             </div>
 
           </div>

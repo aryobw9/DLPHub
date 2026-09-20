@@ -49,6 +49,9 @@ window.I18N_EN = {
   fovNarrow: "NARROW",
   fovWide: "WIDE",
   fovDefaultTick: "DEFAULT · 90°",
+  rendererTitle: "RENDERING API",
+  rendererDefault: "DEFAULT",
+  rendererDesc: "DirectX 11 / Vulkan switch",
   // advanced panel
   advTitle: "Backup & restore",
   backupNow: "BACK UP NOW",
