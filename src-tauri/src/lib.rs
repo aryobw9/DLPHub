@@ -8,8 +8,27 @@ pub fn run() {
     // First-run guidance: if the WebView2 Evergreen Runtime is missing the
     // window would fail silently — show the guided download dialog instead.
     #[cfg(windows)]
-    if webview_check::runtime_version().is_none() {
-        webview_check::guide_download_and_exit();
+    {
+        if webview_check::runtime_version().is_none() {
+            webview_check::guide_download_and_exit();
+        }
+
+        // Optimize WebView2 RAM footprint without disabling any feature:
+        // - Cap V8 JS heap to 64MB & optimize for size instead of pre-allocating 1.4GB+
+        // - Limit renderer process count to 1
+        // - Disable unneeded background services (translation, feed suggestions, domain reliability)
+        if std::env::var_os("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").is_none() {
+            std::env::set_var(
+                "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
+                "--js-flags=\"--max-old-space-size=64 --optimize-for-size\" \
+                 --renderer-process-limit=1 \
+                 --disable-background-networking \
+                 --disable-component-update \
+                 --disable-domain-reliability \
+                 --disable-features=TranslateUI,InterestFeedContentSuggestions,CalculateNativeWinOcclusion \
+                 --disable-hang-monitor",
+            );
+        }
     }
 
     tauri::Builder::default()

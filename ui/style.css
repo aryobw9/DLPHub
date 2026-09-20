@@ -120,8 +120,7 @@
       height: 700px;
       left: -150px;
       top: -150px;
-      background: radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, rgba(0, 0, 0, 0) 70%);
-      filter: blur(60px);
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.16) 0%, rgba(59, 130, 246, 0.06) 35%, rgba(0, 0, 0, 0) 70%);
     }
 
     .ambient-glow .glow-orange {
@@ -130,8 +129,7 @@
       height: 650px;
       right: -100px;
       top: -100px;
-      background: radial-gradient(circle, rgba(249, 115, 22, 0.14) 0%, rgba(0, 0, 0, 0) 70%);
-      filter: blur(70px);
+      background: radial-gradient(circle, rgba(249, 115, 22, 0.12) 0%, rgba(249, 115, 22, 0.04) 35%, rgba(0, 0, 0, 0) 70%);
     }
 
     .ambient-glow .floor-reflection {
@@ -140,8 +138,7 @@
       left: 10%;
       right: 10%;
       height: 250px;
-      background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.12) 0%, rgba(0,0,0,0) 75%);
-      filter: blur(40px);
+      background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.10) 0%, rgba(59, 130, 246, 0.03) 40%, rgba(0,0,0,0) 75%);
     }
 
     /* Windows Custom App Header Bar */
