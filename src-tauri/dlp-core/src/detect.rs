@@ -51,7 +51,7 @@ fn strip_bom_line(text: &str) -> &str {
     text.strip_prefix('\u{FEFF}').unwrap_or(text)
 }
 
-fn md5_hex(data: &[u8]) -> String {
+pub fn md5_hex(data: &[u8]) -> String {
     use md5::{Digest, Md5};
     let mut h = Md5::new();
     h.update(data);

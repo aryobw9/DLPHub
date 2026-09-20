@@ -200,8 +200,15 @@ pub struct SettingsPatch {
     pub custom_autoexec: Option<String>,
 }
 
-/// Tester unlock code. Placeholder until Aryo supplies the real code.
-const DLPB_TESTER_CODE: &str = "DLP-2026";
+fn verify_vip_code(input: &str) -> bool {
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        return false;
+    }
+    let digest = detect::md5_hex(trimmed.as_bytes());
+    let expected = std::env::var("DLPHUB_VIP_HASH").unwrap_or_else(|_| "e2fc714c4727ee9395f324cd2e7f331f".to_string());
+    digest.eq_ignore_ascii_case(&expected)
+}
 
 #[tauri::command]
 pub fn get_settings() -> SettingsDto {
@@ -218,7 +225,7 @@ pub fn set_settings(patch: SettingsPatch) -> Result<SettingsDto, String> {
         s.lang = lang;
     }
     if let Some(code) = patch.unlock_code {
-        if code.trim() != DLPB_TESTER_CODE {
+        if !verify_vip_code(&code) {
             return Err("invalid unlock code".into());
         }
         s.unlocked = true;
