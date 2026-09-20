@@ -2782,13 +2782,41 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
 .setting-box:last-child .hud-switch-label { font-size: 0.78rem; }
 
 
-.setting-box:last-child { padding: 12px 14px; }
-.fov-value-hero { margin: 2px 0 4px; }
-.fov-current { font-size: 1.4rem !important; }
+.fov-value-hero { margin: 2px 0 3px; }
+.fov-current { font-size: 1.35rem !important; }
 
 /* ===================== FINAL BOX SIZING (single source of truth) ===================== */
-/* tier cards: taller than 8px-padding version */
-.tier-card { padding: 14px 12px; gap: 4px; }
+/* tier cards: fixed height to prevent EN/FA size jumping */
+.tiers-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  height: 58px;
+  min-height: 58px;
+  max-height: 58px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.tier-card {
+  height: 58px;
+  min-height: 58px;
+  max-height: 58px;
+  padding: 8px 10px;
+  gap: 4px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.tier-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
 
 /* Settings Row 1: CAMERA, HUD, RENDERER (3 boxes) */
 .settings-row-3 {
@@ -2796,6 +2824,9 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   grid-template-columns: 1.15fr 1fr 1fr;
   gap: 8px;
   align-items: stretch;
+  height: 112px;
+  min-height: 112px;
+  max-height: 112px;
 }
 
 /* Settings Row 2: FPS LIMIT + LAUNCH OPTIONS (2 boxes) */
@@ -2804,7 +2835,10 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   grid-template-columns: 1.22fr 1.78fr;
   gap: 8px;
   align-items: stretch;
-  margin-top: 6px;
+  height: 112px;
+  min-height: 112px;
+  max-height: 112px;
+  margin-top: 0;
 }
 
 .setting-box {
@@ -2812,10 +2846,11 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   border: 1px solid rgba(59, 130, 246, 0.16);
   border-radius: var(--radius, 10px);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), var(--card-highlight);
-  padding: 10px 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 4px;
   box-sizing: border-box;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -2884,11 +2919,11 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   width: 100%;
 }
 .fps-pill-grid .renderer-pill {
-  height: 24px;
-  min-height: 24px;
-  font-size: 0.72rem;
+  height: 23px;
+  min-height: 23px;
+  font-size: 0.75rem;
   font-weight: 700;
-  padding: 0 3px;
+  padding: 0 2px;
   background: rgba(10, 16, 27, 0.75) !important;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
@@ -2918,9 +2953,9 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   border-radius: 6px;
   color: var(--deadlock-cyan);
   padding: 2px 8px;
-  font-size: 0.7rem;
-  font-family: 'Vazirmatn', sans-serif;
-  font-weight: 600;
+  font-size: 0.74rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
   cursor: var(--cur-pointer);
   display: inline-flex;
   align-items: center;
@@ -2941,9 +2976,13 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   flex: 1;
 }
 .launch-options-desc {
-  font-size: 0.65rem;
+  font-size: 0.63rem;
   color: var(--text-secondary);
-  line-height: 1.4;
+  line-height: 1.32;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 body.lang-fa .launch-options-desc {
   direction: rtl;
@@ -3159,6 +3198,20 @@ body.lang-fa .modal-body {
 body.lang-fa .btn-apply,
 body.lang-fa .btn-reset {
   font-family: 'Vazirmatn', sans-serif;
+  font-weight: 600;
+}
+body.lang-fa .renderer-pill {
+  font-family: 'Vazirmatn', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+body.lang-fa .fps-pill-grid .renderer-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+body.lang-fa .btn-copy-launch {
+  font-family: 'Vazirmatn', sans-serif;
+  font-size: 0.70rem;
   font-weight: 600;
 }
 body.lang-fa .step-log,
