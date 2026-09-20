@@ -35,6 +35,7 @@ const state = {
   gamePath: null,
   fov: 90,
   selectedMode: null,
+  detectedTier: null,
   running: false,
   unitStatusNew: false,
   fpsMax: 0,
@@ -103,6 +104,7 @@ function applyLang() {
   if (u) u.placeholder = t('unlockPlaceholder');
   if (p) p.placeholder = t('pathPlaceholder');
   renderBackups();
+  renderActiveBadge();
   if (state.lastValvePings) renderValvePings(state.lastValvePings);
   setTimeout(() => {
     updateRendererGlider();
@@ -280,7 +282,7 @@ async function copyLaunchOpt(text, btn) {
 }
 
 async function copyAllLaunchOpts() {
-  const allText = '-high -dx11 -nojoy -novid +citadel_unit_status_use_new true';
+  const allText = '-high -dx11 +citadel_unit_status_use_new true';
   try {
     await copyToClipboard(allText);
     const icon = document.getElementById('copy-launch-all-icon');
@@ -378,23 +380,33 @@ async function confirmPath() {
 }
 
 // ---------- detect badge ----------
+function renderActiveBadge() {
+  const apDot = document.getElementById('active-dot');
+  const apLabel = document.getElementById('active-profile-label');
+  const res = state.detectedTier;
+  if (!apLabel) return;
+  if (res === 'T1' || res === 'T2' || res === 'T3' || res === 'POTATO' || res === 'T1MODS' || res === 'T2MODS') {
+    if (apDot) { apDot.style.background = 'var(--deadlock-orange)'; apDot.style.color = 'var(--deadlock-orange)'; }
+    apLabel.textContent = t('activeProfile') + ' · ' + res;
+  } else if (res === 'MISSING') {
+    if (apDot) { apDot.style.background = 'var(--text-muted)'; apDot.style.color = 'var(--text-muted)'; }
+    apLabel.textContent = t('currentMissing');
+  } else if (res) {
+    if (apDot) { apDot.style.background = 'var(--deadlock-cyan)'; apDot.style.color = 'var(--deadlock-cyan)'; }
+    apLabel.textContent = t('currentUnknown');
+  } else {
+    if (apDot) { apDot.style.background = 'var(--text-muted)'; apDot.style.color = 'var(--text-muted)'; }
+    apLabel.textContent = t('activeProfile') + ' · —';
+  }
+}
+
 async function updateDetectBadge() {
   if (!state.gamePath) return;
   const cit = state.gamePath.replace(/[\\/]+$/, '') + '\\game\\citadel';
   let res;
   try { res = await call('detect_tier_cmd', { citadel: cit }); } catch (e) { return; }
-  const apDot = document.getElementById('active-dot');
-  const apLabel = document.getElementById('active-profile-label');
-    if (res === 'T1' || res === 'T2' || res === 'T3' || res === 'POTATO' || res === 'T1MODS' || res === 'T2MODS') {
-      if (apDot) { apDot.style.background = 'var(--deadlock-orange)'; apDot.style.color = 'var(--deadlock-orange)'; }
-      if (apLabel) apLabel.textContent = t('activeProfile') + ' · ' + res;
-    } else if (res === 'MISSING') {
-      if (apDot) { apDot.style.background = 'var(--text-muted)'; apDot.style.color = 'var(--text-muted)'; }
-      if (apLabel) apLabel.textContent = t('currentMissing');
-    } else {
-      if (apDot) { apDot.style.background = 'var(--deadlock-cyan)'; apDot.style.color = 'var(--deadlock-cyan)'; }
-      if (apLabel) apLabel.textContent = t('currentUnknown');
-    }
+  state.detectedTier = res;
+  renderActiveBadge();
 }
 
 // ---------- install flow ----------
@@ -538,7 +550,7 @@ let updateCursorFollower = () => {};
       if (t.closest('.app-titlebar, .titlebar-drag-spacer, .brand-meta, [data-tauri-drag-region]')) {
         return 'move';
       }
-      if (t.closest('[title]:not(button):not(a):not(input):not(.social-card):not(.win-ctl)')) {
+      if (t.closest('.hint-trigger, .hint-tooltip, [title]:not(button):not(a):not(input):not(.social-card):not(.win-ctl)')) {
         return 'help';
       }
     }
@@ -677,10 +689,10 @@ async function doBackupNow() {
   setBusyCursor(true, 'advanced');
   try {
     const name = await call('do_backup_cmd', { path: state.gamePath || '' });
-    stepLine(`[${t('backupLog')}] ${name}`, 'ok');
+    stepLine(`[backup] ${name}`, 'ok');
     renderBackups();
   } catch (e) {
-    showModal(t('advTitle'), String(e), [{ label: t('ok') }]);
+    showModal('BACKUP & RESTORE', String(e), [{ label: 'OK' }]);
   } finally {
     setBusyCursor(false, 'advanced');
   }
@@ -726,9 +738,6 @@ async function renderBackups() {
     if (b.size_bytes !== undefined && b.size_bytes > 0) {
       const size = document.createElement('span');
       size.className = 'backup-size';
-      size.style.fontSize = '0.62rem';
-      size.style.color = 'var(--text-muted)';
-      size.style.direction = 'ltr';
       size.textContent = formatBytes(b.size_bytes);
       info.appendChild(size);
     }
@@ -743,22 +752,22 @@ async function renderBackups() {
       try {
         const running = await call('check_running');
         if (running.length > 0) {
-          showModal(t('guardTitle'), t('guardBody'), [{ label: t('ok') }]);
+          showModal('Game Running', 'Deadlock is currently running. Please close the game before restoring backups.', [{ label: 'OK' }]);
           return;
         }
       } catch (e) { /* non-fatal */ }
-      const go = await showModal('RESTORE', t('confirmRestore'), [
+      const go = await showModal('RESTORE BACKUP', 'Restore this backup? Your current gameinfo.gi / video.txt / our addons will be replaced.', [
         { label: 'RESTORE', value: true, kind: 'apply' },
-        { label: t('guardCancel'), value: false },
+        { label: 'Cancel', value: false },
       ]);
       if (!go) return;
       setBusyCursor(true, 'advanced');
       try {
         const rep = await call('do_restore', { name: n, path: state.gamePath || '' });
-        stepLine(`[restore] ${n} — ${rep.removed_addons.length} ${t('addonsRemoved')}`, 'ok');
+        stepLine(`[restore] ${n} — ${rep.removed_addons.length} addons removed`, 'ok');
         updateDetectBadge();
       } catch (e) {
-        showModal('RESTORE', String(e), [{ label: t('ok') }]);
+        showModal('RESTORE BACKUP', String(e), [{ label: 'OK' }]);
       } finally {
         setBusyCursor(false, 'advanced');
       }
@@ -769,18 +778,18 @@ async function renderBackups() {
     btnDel.innerHTML = '<i class="fa-solid fa-trash"></i>';
     btnDel.title = 'Delete';
     btnDel.onclick = async () => {
-      const go = await showModal(t('deleteBackup'), t('confirmDeleteBackup'), [
-        { label: t('deleteBackup'), value: true, kind: 'danger' },
-        { label: t('guardCancel'), value: false },
+      const go = await showModal('DELETE BACKUP', 'Are you sure you want to delete this backup? This action cannot be undone.', [
+        { label: 'DELETE', value: true, kind: 'danger' },
+        { label: 'Cancel', value: false },
       ]);
       if (!go) return;
       setBusyCursor(true, 'advanced');
       try {
         await call('delete_backup_cmd', { name: n });
-        stepLine(`[${t('deleteBackup')}] ${n}`, 'ok');
+        stepLine(`[delete] ${n}`, 'ok');
         renderBackups();
       } catch (e) {
-        showModal(t('deleteBackup'), String(e), [{ label: t('ok') }]);
+        showModal('DELETE BACKUP', String(e), [{ label: 'OK' }]);
       } finally {
         setBusyCursor(false, 'advanced');
       }

@@ -120,7 +120,7 @@ window.I18N_FA = {
   textureBiasDesc: "میزان کاهش رزولوشن بافت‌ها جهت افزایش فریم‌ریت",
   fpsLimitTitle: "محدودیت فریم (FPS)",
   fpsHint: "مقدار fps_max را در video.txt و autoexec.cfg تنظیم می‌کند. رفرش‌ریت اصلی مانیتور دست‌نخورده باقی می‌ماند.",
-  fpsDefaultPill: "پیش‌فرض",
+  fpsDefaultPill: "DEFAULT",
   launchOptionsTitle: "تنظیمات LAUNCH OPTIONS",
   launchOptionsDesc: "روی هر گزینه کلیک کنید تا کپی شود، سپس در مسیر Properties → Launch Options استیم قرار دهید:",
   copyText: "کپی",
