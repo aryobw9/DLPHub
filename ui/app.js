@@ -79,6 +79,9 @@ function applyLang() {
     el.textContent = t(el.dataset.i18n);
     el.classList.toggle('i18n-rtl', state.lang === 'fa');
   });
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+  });
 
   // Retain contextual hero & section title for currently active tab
   const currentTab = state.activeTab || 'graphic';

@@ -52,6 +52,8 @@ window.I18N_EN = {
   rendererTitle: "RENDERING API",
   rendererDefault: "DEFAULT",
   rendererDesc: "DirectX 11 / Vulkan switch",
+  rendererHint: "This option applies when you launch the game using the 'Launch Game' button in DLPHub, or by adding -dx11 / -vulkan to your Steam Launch Options.",
+  hudHint: "Saves directly into your cfg\\autoexec.cfg when clicking 'Apply to Deadlock'. Takes effect regardless of how you launch the game.",
   // advanced panel
   advTitle: "Backup & restore",
   backupNow: "BACK UP NOW",

@@ -49,6 +49,8 @@ window.I18N_FA = {
   rendererTitle: "رندرر (Rendering API)",
   rendererDefault: "پیش‌فرض",
   rendererDesc: "سوئیچ بین DirectX 11 و Vulkan",
+  rendererHint: "این گزینه هنگام اجرای بازی از طریق دکمه «اجرای بازی» در DLPHub اعمال می‌شود، یا با قرار دادن -dx11 / -vulkan در Launch Options استیم.",
+  hudHint: "با زدن دکمه «اعمال روی ددلاک» مستقیماً در فایل cfg\\autoexec.cfg ذخیره می‌شود و با هر روشی که بازی را باز کنید فعال است.",
   advTitle: "بکاپ و بازگردانی",
   backupNow: "بکاپ فوری",
   restoreTitle: "تاریخچه بکاپ‌ها",

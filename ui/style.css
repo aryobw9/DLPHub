@@ -2859,6 +2859,19 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   box-shadow: 0 0 10px var(--deadlock-orange-glow);
 }
 
+.info-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: var(--cur-help);
+  margin-left: 4px;
+  opacity: 0.75;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+.info-hint:hover {
+  opacity: 1;
+  color: var(--deadlock-cyan);
+}
+
 /* FOV internals compacted: smaller readout + tighter slider block so the BOX is short */
 .fov-value-hero { margin: 0; }
 .fov-current { font-size: 1.1rem !important; }
