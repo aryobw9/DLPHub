@@ -104,7 +104,10 @@ function applyLang() {
   if (p) p.placeholder = t('pathPlaceholder');
   renderBackups();
   if (state.lastValvePings) renderValvePings(state.lastValvePings);
-  setTimeout(updateRendererGlider, 20);
+  setTimeout(() => {
+    updateRendererGlider();
+    updateFpsGlider();
+  }, 20);
 }
 
 function setLang(lang) {
@@ -113,7 +116,10 @@ function setLang(lang) {
   applyLang();
 }
 
-window.addEventListener('resize', updateRendererGlider);
+window.addEventListener('resize', () => {
+  updateRendererGlider();
+  updateFpsGlider();
+});
 
 // ---------- fatal-error surface (never silent) ----------
 function fatal(err) {
@@ -182,6 +188,7 @@ function syncSettingsToUi() {
     btn.classList.toggle('active', btn.dataset.renderer === renderer);
   });
   updateRendererGlider();
+  updateFpsGlider();
 }
 
 function updateRendererGlider() {
@@ -198,12 +205,28 @@ function updateRendererGlider() {
   glider.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
 }
 
+function updateFpsGlider() {
+  const group = document.getElementById('fps-radio-group');
+  const glider = document.getElementById('fps-glider');
+  if (!group || !glider) return;
+  const activeBtn = group.querySelector('.renderer-pill.active');
+  if (!activeBtn) {
+    glider.style.opacity = '0';
+    return;
+  }
+  glider.style.opacity = '1';
+  glider.style.width = `${activeBtn.offsetWidth}px`;
+  glider.style.height = `${activeBtn.offsetHeight}px`;
+  glider.style.transform = `translate(${activeBtn.offsetLeft}px, ${activeBtn.offsetTop}px)`;
+}
+
 function selectFps(val) {
   if (val === 'DEFAULT' || val === null || val === undefined || val === '') {
     state.fpsMax = null;
     document.querySelectorAll('#fps-radio-group .renderer-pill').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.fps === 'DEFAULT');
     });
+    updateFpsGlider();
     call('set_settings', { patch: { fps_max: -1 } }).catch(() => {});
   } else {
     const num = Number(val) || 0;
@@ -211,6 +234,7 @@ function selectFps(val) {
     document.querySelectorAll('#fps-radio-group .renderer-pill').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.fps === String(num));
     });
+    updateFpsGlider();
     call('set_settings', { patch: { fps_max: num } }).catch(() => {});
   }
 }
@@ -653,7 +677,7 @@ async function renderBackups() {
   if (!items || items.length === 0) {
     const d = document.createElement('div');
     d.className = 'option-detail';
-    d.textContent = t('noBackups');
+    d.textContent = 'No backups found';
     list.appendChild(d);
     return;
   }
@@ -747,28 +771,58 @@ async function renderBackups() {
 async function checkForUpdates() {
   const btn = document.getElementById('btn-check-updates');
   const icon = btn ? btn.querySelector('i') : null;
+  if (btn) {
+    btn.disabled = true;
+    btn.style.pointerEvents = 'none';
+  }
   if (icon) icon.classList.add('fa-spin');
+  document.body.style.cursor = 'wait';
+
+  const startTime = Date.now();
+
   try {
-    if (window.__TAURI__ && window.__TAURI__.updater && typeof window.__TAURI__.updater.check === 'function') {
-      const update = await window.__TAURI__.updater.check();
-      if (update && update.available) {
-        const go = await showModal(t('updateTitle'), `${t('updateAvailable')}: ${update.version}`, [
-          { label: t('ok'), value: true, kind: 'apply' },
-          { label: t('guardCancel'), value: false },
-        ]);
-        if (go && window.__OPEN_URL__) {
-          window.__OPEN_URL__('https://github.com/aryobw9/DLPHub/releases/latest');
-        }
-      } else {
-        showModal(t('updateTitle'), t('updateLatest'), [{ label: t('ok') }]);
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('TIMEOUT')), 7000);
+    });
+
+    const checkPromise = (async () => {
+      if (window.__TAURI__ && window.__TAURI__.updater && typeof window.__TAURI__.updater.check === 'function') {
+        return await window.__TAURI__.updater.check();
+      }
+      return null;
+    })();
+
+    const update = await Promise.race([checkPromise, timeoutPromise]);
+
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 800) {
+      await new Promise((r) => setTimeout(r, 800 - elapsed));
+    }
+
+    if (update && update.available) {
+      const go = await showModal(t('updateTitle'), `${t('updateAvailable')}: ${update.version}`, [
+        { label: t('ok'), value: true, kind: 'apply' },
+        { label: t('guardCancel'), value: false },
+      ]);
+      if (go && window.__OPEN_URL__) {
+        window.__OPEN_URL__('https://github.com/aryobw9/DLPHub/releases/latest');
       }
     } else {
       showModal(t('updateTitle'), t('updateLatest'), [{ label: t('ok') }]);
     }
   } catch (err) {
-    showModal(t('updateTitle'), t('updateLatest'), [{ label: t('ok') }]);
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 800) {
+      await new Promise((r) => setTimeout(r, 800 - elapsed));
+    }
+    showModal(t('updateTitle'), t('updateFailed'), [{ label: t('ok') }]);
   } finally {
     if (icon) icon.classList.remove('fa-spin');
+    if (btn) {
+      btn.disabled = false;
+      btn.style.pointerEvents = '';
+    }
+    document.body.style.cursor = '';
   }
 }
 
@@ -1199,6 +1253,12 @@ function selectCardByKey(tabKey) {
   updateCursorFollower();
   if (tabKey === 'latency') refreshValvePings();
   if (tabKey === 'advanced') renderBackups();
+  if (tabKey === 'graphic') {
+    setTimeout(() => {
+      updateRendererGlider();
+      updateFpsGlider();
+    }, 40);
+  }
 }
 
 function getWin() {

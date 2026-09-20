@@ -74,6 +74,7 @@ window.I18N_EN = {
   updateTitle: "Check for Updates",
   updateAvailable: "A new version is available",
   updateLatest: "You are running the latest version.",
+  updateFailed: "Failed to connect to server. Please try again later.",
   testerTitle: "VIP/TEST MODE",
   testerDesc: "",
   unlockPlaceholder: "VIP Code...",

@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="vendor/fontawesome/css/regular.min.css" />
   <link rel="stylesheet" href="vendor/fontawesome/css/brands.min.css" />
   <link rel="stylesheet" href="vendor/animate.css/animate.min.css" />
-  <link rel="stylesheet" href="style.css?v=10" />
+  <link rel="stylesheet" href="style.css?v=11" />
 </head>
 <body>
 
@@ -270,6 +270,7 @@
                   </div>
                 </div>
                 <div class="fps-pill-grid" id="fps-radio-group">
+                  <span class="fps-glider" id="fps-glider"></span>
                   <button type="button" class="renderer-pill active" data-fps="DEFAULT" onclick="selectFps('DEFAULT')" data-i18n="fpsDefaultPill">DEFAULT</button>
                   <button type="button" class="renderer-pill" data-fps="45" onclick="selectFps('45')">45</button>
                   <button type="button" class="renderer-pill" data-fps="60" onclick="selectFps('60')">60</button>
@@ -366,7 +367,7 @@
                   <i class="fa-solid fa-rotate-left" style="color:var(--deadlock-cyan)"></i>
                   <span data-i18n="btnResetSettings">ریست تنظیمات برنامه</span>
                 </button>
-                <button class="btn-apply btn-sm" id="btn-copy-diag" onclick="doCopyDiagnostics()" style="flex: 1; height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.75rem; border-radius: 6px;">
+                <button class="btn-reset" id="btn-copy-diag" onclick="doCopyDiagnostics()" style="flex: 1; height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.75rem; border-radius: 6px;">
                   <i class="fa-solid fa-clipboard-list" style="color:var(--deadlock-orange)"></i>
                   <span data-i18n="btnCopyDiag">کپی گزارش عیب‌یابی</span>
                 </button>
@@ -388,13 +389,13 @@
                 <div class="adv-card-header">
                   <div class="adv-card-title-group">
                     <i class="fa-solid fa-floppy-disk" style="font-size:15px"></i>
-                    <span class="adv-card-title" data-i18n="advTitle">بکاپ و بازگردانی</span>
+                    <span class="adv-card-title">BACKUP & RESTORE</span>
                   </div>
                   <button class="btn-apply btn-sm" id="btn-backup" onclick="doBackupNow()">
                     <span data-i18n="backupNow">بکاپ فوری</span>
                   </button>
                 </div>
-                <div class="adv-card-desc" data-i18n="restoreTitle">تاریخچه بکاپ‌ها و اسنپ‌شات‌های بازی</div>
+                <div class="adv-card-desc">Game snapshots and backup history</div>
                 <div id="backup-list" class="backup-list-box"></div>
               </div>
             </div>
@@ -464,7 +465,7 @@
   <script src="vendor/motion/motion.js"></script>
   <script src="i18n/fa.js"></script>
   <script src="i18n/en.js"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
   <script>
     // expose opener global (withGlobalTauri injects plugin APIs lazily via plugins object)
     window.addEventListener('DOMContentLoaded', () => {

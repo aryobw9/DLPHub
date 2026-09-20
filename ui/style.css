@@ -2786,24 +2786,24 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
 .fov-current { font-size: 1.35rem !important; }
 
 /* ===================== FINAL BOX SIZING (single source of truth) ===================== */
-/* tier cards: fixed height to prevent EN/FA size jumping */
+/* tier cards: spacious, comfortable preset cards */
 .tiers-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
-  height: 58px;
-  min-height: 58px;
-  max-height: 58px;
+  height: 68px;
+  min-height: 68px;
+  max-height: 68px;
   box-sizing: border-box;
   flex-shrink: 0;
 }
 
 .tier-card {
-  height: 58px;
-  min-height: 58px;
-  max-height: 58px;
-  padding: 8px 10px;
+  height: 68px;
+  min-height: 68px;
+  max-height: 68px;
+  padding: 10px 12px;
   gap: 4px;
   box-sizing: border-box;
   display: flex;
@@ -2813,7 +2813,7 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
 }
 
 .tier-name {
-  font-size: 0.92rem;
+  font-size: 0.94rem;
   font-weight: 700;
   letter-spacing: 0.5px;
 }
@@ -2824,9 +2824,9 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   grid-template-columns: 1.15fr 1fr 1fr;
   gap: 8px;
   align-items: stretch;
-  height: 112px;
-  min-height: 112px;
-  max-height: 112px;
+  height: 124px;
+  min-height: 124px;
+  max-height: 124px;
 }
 
 /* Settings Row 2: FPS LIMIT + LAUNCH OPTIONS (2 boxes) */
@@ -2835,9 +2835,9 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   grid-template-columns: 1.22fr 1.78fr;
   gap: 8px;
   align-items: stretch;
-  height: 112px;
-  min-height: 112px;
-  max-height: 112px;
+  height: 128px;
+  min-height: 128px;
+  max-height: 128px;
   margin-top: 0;
 }
 
@@ -2846,11 +2846,11 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   border: 1px solid rgba(59, 130, 246, 0.16);
   border-radius: var(--radius, 10px);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), var(--card-highlight);
-  padding: 8px 10px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 4px;
+  gap: 6px;
   box-sizing: border-box;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -2879,7 +2879,7 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   border-radius: 6px;
   background: var(--deadlock-orange);
   box-shadow: 0 2px 8px var(--deadlock-orange-glow), var(--btn-highlight);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 1;
   pointer-events: none;
 }
@@ -2888,13 +2888,16 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   position: relative;
   z-index: 2;
   flex: 1;
-  height: 26px;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  line-height: 26px;
   background: transparent !important;
   border: none;
   border-radius: 6px;
   color: var(--text-secondary);
   font-family: 'Rajdhani', sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 700;
   cursor: var(--cur-pointer);
   transition: color 0.18s ease;
@@ -2910,36 +2913,54 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   box-shadow: none !important;
 }
 
-/* FPS 10-button grid */
+/* FPS 10-button grid with sliding glider */
 .fps-pill-grid {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   margin: auto 0;
   width: 100%;
 }
+
+.fps-glider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 6px;
+  background: var(--deadlock-orange);
+  box-shadow: 0 2px 8px var(--deadlock-orange-glow), var(--btn-highlight);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), width 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+}
+
 .fps-pill-grid .renderer-pill {
-  height: 23px;
-  min-height: 23px;
-  font-size: 0.75rem;
+  position: relative;
+  z-index: 2;
+  height: 26px;
+  min-height: 26px;
+  max-height: 26px;
+  line-height: 24px;
+  font-size: 0.76rem;
   font-weight: 700;
   padding: 0 2px;
   background: rgba(10, 16, 27, 0.75) !important;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   color: var(--text-secondary);
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: color 0.18s ease, border-color 0.18s ease;
 }
 .fps-pill-grid .renderer-pill:hover {
   color: var(--text-main);
-  background: rgba(255, 255, 255, 0.08) !important;
   border-color: rgba(255, 255, 255, 0.2);
 }
 .fps-pill-grid .renderer-pill.active {
-  background: var(--deadlock-orange) !important;
+  background: transparent !important;
+  border-color: transparent !important;
   color: #fff !important;
-  border-color: var(--deadlock-orange);
-  box-shadow: 0 2px 8px var(--deadlock-orange-glow), var(--btn-highlight) !important;
+  box-shadow: none !important;
 }
 
 /* Launch Options Box */
@@ -3104,7 +3125,7 @@ body.lang-fa .hint-tooltip {
 
 /* ===================== VIBEFARSI PERSIAN TYPOGRAPHY ENHANCEMENT ===================== */
 body.lang-fa {
-  font-feature-settings: 'cv01' on, 'ss01' on;
+  font-feature-settings: 'cv01' on;
   letter-spacing: normal !important;
   line-height: 1.55;
 }
@@ -3154,8 +3175,8 @@ body.lang-fa .section-label {
 body.lang-fa .tier-name {
   font-family: 'Vazirmatn', sans-serif;
   font-weight: 600;
-  font-size: 0.84rem;
-  line-height: 1.35;
+  font-size: 0.86rem;
+  line-height: 1.25;
   text-align: center;
   justify-content: center;
 }
@@ -3202,16 +3223,24 @@ body.lang-fa .btn-reset {
 }
 body.lang-fa .renderer-pill {
   font-family: 'Vazirmatn', sans-serif;
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 600;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  line-height: 26px;
 }
 body.lang-fa .fps-pill-grid .renderer-pill {
-  font-size: 0.72rem;
+  font-size: 0.73rem;
   font-weight: 600;
+  height: 26px;
+  min-height: 26px;
+  max-height: 26px;
+  line-height: 24px;
 }
 body.lang-fa .btn-copy-launch {
   font-family: 'Vazirmatn', sans-serif;
-  font-size: 0.70rem;
+  font-size: 0.72rem;
   font-weight: 600;
 }
 body.lang-fa .step-log,
