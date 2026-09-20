@@ -11,10 +11,6 @@ pub struct Settings {
     pub unit_status_new: bool, // citadel_unit_status_use_new autoexec block
     pub fov: u32,              // per-user draft FOV 70..=120, applied on install
     pub fps_max: u32,          // 0: uncapped
-    pub vsync: bool,           // false
-    pub reduce_flash: bool,    // true
-    pub texture_bias: u8,      // 0 = preset default, 4 = heavy, 6 = med, 8 = light, 10 = potato
-    pub ragdoll_gib_limit: bool, // true
     pub custom_autoexec: String, // custom user lines
     pub renderer: String,        // "default" | "dx11" | "vulkan"
 }
@@ -28,10 +24,6 @@ impl Default for Settings {
             unit_status_new: false,
             fov: 90,
             fps_max: 0,
-            vsync: false,
-            reduce_flash: true,
-            texture_bias: 0,
-            ragdoll_gib_limit: true,
             custom_autoexec: String::new(),
             renderer: "default".into(),
         }
@@ -43,7 +35,6 @@ impl Settings {
         if !["fa", "en"].contains(&self.lang.as_str()) { return Err("lang must be fa or en".into()); }
         if !(70..=120).contains(&self.fov) || self.fov % 5 != 0 { return Err("fov must be 70..120 in steps of 5".into()); }
         if self.fps_max > 1000 { return Err("fps_max must be 0..1000".into()); }
-        if ![0, 4, 6, 8, 10].contains(&self.texture_bias) { return Err("invalid texture_bias".into()); }
         if self.custom_autoexec.len() > 65536 || self.custom_autoexec.contains('\0') { return Err("invalid custom_autoexec".into()); }
         if !["default", "dx11", "vulkan"].contains(&self.renderer.as_str()) { return Err("renderer must be default, dx11, or vulkan".into()); }
         Ok(())
@@ -173,10 +164,6 @@ mod tests {
         assert!(s.last_path.is_none());
         assert!(!s.unit_status_new);
         assert_eq!(s.fps_max, 0);
-        assert!(!s.vsync);
-        assert!(s.reduce_flash);
-        assert_eq!(s.texture_bias, 0);
-        assert!(s.ragdoll_gib_limit);
         assert!(s.custom_autoexec.is_empty());
         crate::backup::rm_ro(&tmp);
     }
@@ -192,10 +179,6 @@ mod tests {
             unit_status_new: true,
             fov: 110,
             fps_max: 165,
-            vsync: true,
-            reduce_flash: false,
-            texture_bias: 4,
-            ragdoll_gib_limit: false,
             custom_autoexec: "bind f6 kill".into(),
             renderer: "vulkan".into(),
         };
@@ -206,10 +189,6 @@ mod tests {
         assert_eq!(s2.last_path.as_deref(), Some("D:\\SteamLibrary\\steamapps\\common\\Deadlock"));
         assert!(s2.unit_status_new);
         assert_eq!(s2.fps_max, 165);
-        assert!(s2.vsync);
-        assert!(!s2.reduce_flash);
-        assert_eq!(s2.texture_bias, 4);
-        assert!(!s2.ragdoll_gib_limit);
         assert_eq!(s2.custom_autoexec, "bind f6 kill");
         assert_eq!(s2.renderer, "vulkan");
         crate::backup::rm_ro(&tmp);

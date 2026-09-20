@@ -161,10 +161,6 @@ pub struct SettingsDto {
     pub unit_status_new: bool,
     pub fov: u32,
     pub fps_max: u32,
-    pub vsync: bool,
-    pub reduce_flash: bool,
-    pub texture_bias: u8,
-    pub ragdoll_gib_limit: bool,
     pub custom_autoexec: String,
     pub renderer: String,
 }
@@ -178,10 +174,6 @@ impl From<settings::Settings> for SettingsDto {
             unit_status_new: s.unit_status_new,
             fov: s.fov,
             fps_max: s.fps_max,
-            vsync: s.vsync,
-            reduce_flash: s.reduce_flash,
-            texture_bias: s.texture_bias,
-            ragdoll_gib_limit: s.ragdoll_gib_limit,
             custom_autoexec: s.custom_autoexec,
             renderer: s.renderer,
         }
@@ -196,10 +188,6 @@ pub struct SettingsPatch {
     pub unit_status_new: Option<bool>,
     pub fov: Option<u32>,
     pub fps_max: Option<u32>,
-    pub vsync: Option<bool>,
-    pub reduce_flash: Option<bool>,
-    pub texture_bias: Option<u8>,
-    pub ragdoll_gib_limit: Option<bool>,
     pub custom_autoexec: Option<String>,
     pub renderer: Option<String>,
 }
@@ -244,18 +232,6 @@ pub fn set_settings(patch: SettingsPatch) -> Result<SettingsDto, String> {
     if let Some(fm) = patch.fps_max {
         s.fps_max = fm;
     }
-    if let Some(vs) = patch.vsync {
-        s.vsync = vs;
-    }
-    if let Some(rf) = patch.reduce_flash {
-        s.reduce_flash = rf;
-    }
-    if let Some(tb) = patch.texture_bias {
-        s.texture_bias = tb;
-    }
-    if let Some(rg) = patch.ragdoll_gib_limit {
-        s.ragdoll_gib_limit = rg;
-    }
     if let Some(ca) = patch.custom_autoexec {
         s.custom_autoexec = ca;
     }
@@ -287,8 +263,8 @@ pub fn get_diagnostics() -> String {
     diag.push_str(&format!("Log Path: {:?}\n", dlp_core::logger::log_path(&data_dir)));
 
     let s = settings::load();
-    diag.push_str(&format!("Settings: lang={}, unlocked={}, last_path={:?}, fov={}, fps_max={}, vsync={}, unit_status={}\n",
-        s.lang, s.unlocked, s.last_path, s.fov, s.fps_max, s.vsync, s.unit_status_new
+    diag.push_str(&format!("Settings: lang={}, unlocked={}, last_path={:?}, fov={}, fps_max={}, unit_status={}\n",
+        s.lang, s.unlocked, s.last_path, s.fov, s.fps_max, s.unit_status_new
     ));
 
     let detected = discovery::find_game();

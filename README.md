@@ -39,16 +39,10 @@ Deadlock is actively developed on the Source 2 engine. Many players experience a
 - Real-time ICMP ping measurement across 8 official Valve server regions (Frankfurt, Vienna, Dubai, Stockholm, Warsaw, Amsterdam, London, US East).
 - Advanced telemetry: average latency, jitter calculation, packet loss percentage, and overall stability scoring.
 
-#### ⏱️ Engine & Latency Optimization
-- **Framerate Limit (FPS Cap):** Match your monitor refresh rate (60, 144, 165, 240, 360) or uncap (0).
-- **Vertical Sync (V-Sync):** Toggle for tear-free gaming or lowest input delay.
-- **Texture Streaming Mip Bias:** Adjust texture streaming resolution for maximum GPU throughput.
-- **Ragdoll & Gib Limits:** Disable corpse physics and debris pieces to eliminate massive combat frame drops.
-- **Reduce Flash Intensity:** Dims blinding white flashes and spell bursts for visual comfort and stability.
-
-#### 📝 Custom Autoexec & HUD Visuals
-- **Custom Autoexec Editor:** Safely append personal console commands to `cfg\autoexec.cfg`.
-- **New Health Bars:** Toggle updated Citadel unit status visuals with a single switch.
+#### ⏱️ Framerate Limit & Engine Controls
+- **Framerate Limit (FPS Limit):** Toggle between **MAX (0 / Uncapped)**, **144**, **165**, and **240 FPS**. Applied directly to `video.txt` and enforced in `autoexec.cfg` without modifying your monitor's native refresh rate (Hz).
+- **Rendering API Selection:** Switch between **DirectX 11**, **Default**, and **Vulkan** via launch options with one click.
+- **HUD Configuration:** Toggle updated Citadel unit status and health bar visuals (`citadel_unit_status_use_new`).
 
 #### 🛡️ Automatic Backup & Safe Revert
 - **15-Backup Retention:** Automatically manages up to 15 backups, pruning the oldest automatically.
@@ -109,16 +103,10 @@ Deadlock is actively developed on the Source 2 engine. Many players experience a
 - اندازه‌گیری تاخیر واقعی (ICMP) تا ۸ منطقه سرور رسمی ولو (فرانکفورت، وین، دبی، استکهلم، ورشو، آمستردام، لندن، شرق آمریکا).
 - تله‌متری پیشرفته: نمایش میانگین پینگ، نوسان (Jitter)، درصد پکت‌لاس و امتیاز پایداری مسیر.
 
-#### ⏱️ تنظیمات تخصصی موتور و کاهش تاخیر
-- **محدودیت نرخ فریم (FPS Cap):** قفل فریم متناسب با مانیتور یا حالت نامحدود (0).
-- **همگام‌سازی عمودی (V-Sync):** خاموش برای کمترین تاخیر ورودی یا روشن برای حذف پارگی تصویر.
-- **کاهش کیفیت بافت‌ها (Texture Mip Bias):** تنظیم استریم تکسچرها جهت افزایش راندمان کارت گرافیک.
-- **کاهش فیزیک اجساد و قطعات (Ragdolls & Gibs):** حذف فیزیک اجساد برای جلوگیری از افت فریم ناگهانی در فایت‌ها.
-- **کاهش نور خیره‌کننده فلش‌ها (Reduce Flash):** تعدیل نور سفید افکت‌ها و اسپل‌ها برای راحتی چشم.
-
-#### 📝 کدهای دلخواه Autoexec و رابط کاربری
-- **ویرایشگر کدهای اختصاصی Autoexec:** درج ایمن دستورات کنسول دلخواه بدون دستکاری فایل‌های اصلی.
-- **نوارهای سلامت جدید (Health Bars):** فعال‌سازی رابط بصری جدید نوار خون هیروها و یونیت‌ها.
+#### ⏱️ تنظیمات فریم‌ریت و موتور بازی
+- **محدودیت نرخ فریم (FPS Limit):** امکان انتخاب بین **حالت حداکثر (0 / نامحدود)**، **۱۴۴**، **۱۶۵** و **۲۴۰ فریم بر ثانیه**. این مقدار مستقیماً در `video.txt` و `autoexec.cfg` اعمال می‌شود بدون تغییر در رفرش‌ریت اصلی مانیتور شما.
+- **انتخاب موتور گرافیکی (Rendering API):** سوییچ سریع میان **DirectX 11**، **حالت پیش‌فرض** و **Vulkan** از طریق Launch Options.
+- **نوارهای سلامت جدید (Health Bars):** فعال‌سازی یا غیرفعال‌سازی ظاهر جدید نوار خون هیروها و یونیت‌ها (`citadel_unit_status_use_new`).
 
 #### 🛡️ سیستم بکاپ هوشمند و بازگردانی سریع
 - **نگهداری خودکار تا ۱۵ بکاپ:** ذخیره خودکار نسخه‌های پشتیبان با پاکسازی خودکار قدیمی‌ترین‌ها.

@@ -195,6 +195,29 @@
                 <input type="hidden" id="fov-number" value="90" />
               </div>
 
+              <!-- FPS LIMIT box -->
+              <div class="setting-box" style="justify-content: space-between;">
+                <div class="fov-box-header">
+                  <div class="fov-box-title-wrap">
+                    <i class="fa-solid fa-gauge-high" style="font-size:14px"></i>
+                    <span class="fov-box-title" data-i18n="fpsLimitTitle">FPS LIMIT</span>
+                  </div>
+                  <div class="hint-trigger">
+                    <i class="fa-solid fa-circle-question"></i>
+                    <div class="hint-tooltip" data-i18n="fpsHint">Sets fps_max in video.txt and autoexec.cfg. Does not alter your monitor's native refresh rate.</div>
+                  </div>
+                </div>
+                <div class="renderer-radio-group" id="fps-radio-group" style="margin: auto 0;">
+                  <button type="button" class="renderer-pill active" data-fps="0" onclick="selectFps(0)" data-i18n="fpsMaxPill">MAX (0)</button>
+                  <button type="button" class="renderer-pill" data-fps="144" onclick="selectFps(144)">144</button>
+                  <button type="button" class="renderer-pill" data-fps="165" onclick="selectFps(165)">165</button>
+                  <button type="button" class="renderer-pill" data-fps="240" onclick="selectFps(240)">240</button>
+                </div>
+                <div class="renderer-desc" data-i18n="fpsLimitDesc" style="font-size:0.62rem; color:var(--text-muted); text-align:center; margin-bottom:2px;">
+                  Target framerate limit (0 = uncapped)
+                </div>
+              </div>
+
               <!-- HUD box (New Health bars) -->
               <div class="setting-box" style="justify-content: space-between;">
                 <div class="fov-box-header">

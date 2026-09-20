@@ -38,10 +38,7 @@ const state = {
   running: false,
   unitStatusNew: false,
   fpsMax: 0,
-  vsync: false,
-  reduceFlash: true,
-  textureBias: 0,
-  ragdollGibLimit: true,
+  renderer: 'default',
   customAutoexec: '',
   lastValvePings: null,
   activeTab: 'graphic',
@@ -144,10 +141,6 @@ async function boot() {
   state.lastPath = s.last_path || null;
   state.unitStatusNew = !!s.unit_status_new;
   state.fpsMax = s.fps_max ?? 0;
-  state.vsync = !!s.vsync;
-  state.reduceFlash = s.reduce_flash !== false;
-  state.textureBias = s.texture_bias ?? 0;
-  state.ragdollGibLimit = s.ragdoll_gib_limit !== false;
   state.customAutoexec = s.custom_autoexec || '';
   state.renderer = s.renderer || 'default';
 
@@ -172,28 +165,24 @@ function syncSettingsToUi() {
   const swUnit = document.getElementById('sw-unit-status');
   if (swUnit) swUnit.checked = !!state.unitStatusNew;
 
-  const swVsync = document.getElementById('sw-vsync');
-  if (swVsync) swVsync.checked = !!state.vsync;
-
-  const swFlash = document.getElementById('sw-reduce-flash');
-  if (swFlash) swFlash.checked = !!state.reduceFlash;
-
-  const swRagdoll = document.getElementById('sw-ragdoll-limit');
-  if (swRagdoll) swRagdoll.checked = !!state.ragdollGibLimit;
-
-  const selBias = document.getElementById('sel-texture-bias');
-  if (selBias) selBias.value = String(state.textureBias);
-
-  const inpFps = document.getElementById('inp-fps-max');
-  if (inpFps) inpFps.value = state.fpsMax;
-  document.querySelectorAll('#chips-fps .chip-btn').forEach((btn) => {
-    btn.classList.toggle('active', Number(btn.dataset.val) === state.fpsMax);
+  const fps = state.fpsMax ?? 0;
+  document.querySelectorAll('#fps-radio-group .renderer-pill').forEach((btn) => {
+    btn.classList.toggle('active', Number(btn.dataset.fps) === fps);
   });
 
   const renderer = state.renderer || 'default';
   document.querySelectorAll('#renderer-radio-group .renderer-pill').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.renderer === renderer);
   });
+}
+
+function selectFps(val) {
+  const num = Number(val) || 0;
+  state.fpsMax = num;
+  document.querySelectorAll('#fps-radio-group .renderer-pill').forEach((btn) => {
+    btn.classList.toggle('active', Number(btn.dataset.fps) === num);
+  });
+  call('set_settings', { patch: { fps_max: num } }).catch(() => {});
 }
 
 function selectRenderer(mode) {
@@ -739,24 +728,17 @@ async function doResetSettings() {
     state.lang = s.lang;
     state.unlocked = s.unlocked;
     state.fov = s.fov;
-    state.fpsMax = s.fps_max;
-    state.vsync = s.vsync;
-    state.reduceFlash = s.reduce_flash;
-    state.textureBias = s.texture_bias;
-    state.ragdollGibLimit = s.ragdoll_gib_limit;
+    state.fpsMax = s.fps_max ?? 0;
+    state.unitStatusNew = s.unit_status_new;
     state.customAutoexec = s.custom_autoexec;
+    state.renderer = s.renderer || 'default';
 
     const fovSlider = document.getElementById('fov-slider');
     if (fovSlider) fovSlider.value = s.fov;
     const fovCurrent = document.getElementById('fov-current');
     if (fovCurrent) fovCurrent.textContent = s.fov + '°';
-    const swUnit = document.getElementById('sw-unit-status');
-    if (swUnit) swUnit.checked = s.unit_status_new;
 
-    state.renderer = s.renderer || 'default';
-    document.querySelectorAll('#renderer-radio-group .renderer-pill').forEach((btn) => {
-      btn.classList.toggle('active', btn.dataset.renderer === state.renderer);
-    });
+    syncSettingsToUi();
 
     showModal(t('btnResetSettings'), t('settingsResetDone'), [{ label: t('ok'), kind: 'apply' }]);
   } catch (e) {
@@ -1502,60 +1484,6 @@ function init() {
     }
 
     // Engine controls
-    const selBias = document.getElementById('sel-texture-bias');
-    if (selBias) {
-      selBias.onchange = (e) => {
-        state.textureBias = Number(e.target.value);
-        call('set_settings', { patch: { texture_bias: state.textureBias } }).catch(() => {});
-      };
-    }
-    const swRagdoll = document.getElementById('sw-ragdoll-limit');
-    if (swRagdoll) {
-      swRagdoll.onchange = (e) => {
-        state.ragdollGibLimit = e.target.checked;
-        call('set_settings', { patch: { ragdoll_gib_limit: state.ragdollGibLimit } }).catch(() => {});
-      };
-    }
-
-    // Latency controls: FPS cap
-    const inpFps = document.getElementById('inp-fps-max');
-    document.querySelectorAll('#chips-fps .chip-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#chips-fps .chip-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        const val = Number(btn.dataset.val);
-        state.fpsMax = val;
-        if (inpFps) inpFps.value = val;
-        call('set_settings', { patch: { fps_max: val } }).catch(() => {});
-      });
-    });
-    if (inpFps) {
-      inpFps.onchange = (e) => {
-        const val = Math.max(0, Number(e.target.value) || 0);
-        state.fpsMax = val;
-        document.querySelectorAll('#chips-fps .chip-btn').forEach((b) => {
-          b.classList.toggle('active', Number(b.dataset.val) === val);
-        });
-        call('set_settings', { patch: { fps_max: val } }).catch(() => {});
-      };
-    }
-
-    const swVsync = document.getElementById('sw-vsync');
-    if (swVsync) {
-      swVsync.onchange = (e) => {
-        state.vsync = e.target.checked;
-        call('set_settings', { patch: { vsync: state.vsync } }).catch(() => {});
-      };
-    }
-
-    const swFlash = document.getElementById('sw-reduce-flash');
-    if (swFlash) {
-      swFlash.onchange = (e) => {
-        state.reduceFlash = e.target.checked;
-        call('set_settings', { patch: { reduce_flash: state.reduceFlash } }).catch(() => {});
-      };
-    }
-
     // FOV controls
     const slider = document.getElementById('fov-slider');
     const number = document.getElementById('fov-number');
