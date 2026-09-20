@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="vendor/fontawesome/css/regular.min.css" />
   <link rel="stylesheet" href="vendor/fontawesome/css/brands.min.css" />
   <link rel="stylesheet" href="vendor/animate.css/animate.min.css" />
-  <link rel="stylesheet" href="style.css?v=13" />
+  <link rel="stylesheet" href="style.css?v=14" />
 </head>
 <body>
 
@@ -408,8 +408,8 @@
         <!-- Actions (install button only meaningful in the graphic tab) -->
         <div class="action-footer" style="display:none" id="action-footer">
           <!-- ACTIVE profile indicator -->
-          <div class="active-profile" id="active-profile" style="display:flex; align-items:center; gap:8px; font-family:'Rajdhani', monospace; font-size:0.8rem; font-weight:700; color:var(--text-main); letter-spacing:1px;">
-            <span class="active-dot" id="active-dot" style="width:8px; height:8px; border-radius:50%; background:var(--text-muted); box-shadow:0 0 8px currentColor;"></span>
+          <div class="active-profile" id="active-profile">
+            <span class="active-dot" id="active-dot"></span>
             <span class="active-label" id="active-profile-label" data-i18n="activeProfile">ACTIVE · —</span>
           </div>
           <div id="step-log" class="step-log" style="flex:1; margin:0 15px; font-size:0.75rem; color:var(--text-muted); text-align:right;"></div>
@@ -467,7 +467,7 @@
   <script src="vendor/motion/motion.js"></script>
   <script src="i18n/fa.js"></script>
   <script src="i18n/en.js"></script>
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
   <script>
     // expose opener global (withGlobalTauri injects plugin APIs lazily via plugins object)
     window.addEventListener('DOMContentLoaded', () => {

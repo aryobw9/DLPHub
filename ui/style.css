@@ -877,10 +877,7 @@
 
 .detect-badge { font-weight: 700; letter-spacing: .04em; }
 
-.backup-list { display: flex; flex-direction: column; gap: 4px; max-height: 52px; overflow-y: auto; box-sizing: border-box; }
-.backup-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: rgba(10,16,27,.6); border: 1px solid var(--card-border); border-radius: 4px; padding: 3px 8px; }
-.backup-name { font-family: 'Rajdhani', monospace; font-size: 0.78rem; color: var(--text-secondary); direction: ltr; }
-.backup-row .btn-restore { padding: 0 10px; height: 22px; min-height: 22px; font-size: 0.75rem; }
+.backup-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; box-sizing: border-box; }
 
 .step-log { flex: 1; display: flex; flex-direction: column; gap: 2px; font-family: 'Rajdhani', monospace; font-size: 0.82rem; color: var(--text-secondary); direction: ltr; text-align: left; max-height: 38px; height: 38px; overflow-y: auto; }
 .step-log .ok { color: #4ade80; }
@@ -2756,23 +2753,156 @@ body.lang-fa .hud-switch-label {
 }
 /* Backup & Restore card: Always pure English / LTR */
 .adv-backup-card,
-.adv-backup-card .adv-card-title,
-.adv-backup-card .adv-card-desc,
+.adv-backup-card *,
 .backup-list-box,
-.backup-row,
-.backup-meta,
-.backup-actions {
+.backup-row {
   direction: ltr !important;
   text-align: left !important;
 }
 
-.backup-size {
-  font-family: 'Rajdhani', monospace;
-  font-size: 0.62rem !important;
-  font-weight: 600;
-  color: var(--text-muted);
+.adv-backup-card .adv-card-header {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 2px !important;
+}
+
+.adv-backup-card .adv-card-title {
+  font-family: 'Rajdhani', sans-serif !important;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  color: var(--text-main) !important;
+  letter-spacing: 0.5px !important;
+}
+
+.adv-backup-card .adv-card-desc {
+  font-family: 'Rajdhani', sans-serif !important;
+  font-size: 0.74rem !important;
+  font-weight: 500 !important;
+  color: var(--text-secondary) !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  max-height: 16px !important;
+  line-height: 16px !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+}
+
+body.lang-fa .adv-backup-card .adv-card-title,
+body.lang-fa .adv-backup-card .adv-card-desc {
+  font-family: 'Rajdhani', sans-serif !important;
+  line-height: 16px !important;
+  letter-spacing: 0.5px !important;
   direction: ltr !important;
-  letter-spacing: 0.3px;
+  text-align: left !important;
+}
+
+.backup-row {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  background: rgba(10, 16, 27, 0.6) !important;
+  border: 1px solid var(--card-border) !important;
+  border-radius: 6px !important;
+  padding: 0 10px !important;
+  box-sizing: border-box !important;
+  direction: ltr !important;
+  line-height: 1 !important;
+}
+
+.backup-meta {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: 100% !important;
+  line-height: 1 !important;
+  direction: ltr !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.backup-name {
+  font-family: 'Rajdhani', monospace !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  color: var(--text-secondary) !important;
+  line-height: 1 !important;
+  direction: ltr !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.backup-size {
+  font-family: 'Rajdhani', monospace !important;
+  font-size: 0.62rem !important;
+  font-weight: 600 !important;
+  color: var(--text-muted) !important;
+  line-height: 1 !important;
+  direction: ltr !important;
+  letter-spacing: 0.3px !important;
+  flex-shrink: 0 !important;
+}
+
+.backup-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 100% !important;
+  direction: ltr !important;
+  flex-shrink: 0 !important;
+}
+
+.backup-row .btn-restore {
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  line-height: 22px !important;
+  padding: 0 10px !important;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  box-sizing: border-box !important;
+  direction: ltr !important;
+  border-radius: 5px !important;
+}
+
+.btn-delete-backup {
+  padding: 0 !important;
+  width: 24px !important;
+  min-width: 24px !important;
+  max-width: 24px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  line-height: 22px !important;
+  border-radius: 5px !important;
+  font-size: 0.72rem !important;
+  background: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  color: #fca5a5 !important;
+  cursor: var(--cur-pointer) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  direction: ltr !important;
+}
+.btn-delete-backup:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+  border-color: #ef4444 !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3) !important;
 }
 /* but keep numeric/path content LTR even in FA */
 body.lang-fa .path-input,
@@ -3466,79 +3596,130 @@ body.lang-fa .ping-view-title {
   line-height: 1.35;
 }
 
-/* ===================== DELETE BACKUP BUTTON ===================== */
-.backup-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.btn-delete-backup {
-  padding: 0 10px;
-  height: 28px;
-  min-height: 28px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  color: #fca5a5;
-  cursor: var(--cur-pointer);
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.btn-delete-backup:hover {
-  background: rgba(239, 68, 68, 0.3);
-  border-color: #ef4444;
-  color: #fff;
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+/* ===================== APP VERSION BADGE ===================== */
+.app-version-badge,
+.app-version-badge * {
+  font-family: 'Rajdhani', sans-serif !important;
+  line-height: 1 !important;
+  letter-spacing: 0.5px !important;
+  direction: ltr !important;
+  text-align: left !important;
 }
 
-/* ===================== APP VERSION BADGE ===================== */
 .app-version-badge {
-  position: fixed;
-  bottom: 12px;
-  right: 14px;
-  z-index: 99;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  font-family: 'Rajdhani', sans-serif;
-  pointer-events: none;
+  position: fixed !important;
+  bottom: 12px !important;
+  right: 14px !important;
+  z-index: 99 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  max-height: 16px !important;
+  box-sizing: border-box !important;
 }
+
 .app-version-badge .ver-tag {
-  color: #cbd5e1;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  color: #cbd5e1 !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  height: 16px !important;
+  line-height: 16px !important;
 }
+
 .app-version-badge .ver-beta {
-  background: rgba(249, 115, 22, 0.2);
-  color: var(--deadlock-orange);
-  border: 1px solid rgba(249, 115, 22, 0.35);
-  padding: 0 4px;
-  border-radius: 3px;
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
+  background: rgba(249, 115, 22, 0.2) !important;
+  color: var(--deadlock-orange) !important;
+  border: 1px solid rgba(249, 115, 22, 0.35) !important;
+  padding: 0 4px !important;
+  border-radius: 3px !important;
+  font-size: 0.62rem !important;
+  font-weight: 800 !important;
+  height: 14px !important;
+  min-height: 14px !important;
+  max-height: 14px !important;
+  line-height: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
 }
+
 .app-version-badge .ver-sep {
-  color: #475569;
-  font-size: 0.7rem;
+  color: #475569 !important;
+  font-size: 0.7rem !important;
+  height: 16px !important;
+  line-height: 16px !important;
+  display: inline-flex !important;
+  align-items: center !important;
 }
+
 .app-version-badge .ver-by {
-  color: #64748b;
-  font-size: 0.72rem;
-  font-weight: 600;
+  color: #64748b !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  height: 16px !important;
+  line-height: 16px !important;
+  display: inline-flex !important;
+  align-items: center !important;
 }
+
 .app-version-badge .ver-author {
-  color: var(--deadlock-cyan);
+  color: var(--deadlock-cyan) !important;
+  font-weight: 700 !important;
+}
+
+/* ===================== ACTIVE PROFILE FOOTER INDICATOR ===================== */
+.active-profile {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  max-height: 20px !important;
+  line-height: 20px !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  font-family: 'Rajdhani', monospace;
+  font-size: 0.8rem;
   font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: 1px;
+  direction: ltr !important;
+}
+
+.active-dot {
+  display: block !important;
+  width: 8px !important;
+  height: 8px !important;
+  min-width: 8px !important;
+  min-height: 8px !important;
+  border-radius: 50% !important;
+  background: var(--text-muted);
+  box-shadow: 0 0 8px currentColor;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  align-self: center !important;
+}
+
+.active-label {
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  max-height: 20px !important;
+  line-height: 20px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  direction: ltr !important;
 }
