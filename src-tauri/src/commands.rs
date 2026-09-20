@@ -263,7 +263,7 @@ pub fn get_diagnostics() -> String {
     diag.push_str(&format!("Log Path: {:?}\n", dlp_core::logger::log_path(&data_dir)));
 
     let s = settings::load();
-    diag.push_str(&format!("Settings: lang={}, unlocked={}, last_path={:?}, fov={}, fps_max={}, unit_status={}\n",
+    diag.push_str(&format!("Settings: lang={}, unlocked={}, last_path={:?}, fov={}, fps_max={:?}, unit_status={}\n",
         s.lang, s.unlocked, s.last_path, s.fov, s.fps_max, s.unit_status_new
     ));
 

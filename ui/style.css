@@ -2304,55 +2304,64 @@ button:active,
 .dlp-loading .dlp-load-label { font-size: 0.8rem; color: var(--text-secondary, #94a3b8); }
 @media (prefers-reduced-motion: reduce) { .dlp-loader { animation: none; } }
 
-/* ===================== BORDER BEAM (MagicUI faithful port) ===================== */
-/* Small gradient square travels the border via offset-path.
-   The container is masked so ONLY the 1px border ring is visible —
-   the beam appears as a comet segment running the border line. */
+/* ===================== VIBEFARSI-STYLE BORDER BEAM FOR PRESET CARDS ===================== */
+/* Smooth rotating beam around active cards using CSS @property --beam-angle.
+   Hardware accelerated via GPU compositor conic-gradient rotation.
+   Zero JS overhead, zero layout shifts, zero offset-path CPU rasterization. */
+@property --beam-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes beam {
+  to {
+    --beam-angle: 360deg;
+  }
+}
+
 .tier-card, .tier-card-sm { position: relative; }
 
 .border-beam {
   pointer-events: none;
   position: absolute;
-  inset: 0;
+  inset: -1px;
   border-radius: inherit;
-  border: 1px solid transparent;               /* the ring the beam runs on */
+  padding: 1.5px;
   opacity: 0;
   transition: opacity 0.3s ease;
-  -webkit-mask:
-    linear-gradient(transparent, transparent),
-    linear-gradient(#000, #000);
-  -webkit-mask-clip: padding-box, border-box;
-  -webkit-mask-composite: source-in;            /* intersect: keep border ring only */
-  mask:
-    linear-gradient(transparent, transparent),
-    linear-gradient(#000, #000);
-  mask-clip: padding-box, border-box;
-  mask-composite: intersect;
+  overflow: hidden;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  z-index: 2;
 }
+
 .tier-card.selected .border-beam,
-.tier-card-sm.selected .border-beam { opacity: 1; }
+.tier-card-sm.selected .border-beam {
+  opacity: 1;
+}
 
 .border-beam .beam {
   position: absolute;
-  top: 0; left: 0;
-  width: 34px; height: 34px;
-  will-change: offset-distance;                 /* compositor-only animation */
-  background: linear-gradient(to left,
-    #ffaa40 0%,
-    #ffaa40 45%,                                /* hold orange: no early fade */
-    #38bdf8 75%,
-    transparent 100%);
-  offset-path: rect(0 auto auto 0 round 8px);
-  animation: dlp-beam-run 5s linear infinite;
+  inset: -100%;
+  background: conic-gradient(
+    from var(--beam-angle),
+    transparent 0 76%,
+    #38bdf8 84%,
+    #ffaa40 91%,
+    var(--deadlock-orange, #f97316) 95%,
+    transparent 100%
+  );
+  animation: beam 4s linear infinite;
+  will-change: --beam-angle;
 }
-.tier-card-sm .border-beam .beam { width: 24px; height: 24px; }
 
-@keyframes dlp-beam-run {
-  from { offset-distance: 0%; }
-  to   { offset-distance: 100%; }
-}
 @media (prefers-reduced-motion: reduce) {
-  .border-beam .beam { animation: none; }
+  .border-beam .beam {
+    animation: none;
+  }
 }
 
 /* ===================== NETWORK INSTRUMENT — relay cards ===================== */
