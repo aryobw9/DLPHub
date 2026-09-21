@@ -11,6 +11,11 @@ FOLDERS = ('t1', 't2', 't3', 'potato', 'addons')
 
 def build_payload(source=SRC, output=OUT):
     source, output = Path(source), Path(output)
+    if not source.exists():
+        if output.is_file() and output.stat().st_size > 0:
+            print(f"Configs dir {source} not found; using existing {output} ({output.stat().st_size} bytes)")
+            return output
+        raise FileNotFoundError(f"Configs dir {source} not found and no existing payload at {output}")
     required = [source / tier / 'gameinfo.gi' for tier in FOLDERS[:4]]
     required += [source / tier / 'video.txt' for tier in FOLDERS[:4]]
     for path in required:
