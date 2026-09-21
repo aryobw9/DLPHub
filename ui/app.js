@@ -324,26 +324,6 @@ async function copyLaunchOpt(text, btn) {
   }
 }
 
-async function copyAllLaunchOpts() {
-  const allText = '-high -dx11';
-  try {
-    await copyToClipboard(allText);
-    const icon = document.getElementById('copy-launch-all-icon');
-    const label = document.getElementById('copy-launch-all-text');
-    if (icon) icon.className = 'fa-solid fa-check';
-    if (label) label.textContent = t('copied') || 'کپی شد!';
-    setTimeout(() => {
-      if (icon) icon.className = 'fa-solid fa-copy';
-      if (label) label.textContent = t('copyAll') || 'کپی همه';
-    }, 1500);
-  } catch (err) {
-    console.error('Failed to copy all launch options:', err);
-  }
-}
-
-async function copyLaunchOptions() {
-  return copyAllLaunchOpts();
-}
 
 async function refreshGame() {
   try {
@@ -1681,7 +1661,6 @@ window.doCopyDiagnostics = doCopyDiagnostics;
 window.selectRenderer = selectRenderer;
 window.setFov = setFov;
 window.copyLaunchOpt = copyLaunchOpt;
-window.copyAllLaunchOpts = copyAllLaunchOpts;
 // ---------- Custom Info Tooltip & Launch Options Hover Preview ----------
 function positionTooltip(el, tooltip) {
   const rect = el.getBoundingClientRect();
@@ -1782,21 +1761,16 @@ function init() {
     const number = document.getElementById('fov-number');
     if (slider) slider.oninput = () => setFov(Number(slider.value));
     if (number) number.onchange = () => setFov(Number(number.value) || 90);
-    const pFov = document.getElementById('panel-fov');
-    if (pFov) {
-      pFov.addEventListener('wheel', (e) => {
+    const fovBox = document.querySelector('.setting-box.fov-box');
+    if (fovBox) {
+      fovBox.addEventListener('wheel', (e) => {
         e.preventDefault();
         setFov(Number(slider ? slider.value : 90) + (e.deltaY < 0 ? 5 : -5));
       }, { passive: false });
     }
-    const btnFovReset = document.getElementById('btn-fov-reset');
-    if (btnFovReset) {
-      btnFovReset.onclick = () => {
-        setFov(90);
-        btnFovReset.classList.remove('reset-pop');
-        void btnFovReset.offsetWidth;
-        btnFovReset.classList.add('reset-pop');
-      };
+    const fovDefaultTick = document.getElementById('fov-default-tick');
+    if (fovDefaultTick) {
+      fovDefaultTick.onclick = () => setFov(90);
     }
 
     document.querySelectorAll('.tier-card, .tier-card-sm, .option-item.preset').forEach((el) => {
