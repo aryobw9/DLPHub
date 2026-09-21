@@ -74,6 +74,20 @@ Deadlock is actively developed on the Source 2 engine. Players frequently face s
 
 ---
 
+### Security, Transparency & VirusTotal Report
+🛡️ **VirusTotal Scan:** [68/70 Vendors Clean (Verified Safe)](https://www.virustotal.com/gui/file/c519c55ecdff5cedac66611f44b182c0cc216df327fab6dca2a7faf2c3e7f925?nocache=1)
+
+DLPHub is 100% open-source, safe, and transparent. The standalone executable was analyzed across 70 antivirus vendors on VirusTotal:
+- **68 / 70 Clean:** All leading industry-standard security solutions—including **Microsoft Defender**, **Kaspersky**, **Bitdefender**, **ESET**, **Sophos**, **Malwarebytes**, **Avast**, and **Symantec**—report **0 threats**.
+- **Understanding the 2 Heuristic / Machine-Learning Detections:**
+  1. **Self-Extracting Embedded Payload:** As a portable single binary, DLPHub unpacks its embedded game config files (`payload.zip`) to `%TEMP%\DLPHubPkg` at runtime on first launch. Generic heuristics in lesser-known scanners sometimes flag runtime temporary unpackers as potential "droppers".
+  2. **Win32 Window Subclassing:** DLPHub intercepts `WM_SETCURSOR` and `WM_NCHITTEST` via `SetWindowLongPtrW` solely to draw custom resizable flame window borders.
+  3. **Open-Source Reputation:** As a new open-source release without an expensive ($500+/yr) commercial EV code-signing certificate, the binary initially has neutral reputation on automated scanners.
+- **100% Auditable & Reproducible:** Every release binary is compiled automatically and publicly on [GitHub Actions CI/CD](https://github.com/aryobw9/DLPHub/actions). You can inspect every line of Rust and TypeScript code yourself.
+- **100% VAC-Safe:** DLPHub never injects into the Deadlock process, never reads game memory, and only writes standard Source 2 configuration files (`gameinfo.gi`, `autoexec.cfg`, `video.txt`).
+
+---
+
 ### How to Use in 3 Steps
 1. Download `DLPHub.exe` from the latest release and run it (Deadlock is auto-detected).
 2. Choose your preferred graphics tier, rendering API, FOV, and options.
@@ -138,6 +152,20 @@ Deadlock is actively developed on the Source 2 engine. Players frequently face s
 #### 🔍 گزارش عیب‌یابی و لاگر سیستمی
 - لاگ فایل چرخشی در مسیر `%APPDATA%\DLPHub\logs\app.log`.
 - **دکمه کپی گزارش عیب‌یابی (Copy Diagnostics):** کپی یکپارچه مشخصات سیستم، مسیر بازی، وضعیت بکاپ‌ها و لاگ‌ها در کلیپ‌بورد.
+
+---
+
+### امنیت، شفافیت و گزارش VirusTotal
+🛡️ **بررسی ویروس‌توتال:** [۶۸ از ۷۰ آنتی‌ویروس کاملاً پاک (تأیید ایمنی)](https://www.virustotal.com/gui/file/c519c55ecdff5cedac66611f44b182c0cc216df327fab6dca2a7faf2c3e7f925?nocache=1)
+
+نرم‌افزار DLPHub کاملاً متن‌باز، ایمن و شفاف است. فایل اجرایی پرتابل توسط ۷۰ موتور آنتی‌ویروس معتبر در وبسایت VirusTotal بررسی شده است:
+- **۶۸ از ۷۰ کاملاً پاک:** تمامی آنتی‌ویروس‌های معتبر و درجه یک جهان از جمله **Microsoft Defender**، **Kaspersky**، **Bitdefender**، **ESET**، **Sophos**، **Malwarebytes**، **Avast** و **Symantec** سلامت ۱۰۰٪ برنامه را تأیید کرده و هیچ خطری شناسایی نکرده‌اند.
+- **علت هشدار یادگیری ماشین ۲ آنتی‌ویروس متفرقه (False Positive):**
+  1. **استخراج پکیج در پوشه موقت (%TEMP%):** برنامه برای اینکه تک‌فایلی و پرتابل باشد، پکیج فشرده تنظیمات بازی (`payload.zip`) را هنگام اولین اجرا در مسیر موقت `%TEMP%\DLPHubPkg` اکسترکت می‌کند. الگوریتم‌های هوش مصنوعی برخی اسکنرهای متفرقه به استخراج فایل در پوشه موقت ویندوز حساس هستند.
+  2. **شخصی‌سازی کادر پنجره (Win32 API):** برنامه برای رسم حاشیه‌های اختصاصی و ریسایز پنجره با جلوه آتشین از توابع استاندارد ویندوز (`SetWindowLongPtrW`) استفاده می‌کند.
+  3. **پروژه جدید بدون سرتیفیکیت تجاری گران‌قیمت:** به عنوان یک نرم‌افزار آزاد و عام‌المنفعه، این برنامه فاقد امضای دیجیتال EV تجاری چندصد دلاری شرکتی است و در ابتدای انتشار ریپیتیشن خنثی دارد.
+- **کاملاً شفاف و قابل رهگیری:** تمامی فایل‌های اجرایی به صورت خودکار، عمومی و مستقیم توسط [گیت‌هاب اکشنز (GitHub Actions)](https://github.com/aryobw9/DLPHub/actions) از روی همین سورس‌کد ساخته می‌شوند.
+- **۱۰۰٪ ایمن در برابر VAC استیم:** نرم‌افزار به هیچ عنوان به پروسه ددلاک تزریق نمی‌شود، حافظه رم بازی را دستکاری نمی‌کند و فقط فایل‌های متنی رسمی سورس ۲ (`gameinfo.gi`، `autoexec.cfg`، `video.txt`) را تنظیم می‌نماید.
 
 ---
 

@@ -45,6 +45,13 @@ Welcome to the initial public open-source release of **DLPHub**, the high-perfor
 * Licensed under the **GNU General Public License v3.0 (GPLv3)**.
 * Completely free, open-source, and 100% VAC-safe (modifies only official Source 2 text configs and CVars).
 
+### 🛡️ Security & VirusTotal Transparency Report
+* **VirusTotal Result:** [68/70 Vendors Clean (Verified Safe)](https://www.virustotal.com/gui/file/c519c55ecdff5cedac66611f44b182c0cc216df327fab6dca2a7faf2c3e7f925?nocache=1)
+* **Verified Clean:** Microsoft Defender, Kaspersky, Bitdefender, ESET, Sophos, Malwarebytes, Avast, and Symantec confirm 0 threats.
+* The 2 heuristic flags are routine false positives caused by the single-binary self-extractor (`%TEMP%\DLPHubPkg`) and Win32 border subclassing APIs on an un-signed open-source release.
+* **100% VAC-Safe:** Modifies only official Valve configuration files; zero memory injection or process hooking.
+* Built directly and transparently via [GitHub Actions CI/CD](https://github.com/aryobw9/DLPHub/actions).
+
 ---
 
 ## 💾 Installation & Usage
@@ -69,4 +76,5 @@ Welcome to the initial public open-source release of **DLPHub**, the high-perfor
 * **دکمه‌های کپی سریع Launch Options** برای `-dx11`، `-vulkan` و `-high`.
 * **سیستم بکاپ هوشمند و بازگردانی سریع (Revert Vanilla)** به حالت اولیه بازی بدون نگرانی از دست رفتن فایل‌ها.
 * **تک‌فایل پرتابل و سبک (`DLPHub.exe`)** بر پایه Rust و Tauri؛ بدون نیاز به نصب و ۱۰۰٪ ایمن (VAC-Safe).
+* **گزارش شفافیت و بررسی VirusTotal:** [۶۸ از ۷۰ آنتی‌ویروس کاملاً پاک](https://www.virustotal.com/gui/file/c519c55ecdff5cedac66611f44b182c0cc216df327fab6dca2a7faf2c3e7f925?nocache=1) (تأیید سلامت توسط Defender، Kaspersky، Bitdefender، ESET و...). ۲ مورد هشدار مربوط به اکسترکت فایل موقت پرتابل و عدم وجود امضای تجاری است.
 * **تحت مجوز آزاد GNU GPLv3**.
