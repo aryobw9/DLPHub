@@ -1,4 +1,4 @@
-// DLPBooster FA strings (Farsi — template strings preserved verbatim where they existed)
+// DLPHub FA strings (Farsi — template strings preserved verbatim where they existed)
 window.I18N_FA = {
   brand: "ددلاک پرشین",
   brandTagline: "ابزار بهینه‌سازی گرافیک و کانفیگ",

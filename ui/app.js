@@ -175,7 +175,7 @@ window.addEventListener('resize', () => {
 
 // ---------- fatal-error surface (never silent) ----------
 function fatal(err) {
-  console.error('[DLPBooster fatal]', err);
+  console.error('[DLPHub fatal]', err);
   let d = document.getElementById('dlp-fatal-banner');
   if (!d && document.body) {
     d = document.createElement('pre');

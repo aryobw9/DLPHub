@@ -18,7 +18,7 @@
     "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tauri-apps/plugin-opener": "^2.5.5",
     "animate.css": "^4.1.1",
-    "chart.js": "^4.5.1",
     "motion": "^13.2.0"
-  }
+  },
+  "license": "MIT"
 }

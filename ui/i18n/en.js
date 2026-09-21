@@ -1,4 +1,4 @@
-// DLPBooster EN strings
+// DLPHub EN strings
 window.I18N_EN = {
   brand: "DEADLOCK PERSIAN",
   brandTagline: "Graphics optimizer & config tool",
