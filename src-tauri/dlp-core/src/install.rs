@@ -37,7 +37,7 @@ impl Mode {
         const LOOK: &str = "pak01_dir.vpk,pak02_dir.vpk,pak03_dir.vpk";
         match self {
             Mode::T1 | Mode::T2 | Mode::T3 => ("", LOOK),
-            Mode::Potato => (LOOK, ""),
+            Mode::Potato => ("", ""),
             Mode::T1Mods | Mode::T2Mods => ("", ""),
         }
     }
@@ -147,9 +147,37 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
     // 3) .dlp.bak snapshots (permanent restore points, never deleted)
     log.extend(snapshot_original(&citadel)?);
 
-    // Every mutation keeps a complete current-state recovery point.
-    let b_name = crate::backup::do_backup(&citadel, data_dir).map_err(|e| format!("backup: {e}"))?;
-    log.push(StepLog { step: "backup".into(), detail: format!("full backup saved ({b_name})"), skipped: false });
+    // Smart backup:
+    // Only create an automatic backup if:
+    // 1. No backups exist yet (the user's initial baseline backup)
+    // 2. OR the current config is NOT one of our presets (vanilla or custom hand-modified files)
+    //    AND it is NOT byte-identical to the latest existing backup.
+    let existing_backups = crate::backup::list_backups(data_dir);
+    let is_ours = crate::backup::is_our_config(&citadel, pkg);
+    let should_backup = if existing_backups.is_empty() {
+        true
+    } else if is_ours {
+        false
+    } else {
+        let latest = crate::backup::backups_root(data_dir).join(&existing_backups[0]);
+        !crate::backup::is_identical_to_backup(&citadel, &latest)
+    };
+
+    if should_backup {
+        let is_first = existing_backups.is_empty();
+        let b_name = crate::backup::do_backup_internal(&citadel, data_dir, is_first).map_err(|e| format!("backup: {e}"))?;
+        log.push(StepLog { step: "backup".into(), detail: format!("full backup saved ({b_name})"), skipped: false });
+    } else {
+        log.push(StepLog {
+            step: "backup".into(),
+            detail: if is_ours {
+                "preset switch (tier already installed) - skipping duplicate backup".into()
+            } else {
+                "identical to latest backup - skipping duplicate backup".into()
+            },
+            skipped: true,
+        });
+    }
 
     // 3b) REVERT FIRST: wipe our previous install (manifest vpks, patched
     // gameinfo.gi/video.txt, managed autoexec) so every apply starts from the
@@ -335,7 +363,7 @@ mod tests {
     }
 
     #[test]
-    fn sandbox_potato_three_vpks() {
+    fn sandbox_potato_nine_vpks() {
         let (cit, data, pkg) = sandbox("pot");
         let deadlock = cit.parent().unwrap().parent().unwrap().to_path_buf(); // <deadlock> root
         install(Mode::Potato, 100, deadlock.to_str().unwrap(), &pkg, &data).unwrap();
@@ -344,8 +372,8 @@ mod tests {
         assert!(gi.contains("\"r_aspectratio\"\t\t\t\t\t\t\"2.49\""), "gi: {gi}");
         let vpks: Vec<String> = std::fs::read_dir(cit.join("addons")).unwrap().flatten()
             .map(|e| e.file_name().to_string_lossy().into_owned()).collect();
-        assert_eq!(vpks.len(), 3);
-        for n in ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk"] {
+        assert_eq!(vpks.len(), 9, "Potato must install all 9 addons");
+        for n in ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak04_dir.vpk", "pak05_dir.vpk", "pak06_dir.vpk", "pak08_dir.vpk", "pak26_dir.vpk", "pak54_dir.vpk"] {
             assert!(vpks.iter().any(|v| v == n), "missing {n}");
         }
         crate::backup::rm_ro(cit.parent().unwrap().parent().unwrap());
@@ -374,6 +402,8 @@ mod tests {
         // .dlp.bak snapshots survive (permanent)
         assert!(cit.join("gameinfo.gi.dlp.bak").is_file());
         assert!(cit.join("cfg").join("video.txt.dlp.bak").is_file());
+        // Deduplication: switching T1 -> T2 must keep ONLY 1 backup (no duplicate backup created for T2)
+        assert_eq!(crate::backup::list_backups(&data).len(), 1, "switching presets must NOT create duplicate backups");
         crate::backup::rm_ro(cit.parent().unwrap().parent().unwrap());
     }
 

@@ -79,6 +79,7 @@ fn resolve_path(path: &str) -> Result<String, String> {
 pub struct BackupInfo {
     pub name: String,
     pub size_bytes: u64,
+    pub is_main: bool,
 }
 
 #[tauri::command]
@@ -95,6 +96,7 @@ pub fn list_backups() -> Vec<BackupInfo> {
         .map(|b| BackupInfo {
             name: b.name,
             size_bytes: b.size_bytes,
+            is_main: b.is_main,
         })
         .collect()
 }
@@ -104,7 +106,11 @@ pub fn delete_backup_cmd(name: String) -> Result<(), String> {
     if name.contains('/') || name.contains('\\') || name.contains("..") {
         return Err("invalid backup name".into());
     }
-    let bdir = backup::backups_root(&settings::data_dir()).join(&name);
+    let data_dir = settings::data_dir();
+    if backup::is_main_backup(&data_dir, &name) {
+        return Err("Cannot delete the initial original game backup".into());
+    }
+    let bdir = backup::backups_root(&data_dir).join(&name);
     if !bdir.is_dir() {
         return Err(format!("backup not found: {name}"));
     }

@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="vendor/fontawesome/css/regular.min.css" />
   <link rel="stylesheet" href="vendor/fontawesome/css/brands.min.css" />
   <link rel="stylesheet" href="vendor/animate.css/animate.min.css" />
-  <link rel="stylesheet" href="style.css?v=28" />
+  <link rel="stylesheet" href="style.css?v=41" />
 </head>
 <body>
 
@@ -28,20 +28,20 @@
     </div>
     <div class="titlebar-drag-spacer" data-tauri-drag-region style="flex:1; height:100%;"></div>
     <div class="window-controls" data-tauri-drag-region="false">
-      <button class="btn-play" id="btn-launch" title="اجرای بازی ددلاک / Launch Game">
+      <button class="btn-play" id="btn-launch" data-tooltip="اجرای بازی ددلاک / Launch Game">
         <span class="play-chip"><img src="assets/icons_norm/logo_mark.png" class="dlp-icon-play" alt="" /></span>
         <span data-i18n="launch">اجرای بازی</span>
       </button>
-      <button class="lang-pill-btn" id="btn-lang-toggle" data-tauri-drag-region="false" onclick="toggleLang()" title="تغییر زبان / Switch Language">
+      <button class="lang-pill-btn" id="btn-lang-toggle" data-tauri-drag-region="false" onclick="toggleLang()" data-tooltip="تغییر زبان / Switch Language">
         <span id="lang-label">EN</span>
       </button>
-      <button class="win-ctl" id="btn-min" data-tauri-drag-region="false" onclick="handleWinMin()" title="Minimize" aria-label="Minimize">
+      <button class="win-ctl" id="btn-min" data-tauri-drag-region="false" onclick="handleWinMin()" data-tooltip="Minimize" aria-label="Minimize">
         <i class="fa-solid fa-minus" style="font-size:11px"></i>
       </button>
-      <button class="win-ctl" id="btn-max" data-tauri-drag-region="false" onclick="handleWinMax()" title="Maximize" aria-label="Maximize">
+      <button class="win-ctl" id="btn-max" data-tauri-drag-region="false" onclick="handleWinMax()" data-tooltip="Maximize" aria-label="Maximize">
         <i class="fa-regular fa-square" style="font-size:10px"></i>
       </button>
-      <button class="win-ctl win-close" id="btn-close" data-tauri-drag-region="false" onclick="handleWinClose()" title="Close" aria-label="Close">
+      <button class="win-ctl win-close" id="btn-close" data-tauri-drag-region="false" onclick="handleWinClose()" data-tooltip="Close" aria-label="Close">
         <i class="fa-solid fa-xmark" style="font-size:13px"></i>
       </button>
     </div>
@@ -118,8 +118,63 @@
           <i class="fa-solid fa-desktop" id="section-icon" style="font-size:13px;color:var(--deadlock-orange)"></i>
           <span id="section-title">تنظیمات گرافیکی</span>
         </div>
-        <button class="btn-refresh-ping-top" id="btn-refresh-ping" onclick="refreshValvePings()" style="display:none" title="تست پینگ / Test Ping">
-          <i class="fa-solid fa-wave-square refresh-icon"></i>
+        <button class="btn-refresh-ping-top" id="btn-refresh-ping" onclick="refreshValvePings(true)" style="display:none" data-tooltip="تست پینگ / Test Ping" aria-label="Test Ping">
+          <div class="ping-cloud-loader">
+            <div class="loader">
+              <svg id="cloud" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" shape-rendering="geometricPrecision">
+                <defs>
+                  <filter id="roundness" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" />
+                    <feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -10" />
+                  </filter>
+                  <mask id="shapes">
+                    <g fill="white">
+                      <polygon points="50 37.5 80 75 20 75 50 37.5" />
+                      <circle cx="20" cy="60" r="15" />
+                      <circle cx="80" cy="60" r="15" />
+                      <g>
+                        <circle cx="20" cy="60" r="15" />
+                        <circle cx="20" cy="60" r="15" />
+                        <circle cx="20" cy="60" r="15" />
+                      </g>
+                    </g>
+                  </mask>
+                  <mask id="clipping" clipPathUnits="userSpaceOnUse">
+                    <g id="lines" filter="url(#roundness)">
+                      <g mask="url(#shapes)" stroke="white">
+                        <line x1="-50" y1="-40" x2="150" y2="-40" />
+                        <line x1="-50" y1="-31" x2="150" y2="-31" />
+                        <line x1="-50" y1="-22" x2="150" y2="-22" />
+                        <line x1="-50" y1="-13" x2="150" y2="-13" />
+                        <line x1="-50" y1="-4" x2="150" y2="-4" />
+                        <line x1="-50" y1="5" x2="150" y2="5" />
+                        <line x1="-50" y1="14" x2="150" y2="14" />
+                        <line x1="-50" y1="23" x2="150" y2="23" />
+                        <line x1="-50" y1="32" x2="150" y2="32" />
+                        <line x1="-50" y1="41" x2="150" y2="41" />
+                        <line x1="-50" y1="50" x2="150" y2="50" />
+                        <line x1="-50" y1="59" x2="150" y2="59" />
+                        <line x1="-50" y1="68" x2="150" y2="68" />
+                        <line x1="-50" y1="77" x2="150" y2="77" />
+                        <line x1="-50" y1="86" x2="150" y2="86" />
+                        <line x1="-50" y1="95" x2="150" y2="95" />
+                        <line x1="-50" y1="104" x2="150" y2="104" />
+                        <line x1="-50" y1="113" x2="150" y2="113" />
+                        <line x1="-50" y1="122" x2="150" y2="122" />
+                        <line x1="-50" y1="131" x2="150" y2="131" />
+                        <line x1="-50" y1="140" x2="150" y2="140" />
+                      </g>
+                    </g>
+                  </mask>
+                </defs>
+                <rect x="0" y="0" width="100" height="100" rx="0" ry="0" mask="url(#clipping)" />
+                <g class="cloud-arrows">
+                  <path d="M33.52,68.12 C35.02,62.8 39.03,58.52 44.24,56.69 C49.26,54.93 54.68,55.61 59.04,58.4 C59.04,58.4 56.24,60.53 56.24,60.53 C55.45,61.13 55.68,62.37 56.63,62.64 C56.63,62.64 67.21,65.66 67.21,65.66 C67.98,65.88 68.75,65.3 68.74,64.5 C68.74,64.5 68.68,53.5 68.68,53.5 C68.67,52.51 67.54,51.95 66.75,52.55 C66.75,52.55 64.04,54.61 64.04,54.61 C57.88,49.79 49.73,48.4 42.25,51.03 C35.2,53.51 29.78,59.29 27.74,66.49 C27.29,68.08 28.22,69.74 29.81,70.19 C30.09,70.27 30.36,70.31 30.63,70.31 C31.94,70.31 33.14,69.44 33.52,68.12Z" />
+                  <path d="M69.95,74.85 C68.35,74.4 66.7,75.32 66.25,76.92 C64.74,82.24 60.73,86.51 55.52,88.35 C50.51,90.11 45.09,89.43 40.73,86.63 C40.73,86.63 43.53,84.51 43.53,84.51 C44.31,83.91 44.08,82.67 43.13,82.4 C43.13,82.4 32.55,79.38 32.55,79.38 C31.78,79.16 31.02,79.74 31.02,80.54 C31.02,80.54 31.09,91.54 31.09,91.54 C31.09,92.53 32.22,93.09 33.01,92.49 C33.01,92.49 35.72,90.43 35.72,90.43 C39.81,93.63 44.77,95.32 49.84,95.32 C52.41,95.32 55,94.89 57.51,94.01 C64.56,91.53 69.99,85.75 72.02,78.55 C72.47,76.95 71.54,75.3 69.95,74.85Z" />
+                </g>
+              </svg>
+            </div>
+          </div>
         </button>
         </div>
 
@@ -132,7 +187,7 @@
               <div class="tier-card selected" data-mode="T1" onclick="selectPreset('T1')">
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="tier-card-header">
-                  <span class="tier-badge t1"><img src="assets/icons_norm/t1_shield.png" class="dlp-icon-badge" alt="" /> T1</span>
+                  <span class="tier-badge t1"><svg class="dlp-icon-badge" viewBox="0 0 64 64" fill="currentColor"><path d="M 30.5 7.5 C 31.2 6.3 32.8 6.3 33.5 7.5 L 56.5 47 C 57.3 48.4 56.3 50.5 54.6 50.5 L 9.4 50.5 C 7.7 50.5 6.7 48.4 7.5 47 Z"/></svg> T1</span>
                 </div>
                 <div class="tier-name" data-i18n="tierHigh">گرافیک بالا</div>
               </div>
@@ -140,7 +195,7 @@
               <div class="tier-card" data-mode="T2" onclick="selectPreset('T2')">
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="tier-card-header">
-                  <span class="tier-badge t2"><img src="assets/icons_norm/t2_spirit.png" class="dlp-icon-badge" alt="" /> T2</span>
+                  <span class="tier-badge t2"><svg class="dlp-icon-badge" viewBox="0 0 64 64" fill="currentColor"><path d="M 30.4 6.5 C 31.2 5.1 32.8 5.1 33.6 6.5 L 50.8 36.8 C 51.7 38.3 50.6 40 48.9 40 L 15.1 40 C 13.4 40 12.3 38.3 13.2 36.8 Z"/><rect x="12.5" y="49" width="39" height="9.5" rx="3"/></svg> T2</span>
                 </div>
                 <div class="tier-name" data-i18n="tierMed">گرافیک متوسط</div>
               </div>
@@ -148,7 +203,7 @@
               <div class="tier-card" data-mode="T3" onclick="selectPreset('T3')">
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="tier-card-header">
-                  <span class="tier-badge t3"><img src="assets/icons_norm/t3_flare.png" class="dlp-icon-badge" alt="" /> T3</span>
+                  <span class="tier-badge t3"><svg class="dlp-icon-badge" viewBox="0 0 64 64" fill="currentColor"><path d="M 30.4 5.5 C 31.2 4.1 32.8 4.1 33.6 5.5 L 47.3 27 C 48.2 28.5 47.1 30 45.4 30 L 18.6 30 C 16.9 30 15.8 28.5 16.7 27 Z"/><rect x="17" y="38" width="30" height="6.5" rx="2.5"/><rect x="17" y="53" width="30" height="6.5" rx="2.5"/></svg> T3</span>
                 </div>
                 <div class="tier-name" data-i18n="tierLow">گرافیگ پایین</div>
               </div>
@@ -165,7 +220,7 @@
             <!-- Settings Row 1: CAMERA, HUD, RENDERER -->
             <div class="settings-duo settings-row-3">
               <!-- CAMERA box (FOV) -->
-              <div class="setting-box">
+              <div class="setting-box fov-box">
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
                     <i class="fa-solid fa-eye" style="font-size:14px"></i>
@@ -194,10 +249,6 @@
                   <div class="fov-box-title-wrap">
                     <i class="fa-solid fa-heart-pulse" style="font-size:14px"></i>
                     <span class="fov-box-title" data-i18n="hudTitle">HUD CONFIGURATION</span>
-                  </div>
-                  <div class="hint-trigger">
-                    <i class="fa-solid fa-circle-question"></i>
-                    <div class="hint-tooltip" data-i18n="hudHint">Saves directly into your cfg\autoexec.cfg when clicking 'Apply to Deadlock'. Takes effect regardless of how you launch the game.</div>
                   </div>
                 </div>
                 <label class="hud-switch-card" for="sw-unit-status">
@@ -260,14 +311,10 @@
                     <i class="fa-solid fa-gauge-high" style="font-size:14px"></i>
                     <span class="fov-box-title" data-i18n="fpsLimitTitle">FPS LIMIT</span>
                   </div>
-                  <div class="hint-trigger">
-                    <i class="fa-solid fa-circle-question"></i>
-                    <div class="hint-tooltip" data-i18n="fpsHint">Sets fps_max in video.txt and autoexec.cfg. Does not alter your monitor's native refresh rate.</div>
-                  </div>
                 </div>
                 <div class="fps-pill-grid" id="fps-radio-group">
                   <span class="fps-glider" id="fps-glider"></span>
-                  <button type="button" class="renderer-pill active" data-fps="DEFAULT" onclick="selectFps('DEFAULT')">DEFAULT</button>
+                  <button type="button" class="renderer-pill active" data-fps="DEFAULT" onclick="selectFps('DEFAULT')" data-i18n="fpsDefaultPill">DEFAULT</button>
                   <button type="button" class="renderer-pill" data-fps="45" onclick="selectFps('45')">45</button>
                   <button type="button" class="renderer-pill" data-fps="60" onclick="selectFps('60')">60</button>
                   <button type="button" class="renderer-pill" data-fps="75" onclick="selectFps('75')">75</button>
@@ -276,7 +323,7 @@
                   <button type="button" class="renderer-pill" data-fps="165" onclick="selectFps('165')">165</button>
                   <button type="button" class="renderer-pill" data-fps="245" onclick="selectFps('245')">245</button>
                   <button type="button" class="renderer-pill" data-fps="320" onclick="selectFps('320')">320</button>
-                  <button type="button" class="renderer-pill" data-fps="0" onclick="selectFps('0')" title="Unlimited / نامحدود" aria-label="Unlimited"><i class="fa-solid fa-infinity"></i></button>
+                  <button type="button" class="renderer-pill" data-fps="0" onclick="selectFps('0')" data-tooltip="Unlimited / نامحدود" aria-label="Unlimited"><i class="fa-solid fa-infinity"></i></button>
                 </div>
               </div>
 
@@ -284,21 +331,20 @@
               <div class="setting-box launch-options-box">
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
-                    <i class="fa-brands fa-steam" style="font-size:14px;color:var(--deadlock-cyan);"></i>
+                    <i class="fa-brands fa-steam" style="font-size:14px"></i>
                     <span class="fov-box-title" data-i18n="launchOptionsTitle">LAUNCH OPTIONS</span>
                   </div>
                 </div>
                 <div class="launch-options-content">
-                  <div class="launch-options-desc" data-i18n="launchOptionsDesc">
-                    روی هر گزینه کلیک کنید تا کپی شود، سپس در مسیر Properties → Launch Options استیم قرار دهید:
+                  <div class="launch-options-desc" id="launch-options-desc" data-i18n="launchOptionsDesc">
+                    روی هر گزینه کلیک کنید تا کپی شود، سپس در استیم روی ددلاک راست کلیک کن و در مسیر Properties → Launch Options متن را قرار دهید
                   </div>
                   <div class="launch-buttons-grid">
                     <div class="launch-buttons-row">
-                      <button type="button" class="launch-opt-btn" onclick="copyLaunchOpt('-dx11', this)" title="Click to copy -dx11"><code>-dx11</code></button>
-                      <button type="button" class="launch-opt-btn" onclick="copyLaunchOpt('-vulkan', this)" title="Click to copy -vulkan"><code>-vulkan</code></button>
-                      <button type="button" class="launch-opt-btn" onclick="copyLaunchOpt('-high', this)" title="Click to copy -high"><code>-high</code></button>
+                      <button type="button" class="launch-opt-btn" onclick="copyLaunchOpt('-dx11', this)" data-launch="-dx11" data-i18n-tooltip="launchOptDx11"><code>-dx11</code></button>
+                      <button type="button" class="launch-opt-btn" onclick="copyLaunchOpt('-vulkan', this)" data-launch="-vulkan" data-i18n-tooltip="launchOptVulkan"><code>-vulkan</code></button>
+                      <button type="button" class="launch-opt-btn" onclick="copyLaunchOpt('-high', this)" data-launch="-high" data-i18n-tooltip="launchOptHigh"><code>-high</code></button>
                     </div>
-                    <button type="button" class="launch-opt-btn launch-opt-wide" onclick="copyLaunchOpt('+citadel_unit_status_use_new true', this)" title="Click to copy +citadel_unit_status_use_new true"><code>+citadel_unit_status_use_new true</code></button>
                   </div>
                 </div>
               </div>
@@ -325,29 +371,14 @@
         <div class="panel" id="panel-advanced" style="display:none">
           <div class="advanced-grid">
 
-            <!-- Column 1: Recovery & VIP -->
-            <div class="adv-col">
+            <!-- Column 1: Recovery & Actions -->
+            <div class="adv-col adv-col-actions">
               <!-- Revert Vanilla Card (Only Button, No Desc) -->
               <div class="adv-card adv-danger adv-revert-only">
                 <button class="btn-reset btn-danger" id="btn-revert-vanilla" onclick="doRevertVanilla()">
                   <i class="fa-solid fa-triangle-exclamation" style="font-size:16px;color:#ef4444"></i>
                   <span data-i18n="btnRevertVanilla">بازگردانی تمام تغییرات</span>
                 </button>
-              </div>
-
-              <!-- VIP/TEST MODE Card (Box with input + submit only) -->
-              <div class="adv-card adv-vip-card">
-                <div class="adv-card-header">
-                  <div class="adv-card-title-group">
-                    <i class="fa-solid fa-lock" style="font-size:15px"></i>
-                    <span class="adv-card-title" data-i18n="testerTitle">VIP/TEST MODE</span>
-                  </div>
-                </div>
-                <div id="tester-locked" class="tester-lock-bar">
-                  <input type="password" class="path-input tester-code-input" id="unlock-input" placeholder="VIP Code..." />
-                  <button class="btn-apply btn-sm" id="btn-unlock" onclick="doUnlock()"><span data-i18n="unlock">ثبت</span></button>
-                </div>
-                <div id="tester-modes" style="display:none;" class="tester-modes-bar"></div>
               </div>
 
               <!-- Check For Updates Box -->
@@ -379,21 +410,36 @@
               </div>
             </div>
 
-            <!-- Column 2: Backup & History (Full Height, maximum room) -->
-            <div class="adv-col">
+            <!-- Column 2: Backup & History + VIP Mode -->
+            <div class="adv-col adv-col-backup">
               <!-- Backup & History Card -->
               <div class="adv-card adv-backup-card">
                 <div class="adv-card-header">
                   <div class="adv-card-title-group">
                     <i class="fa-solid fa-floppy-disk" style="font-size:15px"></i>
-                    <span class="adv-card-title">BACKUP & RESTORE</span>
+                    <span class="adv-card-title" data-i18n="advTitle">BACKUP & RESTORE</span>
                   </div>
                   <button class="btn-apply btn-sm" id="btn-backup" onclick="doBackupNow()">
                     <span data-i18n="backupNow">بکاپ فوری</span>
                   </button>
                 </div>
-                <div class="adv-card-desc">Game snapshots and backup history</div>
+                <div class="adv-card-desc" data-i18n="backupDesc">Game snapshots and backup history</div>
                 <div id="backup-list" class="backup-list-box"></div>
+              </div>
+
+              <!-- VIP/TEST MODE Card (Box with input + submit only) -->
+              <div class="adv-card adv-vip-card">
+                <div class="adv-card-header">
+                  <div class="adv-card-title-group">
+                    <i class="fa-solid fa-lock" style="font-size:15px"></i>
+                    <span class="adv-card-title" data-i18n="testerTitle">VIP/TEST MODE</span>
+                  </div>
+                </div>
+                <div id="tester-locked" class="tester-lock-bar">
+                  <input type="password" class="path-input tester-code-input" id="unlock-input" placeholder="VIP Code..." />
+                  <button class="btn-apply btn-sm" id="btn-unlock" onclick="doUnlock()"><span data-i18n="unlock">ثبت</span></button>
+                </div>
+                <div id="tester-modes" style="display:none;" class="tester-modes-bar"></div>
               </div>
             </div>
 
@@ -426,18 +472,18 @@
   <!-- Social links: bottom-left corner flip cards -->
   <div class="social-cluster" id="social-cluster">
     <div class="social-row">
-      <button class="social-card tl telegram" data-url="https://t.me/deadlock_persian" title="Telegram: @deadlock_persian">
+      <button class="social-card tl telegram" data-url="https://t.me/deadlock_persian" data-tooltip="Telegram: @deadlock_persian">
         <i class="fa-brands fa-telegram-plane" style="font-size:20px"></i>
       </button>
-      <button class="social-card tr youtube" data-url="https://www.youtube.com/@Deadlock_persian" title="YouTube: @Deadlock_persian">
+      <button class="social-card tr youtube" data-url="https://www.youtube.com/@Deadlock_persian" data-tooltip="YouTube: @Deadlock_persian">
         <i class="fa-brands fa-youtube" style="font-size:20px"></i>
       </button>
     </div>
     <div class="social-row">
-      <button class="social-card bl website" data-url="https://deadlockpersian.ir" title="deadlockpersian.ir">
+      <button class="social-card bl website" data-url="https://deadlockpersian.ir" data-tooltip="deadlockpersian.ir">
         <img src="assets/dlp.png" alt="DLP" />
       </button>
-      <button class="social-card br instagram" data-url="https://www.instagram.com/DeadlockPersian" title="Instagram: DeadlockPersian">
+      <button class="social-card br instagram" data-url="https://www.instagram.com/DeadlockPersian" data-tooltip="Instagram: DeadlockPersian">
         <i class="fa-brands fa-instagram" style="font-size:20px"></i>
       </button>
     </div>
@@ -449,6 +495,9 @@
     <span class="ver-sep">•</span>
     <span class="ver-by">by <span class="ver-author">aryobw9</span></span>
   </div>
+
+  <!-- Custom Info Tooltip Box -->
+  <div id="app-custom-tooltip" class="app-custom-tooltip" style="display:none;" aria-hidden="true"></div>
 
   <!-- Modal -->
   <div class="modal-overlay" id="modal" style="display:none">
@@ -462,7 +511,7 @@
   <script src="vendor/motion/motion.js"></script>
   <script src="i18n/fa.js"></script>
   <script src="i18n/en.js"></script>
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=26"></script>
   <script>
     // expose opener global (withGlobalTauri injects plugin APIs lazily via plugins object)
     window.addEventListener('DOMContentLoaded', () => {

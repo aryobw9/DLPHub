@@ -79,6 +79,9 @@ function applyLang() {
   document.querySelectorAll('[data-i18n-title]').forEach((el) => {
     el.title = t(el.dataset.i18nTitle);
   });
+  document.querySelectorAll('[data-i18n-tooltip]').forEach((el) => {
+    el.setAttribute('data-tooltip', t(el.dataset.i18nTooltip));
+  });
 
   // Retain contextual hero & section title for currently active tab
   const currentTab = state.activeTab || 'graphic';
@@ -105,17 +108,64 @@ function applyLang() {
   if (p) p.placeholder = t('pathPlaceholder');
   renderBackups();
   renderActiveBadge();
-  if (state.lastValvePings) renderValvePings(state.lastValvePings);
-  setTimeout(() => {
-    updateRendererGlider();
-    updateFpsGlider();
-  }, 20);
+  if (pingingActive) {
+    const lbl = document.querySelector('.latency-loading-content .dlp-load-label');
+    if (lbl) lbl.textContent = t('pingTesting').replace(/\.{2,}$/, '');
+  } else if (state.lastValvePings) {
+    renderValvePings(state.lastValvePings);
+  }
+  if (!isLangSwitching) {
+    setTimeout(() => {
+      updateRendererGlider();
+      updateFpsGlider();
+    }, 20);
+  }
 }
 
-function setLang(lang) {
-  state.lang = lang;
-  call('set_settings', { patch: { lang } }).catch(() => {});
-  applyLang();
+let isLangSwitching = false;
+
+function setLang(targetLang) {
+  if (isLangSwitching || targetLang === state.lang) return;
+  const transitionClass = targetLang === 'fa' ? 'to-fa' : 'to-en';
+
+  isLangSwitching = true;
+  const btnToggle = document.getElementById('btn-lang-toggle');
+  if (btnToggle) btnToggle.style.pointerEvents = 'none';
+
+  // Phase 1: VibeFarsi Skeleton Mode (0ms - 2000ms)
+  document.body.classList.remove('to-fa', 'to-en', 'lang-transitioning', 'lang-revealing');
+  document.body.classList.add('lang-transitioning', transitionClass);
+
+  // Phase 2: At 1800ms, swap text and attributes under skeleton disguise
+  setTimeout(() => {
+    state.lang = targetLang;
+    call('set_settings', { patch: { lang: targetLang } }).catch(() => {});
+    applyLang();
+  }, 1800);
+
+  // Phase 3: At 2000ms, transition from Skeleton to 2D Grid Reveal Wave
+  setTimeout(() => {
+    document.body.classList.remove('lang-transitioning');
+    document.body.classList.add('lang-revealing', transitionClass);
+
+    setTimeout(() => {
+      updateRendererGlider();
+      updateFpsGlider();
+    }, 500);
+
+    // Phase 4: At 4000ms (4.0s total), finalize and unlock
+    setTimeout(() => {
+      document.body.classList.remove('lang-revealing', 'to-fa', 'to-en');
+      updateRendererGlider();
+      updateFpsGlider();
+      if (btnToggle) btnToggle.style.pointerEvents = '';
+      isLangSwitching = false;
+    }, 2000); // 2000ms + 2000ms = 4000ms (4.0s)
+  }, 2000);
+}
+
+function toggleLang() {
+  setLang(state.lang === 'fa' ? 'en' : 'fa');
 }
 
 window.addEventListener('resize', () => {
@@ -282,7 +332,7 @@ async function copyLaunchOpt(text, btn) {
 }
 
 async function copyAllLaunchOpts() {
-  const allText = '-high -dx11 +citadel_unit_status_use_new true';
+  const allText = '-high -dx11';
   try {
     await copyToClipboard(allText);
     const icon = document.getElementById('copy-launch-all-icon');
@@ -499,27 +549,22 @@ let updateCursorFollower = () => {};
     cursorEl.style.transform = `translate3d(${x - meta.x}px, ${y - meta.y}px, 0)`;
   }
 
-  function isTargetInBusyScope(t) {
-    if (!state.busyTab) return false;
-    // If a tab is loading, only show busy inside that active visible tab and panel
-    if (state.activeTab && state.busyTab !== 'global' && state.activeTab !== state.busyTab) {
-      return false;
-    }
+  function isUsableInteractive(t) {
     if (!(t instanceof Element)) return false;
-    if (state.busyTab === 'global') return true;
-    const panel = document.getElementById(`panel-${state.busyTab}`);
-    const card = document.getElementById(`card-${state.busyTab}`);
-    if (panel && panel.contains(t)) return true;
-    if (card && card.contains(t)) return true;
-    return false;
+    const btn = t.closest('button, [role="button"], a, [data-url], .win-ctl, .lang-pill-btn, .pro-card, .sci-card, select, .hud-switch-card, .neon-checkbox, .option-item, .tier-card, .social-card, [onclick]');
+    if (!btn) return false;
+    if (btn.matches('button:disabled, [disabled], [aria-disabled="true"], .disabled')) return false;
+    return true;
   }
 
   function determineCursor(t) {
     if (root.classList.contains('right-click')) return 'click_right';
 
-    // 1) If currently in a loading tab: entire tab shows busy, except actual buttons which show pointer/click
-    if (isTargetInBusyScope(t)) {
-      if (t instanceof Element && t.closest('button, [role="button"], a, [data-url], .win-ctl, .btn-play, .lang-pill-btn, .btn-apply, .btn-reset, .btn-refresh-ping-top, .win-close')) {
+    // 1) Busy state: active across the entire application window for the active busy tab or a global task
+    // Only reverts to pointer/click when hovering a usable interactive button.
+    const isBusyNow = state.busyTab && (state.busyTab === 'global' || state.busyTab === state.activeTab);
+    if (isBusyNow) {
+      if (isUsableInteractive(t)) {
         return root.classList.contains('is-pressed') ? 'click' : 'pointer';
       }
       return 'busy';
@@ -715,7 +760,7 @@ async function renderBackups() {
   if (!items || items.length === 0) {
     const d = document.createElement('div');
     d.className = 'option-detail';
-    d.textContent = 'No backups found';
+    d.textContent = t('noBackups');
     list.appendChild(d);
     return;
   }
@@ -735,6 +780,8 @@ async function renderBackups() {
     name.textContent = n;
     info.appendChild(name);
 
+    const isMain = !!b.is_main || (items.length > 0 && b === items[items.length - 1] && !items.some((x) => x.is_main));
+
     if (b.size_bytes !== undefined && b.size_bytes > 0) {
       const size = document.createElement('span');
       size.className = 'backup-size';
@@ -742,23 +789,30 @@ async function renderBackups() {
       info.appendChild(size);
     }
 
+    if (isMain) {
+      const badge = document.createElement('span');
+      badge.className = 'backup-badge-main';
+      badge.textContent = t('mainBackupBadge') || 'Main Backup';
+      info.appendChild(badge);
+    }
+
     const actions = document.createElement('div');
     actions.className = 'backup-actions';
 
     const btnRestore = document.createElement('button');
     btnRestore.className = 'btn-apply btn-restore';
-    btnRestore.textContent = 'RESTORE';
+    btnRestore.textContent = t('restore');
     btnRestore.onclick = async () => {
       try {
         const running = await call('check_running');
         if (running.length > 0) {
-          showModal('Game Running', 'Deadlock is currently running. Please close the game before restoring backups.', [{ label: 'OK' }]);
+          showModal(t('guardTitle') || 'Game Running', t('guardBody') || 'Deadlock is currently running.', [{ label: t('ok') || 'OK' }]);
           return;
         }
       } catch (e) { /* non-fatal */ }
-      const go = await showModal('RESTORE BACKUP', 'Restore this backup? Your current gameinfo.gi / video.txt / our addons will be replaced.', [
-        { label: 'RESTORE', value: true, kind: 'apply' },
-        { label: 'Cancel', value: false },
+      const go = await showModal(t('restoreTitle') || 'RESTORE BACKUP', t('confirmRestore'), [
+        { label: t('restore'), value: true, kind: 'apply' },
+        { label: t('guardCancel') || 'Cancel', value: false },
       ]);
       if (!go) return;
       setBusyCursor(true, 'advanced');
@@ -767,36 +821,39 @@ async function renderBackups() {
         stepLine(`[restore] ${n} — ${rep.removed_addons.length} addons removed`, 'ok');
         updateDetectBadge();
       } catch (e) {
-        showModal('RESTORE BACKUP', String(e), [{ label: 'OK' }]);
-      } finally {
-        setBusyCursor(false, 'advanced');
-      }
-    };
-
-    const btnDel = document.createElement('button');
-    btnDel.className = 'btn-delete-backup';
-    btnDel.innerHTML = '<i class="fa-solid fa-trash"></i>';
-    btnDel.title = 'Delete';
-    btnDel.onclick = async () => {
-      const go = await showModal('DELETE BACKUP', 'Are you sure you want to delete this backup? This action cannot be undone.', [
-        { label: 'DELETE', value: true, kind: 'danger' },
-        { label: 'Cancel', value: false },
-      ]);
-      if (!go) return;
-      setBusyCursor(true, 'advanced');
-      try {
-        await call('delete_backup_cmd', { name: n });
-        stepLine(`[delete] ${n}`, 'ok');
-        renderBackups();
-      } catch (e) {
-        showModal('DELETE BACKUP', String(e), [{ label: 'OK' }]);
+        showModal(t('restoreTitle') || 'RESTORE BACKUP', String(e), [{ label: t('ok') || 'OK' }]);
       } finally {
         setBusyCursor(false, 'advanced');
       }
     };
 
     actions.appendChild(btnRestore);
-    actions.appendChild(btnDel);
+
+    if (!isMain) {
+      const btnDel = document.createElement('button');
+      btnDel.className = 'btn-delete-backup';
+      btnDel.innerHTML = '<i class="fa-solid fa-trash"></i>';
+      btnDel.dataset.tooltip = t('deleteBackup');
+      btnDel.onclick = async () => {
+        const go = await showModal(t('deleteBackup'), t('confirmDeleteBackup'), [
+          { label: t('deleteBackup'), value: true, kind: 'danger' },
+          { label: t('guardCancel') || 'Cancel', value: false },
+        ]);
+        if (!go) return;
+        setBusyCursor(true, 'advanced');
+        try {
+          await call('delete_backup_cmd', { name: n });
+          stepLine(`[delete] ${n}`, 'ok');
+          renderBackups();
+        } catch (e) {
+          showModal(t('deleteBackup'), String(e), [{ label: t('ok') || 'OK' }]);
+        } finally {
+          setBusyCursor(false, 'advanced');
+        }
+      };
+      actions.appendChild(btnDel);
+    }
+
     row.appendChild(info);
     row.appendChild(actions);
     list.appendChild(row);
@@ -1138,7 +1195,7 @@ function relayCardHtml(s, featured) {
                    <span class="fc-stat mono">${t('loss')} ${loss}</span>`}
               <span class="fc-live">${offline ? t('offline') : `${liveTxt} ●`}</span>
             </div>
-            <div class="fc-ip mono" title="${s.ip}">${s.ip}</div>
+            <div class="fc-ip mono" data-tooltip="${s.ip}">${s.ip}</div>
           </div>
           <div class="fc-ping-wrap">
             <div class="fc-ping">${offline ? '—' : s.ping_ms}</div>
@@ -1167,6 +1224,7 @@ function renderValvePings(servers) {
   const slot = document.getElementById('best-route-slot');
   if (!grid || !Array.isArray(servers)) return;
 
+  grid.classList.remove('is-loading');
   for (const s of servers) pushHistory(s);
   const online = servers.filter((s) => s.ping_ms !== null && s.ping_ms !== undefined);
   // RECOMMENDED = best route score (latency + jitter + loss), not raw ping
@@ -1185,11 +1243,18 @@ function renderValvePings(servers) {
     const el = tpl.content.firstElementChild;
     grid.appendChild(el);
   }
-  // staggered rise
-  if (window.Motion) {
-    Motion.animate(grid.querySelectorAll('.ping-card'),
+  // staggered rise (only during normal ping fetch, CSS drives language transitions)
+  if (window.Motion && !isLangSwitching) {
+    const anim = Motion.animate(grid.querySelectorAll('.ping-card'),
       { opacity: [0, 1], transform: ['translateY(8px)', 'translateY(0px)'] },
       { delay: Motion.stagger(0.05), duration: 0.3, easing: 'ease-out' });
+    if (anim && anim.finished) {
+      anim.finished.then(() => {
+        grid.querySelectorAll('.ping-card').forEach((c) => {
+          c.style.transform = '';
+        });
+      });
+    }
   }
 
   // footer: relays online + last test time
@@ -1217,18 +1282,59 @@ function startAgoTicker() {
   }, 1000);
 }
 
-async function refreshValvePings() {
-   if (pingingActive) return;
+function renderMeteorsHtml(count = 16) {
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const left = ((i * 53) % 100) + '%';
+    const delay = (((i * 37) % 60) / 10).toFixed(1) + 's';
+    const duration = (2.5 + ((i * 17) % 40) / 10).toFixed(1) + 's';
+    html += `<span class="vf-meteor" style="left:${left};animation-duration:${duration};animation-delay:${delay};"><span class="vf-meteor-head"></span></span>`;
+  }
+  return html;
+}
+
+async function refreshValvePings(forceLoading = false) {
+  if (pingingActive) return;
   pingingActive = true;
   const btn = document.getElementById('btn-refresh-ping');
   const grid = document.getElementById('ping-grid');
+  const slot = document.getElementById('best-route-slot');
+  const footer = document.getElementById('net-footer');
   const spinIcon = btn ? btn.querySelector('.refresh-icon') : null;
-  if (btn) btn.disabled = true;
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('is-pinging');
+  }
   if (spinIcon) spinIcon.classList.add('spin');
   setBusyCursor(true, 'latency');
 
-  if (grid && (!state.lastValvePings || state.lastValvePings.length === 0)) {
-    grid.innerHTML = `<div class="dlp-loading"><div class="dlp-loader"><div class="l1"><div class="l2"><div class="l3"></div></div></div></div><span class="dlp-load-label">${t('pingTesting')}</span></div>`;
+  const shouldShowLoading = forceLoading || !state.lastValvePings || state.lastValvePings.length === 0;
+
+  if (shouldShowLoading) {
+    if (slot) slot.innerHTML = '';
+    if (footer) footer.style.display = 'none';
+    if (grid) {
+      grid.classList.add('is-loading');
+      grid.innerHTML = `
+        <div class="latency-loading-wrap">
+          <div class="vf-meteors-container" aria-hidden="true">
+            ${renderMeteorsHtml(16)}
+          </div>
+          <div class="latency-loading-content">
+            <div class="dlp-loader">
+              <div class="l1"><div class="l2"><div class="l3"></div></div></div>
+            </div>
+            <div class="vf-loading-dots-wrap" role="status">
+              <span class="dlp-load-label">${t('pingTesting').replace(/\.{2,}$/, '')}</span>
+              <span class="vf-loading-dots" aria-hidden="true">
+                <span class="vf-dot"></span>
+                <span class="vf-dot"></span>
+                <span class="vf-dot"></span>
+              </span>
+            </div>
+          </div>
+        </div>`;
+    }
   }
 
   try {
@@ -1237,12 +1343,16 @@ async function refreshValvePings() {
     renderValvePings(servers);
   } catch (err) {
     console.error('[ping_valve_servers error]', err);
-    if (grid && (!state.lastValvePings || state.lastValvePings.length === 0)) {
+    if (grid) {
+      grid.classList.remove('is-loading');
       grid.innerHTML = `<div class="ping-loading-msg text-danger">${String(err)}</div>`;
     }
   } finally {
     setBusyCursor(false, 'latency');
-    if (btn) btn.disabled = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('is-pinging');
+    }
     if (spinIcon) spinIcon.classList.remove('spin');
     pingingActive = false;
   }
@@ -1273,26 +1383,51 @@ function selectCardByKey(tabKey) {
   }
   for (const p of PANELS) {
     const pan = document.getElementById(`panel-${p}`);
-    if (pan) pan.style.display = p === tabKey ? 'block' : 'none';
+    if (pan) {
+      pan.style.display = p === tabKey ? 'block' : 'none';
+      pan.classList.remove('panel-revealing', 'to-fa', 'to-en');
+    }
   }
   // install action only applies to graphic presets — hide elsewhere
   const footer = document.getElementById('action-footer');
   if (footer) footer.style.display = tabKey === 'graphic' ? 'flex' : 'none';
-  // Motion One: slide+fade the activated panel in (micro-interaction)
+
+  // 2D Grid Reveal cascade (grid only, no skeleton) when switching menus
+  const dirClass = state.lang === 'fa' ? 'to-fa' : 'to-en';
   const active = document.getElementById(`panel-${tabKey}`);
-  if (active && window.Motion) {
-    Motion.animate(active, { opacity: [0, 1], transform: ['translateY(10px)', 'translateY(0px)'] }, { duration: 0.28, easing: 'ease-out' });
+  if (active) {
+    active.classList.remove('panel-revealing', 'to-fa', 'to-en');
+    void active.offsetWidth;
+    active.classList.add('panel-revealing', dirClass);
+    setTimeout(() => {
+      active.classList.remove('panel-revealing', 'to-fa', 'to-en');
+    }, 750);
+  }
+  const header = document.querySelector('.content-header');
+  if (header) {
+    header.classList.remove('panel-revealing', 'to-fa', 'to-en');
+    void header.offsetWidth;
+    header.classList.add('panel-revealing', dirClass);
+    setTimeout(() => {
+      header.classList.remove('panel-revealing', 'to-fa', 'to-en');
+    }, 750);
   }
   const pingBtn = document.getElementById('btn-refresh-ping');
   if (pingBtn) pingBtn.style.display = tabKey === 'latency' ? '' : 'none';
+  const isBusyNow = state.busyTab && (state.busyTab === 'global' || state.busyTab === tabKey);
+  document.documentElement.classList.toggle('is-busy', !!isBusyNow);
   updateCursorFollower();
-  if (tabKey === 'latency') refreshValvePings();
+  if (tabKey === 'latency') {
+    if (!state.lastValvePings || state.lastValvePings.length === 0) {
+      refreshValvePings();
+    }
+  }
   if (tabKey === 'advanced') renderBackups();
   if (tabKey === 'graphic') {
     setTimeout(() => {
       updateRendererGlider();
       updateFpsGlider();
-    }, 40);
+    }, 380);
   }
 }
 
@@ -1566,7 +1701,8 @@ window.selectPreset = selectPreset;
 window.handleWinMin = handleWinMin;
 window.handleWinMax = handleWinMax;
 window.handleWinClose = handleWinClose;
-window.toggleLang = () => setLang(state.lang === 'fa' ? 'en' : 'fa');
+window.toggleLang = toggleLang;
+window.setLang = setLang;
 window.selectCardByKey = selectCardByKey;
 window.refreshValvePings = refreshValvePings;
 window.launchGame = launchGame;
@@ -1582,13 +1718,59 @@ window.selectRenderer = selectRenderer;
 window.setFov = setFov;
 window.copyLaunchOpt = copyLaunchOpt;
 window.copyAllLaunchOpts = copyAllLaunchOpts;
-window.copyLaunchOptions = copyLaunchOptions;
+// ---------- Custom Info Tooltip & Launch Options Hover Preview ----------
+function positionTooltip(el, tooltip) {
+  const rect = el.getBoundingClientRect();
+  const tipRect = tooltip.getBoundingClientRect();
+  let top = rect.top - tipRect.height - 8;
+  let left = rect.left + (rect.width / 2) - (tipRect.width / 2);
+
+  if (top < 8) {
+    top = rect.bottom + 8;
+  }
+  if (left < 10) left = 10;
+  if (left + tipRect.width > window.innerWidth - 10) {
+    left = window.innerWidth - tipRect.width - 10;
+  }
+
+  tooltip.style.top = `${Math.round(top)}px`;
+  tooltip.style.left = `${Math.round(left)}px`;
+}
+
+function setupCustomTooltips() {
+  const tooltip = document.getElementById('app-custom-tooltip');
+
+  document.addEventListener('mouseover', (e) => {
+    const target = e.target.closest('[data-tooltip]');
+    if (target && tooltip) {
+      const text = target.getAttribute('data-tooltip');
+      if (text) {
+        tooltip.textContent = text;
+        tooltip.style.display = 'block';
+        void tooltip.offsetWidth;
+        positionTooltip(target, tooltip);
+        tooltip.classList.add('visible');
+      }
+    }
+  });
+
+  document.addEventListener('mouseout', (e) => {
+    const target = e.target.closest('[data-tooltip]');
+    if (target && tooltip && !e.relatedTarget?.closest('[data-tooltip]')) {
+      tooltip.classList.remove('visible');
+      setTimeout(() => {
+        if (!tooltip.classList.contains('visible')) tooltip.style.display = 'none';
+      }, 150);
+    }
+  });
+}
 
 // ---------- wire everything ----------
 function init() {
   try {
     updateScale();
     window.addEventListener('resize', updateScale);
+    setupCustomTooltips();
     // flag Animate.css availability (loaded before app.js)
     window.__animateStyle = !!document.querySelector('link[href*="animate.min.css"]');
     // boot entrance: staggered card rise

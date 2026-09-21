@@ -53,6 +53,7 @@ pub const MAX_BACKUPS: usize = 15;
 pub struct BackupEntry {
     pub name: String,
     pub size_bytes: u64,
+    pub is_main: bool,
 }
 
 pub fn dir_size(dir: &Path) -> u64 {
@@ -70,16 +71,43 @@ pub fn dir_size(dir: &Path) -> u64 {
     total
 }
 
-/// All backup folder names with their calculated disk sizes, sorted newest first.
+/// Identifies the root/initial vanilla game backup.
+/// Checks for an explicit `main_backup` marker file; falls back to the chronologically
+/// oldest backup directory (last item in list_backups).
+pub fn get_main_backup(data_dir: &Path) -> Option<String> {
+    let names = list_backups(data_dir);
+    if names.is_empty() {
+        return None;
+    }
+    let root = backups_root(data_dir);
+    for n in &names {
+        if root.join(n).join("main_backup").is_file() {
+            return Some(n.clone());
+        }
+    }
+    names.last().cloned()
+}
+
+pub fn is_main_backup(data_dir: &Path, name: &str) -> bool {
+    if let Some(main) = get_main_backup(data_dir) {
+        main == name
+    } else {
+        false
+    }
+}
+
+/// All backup folder names with their calculated disk sizes and main-backup status, sorted newest first.
 pub fn list_backups_with_details(data_dir: &Path) -> Vec<BackupEntry> {
     let names = list_backups(data_dir);
     let root = backups_root(data_dir);
+    let main_name = get_main_backup(data_dir);
     names
         .into_iter()
         .map(|name| {
             let bdir = root.join(&name);
             let size_bytes = dir_size(&bdir);
-            BackupEntry { name, size_bytes }
+            let is_main = Some(&name) == main_name.as_ref();
+            BackupEntry { name, size_bytes, is_main }
         })
         .collect()
 }
@@ -87,7 +115,12 @@ pub fn list_backups_with_details(data_dir: &Path) -> Vec<BackupEntry> {
 pub fn enforce_retention(data_dir: &Path) {
     let backups = list_backups(data_dir);
     if backups.len() > MAX_BACKUPS {
+        let main_name = get_main_backup(data_dir);
         for old in &backups[MAX_BACKUPS..] {
+            // NEVER delete the initial main backup
+            if Some(old) == main_name.as_ref() {
+                continue;
+            }
             let p = backups_root(data_dir).join(old);
             rm_ro(&p);
         }
@@ -111,9 +144,79 @@ pub fn list_backups(data_dir: &Path) -> Vec<String> {
     names
 }
 
+/// Check if the configuration in citadel is already one of DLPBooster's tiers.
+pub fn is_our_config(citadel: &Path, pkg: &Path) -> bool {
+    let tier = crate::detect::detect_tier(citadel, pkg);
+    matches!(tier, crate::detect::Tier::T1 | crate::detect::Tier::T2 | crate::detect::Tier::T3 | crate::detect::Tier::Potato)
+}
+
+/// Check if the current state in citadel is byte-for-byte identical to a backup directory.
+pub fn is_identical_to_backup(citadel: &Path, backup_dir: &Path) -> bool {
+    if !backup_dir.is_dir() {
+        return false;
+    }
+    for (cit_rel, bak_rel) in [
+        ("gameinfo.gi", "gameinfo.gi"),
+        ("cfg/video.txt", "video.txt"),
+        ("cfg/autoexec.cfg", "autoexec.cfg"),
+        ("addons_manifest.txt", "addons_manifest.txt"),
+    ] {
+        let cp = citadel.join(cit_rel);
+        let bp = backup_dir.join(bak_rel);
+        match (cp.is_file(), bp.is_file()) {
+            (true, true) => {
+                if let (Ok(cb), Ok(bb)) = (std::fs::read(&cp), std::fs::read(&bp)) {
+                    if cb != bb { return false; }
+                } else {
+                    return false;
+                }
+            }
+            (false, false) => {}
+            _ => return false,
+        }
+    }
+    let c_addons = citadel.join("addons");
+    let b_addons = backup_dir.join("addons");
+    match (c_addons.is_dir(), b_addons.is_dir()) {
+        (true, true) => {
+            let mut c_files: std::collections::BTreeMap<String, Vec<u8>> = std::collections::BTreeMap::new();
+            if let Ok(rd) = std::fs::read_dir(&c_addons) {
+                for e in rd.flatten() {
+                    if e.path().extension().is_some_and(|x| x.eq_ignore_ascii_case("vpk")) {
+                        if let Ok(bytes) = std::fs::read(e.path()) {
+                            c_files.insert(e.file_name().to_string_lossy().to_string(), bytes);
+                        }
+                    }
+                }
+            }
+            let mut b_files: std::collections::BTreeMap<String, Vec<u8>> = std::collections::BTreeMap::new();
+            if let Ok(rd) = std::fs::read_dir(&b_addons) {
+                for e in rd.flatten() {
+                    if e.path().extension().is_some_and(|x| x.eq_ignore_ascii_case("vpk")) {
+                        if let Ok(bytes) = std::fs::read(e.path()) {
+                            b_files.insert(e.file_name().to_string_lossy().to_string(), bytes);
+                        }
+                    }
+                }
+            }
+            if c_files != b_files {
+                return false;
+            }
+        }
+        (false, false) => {}
+        _ => return false,
+    }
+    true
+}
+
 /// Copy current state into a datestamped backup folder. Returns folder name.
 /// Errors (String) when nothing found to back up (console exit-4 parity).
 pub fn do_backup(citadel: &Path, data_dir: &Path) -> Result<String, String> {
+    let is_first = list_backups(data_dir).is_empty();
+    do_backup_internal(citadel, data_dir, is_first)
+}
+
+pub fn do_backup_internal(citadel: &Path, data_dir: &Path, is_main: bool) -> Result<String, String> {
     let root = backups_root(data_dir);
     std::fs::create_dir_all(&root).map_err(|e| e.to_string())?;
     let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?;
@@ -147,12 +250,15 @@ pub fn do_backup(citadel: &Path, data_dir: &Path) -> Result<String, String> {
         if copied == 0 { return Err(std::io::Error::other("nothing found to back up")); }
         // v2 records absent files too; old backups cannot assert absence.
         std::fs::write(stage.join("complete_v2"), b"2")?;
+        if is_main {
+            std::fs::write(stage.join("main_backup"), b"1")?;
+        }
         std::fs::rename(&stage, root.join(&name))?;
         Ok(())
     })();
     if let Err(e) = result { rm_ro(&stage); return Err(e.to_string()); }
     enforce_retention(data_dir);
-    crate::logger::log(data_dir, "INFO", &format!("Backup created: {name}"));
+    crate::logger::log(data_dir, "INFO", &format!("Backup created: {name} (is_main: {is_main})"));
     Ok(name)
 }
 

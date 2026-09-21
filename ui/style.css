@@ -513,6 +513,7 @@
     }
 
     .content-header {
+      position: relative;
       height: 24px;
       min-height: 24px;
       max-height: 24px;
@@ -1684,16 +1685,16 @@ button:active,
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(239, 68, 68, 0.2);
 }
 
-/* Card 1: Revert Vanilla (Fixed 52px) */
+/* Card 1: Revert Vanilla (90px) */
 .adv-revert-only {
   flex: 0 0 auto;
-  height: 52px;
-  min-height: 52px;
-  max-height: 52px;
+  height: 90px !important;
+  min-height: 90px !important;
+  max-height: 90px !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 12px;
+  padding: 8px 12px;
   box-sizing: border-box;
 }
 
@@ -1701,10 +1702,10 @@ button:active,
   width: 100% !important;
   min-width: 100% !important;
   max-width: 100% !important;
-  height: 38px !important;
-  min-height: 38px !important;
-  max-height: 38px !important;
-  font-size: 0.85rem !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  max-height: 52px !important;
+  font-size: 0.88rem !important;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -1731,93 +1732,16 @@ button:active,
   color: #f87171 !important;
 }
 
-/* Card 2: VIP / Test Mode (Fixed 114px) */
-.adv-vip-card {
-  flex: 0 0 auto;
-  height: 114px;
-  min-height: 114px;
-  max-height: 114px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px 12px;
-  box-sizing: border-box;
-}
-
-.adv-vip-card .adv-card-header {
-  height: 22px;
-  min-height: 22px;
-  max-height: 22px;
-  margin-bottom: 0;
-}
-
-.tester-lock-bar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  width: 100%;
-  height: 36px;
-  min-height: 36px;
-  max-height: 36px;
-}
-
-.tester-code-input {
-  flex: 1;
-  height: 36px !important;
-  min-height: 36px !important;
-  max-height: 36px !important;
-  font-size: 0.85rem !important;
-  padding: 0 12px !important;
-  box-sizing: border-box;
-}
-
-.tester-modes-bar {
-  display: flex;
-  gap: 8px;
-  height: 32px;
-  min-height: 32px;
-  max-height: 32px;
-}
-
-.tier-card-sm {
-  flex: 1;
-  height: 32px;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid var(--card-border);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 10px;
-  cursor: var(--cur-pointer);
-  font-size: 0.8rem;
-  box-sizing: border-box;
-  transition: all 0.15s ease;
-}
-
-.tier-card-sm.selected {
-  border-color: var(--deadlock-orange);
-  background: rgba(249, 115, 22, 0.15);
-}
-
-.tier-card-sm .tier-pick { display: none; /* radios removed — card highlight is the selection state */
-  width: 12px;
-  height: 12px;
-  min-width: 12px;
-  min-height: 12px;
-}
-
-/* Card 3: Check For Updates (Fixed 52px) */
+/* Card 2 (Left): Check For Updates (90px) */
 .adv-update-card {
   flex: 0 0 auto;
-  height: 52px;
-  min-height: 52px;
-  max-height: 52px;
+  height: 90px !important;
+  min-height: 90px !important;
+  max-height: 90px !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 12px;
+  padding: 8px 12px;
   box-sizing: border-box;
 }
 
@@ -1825,10 +1749,10 @@ button:active,
   width: 100% !important;
   min-width: 100% !important;
   max-width: 100% !important;
-  height: 38px !important;
-  min-height: 38px !important;
-  max-height: 38px !important;
-  font-size: 0.85rem !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  max-height: 52px !important;
+  font-size: 0.88rem !important;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -1850,77 +1774,77 @@ button:active,
   box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
 }
 
-/* Card 4: Actions Row (Fixed 50px) */
+/* Card 3 (Left): Actions Row (90px) */
 .adv-actions-row {
   flex: 0 0 auto;
-  height: 50px;
-  min-height: 50px;
-  max-height: 50px;
+  height: 90px !important;
+  min-height: 90px !important;
+  max-height: 90px !important;
   display: flex;
   flex-direction: row;
   gap: 8px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   box-sizing: border-box;
   align-items: center;
 }
 
 .adv-actions-row .btn-reset {
   flex: 1;
-  height: 36px !important;
-  min-height: 36px !important;
-  max-height: 36px !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  max-height: 52px !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 0.72rem !important;
+  font-size: 0.78rem !important;
   border-radius: 6px;
   box-sizing: border-box;
   white-space: nowrap;
 }
 
-/* Card 5: Support Note (Fixed 50px) */
+/* Card 4 (Left): Support Note (88px) */
 .adv-support-card {
   flex: 0 0 auto;
-  height: 50px;
-  min-height: 50px;
-  max-height: 50px;
+  height: 88px !important;
+  min-height: 88px !important;
+  max-height: 88px !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 12px;
+  padding: 10px 14px;
   box-sizing: border-box;
 }
 
 .adv-support-content {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
   height: 100%;
 }
 
 .adv-support-text {
-  font-size: 0.68rem !important;
-  line-height: 1.25 !important;
+  font-size: 0.74rem !important;
+  line-height: 1.45 !important;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
 /* ==========================================================================
-   COLUMN 2: BACKUP & RESTORE (LOCKED PIXEL-PERFECT, NEVER CHANGES SIZE)
+   COLUMN 2: BACKUP & RESTORE (290px) + VIP / TEST MODE (84px) = 382px MATCH
    ========================================================================== */
 .adv-backup-card {
   width: 100% !important;
   min-width: 100% !important;
   max-width: 100% !important;
-  height: 382px !important;
-  min-height: 382px !important;
-  max-height: 382px !important;
+  height: 290px !important;
+  min-height: 290px !important;
+  max-height: 290px !important;
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
@@ -1966,9 +1890,9 @@ button:active,
 
 .backup-list-box {
   width: 100% !important;
-  height: 308px !important;
-  min-height: 308px !important;
-  max-height: 308px !important;
+  height: 226px !important;
+  min-height: 226px !important;
+  max-height: 226px !important;
   flex: 0 0 auto !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
@@ -2024,12 +1948,6 @@ button:active,
   line-height: 34px !important;
 }
 
-#btn-refresh-ping {
-  width: 130px !important;
-  min-width: 130px !important;
-  max-width: 130px !important;
-}
-
 
 
 /* ---------- FontAwesome sizing + animations ---------- */
@@ -2043,6 +1961,88 @@ button:active,
 .btn-apply i, .btn-reset i, .btn-launch i, .win-ctl i {
   display: inline-block;
   vertical-align: middle;
+}
+
+/* VIP / Test Mode in Column 2 (Reduced 84px) */
+.adv-vip-card {
+  flex: 0 0 auto;
+  height: 84px !important;
+  min-height: 84px !important;
+  max-height: 84px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+}
+
+.adv-vip-card .adv-card-header {
+  height: 20px !important;
+  min-height: 20px !important;
+  max-height: 20px !important;
+  margin-bottom: 0;
+}
+
+.tester-lock-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+}
+
+.tester-code-input {
+  flex: 1;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  font-size: 0.85rem !important;
+  padding: 0 12px !important;
+  box-sizing: border-box;
+}
+
+.adv-vip-card #btn-unlock {
+  height: 34px !important;
+  min-height: 34px !important;
+}
+
+.tester-modes-bar {
+  display: flex;
+  gap: 8px;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+}
+
+.tier-card-sm {
+  flex: 1;
+  height: 34px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  cursor: var(--cur-pointer);
+  font-size: 0.8rem;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.tier-card-sm.selected {
+  border-color: var(--deadlock-orange);
+  background: rgba(249, 115, 22, 0.15);
+}
+
+.tier-card-sm .tier-pick { display: none;
+  width: 12px;
+  height: 12px;
+  min-width: 12px;
+  min-height: 12px;
 }
 
 /* spinning refresh while pinging */
@@ -2499,6 +2499,155 @@ button:active,
 .dlp-loading .dlp-load-label { font-size: 0.8rem; color: var(--text-secondary, #94a3b8); }
 @media (prefers-reduced-motion: reduce) { .dlp-loader { animation: none; } }
 
+/* ==========================================================================
+   VIBEFARSI METEORS & BOUNCING DOTS (https://vibefarsi.ir/animations/meteors)
+   ========================================================================== */
+@keyframes meteor {
+  0% {
+    transform: rotate(215deg) translateX(0);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(215deg) translateX(-420px);
+    opacity: 0;
+  }
+}
+
+@keyframes bounce-dot {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+#best-route-slot:empty {
+  display: none;
+}
+
+.ping-grid.is-loading {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto;
+  min-height: 360px;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.latency-loading-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 340px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: radial-gradient(ellipse at center, rgba(14, 28, 48, 0.45) 0%, rgba(9, 14, 24, 0.2) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.08);
+}
+
+.vf-meteors-container {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  z-index: 1;
+  filter: blur(1.5px);
+  opacity: 0.7;
+}
+
+.vf-meteor {
+  position: absolute;
+  top: -10%;
+  height: 1px;
+  width: 96px;
+  background: linear-gradient(to right, #ffffff, #38bdf8 25%, rgba(56, 189, 248, 0.35) 60%, transparent 100%);
+  animation-name: meteor;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.vf-meteor-head {
+  position: absolute;
+  top: -1.5px;
+  left: -2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 10px 2px rgba(56, 189, 248, 0.9), 0 0 4px 1px #fff;
+}
+
+.latency-loading-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+  user-select: none;
+}
+
+.vf-loading-dots-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.latency-loading-content .dlp-load-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+body.lang-fa .latency-loading-content .dlp-load-label {
+  font-family: 'Vazirmatn', sans-serif;
+  letter-spacing: normal;
+}
+
+.vf-loading-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  direction: ltr;
+}
+
+.vf-loading-dots .vf-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--deadlock-cyan, #38bdf8);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.8), 0 0 2px #fff;
+  animation: bounce-dot 1.2s ease-in-out infinite;
+}
+
+.vf-loading-dots .vf-dot:nth-child(1) { animation-delay: 0ms; }
+.vf-loading-dots .vf-dot:nth-child(2) { animation-delay: 160ms; }
+.vf-loading-dots .vf-dot:nth-child(3) { animation-delay: 320ms; }
+
+
 /* ===================== VIBEFARSI-STYLE BORDER BEAM FOR PRESET CARDS ===================== */
 /* Smooth rotating beam around active cards using CSS @property --beam-angle.
    Hardware accelerated via GPU compositor conic-gradient rotation.
@@ -2698,6 +2847,7 @@ button:active,
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-height: 84px;
   box-sizing: border-box;
   transition: transform 0.2s ease, border-color 0.2s ease;
   overflow: hidden;
@@ -2885,9 +3035,80 @@ button:active,
   box-shadow: 0 0 6px currentColor;
 }
 
-/* 13) icon consistency: all inline FA icons same optical size/weight */
+/* 13) Multi-colored Deadlock Themed Setting Box Header Icons */
 .setting-box .fov-box-title-wrap i,
-.section-label i { font-size: 12px; width: 14px; text-align: center; }
+.setting-box .fov-box-title-wrap svg,
+.section-label i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  width: 16px;
+  text-align: center;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+/* 1. FOV Box: Optical Precision Cyan Gradient */
+.fov-box .fov-box-title-wrap i,
+.fov-box .fov-box-title-wrap svg {
+  color: #38bdf8;
+  background: linear-gradient(135deg, #7dd3fc 0%, #0284c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.45));
+}
+
+/* 2. HUD Box: Vitality Heart Red Gradient */
+.hud-box .fov-box-title-wrap i,
+.hud-box .fov-box-title-wrap svg {
+  display: inline-block;
+  color: #f43f5e;
+  background: linear-gradient(135deg, #fb7185 0%, #e11d48 50%, #be123c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.6));
+}
+
+/* 3. Renderer Box: Spirit Engine Purple / Electric Indigo Gradient */
+.renderer-box .fov-box-title-wrap i,
+.renderer-box .fov-box-title-wrap svg {
+  color: #c084fc;
+  background: linear-gradient(135deg, #e879f9 0%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 5px rgba(192, 132, 252, 0.45));
+}
+
+/* 4. FPS Limit Box: Combustion Ember Orange / Fire Gradient */
+.fps-box-bottom .fov-box-title-wrap i,
+.fps-box-bottom .fov-box-title-wrap svg {
+  color: #fb923c;
+  background: linear-gradient(135deg, #fde047 0%, #ea580c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 5px rgba(249, 115, 22, 0.45));
+}
+
+/* 5. Launch Options Box: Steam Dual-tone Deep Cyan / Sky Gradient */
+.launch-options-box .fov-box-title-wrap i,
+.launch-options-box .fov-box-title-wrap svg {
+  color: #38bdf8;
+  background: linear-gradient(135deg, #a5f3fc 0%, #0284c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.45));
+}
+
+/* Question Mark Hint Trigger Icon */
+.hint-trigger i {
+  color: rgba(148, 163, 184, 0.65);
+  transition: color 0.18s ease, filter 0.18s ease;
+}
+.hint-trigger:hover i {
+  color: #fbbf24;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.5));
+}
 
 
 
@@ -2922,13 +3143,12 @@ body.lang-fa .hud-switch-label {
   direction: rtl;
   text-align: right;
 }
-/* Backup & Restore card: Always pure English / LTR (except backup button text) */
+/* Backup & Restore card: Base English / LTR */
 .adv-backup-card,
-.adv-backup-card *:not(#btn-backup):not(#btn-backup *),
 .backup-list-box,
 .backup-row {
-  direction: ltr !important;
-  text-align: left !important;
+  direction: ltr;
+  text-align: left;
 }
 
 .adv-backup-card .adv-card-header {
@@ -2942,7 +3162,7 @@ body.lang-fa .hud-switch-label {
 }
 
 .adv-backup-card .adv-card-title {
-  font-family: 'Rajdhani', sans-serif !important;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.88rem !important;
   font-weight: 700 !important;
   line-height: 1 !important;
@@ -2951,7 +3171,7 @@ body.lang-fa .hud-switch-label {
 }
 
 .adv-backup-card .adv-card-desc {
-  font-family: 'Rajdhani', sans-serif !important;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.74rem !important;
   font-weight: 500 !important;
   color: var(--text-secondary) !important;
@@ -2963,13 +3183,35 @@ body.lang-fa .hud-switch-label {
   margin: 0 !important;
 }
 
-body.lang-fa .adv-backup-card .adv-card-title,
+body.lang-fa .adv-backup-card {
+  direction: rtl;
+}
+
+body.lang-fa .adv-backup-card .adv-card-header {
+  direction: rtl !important;
+}
+
+body.lang-fa .adv-backup-card .adv-card-title-group {
+  direction: rtl !important;
+  gap: 8px !important;
+}
+
+body.lang-fa .adv-backup-card .adv-card-title {
+  font-family: 'Vazirmatn', sans-serif !important;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  direction: rtl !important;
+  text-align: right !important;
+}
+
 body.lang-fa .adv-backup-card .adv-card-desc {
-  font-family: 'Rajdhani', sans-serif !important;
-  line-height: 16px !important;
-  letter-spacing: 0.5px !important;
-  direction: ltr !important;
-  text-align: left !important;
+  font-family: 'Vazirmatn', sans-serif !important;
+  font-size: 0.72rem !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  direction: rtl !important;
+  text-align: right !important;
 }
 
 .backup-row {
@@ -3024,8 +3266,30 @@ body.lang-fa .adv-backup-card .adv-card-desc {
   flex-shrink: 0 !important;
 }
 
-.backup-actions,
-body.lang-fa .backup-actions {
+.backup-badge-main {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 1px 6px !important;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-size: 0.64rem !important;
+  font-weight: 700 !important;
+  border-radius: 4px !important;
+  background: rgba(249, 115, 22, 0.16) !important;
+  border: 1px solid rgba(249, 115, 22, 0.45) !important;
+  color: var(--deadlock-orange) !important;
+  letter-spacing: 0.5px !important;
+  margin-left: 6px !important;
+  flex-shrink: 0 !important;
+}
+
+body.lang-fa .backup-badge-main {
+  font-family: 'Vazirmatn', sans-serif !important;
+  letter-spacing: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 6px !important;
+}
+
+.backup-actions {
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
@@ -3037,10 +3301,18 @@ body.lang-fa .backup-actions {
   max-width: 100px !important;
 }
 
+body.lang-fa .backup-row {
+  direction: rtl !important;
+}
+body.lang-fa .backup-meta {
+  direction: rtl !important;
+}
+body.lang-fa .backup-actions {
+  direction: rtl !important;
+}
+
 .backup-row .btn-restore,
-body.lang-fa .backup-row .btn-restore,
-.btn-restore,
-body.lang-fa .btn-restore {
+.btn-restore {
   width: 70px !important;
   min-width: 70px !important;
   max-width: 70px !important;
@@ -3061,6 +3333,15 @@ body.lang-fa .btn-restore {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+}
+
+body.lang-fa .backup-row .btn-restore,
+body.lang-fa .btn-restore {
+  font-family: 'Vazirmatn', sans-serif !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  direction: rtl !important;
 }
 
 .btn-delete-backup,
@@ -3106,7 +3387,48 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
 
 
 /* ===================== DEADLOCK ICONS (badge/launch only) + COMPACT ROWS ===================== */
-.dlp-icon-badge { width: 12px; height: 12px; vertical-align: -2px; margin-inline-end: 3px; }
+.dlp-icon-badge {
+  width: 12px;
+  height: 12px;
+  vertical-align: -1.5px;
+  margin-inline-end: 4px;
+  flex-shrink: 0;
+  display: inline-block;
+  transition: transform 0.22s ease, filter 0.22s ease;
+}
+
+/* Color & Glow for each Tier Badge SVG Icon (T1, T2, T3 Solid Vectors) */
+.tier-badge svg.dlp-icon-badge {
+  fill: currentColor;
+}
+
+.tier-badge.t1 svg.dlp-icon-badge {
+  color: #38bdf8;
+  fill: #38bdf8;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.55));
+}
+
+.tier-badge.t2 svg.dlp-icon-badge {
+  color: #34d399;
+  fill: #34d399;
+  filter: drop-shadow(0 0 4px rgba(52, 211, 153, 0.55));
+}
+
+.tier-badge.t3 svg.dlp-icon-badge {
+  color: #fb923c;
+  fill: #fb923c;
+  filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.55));
+}
+
+.tier-badge.potato .dlp-icon-badge {
+  filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.45));
+}
+
+.tier-card:hover .tier-badge .dlp-icon-badge,
+.tier-card.selected .tier-badge .dlp-icon-badge {
+  transform: scale(1.12);
+}
+
 .dlp-icon-play { width: 12px; height: 12px; display: block; }
 
 
@@ -3318,6 +3640,7 @@ body.lang-fa .fov-bound {
 
 .fov-scale-labels,
 body.lang-fa .fov-scale-labels {
+  position: relative !important;
   height: 18px !important;
   min-height: 18px !important;
   max-height: 18px !important;
@@ -3350,10 +3673,14 @@ body.lang-fa .fov-scale-labels span {
 
 .fov-default-tick,
 body.lang-fa .fov-default-tick {
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
   color: var(--deadlock-cyan, #38bdf8) !important;
   font-weight: 700 !important;
   font-size: 0.70rem !important;
   text-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
+  pointer-events: none;
 }
 
 /* Settings Row 2: FPS LIMIT + LAUNCH OPTIONS (2 boxes) */
@@ -3682,17 +4009,16 @@ body.lang-fa .fps-pill-grid .renderer-pill.active {
   overflow: hidden;
 }
 .launch-options-desc {
-  font-size: 0.63rem;
+  font-size: 0.64rem;
   color: var(--text-secondary);
-  line-height: 1.25;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.35;
+  white-space: normal;
   margin: 0;
 }
 body.lang-fa .launch-options-desc {
   direction: rtl;
   text-align: right;
+  font-family: 'Vazirmatn', sans-serif;
 }
 
 .launch-buttons-grid {
@@ -3712,9 +4038,9 @@ body.lang-fa .launch-options-desc {
 
 .launch-opt-btn {
   flex: 1;
-  height: 25px;
-  min-height: 25px;
-  max-height: 25px;
+  height: 30px;
+  min-height: 30px;
+  max-height: 30px;
   background: rgba(10, 16, 28, 0.85);
   border: 1px solid rgba(56, 189, 248, 0.28);
   border-radius: 5px;
@@ -3998,27 +4324,124 @@ body.lang-fa .ping-view-title {
 }
 /* digits inside FA text stay readable (Vazirmatn has latin digits) */
 
-/* ===================== TOP-BAR PING BUTTON (icon-only, latency tab) ===================== */
+/* ===================== TOP-BAR PING BUTTON (cloud loader, latency tab) ===================== */
 .btn-refresh-ping-top {
-  background: transparent;
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: rgba(14, 28, 48, 0.45);
+  border: 1px solid rgba(56, 189, 248, 0.25);
   border-radius: 6px;
-  color: var(--deadlock-orange);
-  width: 30px;
+  width: 27px;
   height: 26px;
-  min-width: 30px;
+  min-width: 27px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: var(--cur-pointer);
-  font-size: 13px;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
-.btn-refresh-ping-top:hover:not(:disabled) { border-color: var(--deadlock-orange); background: rgba(249, 115, 22, 0.08); }
-.btn-refresh-ping-top:disabled { opacity: .45; cursor: var(--cur-default); }
-.btn-refresh-ping-top .refresh-icon { font-size: 13px; }
-.btn-refresh-ping-top .refresh-icon.spin { animation: dlp-spin 0.8s linear infinite; }
-@keyframes dlp-spin { to { transform: rotate(360deg); } }
+.btn-refresh-ping-top:hover:not(:disabled) {
+  border-color: var(--deadlock-cyan);
+  background: rgba(56, 189, 248, 0.12);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
+  transform: scale(1.04);
+}
+.btn-refresh-ping-top:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.btn-refresh-ping-top:disabled {
+  opacity: 0.85;
+  cursor: var(--cur-default);
+}
+.btn-refresh-ping-top.is-pinging {
+  opacity: 1 !important;
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+/* Cloud Loader: 1 to 1 with user spec */
+.ping-cloud-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  overflow: hidden;
+  pointer-events: none;
+  margin: 0 auto;
+}
+.ping-cloud-loader .loader {
+  --cloud-color: #4387f4;
+  --arrows-color: #80b1ff;
+  --time-animation: 1s;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-3px) scale(0.20);
+  transform-origin: center center;
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+.ping-cloud-loader .loader #cloud {
+  width: 100px;
+  height: 100px;
+  display: block;
+}
+.ping-cloud-loader .loader #cloud rect {
+  fill: var(--cloud-color);
+}
+.ping-cloud-loader .loader #cloud g:nth-child(3),
+.ping-cloud-loader .loader #cloud .cloud-arrows {
+  transform-box: view-box;
+  transform-origin: 50% 72.8938%;
+  fill: var(--arrows-color);
+  filter: drop-shadow(0 0 8px black);
+  animation: rotation var(--time-animation) linear infinite;
+  animation-play-state: paused;
+}
+.ping-cloud-loader .loader #shapes g g circle {
+  animation: cloud calc(var(--time-animation) * 2) linear infinite;
+  animation-play-state: paused;
+}
+.ping-cloud-loader .loader #shapes g g circle:nth-child(2) {
+  animation-delay: calc((var(--time-animation) * 2) / -3);
+}
+.ping-cloud-loader .loader #shapes g g circle:nth-child(3) {
+  animation-delay: calc((var(--time-animation) * 2) / -1.5);
+}
+.ping-cloud-loader .loader svg #lines g line {
+  stroke-width: 5;
+  transform-origin: 50% 50%;
+  rotate: -65deg;
+  animation: lines calc(var(--time-animation) / 1.33) linear infinite;
+  animation-play-state: paused;
+}
+
+.btn-refresh-ping-top.is-pinging .ping-cloud-loader .loader #cloud g:nth-child(3),
+.btn-refresh-ping-top.is-pinging .ping-cloud-loader .loader #cloud .cloud-arrows,
+.btn-refresh-ping-top.is-pinging .ping-cloud-loader .loader #shapes g g circle,
+.btn-refresh-ping-top.is-pinging .ping-cloud-loader .loader svg #lines g line {
+  animation-play-state: running;
+}
+
+@keyframes rotation {
+  0%   { transform: rotate(0deg); }
+  50%  { transform: rotate(180deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes lines {
+  0%   { transform: translateY(-10px); }
+  100% { transform: translateY(8px); }
+}
+@keyframes cloud {
+  0%   { cx: 20; cy: 60; r: 15; }
+  50%  { cx: 50; cy: 45; r: 20; }
+  100% { cx: 80; cy: 60; r: 15; }
+}
 
 /* ===================== FOV RESET CLICK FEEL ===================== */
 #btn-fov-reset { transition: transform 0.15s ease, color 0.2s ease, box-shadow 0.25s ease; }
@@ -4032,7 +4455,12 @@ body.lang-fa .ping-view-title {
 }
 @media (prefers-reduced-motion: reduce) {
   #btn-fov-reset.reset-pop { animation: none; }
-  .btn-refresh-ping-top .refresh-icon.spin { animation: none; }
+  .btn-refresh-ping-top.is-pinging .ping-cloud-loader .loader #cloud g:nth-child(3),
+  .btn-refresh-ping-top.is-pinging .ping-cloud-loader .loader #cloud .cloud-arrows,
+  .btn-refresh-ping-top.is-pinging .ping-cloud-loader .loader #shapes g g circle,
+  .btn-refresh-ping-top.is-pinging .ping-cloud-loader .loader svg #lines g line {
+    animation: none;
+  }
 }
 
 /* ===================== ADVANCED TAB CARDS (UPDATE & SUPPORT) ===================== */
@@ -4093,7 +4521,7 @@ body.lang-fa .ping-view-title {
 
 /* ===================== APP VERSION BADGE ===================== */
 .app-version-badge,
-.app-version-badge * {
+.app-version-badge span {
   font-family: 'Rajdhani', sans-serif !important;
   line-height: 1 !important;
   letter-spacing: 0.5px !important;
@@ -4171,6 +4599,7 @@ body.lang-fa .ping-view-title {
 .app-version-badge .ver-author {
   color: var(--deadlock-cyan) !important;
   font-weight: 700 !important;
+  margin-inline-start: 4px !important;
 }
 
 /* ===================== ACTIVE PROFILE FOOTER INDICATOR ===================== */
@@ -4217,4 +4646,680 @@ body.lang-fa .ping-view-title {
   margin: 0 !important;
   padding: 0 !important;
   direction: ltr !important;
+}
+
+/* ===================== TRUE INNER-CONTENT RTL (VIBEFARSI SPEC) ===================== */
+
+/* 1. Box Headers: icon & title on the right, hint-trigger on the left */
+body.lang-fa .setting-box .fov-box-header,
+body.lang-fa .fov-box .fov-box-header,
+body.lang-fa .hud-box .fov-box-header,
+body.lang-fa .renderer-box .fov-box-header,
+body.lang-fa .launch-options-box .fov-box-header {
+  direction: rtl !important;
+}
+
+body.lang-fa .fov-box-title-wrap {
+  direction: rtl !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+body.lang-fa .fov-box-title-wrap i,
+body.lang-fa .fov-box-title-wrap svg {
+  margin: 0 !important;
+}
+
+/* 2. Hint Tooltip in RTL: Pop anchored over trigger on the left */
+body.lang-fa .hint-tooltip {
+  right: auto !important;
+  left: -6px !important;
+  direction: rtl !important;
+  text-align: right !important;
+}
+body.lang-fa .hint-tooltip::after {
+  right: auto !important;
+  left: 12px !important;
+}
+
+/* 3. Section Title Bar: Section title on the right, refresh ping on the left */
+body.lang-fa .content-header {
+  direction: rtl !important;
+}
+body.lang-fa .content-header-title {
+  direction: rtl !important;
+  gap: 8px !important;
+}
+
+/* 4. Preset Cards (T1 - Potato): Badge sits on top-right */
+body.lang-fa .tier-card-header {
+  direction: rtl !important;
+  justify-content: flex-start !important;
+}
+
+/* 5. Buttons: Icon on the right, Persian text on the left */
+body.lang-fa .btn-play {
+  direction: rtl !important;
+}
+body.lang-fa .btn-apply {
+  direction: rtl !important;
+}
+body.lang-fa .btn-reset {
+  direction: rtl !important;
+}
+body.lang-fa #btn-check-updates {
+  direction: rtl !important;
+}
+body.lang-fa #btn-revert-vanilla {
+  direction: rtl !important;
+}
+
+/* 6. Active Profile Indicator in Footer: Dot on the right, label to its left */
+body.lang-fa .active-profile {
+  direction: rtl !important;
+}
+body.lang-fa .active-profile .active-label {
+  direction: rtl !important;
+}
+
+/* 7. Advanced Tab Inner RTL */
+body.lang-fa .adv-vip-card .adv-card-header {
+  direction: rtl !important;
+}
+body.lang-fa .adv-card-title-group {
+  direction: rtl !important;
+  gap: 8px !important;
+}
+body.lang-fa .adv-support-content {
+  direction: rtl !important;
+}
+body.lang-fa .adv-support-text {
+  direction: rtl !important;
+  text-align: right !important;
+}
+body.lang-fa .adv-actions-row {
+  direction: rtl !important;
+}
+
+/* 8. Modals & Dialogs */
+body.lang-fa .modal-box {
+  direction: rtl !important;
+  text-align: right !important;
+}
+body.lang-fa .modal-title {
+  direction: rtl !important;
+  text-align: right !important;
+}
+body.lang-fa .modal-body {
+  direction: rtl !important;
+  text-align: right !important;
+}
+body.lang-fa .modal-actions {
+  direction: rtl !important;
+  justify-content: flex-start !important;
+}
+
+/* ===================== LATENCY TAB TYPOGRAPHY ===================== */
+body.lang-fa .fc-tag,
+body.lang-fa .fc-name,
+body.lang-fa .fc-region,
+body.lang-fa .pc-name,
+body.lang-fa .pc-region,
+body.lang-fa .pc-stats {
+  font-family: 'Vazirmatn', sans-serif !important;
+  letter-spacing: 0 !important;
+}
+
+/* ===================== VIBEFARSI SKELETON TRANSITION (4s SPEC) ===================== */
+
+.action-footer,
+.adv-card,
+.featured-card,
+.ping-card {
+  position: relative;
+}
+
+/* --- 1. Soft Breathing Pulse for Skeletons --- */
+@keyframes vf-skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.42;
+  }
+}
+
+/* Skeleton Card Background & Borders */
+body.lang-transitioning .content-header,
+body.lang-transitioning .pro-card,
+body.lang-transitioning .tier-card,
+body.lang-transitioning .setting-box,
+body.lang-transitioning .adv-card,
+body.lang-transitioning .action-footer,
+body.lang-transitioning .backup-row,
+body.lang-transitioning .featured-card,
+body.lang-transitioning .ping-card,
+body.lang-transitioning .latency-loading-wrap,
+body.lang-transitioning .net-footer {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(13, 20, 36, 0.72) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+  pointer-events: none !important;
+}
+
+/* Skeleton Neutral Muted Buttons - NO glowing gradients, shadows, or text showing */
+body.lang-transitioning button,
+body.lang-transitioning .btn-apply,
+body.lang-transitioning .btn-reset,
+body.lang-transitioning .btn-restore,
+body.lang-transitioning .btn-delete-backup,
+body.lang-transitioning .btn-refresh-ping-top,
+body.lang-transitioning .btn-check-updates,
+body.lang-transitioning .launch-opt-btn,
+body.lang-transitioning .renderer-pill,
+body.lang-transitioning .fc-btn,
+body.lang-transitioning .pc-btn,
+body.lang-transitioning #btn-install,
+body.lang-transitioning #btn-backup,
+body.lang-transitioning #btn-unlock,
+body.lang-transitioning #btn-revert-vanilla,
+body.lang-transitioning #btn-reset-settings,
+body.lang-transitioning #btn-copy-diag {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
+  filter: blur(2px) !important;
+  pointer-events: none !important;
+}
+
+body.lang-transitioning .btn-apply::before,
+body.lang-transitioning .btn-apply::after,
+body.lang-transitioning .btn-apply-glow {
+  display: none !important;
+}
+
+/* ALL Icons, SVGs, Images, Gliders, Beams, Badges, and Particle Effects HIDDEN */
+body.lang-transitioning i,
+body.lang-transitioning svg,
+body.lang-transitioning img,
+body.lang-transitioning .glow-spin,
+body.lang-transitioning .glow-bg,
+body.lang-transitioning .card-icon,
+body.lang-transitioning .card-icon-wrap,
+body.lang-transitioning .active-dot,
+body.lang-transitioning .play-chip,
+body.lang-transitioning .spark-svg,
+body.lang-transitioning .spark-flat,
+body.lang-transitioning .fc-spark,
+body.lang-transitioning .vf-meteors-container,
+body.lang-transitioning .dlp-loader,
+body.lang-transitioning .vf-loading-dots,
+body.lang-transitioning .border-beam,
+body.lang-transitioning .renderer-glider,
+body.lang-transitioning .fps-glider,
+body.lang-transitioning .neon-checkbox,
+body.lang-transitioning .neon-checkbox * {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: none !important;
+}
+
+/* Skeleton Placeholder Bars for ALL Text, Labels, Numbers across ALL Tabs */
+body.lang-transitioning .content-header #section-title,
+body.lang-transitioning #section-title,
+body.lang-transitioning .content-header-title,
+body.lang-transitioning .content-header-title *,
+body.lang-transitioning .header-subtitle-accent,
+body.lang-transitioning .header-title-fa,
+body.lang-transitioning .brand-badge,
+body.lang-transitioning [data-i18n="brandTagline"],
+body.lang-transitioning .pro-card .card-title,
+body.lang-transitioning .pro-card .card-desc,
+body.lang-transitioning .tier-card .tier-name,
+body.lang-transitioning .tier-card .tier-badge,
+body.lang-transitioning .setting-box .fov-box-title,
+body.lang-transitioning .setting-box .hud-switch-label,
+body.lang-transitioning .setting-box .hud-desc,
+body.lang-transitioning .setting-box .renderer-desc,
+body.lang-transitioning .setting-box .fov-current,
+body.lang-transitioning .setting-box .fov-bound,
+body.lang-transitioning .setting-box .fov-scale-labels span,
+body.lang-transitioning .setting-box .renderer-pill,
+body.lang-transitioning .renderer-pill,
+body.lang-transitioning .setting-box .launch-options-desc,
+body.lang-transitioning .setting-box .launch-opt-btn code,
+body.lang-transitioning .active-profile .active-label,
+body.lang-transitioning .active-profile .active-tier-badge,
+body.lang-transitioning .active-profile .active-tier-name,
+body.lang-transitioning .adv-card .adv-card-title,
+body.lang-transitioning .adv-card .adv-card-desc,
+body.lang-transitioning .adv-card .adv-support-text,
+body.lang-transitioning .backup-name,
+body.lang-transitioning .backup-size,
+body.lang-transitioning .backup-badge-main,
+body.lang-transitioning .option-detail,
+body.lang-transitioning [class*="st-text-"],
+body.lang-transitioning .net-footer span,
+body.lang-transitioning .net-footer *,
+body.lang-transitioning .latency-loading-content .dlp-load-label,
+body.lang-transitioning .featured-card .fc-tag,
+body.lang-transitioning .featured-card .fc-name,
+body.lang-transitioning .featured-card .fc-code,
+body.lang-transitioning .featured-card .fc-region,
+body.lang-transitioning .featured-card .fc-stat,
+body.lang-transitioning .featured-card .fc-stats,
+body.lang-transitioning .featured-card .fc-stats *,
+body.lang-transitioning .featured-card .fc-live,
+body.lang-transitioning .featured-card .fc-ip,
+body.lang-transitioning .featured-card .fc-ping,
+body.lang-transitioning .featured-card .fc-ms,
+body.lang-transitioning .featured-card .fc-btn,
+body.lang-transitioning .ping-card .pc-name,
+body.lang-transitioning .ping-card .pc-region,
+body.lang-transitioning .ping-card .pc-ping,
+body.lang-transitioning .ping-card .pc-ping *,
+body.lang-transitioning .ping-card .pc-stats,
+body.lang-transitioning .ping-card .pc-stats *,
+body.lang-transitioning .ping-card .pc-btn,
+body.lang-transitioning .btn-apply span,
+body.lang-transitioning .btn-apply *,
+body.lang-transitioning #btn-install span,
+body.lang-transitioning #btn-install *,
+body.lang-transitioning .btn-reset span,
+body.lang-transitioning .btn-reset *,
+body.lang-transitioning #btn-revert-vanilla span,
+body.lang-transitioning #btn-revert-vanilla *,
+body.lang-transitioning #btn-reset-settings span,
+body.lang-transitioning #btn-reset-settings *,
+body.lang-transitioning #btn-copy-diag span,
+body.lang-transitioning #btn-copy-diag *,
+body.lang-transitioning #btn-check-updates span,
+body.lang-transitioning #btn-check-updates *,
+body.lang-transitioning #btn-backup span,
+body.lang-transitioning #btn-backup *,
+body.lang-transitioning #btn-unlock span,
+body.lang-transitioning #btn-unlock *,
+body.lang-transitioning .btn-restore,
+body.lang-transitioning .btn-restore *,
+body.lang-transitioning .btn-delete-backup,
+body.lang-transitioning .btn-delete-backup * {
+  color: transparent !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  user-select: none !important;
+  filter: blur(3px) !important;
+  animation: vf-skeleton-pulse 1.8s ease-in-out infinite !important;
+}
+
+/* Skeleton Muted Inputs & HUD Switch Card */
+body.lang-transitioning input,
+body.lang-transitioning .fov-range-input,
+body.lang-transitioning .tester-code-input {
+  opacity: 0.18 !important;
+  filter: blur(2px) !important;
+  color: transparent !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  pointer-events: none !important;
+}
+
+body.lang-transitioning .hud-switch-card {
+  filter: blur(2px) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  pointer-events: none !important;
+}
+
+/* Console Text Full Blur & Hide */
+body.lang-transitioning .step-log,
+body.lang-transitioning .step-log *,
+body.lang-transitioning #step-log,
+body.lang-transitioning #step-log * {
+  opacity: 0 !important;
+  filter: blur(4px) !important;
+  user-select: none !important;
+}
+
+/* --- 2. Skeleton Shimmer Sweep (Luminous Directional Shine) --- */
+@keyframes vf-shimmer-sweep-to-fa {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes vf-shimmer-sweep-to-en {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Shimmer Layer on Interactive Containers */
+body.lang-transitioning.to-fa .content-header::after,
+body.lang-transitioning.to-fa .tier-card::after,
+body.lang-transitioning.to-fa .setting-box::after,
+body.lang-transitioning.to-fa .pro-card::after,
+body.lang-transitioning.to-fa .adv-card::after,
+body.lang-transitioning.to-fa .backup-row::after,
+body.lang-transitioning.to-fa .action-footer::after,
+body.lang-transitioning.to-fa .featured-card::after,
+body.lang-transitioning.to-fa .ping-card::after,
+body.lang-transitioning.to-fa .latency-loading-wrap::after,
+body.lang-transitioning.to-fa .net-footer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 30;
+  background: linear-gradient(
+    270deg,
+    transparent 0%,
+    rgba(56, 189, 248, 0.08) 20%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(249, 115, 22, 0.14) 80%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: vf-shimmer-sweep-to-fa 1.8s linear infinite;
+}
+
+body.lang-transitioning.to-en .content-header::after,
+body.lang-transitioning.to-en .tier-card::after,
+body.lang-transitioning.to-en .setting-box::after,
+body.lang-transitioning.to-en .pro-card::after,
+body.lang-transitioning.to-en .adv-card::after,
+body.lang-transitioning.to-en .backup-row::after,
+body.lang-transitioning.to-en .action-footer::after,
+body.lang-transitioning.to-en .featured-card::after,
+body.lang-transitioning.to-en .ping-card::after,
+body.lang-transitioning.to-en .latency-loading-wrap::after,
+body.lang-transitioning.to-en .net-footer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 30;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(249, 115, 22, 0.08) 20%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(56, 189, 248, 0.14) 80%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: vf-shimmer-sweep-to-en 1.8s linear infinite;
+}
+
+/* --- 3. 2D Grid Reveal Keyframes & Directional Stagger --- */
+@keyframes vf-grid-tile-in {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.955) translateY(6px);
+    filter: blur(2px);
+  }
+  65% {
+    opacity: 0.96;
+    transform: scale(1.008) translateY(-1px);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0px);
+  }
+}
+
+body.lang-revealing .content-header,
+body.lang-revealing .header-hero,
+body.lang-revealing .pro-card,
+body.lang-revealing .tier-card,
+body.lang-revealing .setting-box,
+body.lang-revealing .adv-card,
+body.lang-revealing .backup-row,
+body.lang-revealing .action-footer,
+body.lang-revealing .featured-card,
+body.lang-revealing .ping-card,
+body.lang-revealing .latency-loading-wrap,
+body.lang-revealing .net-footer {
+  animation: vf-grid-tile-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Directional Stagger - Switching to Farsi (Top-Right to Bottom-Left 2D cascade) */
+body.lang-revealing.to-fa .cards-deck .pro-card:nth-child(3) { animation-delay: 0ms; }
+body.lang-revealing.to-fa .cards-deck .pro-card:nth-child(2) { animation-delay: 100ms; }
+body.lang-revealing.to-fa .content-header { animation-delay: 100ms; }
+body.lang-revealing.to-fa .cards-deck .pro-card:nth-child(1) { animation-delay: 200ms; }
+
+/* Graphic Tab Top-Right to Bottom-Left */
+body.lang-revealing.to-fa .tiers-row .tier-card:nth-child(4) { animation-delay: 120ms; }
+body.lang-revealing.to-fa .tiers-row .tier-card:nth-child(3) { animation-delay: 220ms; }
+body.lang-revealing.to-fa .settings-row-3 .setting-box:nth-child(3) { animation-delay: 220ms; }
+body.lang-revealing.to-fa .tiers-row .tier-card:nth-child(2) { animation-delay: 320ms; }
+body.lang-revealing.to-fa .settings-row-3 .setting-box:nth-child(2) { animation-delay: 320ms; }
+body.lang-revealing.to-fa .settings-bottom-row .setting-box:nth-child(2) { animation-delay: 320ms; }
+body.lang-revealing.to-fa .tiers-row .tier-card:nth-child(1) { animation-delay: 420ms; }
+body.lang-revealing.to-fa .settings-row-3 .setting-box:nth-child(1) { animation-delay: 420ms; }
+body.lang-revealing.to-fa .settings-bottom-row .setting-box:nth-child(1) { animation-delay: 420ms; }
+body.lang-revealing.to-fa .action-footer { animation-delay: 540ms; }
+
+/* Latency Tab Top-Right to Bottom-Left (Full Menu Cascade) */
+body.lang-revealing.to-fa #panel-latency .featured-card { animation-delay: 180ms; }
+body.lang-revealing.to-fa #panel-latency .latency-loading-wrap { animation-delay: 240ms; }
+body.lang-revealing.to-fa #panel-latency .ping-grid .ping-card:nth-child(3n) { animation-delay: 260ms; }
+body.lang-revealing.to-fa #panel-latency .ping-grid .ping-card:nth-child(3n - 1) { animation-delay: 380ms; }
+body.lang-revealing.to-fa #panel-latency .ping-grid .ping-card:nth-child(3n - 2) { animation-delay: 500ms; }
+body.lang-revealing.to-fa #panel-latency .net-footer { animation-delay: 580ms; }
+
+/* Advanced Tab Top-Right to Bottom-Left (Full Menu Cascade) */
+body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(2) .adv-card:nth-child(1) { animation-delay: 180ms; }
+body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(2) .backup-row { animation-delay: 280ms; }
+body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(2) .adv-card:nth-child(2) { animation-delay: 320ms; }
+body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(1) { animation-delay: 240ms; }
+body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(2) { animation-delay: 320ms; }
+body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(3) { animation-delay: 400ms; }
+body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(4) { animation-delay: 480ms; }
+
+/* Directional Stagger - Switching to English (Top-Left to Bottom-Right 2D cascade) */
+body.lang-revealing.to-en .cards-deck .pro-card:nth-child(1) { animation-delay: 0ms; }
+body.lang-revealing.to-en .cards-deck .pro-card:nth-child(2) { animation-delay: 100ms; }
+body.lang-revealing.to-en .content-header { animation-delay: 100ms; }
+body.lang-revealing.to-en .cards-deck .pro-card:nth-child(3) { animation-delay: 200ms; }
+
+/* Graphic Tab Top-Left to Bottom-Right */
+body.lang-revealing.to-en .tiers-row .tier-card:nth-child(1) { animation-delay: 120ms; }
+body.lang-revealing.to-en .tiers-row .tier-card:nth-child(2) { animation-delay: 220ms; }
+body.lang-revealing.to-en .settings-row-3 .setting-box:nth-child(1) { animation-delay: 220ms; }
+body.lang-revealing.to-en .tiers-row .tier-card:nth-child(3) { animation-delay: 320ms; }
+body.lang-revealing.to-en .settings-row-3 .setting-box:nth-child(2) { animation-delay: 320ms; }
+body.lang-revealing.to-en .settings-bottom-row .setting-box:nth-child(1) { animation-delay: 320ms; }
+body.lang-revealing.to-en .tiers-row .tier-card:nth-child(4) { animation-delay: 420ms; }
+body.lang-revealing.to-en .settings-row-3 .setting-box:nth-child(3) { animation-delay: 420ms; }
+body.lang-revealing.to-en .settings-bottom-row .setting-box:nth-child(2) { animation-delay: 420ms; }
+body.lang-revealing.to-en .action-footer { animation-delay: 540ms; }
+
+/* Latency Tab Top-Left to Bottom-Right (Full Menu Cascade) */
+body.lang-revealing.to-en #panel-latency .featured-card { animation-delay: 180ms; }
+body.lang-revealing.to-en #panel-latency .latency-loading-wrap { animation-delay: 240ms; }
+body.lang-revealing.to-en #panel-latency .ping-grid .ping-card:nth-child(3n - 2) { animation-delay: 260ms; }
+body.lang-revealing.to-en #panel-latency .ping-grid .ping-card:nth-child(3n - 1) { animation-delay: 380ms; }
+body.lang-revealing.to-en #panel-latency .ping-grid .ping-card:nth-child(3n) { animation-delay: 500ms; }
+body.lang-revealing.to-en #panel-latency .net-footer { animation-delay: 580ms; }
+
+/* Advanced Tab Top-Left to Bottom-Right (Full Menu Cascade) */
+body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(1) { animation-delay: 180ms; }
+body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(2) { animation-delay: 240ms; }
+body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(3) { animation-delay: 320ms; }
+body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(4) { animation-delay: 400ms; }
+body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-child(1) { animation-delay: 320ms; }
+body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .backup-row { animation-delay: 420ms; }
+body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-child(2) { animation-delay: 460ms; }
+
+/* Accessibility: respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  body.lang-transitioning.to-fa .content-header::after,
+  body.lang-transitioning.to-fa .tier-card::after,
+  body.lang-transitioning.to-fa .setting-box::after,
+  body.lang-transitioning.to-fa .pro-card::after,
+  body.lang-transitioning.to-fa .adv-card::after,
+  body.lang-transitioning.to-fa .action-footer::after,
+  body.lang-transitioning.to-fa .featured-card::after,
+  body.lang-transitioning.to-fa .ping-card::after,
+  body.lang-transitioning.to-fa .backup-row::after,
+  body.lang-transitioning.to-fa .latency-loading-wrap::after,
+  body.lang-transitioning.to-fa .net-footer::after,
+  body.lang-transitioning.to-en .content-header::after,
+  body.lang-transitioning.to-en .tier-card::after,
+  body.lang-transitioning.to-en .setting-box::after,
+  body.lang-transitioning.to-en .pro-card::after,
+  body.lang-transitioning.to-en .adv-card::after,
+  body.lang-transitioning.to-en .action-footer::after,
+  body.lang-transitioning.to-en .featured-card::after,
+  body.lang-transitioning.to-en .ping-card::after,
+  body.lang-transitioning.to-en .backup-row::after,
+  body.lang-transitioning.to-en .latency-loading-wrap::after,
+  body.lang-transitioning.to-en .net-footer::after {
+    animation: none !important;
+  }
+  body.lang-revealing .content-header,
+  body.lang-revealing .pro-card,
+  body.lang-revealing .tier-card,
+  body.lang-revealing .setting-box,
+  body.lang-revealing .adv-card,
+  body.lang-revealing .backup-row,
+  body.lang-revealing .action-footer,
+  body.lang-revealing .featured-card,
+  body.lang-revealing .ping-card,
+  body.lang-revealing .latency-loading-wrap,
+  body.lang-revealing .net-footer,
+  .content-header.panel-revealing,
+  .panel.panel-revealing .tier-card,
+  .panel.panel-revealing .setting-box,
+  .panel.panel-revealing .action-footer,
+  .panel.panel-revealing .featured-card,
+  .panel.panel-revealing .ping-card,
+  .panel.panel-revealing .latency-loading-wrap,
+  .panel.panel-revealing .net-footer,
+  .panel.panel-revealing .adv-card,
+  .panel.panel-revealing .backup-row {
+    animation: none !important;
+  }
+}
+
+/* --- 4. Menu / Tab Navigation 2D Grid Reveal (Grid Only, No Skeleton) --- */
+.content-header.panel-revealing,
+.panel.panel-revealing .tier-card,
+.panel.panel-revealing .setting-box,
+.panel.panel-revealing .action-footer,
+.panel.panel-revealing .featured-card,
+.panel.panel-revealing .ping-card,
+.panel.panel-revealing .latency-loading-wrap,
+.panel.panel-revealing .net-footer,
+.panel.panel-revealing .adv-card,
+.panel.panel-revealing .backup-row {
+  animation: vf-grid-tile-in 0.72s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Graphic Panel Cascade: Top-Right to Bottom-Left (Farsi) */
+#panel-graphic.panel-revealing.to-fa .tiers-row .tier-card:nth-child(4) { animation-delay: 0ms; }
+#panel-graphic.panel-revealing.to-fa .tiers-row .tier-card:nth-child(3) { animation-delay: 90ms; }
+#panel-graphic.panel-revealing.to-fa .settings-row-3 .setting-box:nth-child(3) { animation-delay: 90ms; }
+#panel-graphic.panel-revealing.to-fa .tiers-row .tier-card:nth-child(2) { animation-delay: 180ms; }
+#panel-graphic.panel-revealing.to-fa .settings-row-3 .setting-box:nth-child(2) { animation-delay: 180ms; }
+#panel-graphic.panel-revealing.to-fa .settings-bottom-row .setting-box:nth-child(2) { animation-delay: 180ms; }
+#panel-graphic.panel-revealing.to-fa .tiers-row .tier-card:nth-child(1) { animation-delay: 270ms; }
+#panel-graphic.panel-revealing.to-fa .settings-row-3 .setting-box:nth-child(1) { animation-delay: 270ms; }
+#panel-graphic.panel-revealing.to-fa .settings-bottom-row .setting-box:nth-child(1) { animation-delay: 270ms; }
+#panel-graphic.panel-revealing.to-fa .action-footer { animation-delay: 360ms; }
+
+/* Graphic Panel Cascade: Top-Left to Bottom-Right (English) */
+#panel-graphic.panel-revealing.to-en .tiers-row .tier-card:nth-child(1) { animation-delay: 0ms; }
+#panel-graphic.panel-revealing.to-en .tiers-row .tier-card:nth-child(2) { animation-delay: 90ms; }
+#panel-graphic.panel-revealing.to-en .settings-row-3 .setting-box:nth-child(1) { animation-delay: 90ms; }
+#panel-graphic.panel-revealing.to-en .tiers-row .tier-card:nth-child(3) { animation-delay: 180ms; }
+#panel-graphic.panel-revealing.to-en .settings-row-3 .setting-box:nth-child(2) { animation-delay: 180ms; }
+#panel-graphic.panel-revealing.to-en .settings-bottom-row .setting-box:nth-child(1) { animation-delay: 180ms; }
+#panel-graphic.panel-revealing.to-en .tiers-row .tier-card:nth-child(4) { animation-delay: 270ms; }
+#panel-graphic.panel-revealing.to-en .settings-row-3 .setting-box:nth-child(3) { animation-delay: 270ms; }
+#panel-graphic.panel-revealing.to-en .settings-bottom-row .setting-box:nth-child(2) { animation-delay: 270ms; }
+#panel-graphic.panel-revealing.to-en .action-footer { animation-delay: 360ms; }
+
+/* Latency Panel Cascade: Top-Right to Bottom-Left (Farsi) */
+#panel-latency.panel-revealing.to-fa .featured-card { animation-delay: 0ms; }
+#panel-latency.panel-revealing.to-fa .latency-loading-wrap { animation-delay: 60ms; }
+#panel-latency.panel-revealing.to-fa .ping-grid .ping-card:nth-child(3n) { animation-delay: 90ms; }
+#panel-latency.panel-revealing.to-fa .ping-grid .ping-card:nth-child(3n - 1) { animation-delay: 180ms; }
+#panel-latency.panel-revealing.to-fa .ping-grid .ping-card:nth-child(3n - 2) { animation-delay: 270ms; }
+#panel-latency.panel-revealing.to-fa .net-footer { animation-delay: 360ms; }
+
+/* Latency Panel Cascade: Top-Left to Bottom-Right (English) */
+#panel-latency.panel-revealing.to-en .featured-card { animation-delay: 0ms; }
+#panel-latency.panel-revealing.to-en .latency-loading-wrap { animation-delay: 60ms; }
+#panel-latency.panel-revealing.to-en .ping-grid .ping-card:nth-child(3n - 2) { animation-delay: 90ms; }
+#panel-latency.panel-revealing.to-en .ping-grid .ping-card:nth-child(3n - 1) { animation-delay: 180ms; }
+#panel-latency.panel-revealing.to-en .ping-grid .ping-card:nth-child(3n) { animation-delay: 270ms; }
+#panel-latency.panel-revealing.to-en .net-footer { animation-delay: 360ms; }
+
+/* Advanced Panel Cascade: Top-Right to Bottom-Left (Farsi) */
+#panel-advanced.panel-revealing.to-fa .adv-col:nth-child(2) .adv-card:nth-child(1) { animation-delay: 0ms; }
+#panel-advanced.panel-revealing.to-fa .adv-col:nth-child(2) .backup-row { animation-delay: 80ms; }
+#panel-advanced.panel-revealing.to-fa .adv-col:nth-child(2) .adv-card:nth-child(2) { animation-delay: 140ms; }
+#panel-advanced.panel-revealing.to-fa .adv-col:nth-child(1) .adv-card:nth-child(1),
+#panel-advanced.panel-revealing.to-fa .adv-col:nth-child(1) .adv-card:nth-child(2) { animation-delay: 120ms; }
+#panel-advanced.panel-revealing.to-fa .adv-col:nth-child(1) .adv-card:nth-child(3) { animation-delay: 220ms; }
+#panel-advanced.panel-revealing.to-fa .adv-col:nth-child(1) .adv-card:nth-child(4) { animation-delay: 320ms; }
+
+/* Advanced Panel Cascade: Top-Left to Bottom-Right (English) */
+#panel-advanced.panel-revealing.to-en .adv-col:nth-child(1) .adv-card:nth-child(1),
+#panel-advanced.panel-revealing.to-en .adv-col:nth-child(1) .adv-card:nth-child(2) { animation-delay: 0ms; }
+#panel-advanced.panel-revealing.to-en .adv-col:nth-child(1) .adv-card:nth-child(3) { animation-delay: 100ms; }
+#panel-advanced.panel-revealing.to-en .adv-col:nth-child(1) .adv-card:nth-child(4) { animation-delay: 200ms; }
+#panel-advanced.panel-revealing.to-en .adv-col:nth-child(2) .adv-card:nth-child(1) { animation-delay: 180ms; }
+#panel-advanced.panel-revealing.to-en .adv-col:nth-child(2) .backup-row { animation-delay: 260ms; }
+#panel-advanced.panel-revealing.to-en .adv-col:nth-child(2) .adv-card:nth-child(2) { animation-delay: 320ms; }
+
+/* ===================== CUSTOM INFO TOOLTIP BOX ===================== */
+.app-custom-tooltip {
+  position: fixed;
+  z-index: 999999 !important;
+  pointer-events: none;
+  background: rgba(10, 16, 28, 0.96) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-main);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85), 0 0 14px rgba(56, 189, 248, 0.25);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  max-width: 290px;
+  line-height: 1.35;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px) scale(0.97);
+  transition: opacity 0.14s ease, transform 0.14s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.14s;
+  white-space: pre-line;
+}
+body.lang-fa .app-custom-tooltip {
+  font-family: 'Vazirmatn', sans-serif;
+  font-size: 0.72rem;
+  direction: rtl;
+  text-align: right;
+  line-height: 1.45;
+}
+.app-custom-tooltip.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
 }
