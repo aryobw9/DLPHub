@@ -1,4 +1,4 @@
-    :root {
+:root {
       --bg-canvas: #06090e;
       --bg-surface: #0a101b;
       --bg-card: rgba(14, 23, 38, 0.75);
@@ -17,7 +17,7 @@
       --card-border: rgba(59, 130, 246, 0.22);
       --card-border-active: rgba(249, 115, 22, 0.75);
 
-      /* VibeFarsi Design Tokens & Inset Highlights */
+      
       --radius: 10px;
       --radius-sm: 6px;
       --radius-full: 9999px;
@@ -25,7 +25,7 @@
       --card-highlight-hover: inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
       --btn-highlight: inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
 
-      /* Custom Flame Cursors */
+      
       --cur-default: url('assets/cursors/default.png') 19 16, default;
       --cur-pointer: url('assets/cursors/pointer.png') 16 19, pointer;
       --cur-click: url('assets/cursors/click.png') 24 21, pointer;
@@ -42,7 +42,7 @@
       --cur-move: url('assets/cursors/move.png') 28 33, move;
     }
 
-    /* Virtual flame cursor follower: renders 100% scope right to window edges without OS reversion */
+    
     #dlp-custom-cursor {
       position: fixed;
       top: 0;
@@ -86,7 +86,7 @@
       user-select: none;
     }
 
-    /* Text inputs */
+    
     input[type="text"],
     input[type="password"],
     textarea,
@@ -113,7 +113,7 @@
       direction: ltr !important;
     }
 
-    /* Ambient Atmosphere / Aurora Glows */
+    
     .ambient-glow {
       position: fixed;
       inset: 0;
@@ -149,7 +149,7 @@
       background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.10) 0%, rgba(59, 130, 246, 0.03) 40%, rgba(0,0,0,0) 75%);
     }
 
-    /* Windows Custom App Header Bar */
+    
     .app-titlebar {
       height: 40px;
       min-height: 40px;
@@ -163,7 +163,7 @@
       position: relative;
       z-index: 100;
       backdrop-filter: blur(12px);
-      direction: ltr !important; /* Pinned LTR: brand always left, controls always right */
+      direction: ltr !important; 
       box-sizing: border-box;
       flex-shrink: 0;
     }
@@ -217,7 +217,7 @@
       color: var(--text-main);
     }
 
-    /* Main Container - Always Centered in App Window */
+    
     .app-viewport {
       flex: 1;
       width: 100vw;
@@ -236,7 +236,7 @@
       margin: 0;
     }
 
-    /* UI Scale Wrapper - Centered and scaled according to App Window size */
+    
     #ui-scale-wrapper {
       position: relative;
       width: 920px;
@@ -253,7 +253,7 @@
       direction: ltr !important;
     }
 
-    /* Atmospheric Character Art (behind UI elements) */
+    
     .bg-trooper {
       position: absolute;
       pointer-events: none;
@@ -280,7 +280,7 @@
       filter: drop-shadow(0 0 35px rgba(249, 115, 22, 0.45));
     }
 
-    /* Logo & Header Title matching Deadlock Config Banner */
+    
     .header-hero {
       position: relative;
       z-index: 1;
@@ -345,7 +345,7 @@
       letter-spacing: 0;
     }
 
-    /* Main Content Wrapper - Pinned Fixed Width & Stretch across all views */
+    
     #main-ui {
       width: 100%;
       max-width: 900px;
@@ -364,7 +364,7 @@
       align-self: stretch;
     }
 
-    /* 3-Card Pro Esports Navigation Deck */
+    
     .cards-deck {
       position: relative;
       z-index: 1;
@@ -385,7 +385,7 @@
       margin-bottom: 10px;
     }
 
-    /* Modern Pro Esports Card (Clean, Sleek, No AI Sci-Fi Polygon Slop) */
+    
     .pro-card {
       position: relative;
       width: 100%;
@@ -455,7 +455,7 @@
       line-height: 1.2;
     }
 
-    /* Hover State */
+    
     .pro-card:hover {
       background: rgba(18, 28, 46, 0.85);
       border-color: rgba(56, 189, 248, 0.4);
@@ -468,7 +468,7 @@
       color: var(--deadlock-cyan);
     }
 
-    /* Active State (Deadlock Ember Glow) */
+    
     .pro-card.active {
       background: linear-gradient(180deg, rgba(249, 115, 22, 0.12) 0%, rgba(14, 21, 35, 0.9) 100%);
       border-color: var(--deadlock-orange);
@@ -490,7 +490,7 @@
       color: var(--text-secondary);
     }
 
-    /* Content Viewport / Panels - EXACT FIXED DIMENSIONS IN ALL 3 VIEWS (NO LAYOUT SHIFTS / NO CUT-OFFS) */
+    
     .content-viewport {
       position: relative;
       z-index: 1;
@@ -541,7 +541,7 @@
       color: var(--deadlock-orange);
     }
 
-    /* Fixed Panel Body Height for All 5 Tabs */
+    
     .panel {
       flex: 1 1 auto;
       min-height: 0;
@@ -562,7 +562,7 @@
       direction: ltr !important;
     }
 
-    /* Standardized Option Box Height - Identical Across All Views */
+    
     .option-item {
       height: 130px;
       min-height: 130px;
@@ -609,7 +609,7 @@
       line-height: 1.3;
     }
 
-    /* Custom Sci-Fi Toggle Switch */
+    
     .switch {
       position: relative;
       display: inline-block;
@@ -660,7 +660,7 @@
       transform: translateX(19px);
     }
 
-    /* Action Footer Bar - Pinned Bottom, Pinned LTR */
+    
     .action-footer {
       width: 100%;
       height: 42px;
@@ -745,10 +745,6 @@
       transform: scale(0.98) !important;
     }
 
-/* ---------- DLPBooster Modern Typography Stack ---------- */
-
-/* (Dana removed — Vazirmatn) */
-/* Farsi font: Vazirmatn (local woff2, static weights) */
 @font-face {
   font-family: 'Vazirmatn';
   src: url('fonts/Vazirmatn-Thin.woff2') format('woff2');
@@ -804,10 +800,6 @@
   font-display: swap;
 }
 
-/* (Plus Jakarta Sans removed — Vazirmatn) */
-
-
-/* Fallback fonts */
 @font-face {
   font-family: 'Vazirmatn';
   src: url('fonts/Vazirmatn[wght].woff2') format('woff2-variations');
@@ -824,8 +816,6 @@
   src: url('fonts/Rajdhani-700.woff2') format('woff2');
   font-weight: 700;
 }
-
-/* (old .btn-launch pill removed — replaced by .btn-play octagon button) */
 
 .win-ctl {
   background: transparent;
@@ -925,7 +915,6 @@
 button.btn-apply, button.btn-reset { font-family: 'Vazirmatn', sans-serif; }
 .btn-apply:disabled { opacity: .45; cursor: var(--cur-default); }
 
-/* Language Switcher */
 .lang-pill-btn {
   background: rgba(56, 189, 248, 0.12);
   border: 1px solid rgba(56, 189, 248, 0.35);
@@ -958,7 +947,6 @@ button.btn-apply, button.btn-reset { font-family: 'Vazirmatn', sans-serif; }
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
 }
 
-/* Styled Select */
 .setting-select {
   background: var(--bg-surface);
   border: 1px solid var(--card-border);
@@ -981,7 +969,6 @@ button.btn-apply, button.btn-reset { font-family: 'Vazirmatn', sans-serif; }
   color: var(--text-main);
 }
 
-/* Danger Button (Revert to Vanilla) */
 .btn-danger {
   border: 1px solid rgba(239, 68, 68, 0.5);
   color: #f87171;
@@ -994,7 +981,6 @@ button.btn-apply, button.btn-reset { font-family: 'Vazirmatn', sans-serif; }
   box-shadow: 0 0 14px rgba(239, 68, 68, 0.4);
 }
 
-/* Custom CVar Textarea */
 .custom-cvar-box {
   width: 100%;
   resize: none;
@@ -1007,7 +993,6 @@ button.btn-apply, button.btn-reset { font-family: 'Vazirmatn', sans-serif; }
   box-sizing: border-box;
 }
 
-/* Universal Button Press Stability (zero sizing change or twitch on click/hover) */
 button,
 .btn-apply,
 .btn-reset,
@@ -1042,9 +1027,6 @@ button:active,
   max-height: none;
 }
 
-/* ==========================================================================
-   TAB 1: GRAPHIC SETTING (4 Tiers Row + Long FOV Box)
-   ========================================================================== */
 .graphic-layout {
   display: flex;
   flex-direction: column;
@@ -1054,7 +1036,6 @@ button:active,
   box-sizing: border-box;
 }
 
-/* 4 Tiers Row */
 .tiers-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1166,7 +1147,6 @@ button:active,
   letter-spacing: 0.5px;
 }
 
-/* T1 (High Graphics - Highest Fidelity) */
 .tier-badge.t1 {
   background: rgba(56, 189, 248, 0.16);
   color: #38bdf8;
@@ -1174,28 +1154,25 @@ button:active,
   box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
 }
 
-/* T2 (Medium Graphics - Balanced) */
 .tier-badge.t2 {
   background: rgba(52, 211, 153, 0.15);
   color: #34d399;
   border: 1px solid rgba(52, 211, 153, 0.35);
 }
 
-/* T3 (Low Graphics - Maximum FPS) */
 .tier-badge.t3 {
   background: rgba(249, 115, 22, 0.15);
   color: #fb923c;
   border: 1px solid rgba(249, 115, 22, 0.35);
 }
 
-/* POTATO Tier */
 .tier-badge.potato {
   background: rgba(234, 179, 8, 0.15);
   color: #facc15;
   border: 1px solid rgba(234, 179, 8, 0.4);
 }
 
-.tier-pick { display: none; /* radios removed — card highlight is the selection state */
+.tier-pick { display: none; 
 
   width: 14px;
   height: 14px;
@@ -1208,7 +1185,7 @@ button:active,
   box-sizing: border-box;
 }
 
-.tier-card.selected .tier-pick { display: none; /* radios removed — card highlight is the selection state */
+.tier-card.selected .tier-pick { display: none; 
 
   background: var(--deadlock-orange);
   border-color: var(--deadlock-orange);
@@ -1232,7 +1209,6 @@ button:active,
   margin-bottom: auto;
 }
 
-/* Long FOV Box (Full Width) */
 .fov-box-wide {
   background: rgba(11, 19, 33, 0.75);
   border: 1px solid rgba(59, 130, 246, 0.16);
@@ -1363,9 +1339,6 @@ button:active,
   color: var(--text-secondary);
 }
 
-/* ==========================================================================
-   TAB 2: LATENCY - VALVE SERVERS LIVE PING GRID
-   ========================================================================== */
 .valve-ping-view {
   width: 100%;
   height: 100%;
@@ -1374,7 +1347,7 @@ button:active,
   gap: 10px;
   box-sizing: border-box;
 }
-/* everything below the header scrolls as one page (featured card + relays + footer) */
+
 .latency-scroll {
   flex: 1 1 auto;
   min-height: 0;
@@ -1387,7 +1360,7 @@ button:active,
 
 .ping-view-header {
   display: flex;
-  justify-content: flex-end; /* title removed — button alone at top-right */
+  justify-content: flex-end; 
   align-items: center;
   height: 32px;
   min-height: 32px;
@@ -1426,9 +1399,6 @@ button:active,
 .refresh-icon {
   margin-right: 2px;
 }
-
-
-/* Chart.js canvas wrap: removed (chart dropped) */
 
 .ping-loading-msg {
   grid-column: 1 / -1;
@@ -1592,9 +1562,6 @@ button:active,
   background: #64748b;
 }
 
-/* ==========================================================================
-   TAB 3: ADVANCED GRID (Spacious 2-Column Dashboard)
-   ========================================================================== */
 #panel-advanced {
   height: 100% !important;
   max-height: 385px !important;
@@ -1685,7 +1652,6 @@ button:active,
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(239, 68, 68, 0.2);
 }
 
-/* Card 1: Revert Vanilla (90px) */
 .adv-revert-only {
   flex: 0 0 auto;
   height: 90px !important;
@@ -1732,7 +1698,6 @@ button:active,
   color: #f87171 !important;
 }
 
-/* Card 2 (Left): Check For Updates (90px) */
 .adv-update-card {
   flex: 0 0 auto;
   height: 90px !important;
@@ -1774,7 +1739,6 @@ button:active,
   box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
 }
 
-/* Card 3 (Left): Actions Row (90px) */
 .adv-actions-row {
   flex: 0 0 auto;
   height: 90px !important;
@@ -1803,7 +1767,6 @@ button:active,
   white-space: nowrap;
 }
 
-/* Card 4 (Left): Support Note (88px) */
 .adv-support-card {
   flex: 0 0 auto;
   height: 88px !important;
@@ -1835,9 +1798,6 @@ button:active,
   -webkit-box-orient: vertical;
 }
 
-/* ==========================================================================
-   COLUMN 2: BACKUP & RESTORE (290px) + VIP / TEST MODE (84px) = 382px MATCH
-   ========================================================================== */
 .adv-backup-card {
   width: 100% !important;
   min-width: 100% !important;
@@ -1904,9 +1864,6 @@ button:active,
   scrollbar-color: rgba(59, 130, 246, 0.3) rgba(10, 16, 27, 0.4);
 }
 
-/* ==========================================================================
-   PINNED BUTTON DIMENSIONS (Zero twitching on click/hover/lang/tab switch)
-   ========================================================================== */
 #btn-install {
   width: 190px !important;
   min-width: 190px !important;
@@ -1948,10 +1905,6 @@ button:active,
   line-height: 34px !important;
 }
 
-
-
-/* ---------- FontAwesome sizing + animations ---------- */
-/* FA <i> replaces old svg sizes */
 .pro-card .card-icon {
   width: auto; height: auto;
   font-size: 20px;
@@ -1963,7 +1916,6 @@ button:active,
   vertical-align: middle;
 }
 
-/* VIP / Test Mode in Column 2 (Reduced 84px) */
 .adv-vip-card {
   flex: 0 0 auto;
   height: 84px !important;
@@ -2045,10 +1997,8 @@ button:active,
   min-height: 12px;
 }
 
-/* spinning refresh while pinging */
 .refresh-icon.spin { animation: fa-spin 0.9s linear infinite; }
 
-/* step-log status icons */
 .step-log .ok::before,
 .step-log .skip::before {
   font-family: var(--fa-style-family-classic, "Font Awesome 7 Free"), "Font Awesome 6 Free" !important;
@@ -2056,26 +2006,23 @@ button:active,
   margin-inline-end: 6px;
   display: inline-block;
 }
-.step-log .ok::before { content: "\f00c"; color: #4ade80; }        /* check */
-.step-log .skip::before { content: "\f071"; color: #eab308; }      /* triangle-exclamation */
+.step-log .ok::before { content: "\f00c"; color: #4ade80; }        
+.step-log .skip::before { content: "\f071"; color: #eab308; }      
 
-/* modal title icon accent */
 .modal-title::before {
   font-family: var(--fa-style-family-classic, "Font Awesome 7 Free"), "Font Awesome 6 Free" !important;
   font-weight: 900 !important;
-  content: "\f0a1";   /* bullhorn */
+  content: "\f0a1";   
   margin-inline-end: 8px;
   color: var(--deadlock-orange);
 }
 
-/* hover animations on action buttons */
 .btn-apply:hover i { animation: fa-bounce 0.6s; }
 .btn-danger:hover i { animation: fa-shake 0.7s; }
 .btn-launch:hover i { animation: fa-beat 0.7s infinite; }
 
-/* tier card pick glow pulse when selected */
 .tier-card.selected .tier-pick,
-.tier-card-sm.selected .tier-pick { display: none; /* radios removed — card highlight is the selection state */
+.tier-card-sm.selected .tier-pick { display: none; 
 
   animation: dlp-pulse 1.6s ease-in-out infinite;
 }
@@ -2084,7 +2031,6 @@ button:active,
   50%      { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); }
 }
 
-/* detect badge live dot */
 .detect-badge:not(:empty)::after {
   content: "";
   display: inline-block;
@@ -2096,28 +2042,21 @@ button:active,
 }
 @keyframes dlp-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 
-/* ---------- Animate.css integration + motion polish ---------- */
-/* tab cards entrance on boot (JS adds animate__animated animate__fadeInUp) */
 .cards-deck .pro-card { --animate-duration: 0.45s; }
 .cards-deck .pro-card:nth-child(2) { --animate-delay: 0.07s; }
 .cards-deck .pro-card:nth-child(3) { --animate-delay: 0.14s; }
 
-/* tier cards: quick pop when selected */
-.tier-card.selected { animation: animate__animated 0s; } /* placeholder, JS drives animate__zoomIn */
+.tier-card.selected { animation: animate__animated 0s; } 
 .tier-card, .tier-card-sm { transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .tier-card:hover, .tier-card-sm:hover { transform: translateY(-2px); }
 
-/* FOV summary number slide */
 .fov-summary { transition: color 0.2s ease; }
 .fov-summary.tick { color: var(--deadlock-orange); }
 
-/* reduce motion respect */
 @media (prefers-reduced-motion: reduce) {
   .cards-deck .pro-card, .ping-card { animation: none !important; }
 }
 
-/* ===================== SOCIAL FLIP-CARD BUTTONS (uiverse Praashoo7 port) ===================== */
-/* bottom-left corner cluster: telegram / youtube / website / instagram */
 .social-cluster {
   position: fixed;
   bottom: 14px;
@@ -2140,36 +2079,29 @@ button:active,
     inset -1px -1px 1px rgba(68, 66, 66, 0.25),
     1px 1px 4px rgba(0, 0, 0, 0.35);
 }
-/* FA brand glyphs have uneven ink; normalize each into the same optical box */
+
 .social-card i, .social-card img, .social-card svg {
   display: grid; place-items: center;
   width: 22px; height: 22px;
   line-height: 1;
 }
-/* each icon drifts toward the cluster's shared center (TL card center is
-   bottom-right of the icon cell, etc.) */
+
 .social-card.tl i, .social-card.tl img { transform: translate(3px, 3px); }
 .social-card.tr i, .social-card.tr img { transform: translate(-3px, 3px); }
 .social-card.bl i, .social-card.bl img { transform: translate(3px, -3px); }
 .social-card.br i, .social-card.br img { transform: translate(-3px, -3px); }
-/* glyph-specific size + fine correction on top of the drift */
+
 .social-card .fa-telegram-plane { font-size: 19px; }
 .social-card .fa-youtube        { font-size: 20px; }
 .social-card .fa-instagram      { font-size: 21px; }
 .social-card.website img        { width: 24px; height: 24px; border-radius: 5px; }
 .social-card svg { fill: currentColor; }
 
-/* corner radii — outer corners rounded like the uiverse original */
 .social-card.tl { border-radius: 40px 5px 5px 5px; }
 .social-card.tr { border-radius: 5px 40px 5px 5px; }
 .social-card.bl { border-radius: 5px 5px 5px 40px; }
 .social-card.br { border-radius: 5px 5px 40px 5px; }
 
-/* A 40px radius on a 40px box clips the card's own hit area, but the brand
-   glyphs are not clipped (no overflow:hidden), so they overhang the rounded
-   corner. That overhang hit-tested to .social-row: default arrow instead of
-   the flame pointer, and the click landed on the row — the button felt dead
-   exactly on the icon. This transparent child restores the full 40x40 box. */
 .social-card { position: relative; }
 .social-card::before { content: ''; position: absolute; inset: 0; }
 
@@ -2184,15 +2116,13 @@ button:active,
     inset -1px -1px 1px rgba(255,255,255,0.2);
 }
 
-/* brand colors on glow */
 .social-card.telegram { --social-glow: #29b6f6; color: #29b6f6; }
 .social-card.youtube  { --social-glow: #ff0000; color: #ff0000; }
 .social-card.website  { --social-glow: #f97316; color: #f97316; }
 .social-card.instagram{ --social-glow: #cc39a4; color: #cc39a4; }
-/* website uses DLP logo instead of icon font */
+
 .social-card.website img { border-radius: 6px; }
 
-/* ===================== LAUNCH BUTTON — clean orange pill ===================== */
 .btn-play {
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   border: none;
@@ -2230,8 +2160,6 @@ button:active,
   box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
 }
 
-/* ===================== GLOW-RING APPLY BUTTON (uiverse marcelodolza port) ===================== */
-/* animated conic gradient halo behind the apply button, spins on hover */
 .btn-apply {
   position: relative;
   z-index: 1;
@@ -2259,7 +2187,7 @@ button:active,
 }
 .btn-apply:hover .glow-spin { opacity: 0.95; }
 @keyframes dlp-ring-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-/* soft breathing shadow layer under button */
+
 .btn-apply .glow-bg {
   position: absolute;
   inset: -6px;
@@ -2275,9 +2203,6 @@ button:active,
 .btn-apply:hover { box-shadow: 0 0 14px 1px rgba(249, 115, 22, 0.55); }
 .btn-apply:active { transform: scale(0.98); }
 
-/* ===================== NEON CHECKBOX (uiverse port, deadlock orange) ===================== */
-/* orange glow box + flowing borders + particle/ring/spark burst on check.
-   Replaces the old .switch toggle. Kept: burst animations while active. */
 .neon-checkbox {
   --nc: #f97316;
   --nc-dark: #c2570c;
@@ -2295,7 +2220,7 @@ button:active,
 .neon-checkbox__frame { position: relative; width: 100%; height: 100%; }
 .neon-checkbox__box {
   position: absolute; inset: 0;
-  background: rgba(14, 23, 38, 0.85);   /* app surface, not black */
+  background: rgba(14, 23, 38, 0.85);   
   border-radius: 4px;
   border: 2px solid var(--nc-dark);
   transition: all 0.4s ease;
@@ -2381,7 +2306,7 @@ button:active,
   0% { transform: rotate(var(--r, 0deg)) translateX(0) scale(1); opacity: 1; }
   100% { transform: rotate(var(--r, 0deg)) translateX(26px) scale(0); opacity: 0; }
 }
-/* particle positions */
+
 .neon-checkbox__particles span:nth-child(1) { --x: 22px; --y: -22px; }
 .neon-checkbox__particles span:nth-child(2) { --x: -22px; --y: -22px; }
 .neon-checkbox__particles span:nth-child(3) { --x: 22px; --y: 22px; }
@@ -2394,17 +2319,15 @@ button:active,
 .neon-checkbox__particles span:nth-child(10) { --x: -18px; --y: 26px; }
 .neon-checkbox__particles span:nth-child(11) { --x: 26px; --y: 18px; }
 .neon-checkbox__particles span:nth-child(12) { --x: -26px; --y: -18px; }
-/* spark rotations */
+
 .neon-checkbox__sparks span:nth-child(1) { --r: 0deg; top: 50%; left: 50%; }
 .neon-checkbox__sparks span:nth-child(2) { --r: 90deg; top: 50%; left: 50%; }
 .neon-checkbox__sparks span:nth-child(3) { --r: 180deg; top: 50%; left: 50%; }
 .neon-checkbox__sparks span:nth-child(4) { --r: 270deg; top: 50%; left: 50%; }
-/* ring delays */
+
 .neon-checkbox__rings .ring:nth-child(2) { animation-delay: 0.1s; }
 .neon-checkbox__rings .ring:nth-child(3) { animation-delay: 0.2s; }
 
-/* ===================== GLOW PING CARDS ===================== */
-/* original layout + soft rotating glow layers only (no comet border) */
 .ping-card {
   position: relative;
   overflow: hidden;
@@ -2436,9 +2359,6 @@ button:active,
   .ping-card::before { animation: none; }
 }
 
-/* ===================== ORBIT LOADER (uiverse port, deadlock orange) ===================== */
-/* 3 nested rotating frames, each drops a bouncing orange orb.
-   Frames get explicit inset:0 (inherit-width trick collapses on nested divs). */
 .dlp-loader {
   --orb: #c2570c;
   --orb-lite: #fdba74;
@@ -2499,9 +2419,6 @@ button:active,
 .dlp-loading .dlp-load-label { font-size: 0.8rem; color: var(--text-secondary, #94a3b8); }
 @media (prefers-reduced-motion: reduce) { .dlp-loader { animation: none; } }
 
-/* ==========================================================================
-   VIBEFARSI METEORS & BOUNCING DOTS (https://vibefarsi.ir/animations/meteors)
-   ========================================================================== */
 @keyframes meteor {
   0% {
     transform: rotate(215deg) translateX(0);
@@ -2647,11 +2564,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
 .vf-loading-dots .vf-dot:nth-child(2) { animation-delay: 160ms; }
 .vf-loading-dots .vf-dot:nth-child(3) { animation-delay: 320ms; }
 
-
-/* ===================== VIBEFARSI-STYLE BORDER BEAM FOR PRESET CARDS ===================== */
-/* Smooth rotating beam around active cards using CSS @property --beam-angle.
-   Hardware accelerated via GPU compositor conic-gradient rotation.
-   Zero JS overhead, zero layout shifts, zero offset-path CPU rasterization. */
 @property --beam-angle {
   syntax: "<angle>";
   inherits: false;
@@ -2708,7 +2620,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
   }
 }
 
-/* ===================== NETWORK INSTRUMENT — relay cards ===================== */
 .net-label {
   font-family: 'Rajdhani', monospace;
   font-size: 0.62rem;
@@ -2747,14 +2658,12 @@ body.lang-fa .latency-loading-content .dlp-load-label {
 }
 .mono { font-family: 'Rajdhani', monospace; }
 
-/* state colors — muted, not neon */
 .st-excellent { color: #4ade80; }
 .st-stable    { color: #38bdf8; }
 .st-unstable  { color: #fbbf24; }
 .st-poor      { color: #f87171; }
 .st-offline   { color: #64748b; }
 
-/* ---- featured BEST ROUTE card (horizontal, compact) ---- */
 #best-route-slot { flex-shrink: 0; }
 .featured-card {
   position: relative;
@@ -2821,14 +2730,12 @@ body.lang-fa .latency-loading-content .dlp-load-label {
 }
 .featured-card .fc-spark { margin: 2px 0 3px; }
 
-/* ---- sparkline ---- */
 .spark-svg { width: 100%; height: 30px; display: block; margin: 4px 0 2px; }
 .spark-good { stroke: #4ade80; }
 .spark-mid  { stroke: #38bdf8; }
 .spark-bad  { stroke: #fbbf24; }
 .spark.offline, .spark-flat { height: 30px; border-bottom: 1px dashed rgba(148,163,184,0.25); }
 
-/* ---- small relay cards: name+code / big ms / state — 3 tight rows ---- */
 .ping-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2890,8 +2797,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
   .ping-card, .featured-card { transition: none; }
 }
 
-/* ===================== THEME SCROLLBARS (global) ===================== */
-/* thin, dark, orange-tinted thumb; applies to every scroll area incl. latency page */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track {
   background: rgba(8, 12, 18, 0.5);
@@ -2909,15 +2814,12 @@ body.lang-fa .latency-loading-content .dlp-load-label {
 }
 ::-webkit-scrollbar-corner { background: transparent; }
 
-
-/* ===================== PRESET CARDS: radios removed, classic badges ===================== */
 .tier-pick, .tier-card-sm .tier-pick { display: none !important; }
 .tier-card.selected, .tier-card-sm.selected {
   border-color: rgba(249, 115, 22, 0.75);
   background: rgba(249, 115, 22, 0.08);
 }
 
-/* ===================== SETTINGS COLUMNS (Camera | HUD) ===================== */
 .settings-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2943,18 +2845,14 @@ body.lang-fa .latency-loading-content .dlp-load-label {
 .setting-col .fov-slider-bar { margin: 0; }
 .setting-col .hud-switch-wrap { margin: 0; justify-content: flex-start; }
 
-/* ===================== PANEL AREA: classic fixed size, scroll inside ===================== */
 .content-viewport {
   overflow: visible;
 }
-
 
 .setting-box .fov-box-header { margin: 0; }
 .setting-box .fov-slider-bar { margin: 0; flex: 1; }
 .setting-box .hud-switch-wrap { flex: 1; margin: 0; align-content: center; }
 
-
-/* ===================== NO JUMP: panels = classic fixed size, scroll inside where needed ===================== */
 #panel-graphic {
   height: 100%;
   overflow: visible !important;
@@ -2971,7 +2869,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
 }
 .content-viewport { display: flex; flex-direction: column; }
 
-
 .setting-box .fov-box-title { font-size: 0.74rem; }
 .setting-box .fov-slider-bar { margin: 0; }
 .fov-range-input { height: 4px; }
@@ -2979,11 +2876,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
 .hud-switch-wrap { gap: 6px; }
 .hud-switch-label { font-size: 0.72rem; }
 
-
-
-
-/* ===================== OPTION BATCH: profile cards / fov hero / dividers / active chip ===================== */
-/* 4) section label dividers */
 .section-label {
   display: flex; align-items: center; gap: 10px;
   font-family: 'Rajdhani', monospace;
@@ -2993,7 +2885,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
 }
 .section-label-line { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(148,163,184,0.25), transparent); }
 
-/* 2+3) tier cards: icon in badge, sub descriptor, identity bars */
 .tier-sub {
   display: flex; flex-direction: column; align-items: center; gap: 1px;
 }
@@ -3020,9 +2911,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
 .tier-bar-stars { color: var(--deadlock-orange, #f97316); font-size: 0.5rem; letter-spacing: 1px; }
 .tier-card.selected .tier-bar-row { color: var(--text-secondary, #94a3b8); }
 
-
-
-/* 10) active profile chip */
 .active-profile {
   display: flex; align-items: center; gap: 8px;
   font-family: 'Rajdhani', monospace;
@@ -3035,7 +2923,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
   box-shadow: 0 0 6px currentColor;
 }
 
-/* 13) Multi-colored Deadlock Themed Setting Box Header Icons */
 .setting-box .fov-box-title-wrap i,
 .setting-box .fov-box-title-wrap svg,
 .section-label i {
@@ -3048,7 +2935,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
   transition: transform 0.2s ease, filter 0.2s ease;
 }
 
-/* 1. FOV Box: Optical Precision Cyan Gradient */
 .fov-box .fov-box-title-wrap i,
 .fov-box .fov-box-title-wrap svg {
   color: #38bdf8;
@@ -3058,7 +2944,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
   filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.45));
 }
 
-/* 2. HUD Box: Vitality Heart Red Gradient */
 .hud-box .fov-box-title-wrap i,
 .hud-box .fov-box-title-wrap svg {
   display: inline-block;
@@ -3070,7 +2955,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
   filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.6));
 }
 
-/* 3. Renderer Box: Spirit Engine Purple / Electric Indigo Gradient */
 .renderer-box .fov-box-title-wrap i,
 .renderer-box .fov-box-title-wrap svg {
   color: #c084fc;
@@ -3080,7 +2964,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
   filter: drop-shadow(0 0 5px rgba(192, 132, 252, 0.45));
 }
 
-/* 4. FPS Limit Box: Combustion Ember Orange / Fire Gradient */
 .fps-box-bottom .fov-box-title-wrap i,
 .fps-box-bottom .fov-box-title-wrap svg {
   color: #fb923c;
@@ -3090,7 +2973,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
   filter: drop-shadow(0 0 5px rgba(249, 115, 22, 0.45));
 }
 
-/* 5. Launch Options Box: Steam Dual-tone Deep Cyan / Sky Gradient */
 .launch-options-box .fov-box-title-wrap i,
 .launch-options-box .fov-box-title-wrap svg {
   color: #38bdf8;
@@ -3100,7 +2982,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
   filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.45));
 }
 
-/* Question Mark Hint Trigger Icon */
 .hint-trigger i {
   color: rgba(148, 163, 184, 0.65);
   transition: color 0.18s ease, filter 0.18s ease;
@@ -3110,9 +2991,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
   filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.5));
 }
 
-
-
-/* Stat bars for tier cards */
 .stat-bar {
   width: 45%;
   height: 5px;
@@ -3132,8 +3010,6 @@ body.lang-fa .latency-loading-content .dlp-load-label {
   box-shadow: 0 0 6px var(--deadlock-orange);
 }
 
-
-/* ===================== FA RTL TEXTS (text direction only — placement untouched) ===================== */
 body.lang-fa .i18n-rtl,
 body.lang-fa .adv-card-desc,
 body.lang-fa .option-detail,
@@ -3143,7 +3019,7 @@ body.lang-fa .hud-switch-label {
   direction: rtl;
   text-align: right;
 }
-/* Backup & Restore card: Base English / LTR */
+
 .adv-backup-card,
 .backup-list-box,
 .backup-row {
@@ -3374,7 +3250,7 @@ body.lang-fa .btn-delete-backup:hover {
   color: #fff !important;
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.3) !important;
 }
-/* but keep numeric/path content LTR even in FA */
+
 body.lang-fa .path-input,
 body.lang-fa .fov-num-input,
 body.lang-fa .backup-name,
@@ -3383,10 +3259,8 @@ body.lang-fa .tier-name,
 body.lang-fa .tier-badge {
   direction: ltr;
 }
-body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
+body.lang-fa .step-log { text-align: left; } 
 
-
-/* ===================== DEADLOCK ICONS (badge/launch only) + COMPACT ROWS ===================== */
 .dlp-icon-badge {
   width: 12px;
   height: 12px;
@@ -3397,7 +3271,6 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
   transition: transform 0.22s ease, filter 0.22s ease;
 }
 
-/* Color & Glow for each Tier Badge SVG Icon (T1, T2, T3 Solid Vectors) */
 .tier-badge svg.dlp-icon-badge {
   fill: currentColor;
 }
@@ -3431,12 +3304,8 @@ body.lang-fa .step-log { text-align: left; } /* log stays LTR monospace */
 
 .dlp-icon-play { width: 12px; height: 12px; display: block; }
 
-
-
 .neon-checkbox { --size: 20px; }
 
-/* ===================== FINAL BOX SIZING (single source of truth) ===================== */
-/* tier cards: strictly locked preset cards — IDENTICAL in FA and EN */
 .tiers-row,
 body.lang-fa .tiers-row {
   display: grid !important;
@@ -3534,7 +3403,6 @@ body.lang-fa .tier-name {
   letter-spacing: 0 !important;
 }
 
-/* Settings Row 1: CAMERA, HUD, RENDERER (3 boxes) */
 .settings-row-3 {
   display: grid;
   grid-template-columns: 1.15fr 1fr 1fr;
@@ -3553,7 +3421,6 @@ body.lang-fa .tier-name {
   padding: 6px 12px 8px !important;
 }
 
-/* ===================== CAMERA / FOV BOX (IDENTICAL IN EN AND FA) ===================== */
 .setting-box .fov-box-header {
   height: 22px !important;
   min-height: 22px !important;
@@ -3683,7 +3550,6 @@ body.lang-fa .fov-default-tick {
   pointer-events: none;
 }
 
-/* Settings Row 2: FPS LIMIT + LAUNCH OPTIONS (2 boxes) */
 .settings-bottom-row {
   display: grid;
   grid-template-columns: 1.22fr 1.78fr;
@@ -3721,7 +3587,6 @@ body.lang-fa .fov-default-tick {
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35), var(--card-highlight-hover);
 }
 
-/* HUD Box & Switch Card */
 .hud-box {
   display: flex;
   flex-direction: column;
@@ -3907,7 +3772,6 @@ body.lang-fa .renderer-desc {
   margin: 0 !important;
 }
 
-/* FPS 10-button grid with sliding glider */
 .fps-pill-grid {
   position: relative;
   display: grid;
@@ -3965,7 +3829,6 @@ body.lang-fa .fps-pill-grid .renderer-pill.active {
   box-shadow: none !important;
 }
 
-/* Launch Options Box */
 .launch-options-box {
   justify-content: space-between;
   gap: 4px;
@@ -4094,7 +3957,6 @@ body.lang-fa .launch-options-desc {
   font-size: 0.74rem;
 }
 
-/* Modern Sleek Hint Tooltip */
 .setting-box:hover,
 .setting-box:has(.hint-trigger:hover),
 .setting-box:focus-within {
@@ -4191,8 +4053,6 @@ body.lang-fa .hint-tooltip {
   transform: translateY(0) scale(1);
 }
 
-
-/* ===================== VIBEFARSI PERSIAN TYPOGRAPHY ENHANCEMENT ===================== */
 body.lang-fa {
   font-feature-settings: 'cv01' on;
   letter-spacing: normal !important;
@@ -4220,7 +4080,6 @@ body.lang-fa .btn-reset {
   letter-spacing: 0 !important;
 }
 
-/* Persian Font-Weight & Proportion Hierarchy (VibeFarsi Tokens) */
 body.lang-fa .brand-badge {
   font-weight: 700;
   font-size: 0.75rem;
@@ -4322,9 +4181,7 @@ body.lang-fa .last-test,
 body.lang-fa .ping-view-title {
   font-family: 'Vazirmatn', sans-serif;
 }
-/* digits inside FA text stay readable (Vazirmatn has latin digits) */
 
-/* ===================== TOP-BAR PING BUTTON (cloud loader, latency tab) ===================== */
 .btn-refresh-ping-top {
   background: rgba(14, 28, 48, 0.45);
   border: 1px solid rgba(56, 189, 248, 0.25);
@@ -4361,7 +4218,6 @@ body.lang-fa .ping-view-title {
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
 }
 
-/* Cloud Loader: 1 to 1 with user spec */
 .ping-cloud-loader {
   display: flex;
   align-items: center;
@@ -4443,7 +4299,6 @@ body.lang-fa .ping-view-title {
   100% { cx: 80; cy: 60; r: 15; }
 }
 
-/* ===================== FOV RESET CLICK FEEL ===================== */
 #btn-fov-reset { transition: transform 0.15s ease, color 0.2s ease, box-shadow 0.25s ease; }
 #btn-fov-reset:active { transform: scale(0.88); }
 #btn-fov-reset.reset-pop { animation: dlp-reset-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -4463,7 +4318,6 @@ body.lang-fa .ping-view-title {
   }
 }
 
-/* ===================== ADVANCED TAB CARDS (UPDATE & SUPPORT) ===================== */
 .adv-update-card {
   border-color: rgba(56, 189, 248, 0.25);
   background: rgba(14, 23, 38, 0.5);
@@ -4519,7 +4373,6 @@ body.lang-fa .ping-view-title {
   line-height: 1.35;
 }
 
-/* ===================== APP VERSION BADGE ===================== */
 .app-version-badge,
 .app-version-badge span {
   font-family: 'Rajdhani', sans-serif !important;
@@ -4602,7 +4455,6 @@ body.lang-fa .ping-view-title {
   margin-inline-start: 4px !important;
 }
 
-/* ===================== ACTIVE PROFILE FOOTER INDICATOR ===================== */
 .active-profile {
   display: flex !important;
   align-items: center !important;
@@ -4648,9 +4500,6 @@ body.lang-fa .ping-view-title {
   direction: ltr !important;
 }
 
-/* ===================== TRUE INNER-CONTENT RTL (VIBEFARSI SPEC) ===================== */
-
-/* 1. Box Headers: icon & title on the right, hint-trigger on the left */
 body.lang-fa .setting-box .fov-box-header,
 body.lang-fa .fov-box .fov-box-header,
 body.lang-fa .hud-box .fov-box-header,
@@ -4671,7 +4520,6 @@ body.lang-fa .fov-box-title-wrap svg {
   margin: 0 !important;
 }
 
-/* 2. Hint Tooltip in RTL: Pop anchored over trigger on the left */
 body.lang-fa .hint-tooltip {
   right: auto !important;
   left: -6px !important;
@@ -4683,7 +4531,6 @@ body.lang-fa .hint-tooltip::after {
   left: 12px !important;
 }
 
-/* 3. Section Title Bar: Section title on the right, refresh ping on the left */
 body.lang-fa .content-header {
   direction: rtl !important;
 }
@@ -4692,13 +4539,11 @@ body.lang-fa .content-header-title {
   gap: 8px !important;
 }
 
-/* 4. Preset Cards (T1 - Potato): Badge sits on top-right */
 body.lang-fa .tier-card-header {
   direction: rtl !important;
   justify-content: flex-start !important;
 }
 
-/* 5. Buttons: Icon on the right, Persian text on the left */
 body.lang-fa .btn-play {
   direction: rtl !important;
 }
@@ -4715,7 +4560,6 @@ body.lang-fa #btn-revert-vanilla {
   direction: rtl !important;
 }
 
-/* 6. Active Profile Indicator in Footer: Dot on the right, label to its left */
 body.lang-fa .active-profile {
   direction: rtl !important;
 }
@@ -4723,7 +4567,6 @@ body.lang-fa .active-profile .active-label {
   direction: rtl !important;
 }
 
-/* 7. Advanced Tab Inner RTL */
 body.lang-fa .adv-vip-card .adv-card-header {
   direction: rtl !important;
 }
@@ -4742,7 +4585,6 @@ body.lang-fa .adv-actions-row {
   direction: rtl !important;
 }
 
-/* 8. Modals & Dialogs */
 body.lang-fa .modal-box {
   direction: rtl !important;
   text-align: right !important;
@@ -4760,7 +4602,6 @@ body.lang-fa .modal-actions {
   justify-content: flex-start !important;
 }
 
-/* ===================== LATENCY TAB TYPOGRAPHY ===================== */
 body.lang-fa .fc-tag,
 body.lang-fa .fc-name,
 body.lang-fa .fc-region,
@@ -4771,8 +4612,6 @@ body.lang-fa .pc-stats {
   letter-spacing: 0 !important;
 }
 
-/* ===================== VIBEFARSI SKELETON TRANSITION (4s SPEC) ===================== */
-
 .action-footer,
 .adv-card,
 .featured-card,
@@ -4780,7 +4619,6 @@ body.lang-fa .pc-stats {
   position: relative;
 }
 
-/* --- 1. Soft Breathing Pulse for Skeletons --- */
 @keyframes vf-skeleton-pulse {
   0%, 100% {
     opacity: 1;
@@ -4790,7 +4628,6 @@ body.lang-fa .pc-stats {
   }
 }
 
-/* Skeleton Card Background & Borders */
 body.lang-transitioning .content-header,
 body.lang-transitioning .pro-card,
 body.lang-transitioning .tier-card,
@@ -4808,7 +4645,6 @@ body.lang-transitioning .net-footer {
   pointer-events: none !important;
 }
 
-/* Skeleton Neutral Muted Buttons - NO glowing gradients, shadows, or text showing */
 body.lang-transitioning button,
 body.lang-transitioning .btn-apply,
 body.lang-transitioning .btn-reset,
@@ -4839,7 +4675,6 @@ body.lang-transitioning .btn-apply-glow {
   display: none !important;
 }
 
-/* ALL Icons, SVGs, Images, Gliders, Beams, Badges, and Particle Effects HIDDEN */
 body.lang-transitioning i,
 body.lang-transitioning svg,
 body.lang-transitioning img,
@@ -4865,7 +4700,6 @@ body.lang-transitioning .neon-checkbox * {
   transition: none !important;
 }
 
-/* Skeleton Placeholder Bars for ALL Text, Labels, Numbers across ALL Tabs */
 body.lang-transitioning .content-header #section-title,
 body.lang-transitioning #section-title,
 body.lang-transitioning .content-header-title,
@@ -4954,7 +4788,6 @@ body.lang-transitioning .btn-delete-backup * {
   animation: vf-skeleton-pulse 1.8s ease-in-out infinite !important;
 }
 
-/* Skeleton Muted Inputs & HUD Switch Card */
 body.lang-transitioning input,
 body.lang-transitioning .fov-range-input,
 body.lang-transitioning .tester-code-input {
@@ -4972,7 +4805,6 @@ body.lang-transitioning .hud-switch-card {
   pointer-events: none !important;
 }
 
-/* Console Text Full Blur & Hide */
 body.lang-transitioning .step-log,
 body.lang-transitioning .step-log *,
 body.lang-transitioning #step-log,
@@ -4982,7 +4814,6 @@ body.lang-transitioning #step-log * {
   user-select: none !important;
 }
 
-/* --- 2. Skeleton Shimmer Sweep (Luminous Directional Shine) --- */
 @keyframes vf-shimmer-sweep-to-fa {
   0% {
     background-position: -200% 0;
@@ -5001,7 +4832,6 @@ body.lang-transitioning #step-log * {
   }
 }
 
-/* Shimmer Layer on Interactive Containers */
 body.lang-transitioning.to-fa .content-header::after,
 body.lang-transitioning.to-fa .tier-card::after,
 body.lang-transitioning.to-fa .setting-box::after,
@@ -5060,7 +4890,6 @@ body.lang-transitioning.to-en .net-footer::after {
   animation: vf-shimmer-sweep-to-en 1.8s linear infinite;
 }
 
-/* --- 3. 2D Grid Reveal Keyframes & Directional Stagger --- */
 @keyframes vf-grid-tile-in {
   0% {
     opacity: 0.2;
@@ -5094,13 +4923,11 @@ body.lang-revealing .net-footer {
   animation: vf-grid-tile-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-/* Directional Stagger - Switching to Farsi (Top-Right to Bottom-Left 2D cascade) */
 body.lang-revealing.to-fa .cards-deck .pro-card:nth-child(3) { animation-delay: 0ms; }
 body.lang-revealing.to-fa .cards-deck .pro-card:nth-child(2) { animation-delay: 100ms; }
 body.lang-revealing.to-fa .content-header { animation-delay: 100ms; }
 body.lang-revealing.to-fa .cards-deck .pro-card:nth-child(1) { animation-delay: 200ms; }
 
-/* Graphic Tab Top-Right to Bottom-Left */
 body.lang-revealing.to-fa .tiers-row .tier-card:nth-child(4) { animation-delay: 120ms; }
 body.lang-revealing.to-fa .tiers-row .tier-card:nth-child(3) { animation-delay: 220ms; }
 body.lang-revealing.to-fa .settings-row-3 .setting-box:nth-child(3) { animation-delay: 220ms; }
@@ -5112,7 +4939,6 @@ body.lang-revealing.to-fa .settings-row-3 .setting-box:nth-child(1) { animation-
 body.lang-revealing.to-fa .settings-bottom-row .setting-box:nth-child(1) { animation-delay: 420ms; }
 body.lang-revealing.to-fa .action-footer { animation-delay: 540ms; }
 
-/* Latency Tab Top-Right to Bottom-Left (Full Menu Cascade) */
 body.lang-revealing.to-fa #panel-latency .featured-card { animation-delay: 180ms; }
 body.lang-revealing.to-fa #panel-latency .latency-loading-wrap { animation-delay: 240ms; }
 body.lang-revealing.to-fa #panel-latency .ping-grid .ping-card:nth-child(3n) { animation-delay: 260ms; }
@@ -5120,7 +4946,6 @@ body.lang-revealing.to-fa #panel-latency .ping-grid .ping-card:nth-child(3n - 1)
 body.lang-revealing.to-fa #panel-latency .ping-grid .ping-card:nth-child(3n - 2) { animation-delay: 500ms; }
 body.lang-revealing.to-fa #panel-latency .net-footer { animation-delay: 580ms; }
 
-/* Advanced Tab Top-Right to Bottom-Left (Full Menu Cascade) */
 body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(2) .adv-card:nth-child(1) { animation-delay: 180ms; }
 body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(2) .backup-row { animation-delay: 280ms; }
 body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(2) .adv-card:nth-child(2) { animation-delay: 320ms; }
@@ -5129,13 +4954,11 @@ body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(1) .adv-card:nth-ch
 body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(3) { animation-delay: 400ms; }
 body.lang-revealing.to-fa #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(4) { animation-delay: 480ms; }
 
-/* Directional Stagger - Switching to English (Top-Left to Bottom-Right 2D cascade) */
 body.lang-revealing.to-en .cards-deck .pro-card:nth-child(1) { animation-delay: 0ms; }
 body.lang-revealing.to-en .cards-deck .pro-card:nth-child(2) { animation-delay: 100ms; }
 body.lang-revealing.to-en .content-header { animation-delay: 100ms; }
 body.lang-revealing.to-en .cards-deck .pro-card:nth-child(3) { animation-delay: 200ms; }
 
-/* Graphic Tab Top-Left to Bottom-Right */
 body.lang-revealing.to-en .tiers-row .tier-card:nth-child(1) { animation-delay: 120ms; }
 body.lang-revealing.to-en .tiers-row .tier-card:nth-child(2) { animation-delay: 220ms; }
 body.lang-revealing.to-en .settings-row-3 .setting-box:nth-child(1) { animation-delay: 220ms; }
@@ -5147,7 +4970,6 @@ body.lang-revealing.to-en .settings-row-3 .setting-box:nth-child(3) { animation-
 body.lang-revealing.to-en .settings-bottom-row .setting-box:nth-child(2) { animation-delay: 420ms; }
 body.lang-revealing.to-en .action-footer { animation-delay: 540ms; }
 
-/* Latency Tab Top-Left to Bottom-Right (Full Menu Cascade) */
 body.lang-revealing.to-en #panel-latency .featured-card { animation-delay: 180ms; }
 body.lang-revealing.to-en #panel-latency .latency-loading-wrap { animation-delay: 240ms; }
 body.lang-revealing.to-en #panel-latency .ping-grid .ping-card:nth-child(3n - 2) { animation-delay: 260ms; }
@@ -5155,7 +4977,6 @@ body.lang-revealing.to-en #panel-latency .ping-grid .ping-card:nth-child(3n - 1)
 body.lang-revealing.to-en #panel-latency .ping-grid .ping-card:nth-child(3n) { animation-delay: 500ms; }
 body.lang-revealing.to-en #panel-latency .net-footer { animation-delay: 580ms; }
 
-/* Advanced Tab Top-Left to Bottom-Right (Full Menu Cascade) */
 body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(1) { animation-delay: 180ms; }
 body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(2) { animation-delay: 240ms; }
 body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(1) .adv-card:nth-child(3) { animation-delay: 320ms; }
@@ -5164,7 +4985,6 @@ body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-ch
 body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .backup-row { animation-delay: 420ms; }
 body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-child(2) { animation-delay: 460ms; }
 
-/* Accessibility: respect user preference for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   body.lang-transitioning.to-fa .content-header::after,
   body.lang-transitioning.to-fa .tier-card::after,
@@ -5215,7 +5035,6 @@ body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-ch
   }
 }
 
-/* --- 4. Menu / Tab Navigation 2D Grid Reveal (Grid Only, No Skeleton) --- */
 .content-header.panel-revealing,
 .panel.panel-revealing .tier-card,
 .panel.panel-revealing .setting-box,
@@ -5229,7 +5048,6 @@ body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-ch
   animation: vf-grid-tile-in 0.72s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-/* Graphic Panel Cascade: Top-Right to Bottom-Left (Farsi) */
 #panel-graphic.panel-revealing.to-fa .tiers-row .tier-card:nth-child(4) { animation-delay: 0ms; }
 #panel-graphic.panel-revealing.to-fa .tiers-row .tier-card:nth-child(3) { animation-delay: 90ms; }
 #panel-graphic.panel-revealing.to-fa .settings-row-3 .setting-box:nth-child(3) { animation-delay: 90ms; }
@@ -5241,7 +5059,6 @@ body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-ch
 #panel-graphic.panel-revealing.to-fa .settings-bottom-row .setting-box:nth-child(1) { animation-delay: 270ms; }
 #panel-graphic.panel-revealing.to-fa .action-footer { animation-delay: 360ms; }
 
-/* Graphic Panel Cascade: Top-Left to Bottom-Right (English) */
 #panel-graphic.panel-revealing.to-en .tiers-row .tier-card:nth-child(1) { animation-delay: 0ms; }
 #panel-graphic.panel-revealing.to-en .tiers-row .tier-card:nth-child(2) { animation-delay: 90ms; }
 #panel-graphic.panel-revealing.to-en .settings-row-3 .setting-box:nth-child(1) { animation-delay: 90ms; }
@@ -5253,7 +5070,6 @@ body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-ch
 #panel-graphic.panel-revealing.to-en .settings-bottom-row .setting-box:nth-child(2) { animation-delay: 270ms; }
 #panel-graphic.panel-revealing.to-en .action-footer { animation-delay: 360ms; }
 
-/* Latency Panel Cascade: Top-Right to Bottom-Left (Farsi) */
 #panel-latency.panel-revealing.to-fa .featured-card { animation-delay: 0ms; }
 #panel-latency.panel-revealing.to-fa .latency-loading-wrap { animation-delay: 60ms; }
 #panel-latency.panel-revealing.to-fa .ping-grid .ping-card:nth-child(3n) { animation-delay: 90ms; }
@@ -5261,7 +5077,6 @@ body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-ch
 #panel-latency.panel-revealing.to-fa .ping-grid .ping-card:nth-child(3n - 2) { animation-delay: 270ms; }
 #panel-latency.panel-revealing.to-fa .net-footer { animation-delay: 360ms; }
 
-/* Latency Panel Cascade: Top-Left to Bottom-Right (English) */
 #panel-latency.panel-revealing.to-en .featured-card { animation-delay: 0ms; }
 #panel-latency.panel-revealing.to-en .latency-loading-wrap { animation-delay: 60ms; }
 #panel-latency.panel-revealing.to-en .ping-grid .ping-card:nth-child(3n - 2) { animation-delay: 90ms; }
@@ -5269,7 +5084,6 @@ body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-ch
 #panel-latency.panel-revealing.to-en .ping-grid .ping-card:nth-child(3n) { animation-delay: 270ms; }
 #panel-latency.panel-revealing.to-en .net-footer { animation-delay: 360ms; }
 
-/* Advanced Panel Cascade: Top-Right to Bottom-Left (Farsi) */
 #panel-advanced.panel-revealing.to-fa .adv-col:nth-child(2) .adv-card:nth-child(1) { animation-delay: 0ms; }
 #panel-advanced.panel-revealing.to-fa .adv-col:nth-child(2) .backup-row { animation-delay: 80ms; }
 #panel-advanced.panel-revealing.to-fa .adv-col:nth-child(2) .adv-card:nth-child(2) { animation-delay: 140ms; }
@@ -5278,7 +5092,6 @@ body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-ch
 #panel-advanced.panel-revealing.to-fa .adv-col:nth-child(1) .adv-card:nth-child(3) { animation-delay: 220ms; }
 #panel-advanced.panel-revealing.to-fa .adv-col:nth-child(1) .adv-card:nth-child(4) { animation-delay: 320ms; }
 
-/* Advanced Panel Cascade: Top-Left to Bottom-Right (English) */
 #panel-advanced.panel-revealing.to-en .adv-col:nth-child(1) .adv-card:nth-child(1),
 #panel-advanced.panel-revealing.to-en .adv-col:nth-child(1) .adv-card:nth-child(2) { animation-delay: 0ms; }
 #panel-advanced.panel-revealing.to-en .adv-col:nth-child(1) .adv-card:nth-child(3) { animation-delay: 100ms; }
@@ -5287,7 +5100,6 @@ body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-ch
 #panel-advanced.panel-revealing.to-en .adv-col:nth-child(2) .backup-row { animation-delay: 260ms; }
 #panel-advanced.panel-revealing.to-en .adv-col:nth-child(2) .adv-card:nth-child(2) { animation-delay: 320ms; }
 
-/* ===================== CUSTOM INFO TOOLTIP BOX ===================== */
 .app-custom-tooltip {
   position: fixed;
   z-index: 999999 !important;

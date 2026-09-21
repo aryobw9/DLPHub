@@ -1,4 +1,3 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod commands;
 mod native_cursor;
 mod webview_check;

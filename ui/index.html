@@ -12,15 +12,11 @@
   <link rel="stylesheet" href="style.css?v=41" />
 </head>
 <body>
-
-  <!-- Ambient Light Effects -->
   <div class="ambient-glow">
     <div class="glow-blue"></div>
     <div class="glow-orange"></div>
     <div class="floor-reflection"></div>
   </div>
-
-  <!-- Windows App Shell Titlebar -->
   <header class="app-titlebar" data-tauri-drag-region>
     <div class="brand-meta" data-tauri-drag-region>
       <span class="brand-badge" data-tauri-drag-region data-i18n="brand">ددلاک پرشین</span>
@@ -46,22 +42,15 @@
       </button>
     </div>
   </header>
-
   <main class="app-viewport">
     <div id="ui-scale-wrapper">
-
-      <!-- Atmospheric Character Art (behind UI elements) -->
       <img src="assets/troopers_left.webp" class="bg-trooper bg-trooper-left" alt="" />
       <img src="assets/troopers_right.webp" class="bg-trooper bg-trooper-right" alt="" />
-
-      <!-- Hero Header -->
     <header class="header-hero">
       <img src="assets/app_icon.png?v=1" class="hero-app-icon" alt="DLPHub" />
       <div class="header-subtitle-accent">GRAPHICS CONFIG</div>
       <div class="header-title-fa">تنظیمات اختصاصی افزایش فریم برای ددلاک</div>
     </header>
-
-    <!-- No-game state -->
     <section class="content-viewport" id="nogame-panel" style="display:none">
       <div class="content-header">
         <div class="content-header-title">
@@ -82,36 +71,27 @@
         </div>
       </div>
     </section>
-
-    <!-- Main content: visible by default — JS refines, never gates the UI -->
     <section id="main-ui">
-      <!-- 3 Category Cards (Graphic Setting, Latency, Advanced) -->
       <section class="cards-deck cards-deck-3">
-
         <div class="pro-card active" id="card-graphic">
           <div class="card-icon-wrap">
             <i class="fa-solid fa-desktop card-icon"></i>
           </div>
           <div class="card-title" data-i18n="cardGraphic">Graphic Settings</div>
         </div>
-
         <div class="pro-card" id="card-latency">
           <div class="card-icon-wrap">
             <i class="fa-solid fa-bolt card-icon"></i>
           </div>
           <div class="card-title" data-i18n="cardLatency">Latency</div>
         </div>
-
         <div class="pro-card" id="card-advanced">
           <div class="card-icon-wrap">
             <i class="fa-solid fa-sliders card-icon"></i>
           </div>
           <div class="card-title" data-i18n="cardAdvanced">Advanced</div>
         </div>
-
       </section>
-
-      <!-- Selected Tab Content Panel -->
       <section class="content-viewport">
         <div class="content-header">
         <div class="content-header-title">
@@ -177,12 +157,8 @@
           </div>
         </button>
         </div>
-
-        <!-- GRAPHIC SETTING: 4 Tiers + Long FOV Box -->
         <div class="panel" id="panel-graphic">
           <div class="graphic-layout">
-            
-            <!-- 4 Graphic Presets Row (High, Medium, Low, Potato) -->
             <div class="tiers-row">
               <div class="tier-card selected" data-mode="T1" onclick="selectPreset('T1')">
                 <span class="border-beam"><span class="beam"></span></span>
@@ -191,7 +167,6 @@
                 </div>
                 <div class="tier-name" data-i18n="tierHigh">گرافیک بالا</div>
               </div>
-
               <div class="tier-card" data-mode="T2" onclick="selectPreset('T2')">
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="tier-card-header">
@@ -199,7 +174,6 @@
                 </div>
                 <div class="tier-name" data-i18n="tierMed">گرافیک متوسط</div>
               </div>
-
               <div class="tier-card" data-mode="T3" onclick="selectPreset('T3')">
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="tier-card-header">
@@ -207,7 +181,6 @@
                 </div>
                 <div class="tier-name" data-i18n="tierLow">گرافیگ پایین</div>
               </div>
-
               <div class="tier-card" data-mode="POTATO" onclick="selectPreset('POTATO')">
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="tier-card-header">
@@ -216,10 +189,7 @@
                 <div class="tier-name" data-i18n="tierPotato">گرافیک ذغالی</div>
               </div>
             </div>
-
-            <!-- Settings Row 1: CAMERA, HUD, RENDERER -->
             <div class="settings-duo settings-row-3">
-              <!-- CAMERA box (FOV) -->
               <div class="setting-box fov-box">
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
@@ -242,8 +212,6 @@
                 </div>
                 <input type="hidden" id="fov-number" value="90" />
               </div>
-
-              <!-- HUD box (New Health bars) -->
               <div class="setting-box hud-box">
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
@@ -277,8 +245,6 @@
                   Show updated health bar visuals
                 </div>
               </div>
-
-              <!-- RENDERER box (DirectX 11 / Default / Vulkan) -->
               <div class="setting-box renderer-box" style="justify-content: space-between;">
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
@@ -301,10 +267,7 @@
                 </div>
               </div>
             </div>
-
-            <!-- Settings Row 2: FPS LIMIT + LAUNCH OPTIONS -->
             <div class="settings-bottom-row">
-              <!-- FPS LIMIT box -->
               <div class="setting-box fps-box-bottom">
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
@@ -326,8 +289,6 @@
                   <button type="button" class="renderer-pill" data-fps="0" onclick="selectFps('0')" data-tooltip="Unlimited / نامحدود" aria-label="Unlimited"><i class="fa-solid fa-infinity"></i></button>
                 </div>
               </div>
-
-              <!-- LAUNCH OPTIONS INFO box -->
               <div class="setting-box launch-options-box">
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
@@ -349,47 +310,33 @@
                 </div>
               </div>
             </div>
-
           </div>
         </div>
-
-        <!-- LATENCY: Valve relay network instrument -->
         <div class="panel" id="panel-latency" style="display:none">
           <div class="valve-ping-view" style="flex:1;min-height:0">
-<!-- BEST ROUTE + relays + footer: one scrollable page -->
             <div class="latency-scroll">
               <div id="best-route-slot"></div>
               <div class="ping-grid" id="ping-grid">
-                <!-- remaining relays, dynamically populated -->
               </div>
               <div class="net-footer" id="net-footer" style="display:none"></div>
             </div>
           </div>
         </div>
-
-        <!-- ADVANCED: Recovery & Tools -->
         <div class="panel" id="panel-advanced" style="display:none">
           <div class="advanced-grid">
-
-            <!-- Column 1: Recovery & Actions -->
             <div class="adv-col adv-col-actions">
-              <!-- Revert Vanilla Card (Only Button, No Desc) -->
               <div class="adv-card adv-danger adv-revert-only">
                 <button class="btn-reset btn-danger" id="btn-revert-vanilla" onclick="doRevertVanilla()">
                   <i class="fa-solid fa-triangle-exclamation" style="font-size:16px;color:#ef4444"></i>
                   <span data-i18n="btnRevertVanilla">بازگردانی تمام تغییرات</span>
                 </button>
               </div>
-
-              <!-- Check For Updates Box -->
               <div class="adv-card adv-update-card">
                 <button class="btn-apply btn-check-updates" id="btn-check-updates" onclick="checkForUpdates()">
                   <i class="fa-solid fa-arrows-rotate" style="font-size:15px;color:var(--deadlock-cyan)"></i>
                   <span data-i18n="btnCheckUpdates">بروزرسانی اپ</span>
                 </button>
               </div>
-
-              <!-- Actions Row: Reset Settings & Diagnostics -->
               <div class="adv-card adv-actions-row">
                 <button class="btn-reset" id="btn-reset-settings" onclick="doResetSettings()">
                   <i class="fa-solid fa-rotate-left" style="color:var(--deadlock-cyan)"></i>
@@ -400,8 +347,6 @@
                   <span data-i18n="btnCopyDiag">کپی گزارش عیب‌یابی</span>
                 </button>
               </div>
-
-              <!-- Support Note Box -->
               <div class="adv-card adv-support-card">
                 <div class="adv-support-content">
                   <i class="fa-solid fa-headset" style="font-size:16px;color:var(--deadlock-orange);flex-shrink:0;"></i>
@@ -409,10 +354,7 @@
                 </div>
               </div>
             </div>
-
-            <!-- Column 2: Backup & History + VIP Mode -->
             <div class="adv-col adv-col-backup">
-              <!-- Backup & History Card -->
               <div class="adv-card adv-backup-card">
                 <div class="adv-card-header">
                   <div class="adv-card-title-group">
@@ -426,8 +368,6 @@
                 <div class="adv-card-desc" data-i18n="backupDesc">Game snapshots and backup history</div>
                 <div id="backup-list" class="backup-list-box"></div>
               </div>
-
-              <!-- VIP/TEST MODE Card (Box with input + submit only) -->
               <div class="adv-card adv-vip-card">
                 <div class="adv-card-header">
                   <div class="adv-card-title-group">
@@ -442,13 +382,9 @@
                 <div id="tester-modes" style="display:none;" class="tester-modes-bar"></div>
               </div>
             </div>
-
           </div>
         </div>
-
-        <!-- Actions (install button only meaningful in the graphic tab) -->
         <div class="action-footer" style="display:none" id="action-footer">
-          <!-- ACTIVE profile indicator -->
           <div class="active-profile" id="active-profile">
             <span class="active-dot" id="active-dot"></span>
             <span class="active-label" id="active-profile-label">ACTIVE · —</span>
@@ -465,11 +401,8 @@
         </div>
       </section>
     </section>
-
     </div>
   </main>
-
-  <!-- Social links: bottom-left corner flip cards -->
   <div class="social-cluster" id="social-cluster">
     <div class="social-row">
       <button class="social-card tl telegram" data-url="https://t.me/deadlock_persian" data-tooltip="Telegram: @deadlock_persian">
@@ -488,18 +421,12 @@
       </button>
     </div>
   </div>
-
-  <!-- App Version & Author Badge: bottom-right corner -->
   <div class="app-version-badge" id="app-version-badge" dir="ltr">
     <span class="ver-tag">V0.1 <span class="ver-beta">BETA</span></span>
     <span class="ver-sep">•</span>
     <span class="ver-by">by <span class="ver-author">aryobw9</span></span>
   </div>
-
-  <!-- Custom Info Tooltip Box -->
   <div id="app-custom-tooltip" class="app-custom-tooltip" style="display:none;" aria-hidden="true"></div>
-
-  <!-- Modal -->
   <div class="modal-overlay" id="modal" style="display:none">
     <div class="modal-box">
       <div class="modal-title" id="modal-title"></div>
@@ -507,7 +434,6 @@
       <div class="modal-actions" id="modal-actions"></div>
     </div>
   </div>
-
   <script src="vendor/motion/motion.js"></script>
   <script src="i18n/fa.js"></script>
   <script src="i18n/en.js"></script>

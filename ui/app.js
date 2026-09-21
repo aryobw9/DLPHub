@@ -46,7 +46,7 @@ const state = {
   busyTab: null,
 };
 
-// FOV->aspect ratio map kept in backend (fov.rs); UI doesn't display it.
+
 
 const SECTION_TITLES = {
   graphic: 'presetsTitle',
@@ -69,8 +69,8 @@ function t(key) {
 function applyLang() {
   document.documentElement.lang = state.lang;
   document.documentElement.dir = 'ltr'; // layout stays LTR — only text content flips RTL
-  // FA: all text-bearing elements get rtl so Persian reads correctly; EN back to ltr.
-  // Placement/geometry untouched (buttons stay where they are).
+  
+  
   document.body.classList.toggle('lang-fa', state.lang === 'fa');
   document.querySelectorAll('[data-i18n]').forEach((el) => {
     el.textContent = t(el.dataset.i18n);
@@ -83,7 +83,7 @@ function applyLang() {
     el.setAttribute('data-tooltip', t(el.dataset.i18nTooltip));
   });
 
-  // Retain contextual hero & section title for currently active tab
+  
   const currentTab = state.activeTab || 'graphic';
   const hero = HERO_BY_TAB[currentTab];
   if (hero) {
@@ -97,8 +97,7 @@ function applyLang() {
     secTitle.textContent = t(SECTION_TITLES[currentTab] || 'presetsTitle');
   }
 
-  // re-apply runtime states that own their labels (launch button shows
-  // GAME RUNNING while Deadlock is open, in the current language)
+  
   refreshRunning();
   const u = document.getElementById('unlock-input');
   const p = document.getElementById('path-input');
@@ -132,18 +131,15 @@ function setLang(targetLang) {
   const btnToggle = document.getElementById('btn-lang-toggle');
   if (btnToggle) btnToggle.style.pointerEvents = 'none';
 
-  // Phase 1: VibeFarsi Skeleton Mode (0ms - 2000ms)
   document.body.classList.remove('to-fa', 'to-en', 'lang-transitioning', 'lang-revealing');
   document.body.classList.add('lang-transitioning', transitionClass);
 
-  // Phase 2: At 1800ms, swap text and attributes under skeleton disguise
   setTimeout(() => {
     state.lang = targetLang;
     call('set_settings', { patch: { lang: targetLang } }).catch(() => {});
     applyLang();
   }, 1800);
 
-  // Phase 3: At 2000ms, transition from Skeleton to 2D Grid Reveal Wave
   setTimeout(() => {
     document.body.classList.remove('lang-transitioning');
     document.body.classList.add('lang-revealing', transitionClass);
@@ -153,14 +149,13 @@ function setLang(targetLang) {
       updateFpsGlider();
     }, 500);
 
-    // Phase 4: At 4000ms (4.0s total), finalize and unlock
     setTimeout(() => {
       document.body.classList.remove('lang-revealing', 'to-fa', 'to-en');
       updateRendererGlider();
       updateFpsGlider();
       if (btnToggle) btnToggle.style.pointerEvents = '';
       isLangSwitching = false;
-    }, 2000); // 2000ms + 2000ms = 4000ms (4.0s)
+    }, 2000);
   }, 2000);
 }
 
@@ -188,7 +183,6 @@ function fatal(err) {
 
 // ---------- boot ----------
 async function boot() {
-  // Wait for Tauri IPC to be ready
   for (let i = 0; i < 50 && !getInvoke(); i++) {
     await new Promise((r) => setTimeout(r, 100));
   }
@@ -201,13 +195,12 @@ async function boot() {
   state.unlocked = !!s.unlocked;
   state.lastPath = s.last_path || null;
   state.unitStatusNew = !!s.unit_status_new;
-  state.fpsMax = s.fps_max; // null if None (default)
+  state.fpsMax = s.fps_max;
   state.customAutoexec = s.custom_autoexec || '';
   state.renderer = s.renderer || 'default';
 
   applyLang();
   syncSettingsToUi();
-  // Restore last chosen FOV; falls back to 90 when unset.
   setFov(typeof s.fov === 'number' && s.fov >= 70 && s.fov <= 120 ? s.fov : 90);
   selectCardByKey('graphic');
 
@@ -354,8 +347,6 @@ async function copyLaunchOptions() {
 
 async function refreshGame() {
   try {
-    // DEBUG: force the locate screen — add #pickgame to the URL or set
-    // localStorage.setItem('DLPB_DEBUG_FORCE_PICK','1'). Clear + reload to exit.
     const forcePick = window.location.hash === '#pickgame'
       || (typeof localStorage !== 'undefined' && localStorage.getItem('DLPB_DEBUG_FORCE_PICK') === '1');
     const found = forcePick ? null : await call('find_game');
@@ -374,7 +365,6 @@ async function refreshGame() {
       if (state.lastPath) document.getElementById('path-input').value = state.lastPath;
     }
   } catch (e) {
-    // IPC down: keep main UI visible, show the locate panel as fallback
     document.getElementById('nogame-panel').style.display = 'block';
   }
   updateDetectBadge();
@@ -497,7 +487,6 @@ let updateCursorFollower = () => {};
 (function setupCursorStates() {
   const root = document.documentElement;
 
-  // Preload cursor assets
   Object.values(CURSOR_HOTSPOTS).forEach((c) => {
     const img = new Image();
     img.src = c.file;
@@ -560,8 +549,6 @@ let updateCursorFollower = () => {};
   function determineCursor(t) {
     if (root.classList.contains('right-click')) return 'click_right';
 
-    // 1) Busy state: active across the entire application window for the active busy tab or a global task
-    // Only reverts to pointer/click when hovering a usable interactive button.
     const isBusyNow = state.busyTab && (state.busyTab === 'global' || state.busyTab === state.activeTab);
     if (isBusyNow) {
       if (isUsableInteractive(t)) {
@@ -570,7 +557,6 @@ let updateCursorFollower = () => {};
       return 'busy';
     }
 
-    // 2) Action footer at the bottom of the graphic tab: never resize, always idle or button pointer
     if (t instanceof Element && t.closest('.action-footer, #action-footer, .active-profile, .step-log')) {
       if (t.closest('button, [role="button"], .btn-apply, .btn-reset')) {
         return root.classList.contains('is-pressed') ? 'click' : 'pointer';
@@ -578,7 +564,6 @@ let updateCursorFollower = () => {};
       return 'default';
     }
 
-    // 3) Normal cursor states outside the busy scope
     if (t instanceof Element) {
       if (t.closest('input[type="range"]')) {
         return root.classList.contains('is-pressed') ? 'grab' : 'pointer';
@@ -690,7 +675,6 @@ function setBusyCursor(on, tabKey) {
 async function doInstall() {
   if (!state.gamePath) { showModal(t('locate'), t('noGame'), [{ label: t('ok') }]); return; }
   if (!state.selectedMode) {
-    // default to T1 instead of silently no-oping
     state.selectedMode = 'T1';
     const card = document.querySelector('.option-item.preset[data-mode="T1"]');
     if (card) card.classList.add('selected');
@@ -931,7 +915,7 @@ async function doResetSettings() {
     state.lang = s.lang;
     state.unlocked = s.unlocked;
     state.fov = s.fov;
-    state.fpsMax = s.fps_max; // null if None (default)
+    state.fpsMax = s.fps_max;
     state.unitStatusNew = s.unit_status_new;
     state.customAutoexec = s.custom_autoexec;
     state.renderer = s.renderer || 'default';
@@ -1041,7 +1025,6 @@ async function launchGame() {
 
 // ---------- social links: open in system browser ----------
 async function openExternal(url) {
-  // 1) Tauri opener plugin global (withGlobalTauri)
   try {
     const t = window.__TAURI__;
     const op = t && (t.opener || (t.plugins && t.plugins.opener));
@@ -1050,9 +1033,7 @@ async function openExternal(url) {
       if (typeof op.open === 'function') { await op.open(url); return; }
     }
   } catch (e) { /* fall through */ }
-  // 2) direct command
   try { await call('plugin:opener|open_url', { url }); return; } catch (e) { /* fall through */ }
-  // 3) webview fallback (may be blocked, harmless)
   try { window.open(url, '_blank'); } catch (e) {}
 }
 
@@ -1077,7 +1058,6 @@ function showModal(title, body, actions) {
 
 // ---------- FOV ----------
 function setFov(v) {
-  // Persist draft FOV so relaunching doesn't silently reset it to 90.
   const persist = (snapped) => { if (window.__TAURI__) call('set_settings', { patch: { fov: snapped } }).catch(() => {}); };
   const slider = document.getElementById('fov-slider');
   const number = document.getElementById('fov-number');
@@ -1094,31 +1074,26 @@ function setFov(v) {
 let pingingActive = false;
 let lastTestAt = null;
 
-// rolling per-relay history: [{ms, t}] kept across tests (last 40 samples)
 const PING_HISTORY = {};
 const HISTORY_WINDOW_MS = 30000;
 
 function pushHistory(s) {
   const now = Date.now();
   const arr = (PING_HISTORY[s.id] = PING_HISTORY[s.id] || []);
-  // one point per test: prefer avg (represents the whole burst)
   const v = s.avg_ms !== null && s.avg_ms !== undefined ? s.avg_ms : s.ping_ms;
   if (v !== null && v !== undefined) arr.push({ ms: v, t: now });
-  // drop samples older than window
   while (arr.length && now - arr[0].t > HISTORY_WINDOW_MS) arr.shift();
   return arr;
 }
 
 function routeScore(s) {
-  // 0-100: latency + jitter + loss blend (backend stability already similar;
-  // this is the display score for RECOMMENDED selection)
   if (s.ping_ms === null || s.ping_ms === undefined) return -1;
   const ms = s.ping_ms;
   const jitter = s.jitter_ms || 0;
   const loss = s.loss_pct || 0;
-  const latScore = Math.max(0, 100 - (ms / 3));        // 300ms -> 0
-  const jitScore = Math.max(0, 100 - jitter * 4);      // 25ms jitter -> 0
-  const lossScore = Math.max(0, 100 - loss * 12);      // 8.3% -> 0
+  const latScore = Math.max(0, 100 - (ms / 3));
+  const jitScore = Math.max(0, 100 - jitter * 4);
+  const lossScore = Math.max(0, 100 - loss * 12);
   return Math.round(latScore * 0.45 + jitScore * 0.35 + lossScore * 0.2);
 }
 
@@ -1148,7 +1123,6 @@ function stateDot(state) {
   return { excellent: '●', stable: '●', unstable: '◐', offline: '○', poor: '●' }[state] || '●';
 }
 
-// inline sparkline: SVG polyline of real samples, 0-loss baseline
 function sparkline(history, state, wide) {
   if (!history || history.length < 2) return '<div class="spark-flat"></div>';
   const w = wide ? 460 : 200, h = wide ? 34 : 22;
@@ -1227,7 +1201,6 @@ function renderValvePings(servers) {
   grid.classList.remove('is-loading');
   for (const s of servers) pushHistory(s);
   const online = servers.filter((s) => s.ping_ms !== null && s.ping_ms !== undefined);
-  // RECOMMENDED = best route score (latency + jitter + loss), not raw ping
   const best = online.length
     ? online.reduce((a, b) => (routeScore(b) > routeScore(a) ? b : a))
     : null;
@@ -1237,13 +1210,12 @@ function renderValvePings(servers) {
   grid.innerHTML = '';
   for (const s of servers) {
     pushHistory(s);
-    if (best && s.id === best.id) continue; // featured separately
+    if (best && s.id === best.id) continue;
     const tpl = document.createElement('template');
     tpl.innerHTML = relayCardHtml(s, false).trim();
     const el = tpl.content.firstElementChild;
     grid.appendChild(el);
   }
-  // staggered rise (only during normal ping fetch, CSS drives language transitions)
   if (window.Motion && !isLangSwitching) {
     const anim = Motion.animate(grid.querySelectorAll('.ping-card'),
       { opacity: [0, 1], transform: ['translateY(8px)', 'translateY(0px)'] },
@@ -1257,7 +1229,6 @@ function renderValvePings(servers) {
     }
   }
 
-  // footer: relays online + last test time
   const footer = document.getElementById('net-footer');
   lastTestAt = Date.now();
   const time = new Date(lastTestAt).toLocaleTimeString(state.lang === 'fa' ? 'fa-IR' : 'en-GB');
@@ -1362,7 +1333,6 @@ function selectCardByKey(tabKey) {
   state.activeTab = tabKey;
   const el = document.getElementById(`card-${tabKey}`);
   if (!el) return;
-  // contextual hero
   const hero = HERO_BY_TAB[tabKey];
   if (hero) {
     const accent = document.querySelector('.header-subtitle-accent');
@@ -1373,7 +1343,6 @@ function selectCardByKey(tabKey) {
   document.querySelectorAll('.pro-card, .sci-card').forEach((card) => card.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('section-title').textContent = t(SECTION_TITLES[tabKey] || 'presetsTitle');
-  // icon identity 1:1 with feature (graphic=desktop, latency=bolt, advanced=sliders)
   const ICONS = { graphic: 'fa-desktop', latency: 'fa-bolt', advanced: 'fa-sliders' };
   const iconEl = document.getElementById('section-icon');
   if (iconEl && ICONS[tabKey]) {
@@ -1388,11 +1357,9 @@ function selectCardByKey(tabKey) {
       pan.classList.remove('panel-revealing', 'to-fa', 'to-en');
     }
   }
-  // install action only applies to graphic presets — hide elsewhere
   const footer = document.getElementById('action-footer');
   if (footer) footer.style.display = tabKey === 'graphic' ? 'flex' : 'none';
 
-  // 2D Grid Reveal cascade (grid only, no skeleton) when switching menus
   const dirClass = state.lang === 'fa' ? 'to-fa' : 'to-en';
   const active = document.getElementById(`panel-${tabKey}`);
   if (active) {
@@ -1670,15 +1637,13 @@ function updateScale() {
   const wrapper = document.getElementById('ui-scale-wrapper');
   if (!wrapper) return;
   const availW = window.innerWidth;
-  const availH = window.innerHeight - 40; // titlebar is 40px
+  const availH = window.innerHeight - 40;
   const baseW = 920;
   const baseH = 790;
-  // If window is at least base dimensions, keep native 1:1 scale (zero transform = 100% razor sharp native DirectWrite pixel grid)
   if (availW >= baseW && availH >= baseH) {
     wrapper.style.transform = 'none';
     return;
   }
-  // Only downscale if the user resized the window smaller than base design dimensions
   const scale = Math.min(1, Math.min(availW / baseW, availH / baseH));
   wrapper.style.transform = `scale(${scale.toFixed(4)})`;
 }
@@ -1688,7 +1653,6 @@ function selectPreset(mode) {
   document.querySelectorAll('.tier-card, .tier-card-sm, .option-item.preset').forEach((p) => {
     const was = p.classList.contains('selected');
     p.classList.toggle('selected', p.dataset.mode === mode);
-    // Animate.css: pop the card when it becomes selected
     if (!was && p.dataset.mode === mode && window.__animateStyle) {
       p.classList.add('animate__animated', 'animate__zoomIn');
       p.addEventListener('animationend', () => p.classList.remove('animate__animated', 'animate__zoomIn'), { once: true });
@@ -1771,9 +1735,7 @@ function init() {
     updateScale();
     window.addEventListener('resize', updateScale);
     setupCustomTooltips();
-    // flag Animate.css availability (loaded before app.js)
     window.__animateStyle = !!document.querySelector('link[href*="animate.min.css"]');
-    // boot entrance: staggered card rise
     if (window.__animateStyle) {
       document.querySelectorAll('.cards-deck .pro-card').forEach((card, i) => {
         card.style.setProperty('--animate-delay', `${i * 0.07}s`);
@@ -1781,7 +1743,6 @@ function init() {
         card.addEventListener('animationend', () => card.classList.remove('animate__animated', 'animate__fadeInUp'), { once: true });
       });
     }
-    // window controls
     const btnMin = document.getElementById('btn-min');
     if (btnMin) btnMin.onclick = handleWinMin;
     const btnMax = document.getElementById('btn-max');
@@ -1791,11 +1752,9 @@ function init() {
     setupTitlebarDrag();
     setupResizeEdges();
 
-    // language switcher
     const btnLang = document.getElementById('btn-lang-toggle');
     if (btnLang) btnLang.onclick = window.toggleLang;
 
-    // actions
     document.getElementById('btn-pick-folder').onclick = pickFolder;
     document.getElementById('btn-confirm-path').onclick = confirmPath;
     document.getElementById('btn-launch').onclick = launchGame;
@@ -1811,7 +1770,6 @@ function init() {
     const btnCopyDiag = document.getElementById('btn-copy-diag');
     if (btnCopyDiag) btnCopyDiag.onclick = doCopyDiagnostics;
 
-    // options & switches
     const swUnit = document.getElementById('sw-unit-status');
     if (swUnit) {
       swUnit.onchange = (e) => {
@@ -1820,8 +1778,6 @@ function init() {
       };
     }
 
-    // Engine controls
-    // FOV controls
     const slider = document.getElementById('fov-slider');
     const number = document.getElementById('fov-number');
     if (slider) slider.oninput = () => setFov(Number(slider.value));
@@ -1838,22 +1794,19 @@ function init() {
       btnFovReset.onclick = () => {
         setFov(90);
         btnFovReset.classList.remove('reset-pop');
-        void btnFovReset.offsetWidth; // restart animation
+        void btnFovReset.offsetWidth;
         btnFovReset.classList.add('reset-pop');
       };
     }
 
-    // preset cards (single select, includes TEMP modes when visible)
     document.querySelectorAll('.tier-card, .tier-card-sm, .option-item.preset').forEach((el) => {
       el.addEventListener('click', () => {
         selectPreset(el.dataset.mode);
       });
     });
-    // default selection so INSTALL always has a mode
     state.selectedMode = 'T1';
     selectPreset('T1');
 
-    // tab cards — replace inline onclick with proper listeners
     document.querySelectorAll('.pro-card[id^="card-"], .sci-card[id^="card-"]').forEach((card) => {
       const key = card.id.replace('card-', '');
       card.addEventListener('click', () => selectCardByKey(key));
