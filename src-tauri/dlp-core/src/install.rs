@@ -99,6 +99,7 @@ fn snapshot_original(citadel: &Path) -> Result<Vec<StepLog>, String> {
 }
 
 pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path) -> Result<Vec<StepLog>, String> {
+    let start_instant = std::time::Instant::now();
     let mut log = vec![];
     let citadel = Path::new(deadlock).join("game").join("citadel");
 
@@ -129,16 +130,6 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
         Err(e) => return Err(format!("preflight tier autoexec: {e}")),
     };
-    let addons_dir = pkg.join("addons");
-    if addons_dir.is_dir() {
-        for entry in std::fs::read_dir(&addons_dir).map_err(|e| format!("preflight addons: {e}"))? {
-            let entry = entry.map_err(|e| e.to_string())?;
-            if entry.path().extension().is_some_and(|e| e.eq_ignore_ascii_case("vpk")) {
-                let mut file = std::fs::File::open(entry.path()).map_err(|e| format!("preflight addon: {e}"))?;
-                std::io::copy(&mut file, &mut std::io::sink()).map_err(|e| format!("preflight addon: {e}"))?;
-            }
-        }
-    }
 
     // 2) write test
     write_test(&citadel)?;
@@ -228,6 +219,15 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
     if let Some(fps) = s.fps_max {
         patches.push(("setting.fps_max", fps.to_string()));
     }
+    let vram = crate::detect::detect_vram_bytes();
+    if vram > 0 && vram < 4 * 1024 * 1024 * 1024 {
+        patches.push(("setting.gpu_mem_level", "0".to_string()));
+        crate::logger::log(
+            data_dir,
+            "INFO",
+            &format!("Detected low VRAM ({} MB) - capping setting.gpu_mem_level to 0", vram / (1024 * 1024)),
+        );
+    }
     let patch_refs: Vec<(&str, &str)> = patches.iter().map(|(k, v)| (*k, v.as_str())).collect();
     let final_video = kvedit::patch_video_kv(&merged, &patch_refs);
 
@@ -265,7 +265,7 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
         });
     }
 
-    crate::logger::log(data_dir, "INFO", &format!("Successfully installed mode: {:?}", mode));
+    crate::logger::log(data_dir, "INFO", &format!("Successfully installed mode: {:?} in {}ms", mode, start_instant.elapsed().as_millis()));
     Ok(log)
 }
 
@@ -373,7 +373,7 @@ mod tests {
         let vpks: Vec<String> = std::fs::read_dir(cit.join("addons")).unwrap().flatten()
             .map(|e| e.file_name().to_string_lossy().into_owned()).collect();
         assert_eq!(vpks.len(), 9, "Potato must install all 9 addons");
-        for n in ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak04_dir.vpk", "pak05_dir.vpk", "pak06_dir.vpk", "pak08_dir.vpk", "pak26_dir.vpk", "pak54_dir.vpk"] {
+        for n in ["pak91_dir.vpk", "pak92_dir.vpk", "pak93_dir.vpk", "pak94_dir.vpk", "pak95_dir.vpk", "pak96_dir.vpk", "pak97_dir.vpk", "pak98_dir.vpk", "pak99_dir.vpk"] {
             assert!(vpks.iter().any(|v| v == n), "missing {n}");
         }
         crate::backup::rm_ro(cit.parent().unwrap().parent().unwrap());

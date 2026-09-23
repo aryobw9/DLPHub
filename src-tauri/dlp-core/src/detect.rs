@@ -88,6 +88,36 @@ pub fn detect_tier(citadel: &Path, pkg: &Path) -> Tier {
     Tier::Unknown
 }
 
+/// Query the Windows display class keys in the registry for the GPU's dedicated VRAM.
+/// Returns maximum dedicated VRAM found in bytes (e.g. 10_737_418_240 for 10 GB), or 0 if undetected/non-Windows.
+pub fn detect_vram_bytes() -> u64 {
+    #[cfg(windows)]
+    {
+        use winreg::enums::*;
+        use winreg::RegKey;
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        let class_path = r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}";
+        let Ok(class_key) = hklm.open_subkey(class_path) else { return 0; };
+        let mut max_vram = 0u64;
+        for subkey_name in class_key.enum_keys().flatten() {
+            if subkey_name.starts_with("00") {
+                if let Ok(sub) = class_key.open_subkey(&subkey_name) {
+                    if let Ok(qw) = sub.get_value::<u64, _>("HardwareInformation.qwMemorySize") {
+                        max_vram = max_vram.max(qw);
+                    } else if let Ok(dw) = sub.get_value::<u32, _>("HardwareInformation.MemorySize") {
+                        max_vram = max_vram.max(dw as u64);
+                    }
+                }
+            }
+        }
+        max_vram
+    }
+    #[cfg(not(windows))]
+    {
+        0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

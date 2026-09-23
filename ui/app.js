@@ -213,6 +213,25 @@ async function boot() {
   } catch (e) { /* non-fatal */ }
 
   await refreshGame();
+
+  setTimeout(async () => {
+    try {
+      const up = await call('check_for_updates');
+      if (up && up.should_update) {
+        const go = await showModal(t('updateTitle'), `${t('updateAvailable')}: ${up.version}`, [
+          { label: t('ok'), value: true, kind: 'apply' },
+          { label: t('guardCancel'), value: false },
+        ]);
+        if (go) {
+          if (window.__OPEN_URL__) {
+            window.__OPEN_URL__('https://github.com/aryobw9/DLPHub/releases/latest');
+          } else {
+            window.open('https://github.com/aryobw9/DLPHub/releases/latest', '_blank');
+          }
+        }
+      }
+    } catch (_) {}
+  }, 4000);
 }
 
 function syncSettingsToUi() {
@@ -673,24 +692,46 @@ async function doInstall() {
   setBusyCursor(true, 'graphic');
   document.getElementById('step-log').innerHTML = '';
   stepLine(t('working'));
+
+  const reassuranceMsgs = [
+    t('reassurance1') || 'Applying optimization packages...',
+    t('reassurance2') || 'Still working — configuring graphics and game configs...',
+    t('reassurance3') || 'Almost done — syncing settings with Deadlock...',
+    t('reassurance4') || 'Finalizing files — process is active and running...',
+  ];
+  let reassuranceIdx = 0;
+  const startTime = Date.now();
+  const reassuranceTimer = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    if (elapsed >= 10 && (elapsed - 10) % 5 === 0) {
+      const msg = reassuranceMsgs[reassuranceIdx % reassuranceMsgs.length];
+      reassuranceIdx++;
+      stepLine(`⏳ ${msg} (${elapsed}s)`);
+    }
+  }, 1000);
+
   try {
     const log = await call('install_mode', {
       mode: state.selectedMode,
       fov: state.fov,
       path: state.gamePath,
     });
+    clearInterval(reassuranceTimer);
     document.getElementById('step-log').innerHTML = '';
     for (const l of log) stepLine(`[${l.step}] ${l.detail} ${l.skipped ? '— ' + t('stepSkip') : '— ' + t('stepDone')}`, l.skipped ? 'skip' : 'ok');
     showModal(t('doneTitle'), t('doneBody'), [{ label: 'OK', kind: 'apply' }]);
   } catch (e) {
+    clearInterval(reassuranceTimer);
     document.getElementById('step-log').innerHTML = '';
     stepLine(String(e), 'skip');
     const msg = String(e).includes('NeedsAdmin') ? t('needsAdmin') : String(e);
     showModal(t('guardTitle'), msg, [{ label: t('ok') }]);
+  } finally {
+    clearInterval(reassuranceTimer);
+    setBusyCursor(false, 'graphic');
+    btn.disabled = false;
+    updateDetectBadge();
   }
-  setBusyCursor(false, 'graphic');
-  btn.disabled = false;
-  updateDetectBadge();
 }
 
 // ---------- backup ----------
@@ -842,10 +883,14 @@ async function checkForUpdates() {
     });
 
     const checkPromise = (async () => {
-      if (window.__TAURI__ && window.__TAURI__.updater && typeof window.__TAURI__.updater.check === 'function') {
-        return await window.__TAURI__.updater.check();
+      try {
+        return await call('check_for_updates');
+      } catch (e) {
+        if (window.__TAURI__ && window.__TAURI__.updater && typeof window.__TAURI__.updater.check === 'function') {
+          return await window.__TAURI__.updater.check();
+        }
+        return null;
       }
-      return null;
     })();
 
     const update = await Promise.race([checkPromise, timeoutPromise]);
@@ -855,13 +900,18 @@ async function checkForUpdates() {
       await new Promise((r) => setTimeout(r, 800 - elapsed));
     }
 
-    if (update && update.available) {
-      const go = await showModal(t('updateTitle'), `${t('updateAvailable')}: ${update.version}`, [
+    if (update && (update.should_update || update.available)) {
+      const ver = update.version || '';
+      const go = await showModal(t('updateTitle'), `${t('updateAvailable')}: ${ver}`, [
         { label: t('ok'), value: true, kind: 'apply' },
         { label: t('guardCancel'), value: false },
       ]);
-      if (go && window.__OPEN_URL__) {
-        window.__OPEN_URL__('https://github.com/aryobw9/DLPHub/releases/latest');
+      if (go) {
+        if (window.__OPEN_URL__) {
+          window.__OPEN_URL__('https://github.com/aryobw9/DLPHub/releases/latest');
+        } else {
+          window.open('https://github.com/aryobw9/DLPHub/releases/latest', '_blank');
+        }
       }
     } else {
       showModal(t('updateTitle'), t('updateLatest'), [{ label: t('ok') }]);

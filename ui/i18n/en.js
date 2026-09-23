@@ -179,4 +179,13 @@ window.I18N_EN = {
   restoreLog: "restore",
   revertLog: "revert",
   tempPkgTitle: "This copy was extracted to TEMP — run the installed exe.",
+  reassurance1: "Applying optimization packages...",
+  reassurance2: "Still working — configuring graphics and game configs...",
+  reassurance3: "Almost done — syncing settings with Deadlock...",
+  reassurance4: "Finalizing files — process is active and running...",
+  updateAvailableTitle: "UPDATE AVAILABLE",
+  updateAvailableDesc: "A new version of DLPHub is available. Would you like to update?",
+  updateUpToDate: "DLPHub is up to date!",
+  btnUpdateNow: "UPDATE NOW",
+  checkingUpdate: "Checking for updates...",
 };

@@ -46,20 +46,24 @@ pub fn check_running() -> Vec<String> {
 
 // ---------- install ----------
 #[tauri::command]
-pub fn install_mode(mode: String, fov: u32, path: String) -> Result<Vec<install::StepLog>, String> {
-    let m = match mode.as_str() {
-        "T1" => install::Mode::T1,
-        "T2" => install::Mode::T2,
-        "T3" => install::Mode::T3,
-        "POTATO" => install::Mode::Potato,
-        "T1MODS" => install::Mode::T1Mods,
-        "T2MODS" => install::Mode::T2Mods,
-        other => return Err(format!("unknown mode: {other}")),
-    };
-    let deadlock = resolve_path(&path)?;
-    let pkg = payload::extract().map_err(|e| e.to_string())?;
-    let data = settings::data_dir();
-    install::install(m, fov, &deadlock, &pkg, &data)
+pub async fn install_mode(mode: String, fov: u32, path: String) -> Result<Vec<install::StepLog>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let m = match mode.as_str() {
+            "T1" => install::Mode::T1,
+            "T2" => install::Mode::T2,
+            "T3" => install::Mode::T3,
+            "POTATO" => install::Mode::Potato,
+            "T1MODS" => install::Mode::T1Mods,
+            "T2MODS" => install::Mode::T2Mods,
+            other => return Err(format!("unknown mode: {other}")),
+        };
+        let deadlock = resolve_path(&path)?;
+        let pkg = payload::extract_cached().map_err(|e| e.to_string())?;
+        let data = settings::data_dir();
+        install::install(m, fov, &deadlock, &pkg, &data)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 fn resolve_path(path: &str) -> Result<String, String> {
@@ -83,10 +87,14 @@ pub struct BackupInfo {
 }
 
 #[tauri::command]
-pub fn do_backup_cmd(path: String) -> Result<String, String> {
-    let deadlock = resolve_path(&path)?;
-    let cit = std::path::Path::new(&deadlock).join("game").join("citadel");
-    backup::do_backup(&cit, &settings::data_dir())
+pub async fn do_backup_cmd(path: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let deadlock = resolve_path(&path)?;
+        let cit = std::path::Path::new(&deadlock).join("game").join("citadel");
+        backup::do_backup(&cit, &settings::data_dir())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -127,35 +135,43 @@ pub struct RestoreReportDto {
 }
 
 #[tauri::command]
-pub fn do_restore(name: String, path: String) -> Result<RestoreReportDto, String> {
-    let running = guard::game_running();
-    if !running.is_empty() {
-        return Err(format!("game running: {} — close Deadlock first", running.join(", ")));
-    }
-    let deadlock = resolve_path(&path)?;
-    let cit = std::path::Path::new(&deadlock).join("game").join("citadel");
-    backup::restore(&cit, &settings::data_dir(), &name).map(|r| RestoreReportDto {
-        restored_gi: r.restored_gi,
-        restored_video: r.restored_video,
-        removed_addons: r.removed_addons,
-        restored_addons: r.restored_addons,
+pub async fn do_restore(name: String, path: String) -> Result<RestoreReportDto, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let running = guard::game_running();
+        if !running.is_empty() {
+            return Err(format!("game running: {} — close Deadlock first", running.join(", ")));
+        }
+        let deadlock = resolve_path(&path)?;
+        let cit = std::path::Path::new(&deadlock).join("game").join("citadel");
+        backup::restore(&cit, &settings::data_dir(), &name).map(|r| RestoreReportDto {
+            restored_gi: r.restored_gi,
+            restored_video: r.restored_video,
+            removed_addons: r.removed_addons,
+            restored_addons: r.restored_addons,
+        })
     })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn revert_original_cmd(path: String) -> Result<RestoreReportDto, String> {
-    let running = guard::game_running();
-    if !running.is_empty() {
-        return Err(format!("game running: {} — close Deadlock first", running.join(", ")));
-    }
-    let deadlock = resolve_path(&path)?;
-    let cit = std::path::Path::new(&deadlock).join("game").join("citadel");
-    backup::revert_original(&cit).map(|r| RestoreReportDto {
-        restored_gi: r.restored_gi,
-        restored_video: r.restored_video,
-        removed_addons: r.removed_addons,
-        restored_addons: r.restored_addons,
+pub async fn revert_original_cmd(path: String) -> Result<RestoreReportDto, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let running = guard::game_running();
+        if !running.is_empty() {
+            return Err(format!("game running: {} — close Deadlock first", running.join(", ")));
+        }
+        let deadlock = resolve_path(&path)?;
+        let cit = std::path::Path::new(&deadlock).join("game").join("citadel");
+        backup::revert_original(&cit).map(|r| RestoreReportDto {
+            restored_gi: r.restored_gi,
+            restored_video: r.restored_video,
+            removed_addons: r.removed_addons,
+            restored_addons: r.restored_addons,
+        })
     })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 // ---------- settings ----------
@@ -273,6 +289,10 @@ pub fn get_diagnostics() -> String {
         s.lang, s.unlocked, s.last_path, s.fov, s.fps_max, s.unit_status_new
     ));
 
+    let vram_bytes = detect::detect_vram_bytes();
+    let vram_mb = vram_bytes / (1024 * 1024);
+    diag.push_str(&format!("Detected Dedicated VRAM: {} MB ({} bytes)\n", vram_mb, vram_bytes));
+
     let detected = discovery::find_game();
     diag.push_str(&format!("Deadlock Detected: {:?}\n", detected));
 
@@ -296,6 +316,75 @@ pub fn get_diagnostics() -> String {
         }
     }
     diag
+}
+
+// ---------- updater ----------
+#[derive(Serialize)]
+pub struct UpdateCheckDto {
+    pub should_update: bool,
+    pub current_version: String,
+    pub version: String,
+    pub body: Option<String>,
+    pub date: Option<String>,
+}
+
+#[tauri::command]
+pub async fn check_for_updates(app: tauri::AppHandle) -> Result<UpdateCheckDto, String> {
+    #[cfg(windows)]
+    {
+        use tauri_plugin_updater::UpdaterExt;
+        let updater = app.updater().map_err(|e| e.to_string())?;
+        match updater.check().await {
+            Ok(Some(update)) => {
+                Ok(UpdateCheckDto {
+                    should_update: true,
+                    current_version: update.current_version.clone(),
+                    version: update.version.clone(),
+                    body: update.body.clone(),
+                    date: update.date.map(|d| d.to_string()),
+                })
+            }
+            Ok(None) => {
+                let curr = app.package_info().version.to_string();
+                Ok(UpdateCheckDto {
+                    should_update: false,
+                    current_version: curr.clone(),
+                    version: curr,
+                    body: None,
+                    date: None,
+                })
+            }
+            Err(e) => Err(e.to_string()),
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        let curr = app.package_info().version.to_string();
+        Ok(UpdateCheckDto {
+            should_update: false,
+            current_version: curr.clone(),
+            version: curr,
+            body: None,
+            date: None,
+        })
+    }
+}
+
+#[tauri::command]
+pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        use tauri_plugin_updater::UpdaterExt;
+        let updater = app.updater().map_err(|e| e.to_string())?;
+        if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
+            update.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        Ok(())
+    }
 }
 
 // ---------- misc ----------

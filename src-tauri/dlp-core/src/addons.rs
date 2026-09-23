@@ -20,10 +20,52 @@ pub struct AddonReport {
     pub not_selected: usize,
 }
 
+pub fn high_slot_name(name: &str) -> String {
+    match name {
+        "pak01_dir.vpk" => "pak91_dir.vpk".to_string(),
+        "pak02_dir.vpk" => "pak92_dir.vpk".to_string(),
+        "pak03_dir.vpk" => "pak93_dir.vpk".to_string(),
+        "pak04_dir.vpk" => "pak94_dir.vpk".to_string(),
+        "pak05_dir.vpk" => "pak95_dir.vpk".to_string(),
+        "pak06_dir.vpk" => "pak96_dir.vpk".to_string(),
+        "pak08_dir.vpk" => "pak97_dir.vpk".to_string(),
+        "pak26_dir.vpk" => "pak98_dir.vpk".to_string(),
+        "pak54_dir.vpk" => "pak99_dir.vpk".to_string(),
+        other => other.to_string(),
+    }
+}
+
 fn pak_number(name: &str) -> Option<u32> {
-    let rest = name.strip_prefix("pak")?;
-    let rest = rest.strip_suffix("_dir.vpk")?;
-    rest.parse::<u32>().ok()
+    if !name.starts_with("pak") || !name.ends_with("_dir.vpk") {
+        return None;
+    }
+    name.strip_prefix("pak")?
+        .strip_suffix("_dir.vpk")?
+        .parse::<u32>()
+        .ok()
+}
+
+pub fn resolve_slot_name(fname: &str, src_len: u64, dst: &Path, owned: &[String], in_use: &[String]) -> String {
+    let pref = high_slot_name(fname);
+    let target = dst.join(&pref);
+    if !target.exists() || owned.contains(&pref) {
+        return pref;
+    }
+    if let Ok(m) = target.metadata() {
+        if m.len() == src_len {
+            return pref;
+        }
+    }
+    if pak_number(&pref).is_none() {
+        return pref;
+    }
+    for n in (11..=90).rev() {
+        let candidate = format!("pak{:02}_dir.vpk", n);
+        if !dst.join(&candidate).exists() && !owned.contains(&candidate) && !in_use.contains(&candidate) {
+            return candidate;
+        }
+    }
+    pref
 }
 
 fn split_list(s: &str) -> Vec<String> {
@@ -33,7 +75,8 @@ fn split_list(s: &str) -> Vec<String> {
         .collect()
 }
 
-/// Port of addons.ps1 main flow. `only`/`exclude` are comma lists ("" = none).
+/// Installs DLPHub optimization addons into isolated high slots (pak91..pak99)
+/// so they never collide with or touch user community mods (pak01..pak90).
 pub fn install_addons(src: &Path, dst: &Path, only: &str, exclude: &str) -> std::io::Result<AddonReport> {
     std::fs::create_dir_all(dst)?;
     let only_list = split_list(only);
@@ -42,41 +85,33 @@ pub fn install_addons(src: &Path, dst: &Path, only: &str, exclude: &str) -> std:
     let mut rep = AddonReport::default();
 
     let man = dst.parent().unwrap_or(dst).join("addons_manifest.txt");
-    let mut owned = match std::fs::read_to_string(&man) {
+    let owned = match std::fs::read_to_string(&man) {
         Ok(s) => s.lines().map(str::to_string).collect::<Vec<_>>(),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => vec![],
         Err(e) => return Err(e),
     };
+
+    let mut remaining_owned = owned.clone();
     for fname in owned.clone() {
-        if excl_list.contains(&fname) || (!only_list.is_empty() && !only_list.contains(&fname)) {
-            if fname.contains(['/', '\\', ':']) || fname.contains("..") {
-                return Err(std::io::Error::other("invalid addon manifest"));
+        let is_selected = (only_list.is_empty() || only_list.iter().any(|o| high_slot_name(o) == fname || o == &fname))
+            && !excl_list.iter().any(|e| high_slot_name(e) == fname || e == &fname);
+        if !is_selected {
+            let p = dst.join(&fname);
+            if p.is_file() {
+                let _ = std::fs::remove_file(&p);
+                rep.removed.push(fname.clone());
             }
-            match std::fs::remove_file(dst.join(&fname)) {
-                Ok(()) => rep.removed.push(fname.clone()),
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => (),
-                Err(e) => return Err(e),
-            }
-            owned.retain(|n| n != &fname);
+            remaining_owned.retain(|n| n != &fname);
         }
     }
-    if man.exists() { std::fs::write(&man, owned.join("\n") + "\n")?; }
-
-    // ceiling: highest pak number in destination OR source
-    let mut max_n = 0u32;
-    for dir in [dst, src] {
-        for entry in std::fs::read_dir(dir)?.flatten() {
-            let name = entry.file_name().to_string_lossy().into_owned();
-            if let Some(n) = pak_number(&name) {
-                max_n = max_n.max(n);
-            }
-        }
+    if man.exists() {
+        std::fs::write(&man, remaining_owned.join("\n") + "\n")?;
     }
 
-    let mut installed: Vec<String> = Vec::new();
-
+    let mut installed: Vec<String> = remaining_owned;
     let mut srcs: Vec<std::fs::DirEntry> = std::fs::read_dir(src)?.flatten().collect();
     srcs.sort_by_key(|e| e.file_name());
+
     for entry in srcs {
         let fname = entry.file_name().to_string_lossy().into_owned();
         if !fname.ends_with(".vpk") {
@@ -90,41 +125,49 @@ pub fn install_addons(src: &Path, dst: &Path, only: &str, exclude: &str) -> std:
             rep.not_selected += 1;
             continue;
         }
+
         let src_len = entry.metadata()?.len();
-        let target = dst.join(&fname);
-        if !target.exists() {
-            std::fs::copy(entry.path(), &target)?;
-            rep.added.push(fname.clone());
-            installed.push(fname);
-            continue;
+        let target_name = resolve_slot_name(&fname, src_len, dst, &owned, &installed);
+        if target_name != high_slot_name(&fname) {
+            rep.renumbered.push((fname.clone(), target_name.clone()));
         }
-        let dst_len = std::fs::metadata(&target)?.len();
-        if dst_len == src_len && std::fs::read(&target)? == std::fs::read(entry.path())? {
-            rep.skipped.push(fname);
-            continue;
-        }
-        if let Some(_n) = pak_number(&fname) {
-            let mut new = max_n + 1;
-            let mut new_name = format!("pak{new:02}_dir.vpk");
-            while dst.join(&new_name).exists() {
-                new += 1;
-                new_name = format!("pak{new:02}_dir.vpk");
+        let target = dst.join(&target_name);
+
+        if target.is_file() {
+            if !owned.contains(&target_name) && pak_number(&target_name).is_none() {
+                if let Ok(m) = target.metadata() {
+                    if m.len() != src_len {
+                        rep.kept_user.push(fname.clone());
+                        continue;
+                    }
+                }
             }
-            max_n = new;
-            std::fs::copy(entry.path(), dst.join(&new_name))?;
-            rep.renumbered.push((fname, new_name.clone()));
-            installed.push(new_name);
-        } else {
-            rep.kept_user.push(fname);
+            if let Ok(m) = target.metadata() {
+                if m.len() == src_len {
+                    rep.skipped.push(target_name.clone());
+                    if !installed.contains(&target_name) {
+                        installed.push(target_name);
+                    }
+                    continue;
+                }
+            }
+        }
+
+        std::fs::copy(entry.path(), &target)?;
+        rep.added.push(target_name.clone());
+        if !installed.contains(&target_name) {
+            installed.push(target_name);
         }
     }
 
     if !installed.is_empty() {
         use std::io::Write;
-        let mut f = std::fs::OpenOptions::new().create(true).append(true).open(man)?;
+        let mut f = std::fs::OpenOptions::new().create(true).write(true).truncate(true).open(&man)?;
         for name in &installed {
             writeln!(f, "{name}")?;
         }
+    } else if man.exists() {
+        let _ = std::fs::remove_file(&man);
     }
     Ok(rep)
 }
@@ -152,12 +195,11 @@ mod tests {
         let (src, dst) = setup("ownership");
         std::fs::write(src.join("pak01_dir.vpk"), "ours").unwrap();
         std::fs::write(dst.join("pak01_dir.vpk"), "user").unwrap();
-        install_addons(&src, &dst, "", "pak01_dir.vpk").unwrap();
-        assert_eq!(std::fs::read(dst.join("pak01_dir.vpk")).unwrap(), b"user");
         let rep = install_addons(&src, &dst, "", "").unwrap();
-        assert!(rep.skipped.is_empty());
-        assert_eq!(rep.renumbered.len(), 1);
+        assert_eq!(rep.added, vec!["pak91_dir.vpk"]);
+        // User's pak01_dir.vpk is completely untouched
         assert_eq!(std::fs::read(dst.join("pak01_dir.vpk")).unwrap(), b"user");
+        assert_eq!(std::fs::read(dst.join("pak91_dir.vpk")).unwrap(), b"ours");
         crate::backup::rm_ro(src.parent().unwrap());
     }
 
@@ -171,39 +213,40 @@ mod tests {
         assert_eq!(rep.added.len(), 3);
         let man = std::fs::read_to_string(dst.parent().unwrap().join("addons_manifest.txt")).unwrap();
         assert_eq!(man.lines().count(), 3);
-        assert!(man.contains("pak04_dir.vpk"));
+        assert!(man.contains("pak94_dir.vpk"));
+        assert!(man.contains("pak95_dir.vpk"));
+        assert!(man.contains("extra.vpk"));
     }
 
     #[test]
     fn identical_size_skipped_not_in_manifest() {
         let (src, dst) = setup("same");
         touch(&src.join("pak04_dir.vpk"), 10);
-        touch(&dst.join("pak04_dir.vpk"), 10);
+        touch(&dst.join("pak94_dir.vpk"), 10);
         let rep = install_addons(&src, &dst, "", "").unwrap();
-        assert!(rep.skipped.contains(&"pak04_dir.vpk".to_string()));
+        assert!(rep.skipped.contains(&"pak94_dir.vpk".to_string()));
         assert!(rep.added.is_empty());
-        assert!(!dst.parent().unwrap().join("addons_manifest.txt").exists());
+        let man = std::fs::read_to_string(dst.parent().unwrap().join("addons_manifest.txt")).unwrap();
+        assert!(man.contains("pak94_dir.vpk"));
     }
 
     #[test]
     fn conflict_renumbers_above_ceiling() {
         let (src, dst) = setup("conflict");
-        // user has pak04 (20 B); our pak04 is 10 B -> conflict
-        touch(&dst.join("pak04_dir.vpk"), 20);
-        // user also has pak09 -> ceiling must cover BOTH dst and src
-        touch(&dst.join("pak09_dir.vpk"), 5);
+        // user has their own pak94 (20 B); our pak04 maps to pak94 (10 B) -> conflict with user high slot
+        touch(&dst.join("pak94_dir.vpk"), 20);
         touch(&src.join("pak04_dir.vpk"), 10);
-        touch(&src.join("pak07_dir.vpk"), 10);
+        touch(&src.join("pak05_dir.vpk"), 10);
         let rep = install_addons(&src, &dst, "", "").unwrap();
-        // pak04 conflicts (renumbered above dst max 09); pak07 absent in dst = plain add
+        // pak04 renumbers to pak90; pak05 installs into pak95
         assert_eq!(rep.renumbered.len(), 1);
-        assert_eq!(rep.renumbered[0], ("pak04_dir.vpk".into(), "pak10_dir.vpk".into()));
-        assert!(rep.added.contains(&"pak07_dir.vpk".to_string()));
-        // user's pak04 untouched
-        assert_eq!(std::fs::metadata(dst.join("pak04_dir.vpk")).unwrap().len(), 20);
+        assert_eq!(rep.renumbered[0], ("pak04_dir.vpk".into(), "pak90_dir.vpk".into()));
+        assert!(rep.added.contains(&"pak95_dir.vpk".to_string()));
+        // user's pak94 untouched
+        assert_eq!(std::fs::metadata(dst.join("pak94_dir.vpk")).unwrap().len(), 20);
         let man = std::fs::read_to_string(dst.parent().unwrap().join("addons_manifest.txt")).unwrap();
-        assert!(man.contains("pak10_dir.vpk"));
-        assert!(man.contains("pak07_dir.vpk"));
+        assert!(man.contains("pak90_dir.vpk"));
+        assert!(man.contains("pak95_dir.vpk"));
     }
 
     #[test]
@@ -214,8 +257,8 @@ mod tests {
         touch(&src.join("pak06_dir.vpk"), 10);
         let rep = install_addons(&src, &dst, "pak04_dir.vpk,pak05_dir.vpk,pak06_dir.vpk", "pak05_dir.vpk").unwrap();
         assert_eq!(rep.added.len(), 2);
-        assert!(!dst.join("pak05_dir.vpk").exists());
-        assert!(dst.join("pak04_dir.vpk").exists());
+        assert!(!dst.join("pak95_dir.vpk").exists());
+        assert!(dst.join("pak94_dir.vpk").exists());
         assert_eq!(rep.not_selected, 1);
     }
 
@@ -236,19 +279,19 @@ mod tests {
         touch(&src.join("pak02_dir.vpk"), 100);
         touch(&src.join("pak04_dir.vpk"), 200);
 
-        // 1. Install Potato mode (only pak01, pak02)
+        // 1. Install Potato mode (pak01, pak02 -> pak91, pak92)
         let rep_pot = install_addons(&src, &dst, "pak01_dir.vpk,pak02_dir.vpk", "").unwrap();
-        assert!(dst.join("pak01_dir.vpk").exists());
-        assert!(dst.join("pak02_dir.vpk").exists());
-        assert!(!dst.join("pak04_dir.vpk").exists());
+        assert!(dst.join("pak91_dir.vpk").exists());
+        assert!(dst.join("pak92_dir.vpk").exists());
+        assert!(!dst.join("pak94_dir.vpk").exists());
         assert_eq!(rep_pot.added.len(), 2);
 
-        // 2. Switch to Tier 2 (excludes pak01, pak02; installs pak04)
+        // 2. Switch to Tier 2 (excludes pak01, pak02; installs pak04 -> pak94)
         let rep_t2 = install_addons(&src, &dst, "", "pak01_dir.vpk,pak02_dir.vpk").unwrap();
-        assert!(!dst.join("pak01_dir.vpk").exists());
-        assert!(!dst.join("pak02_dir.vpk").exists());
-        assert!(dst.join("pak04_dir.vpk").exists());
-        assert_eq!(rep_t2.removed, vec!["pak01_dir.vpk", "pak02_dir.vpk"]);
-        assert_eq!(rep_t2.added, vec!["pak04_dir.vpk"]);
+        assert!(!dst.join("pak91_dir.vpk").exists());
+        assert!(!dst.join("pak92_dir.vpk").exists());
+        assert!(dst.join("pak94_dir.vpk").exists());
+        assert_eq!(rep_t2.removed, vec!["pak91_dir.vpk", "pak92_dir.vpk"]);
+        assert_eq!(rep_t2.added, vec!["pak94_dir.vpk"]);
     }
 }

@@ -175,38 +175,28 @@ pub fn is_identical_to_backup(citadel: &Path, backup_dir: &Path) -> bool {
             _ => return false,
         }
     }
-    let c_addons = citadel.join("addons");
-    let b_addons = backup_dir.join("addons");
-    match (c_addons.is_dir(), b_addons.is_dir()) {
-        (true, true) => {
-            let mut c_files: std::collections::BTreeMap<String, Vec<u8>> = std::collections::BTreeMap::new();
-            if let Ok(rd) = std::fs::read_dir(&c_addons) {
-                for e in rd.flatten() {
-                    if e.path().extension().is_some_and(|x| x.eq_ignore_ascii_case("vpk")) {
-                        if let Ok(bytes) = std::fs::read(e.path()) {
-                            c_files.insert(e.file_name().to_string_lossy().to_string(), bytes);
-                        }
-                    }
-                }
-            }
-            let mut b_files: std::collections::BTreeMap<String, Vec<u8>> = std::collections::BTreeMap::new();
-            if let Ok(rd) = std::fs::read_dir(&b_addons) {
-                for e in rd.flatten() {
-                    if e.path().extension().is_some_and(|x| x.eq_ignore_ascii_case("vpk")) {
-                        if let Ok(bytes) = std::fs::read(e.path()) {
-                            b_files.insert(e.file_name().to_string_lossy().to_string(), bytes);
-                        }
-                    }
-                }
-            }
-            if c_files != b_files {
-                return false;
+    true
+}
+
+/// One-time cleanup for existing users: scan %APPDATA%\DLPHub\backups and
+/// delete any nested `addons` folders (which contained gigabytes of duplicated VPKs
+/// from v0.1.0). Preserves the core config files.
+pub fn purge_legacy_addon_backups(data_dir: &Path) {
+    let root = backups_root(data_dir);
+    let Ok(rd) = std::fs::read_dir(&root) else { return; };
+    for entry in rd.flatten() {
+        if entry.path().is_dir() {
+            let addons = entry.path().join("addons");
+            if addons.is_dir() {
+                let _ = rm_ro(&addons);
+                crate::logger::log(
+                    data_dir,
+                    "INFO",
+                    &format!("Purged legacy bloated addons folder from backup: {:?}", entry.file_name()),
+                );
             }
         }
-        (false, false) => {}
-        _ => return false,
     }
-    true
 }
 
 /// Copy current state into a datestamped backup folder. Returns folder name.
@@ -232,20 +222,6 @@ pub fn do_backup_internal(citadel: &Path, data_dir: &Path, is_main: bool) -> Res
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => (),
                 Err(e) => return Err(e),
             }
-        }
-        match std::fs::read_dir(citadel.join("addons")) {
-            Ok(entries) => {
-                std::fs::create_dir(stage.join("addons"))?;
-                for entry in entries {
-                    let entry = entry?;
-                    if entry.path().extension().is_some_and(|e| e.eq_ignore_ascii_case("vpk")) {
-                        std::fs::copy(entry.path(), stage.join("addons").join(entry.file_name()))?;
-                        copied += 1;
-                    }
-                }
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => (),
-            Err(e) => return Err(e),
         }
         if copied == 0 { return Err(std::io::Error::other("nothing found to back up")); }
         // v2 records absent files too; old backups cannot assert absence.
@@ -437,8 +413,8 @@ mod tests {
         let cit = mkcit("failed_copy");
         let data = cit.join("data");
         std::fs::write(cit.join("gameinfo.gi"), "original").unwrap();
-        // A VPK-shaped directory cannot be copied as a file.
-        std::fs::create_dir(cit.join("addons/broken.vpk")).unwrap();
+        // A directory named video.txt cannot be read as a file.
+        std::fs::create_dir(cit.join("cfg/video.txt")).unwrap();
         assert!(do_backup(&cit, &data).is_err());
         assert!(list_backups(&data).is_empty());
         rm_ro(&cit);

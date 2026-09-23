@@ -42,6 +42,8 @@ pub fn run() {
             if let Some(win) = app.get_webview_window("main") {
                 native_cursor::install(&win);
             }
+            let data_dir = dlp_core::settings::data_dir();
+            dlp_core::backup::purge_legacy_addon_backups(&data_dir);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -62,6 +64,8 @@ pub fn run() {
             commands::launch_game,
             commands::running_from_pkg,
             commands::ping_valve_servers,
+            commands::check_for_updates,
+            commands::install_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
