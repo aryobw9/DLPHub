@@ -99,7 +99,7 @@ window.I18N_EN = {
   working: "Working…",
   noGame: "Locate Deadlock first",
   needsAdmin: "Cannot write to the game folder. Run DLPHub as administrator and try again.",
-  footer: "DLPHub v0.1.0 — payload stays private. Backups in %APPDATA%\\DLPHub.",
+  footer: "DLPHub v0.1.1 — payload stays private. Backups in %APPDATA%\\DLPHub.",
   windowMin: "Minimize",
   windowMax: "Maximize",
   windowClose: "Close",

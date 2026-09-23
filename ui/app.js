@@ -210,7 +210,16 @@ async function boot() {
     if (await call('running_from_pkg')) {
       showModal(t('guardTitle'), t('tempPkgTitle'), [{ label: t('ok') }]);
     }
-  } catch (e) { /* non-fatal */ }
+  try {
+    const ver = await call('get_app_version');
+    if (ver) {
+      state.appVersion = ver;
+      const el = document.getElementById('app-ver-tag');
+      if (el) {
+        el.innerHTML = `v${ver} <span class="ver-beta">BETA</span>`;
+      }
+    }
+  } catch (_) {}
 
   await refreshGame();
 
@@ -219,14 +228,19 @@ async function boot() {
       const up = await call('check_for_updates');
       if (up && up.should_update) {
         const go = await showModal(t('updateTitle'), `${t('updateAvailable')}: ${up.version}`, [
-          { label: t('ok'), value: true, kind: 'apply' },
+          { label: t('btnUpdateNow') || t('ok'), value: true, kind: 'apply' },
           { label: t('guardCancel'), value: false },
         ]);
         if (go) {
-          if (window.__OPEN_URL__) {
-            window.__OPEN_URL__('https://github.com/aryobw9/DLPHub/releases/latest');
-          } else {
-            window.open('https://github.com/aryobw9/DLPHub/releases/latest', '_blank');
+          const targetUrl = up.download_url || up.html_url || 'https://github.com/aryobw9/DLPHub/releases/latest';
+          try {
+            await call('open_download_url', { url: targetUrl });
+          } catch (_) {
+            if (window.__OPEN_URL__) {
+              window.__OPEN_URL__(targetUrl);
+            } else {
+              window.open(targetUrl, '_blank');
+            }
           }
         }
       }
@@ -903,25 +917,31 @@ async function checkForUpdates() {
     if (update && (update.should_update || update.available)) {
       const ver = update.version || '';
       const go = await showModal(t('updateTitle'), `${t('updateAvailable')}: ${ver}`, [
-        { label: t('ok'), value: true, kind: 'apply' },
+        { label: t('btnUpdateNow') || t('ok'), value: true, kind: 'apply' },
         { label: t('guardCancel'), value: false },
       ]);
       if (go) {
-        if (window.__OPEN_URL__) {
-          window.__OPEN_URL__('https://github.com/aryobw9/DLPHub/releases/latest');
-        } else {
-          window.open('https://github.com/aryobw9/DLPHub/releases/latest', '_blank');
+        const targetUrl = update.download_url || update.html_url || 'https://github.com/aryobw9/DLPHub/releases/latest';
+        try {
+          await call('open_download_url', { url: targetUrl });
+        } catch (_) {
+          if (window.__OPEN_URL__) {
+            window.__OPEN_URL__(targetUrl);
+          } else {
+            window.open(targetUrl, '_blank');
+          }
         }
       }
     } else {
-      showModal(t('updateTitle'), t('updateLatest'), [{ label: t('ok') }]);
+      showModal(t('updateTitle'), t('updateUpToDate') || t('updateLatest'), [{ label: t('ok') }]);
     }
   } catch (err) {
     const elapsed = Date.now() - startTime;
     if (elapsed < 800) {
       await new Promise((r) => setTimeout(r, 800 - elapsed));
     }
-    showModal(t('updateTitle'), t('updateFailed'), [{ label: t('ok') }]);
+    const errText = (err && err.message) ? err.message : String(err);
+    showModal(t('updateTitle'), `${t('updateFailed')}\n(${errText})`, [{ label: t('ok') }]);
   } finally {
     if (icon) icon.classList.remove('fa-spin');
     if (btn) {

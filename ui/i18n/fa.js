@@ -94,7 +94,7 @@ window.I18N_FA = {
   working: "در حال اجرا…",
   noGame: "اول پوشه ددلاک را مشخص کن",
   needsAdmin: "نوشتن در پوشه بازی ممکن نیست. DLPHub را به‌صورت ادمین اجرا کن و دوباره تلاش کن.",
-  footer: "DLPHub v0.1.0 — بکاپ‌ها در %APPDATA%\\DLPHub ذخیره می‌شوند.",
+  footer: "DLPHub v0.1.1 — بکاپ‌ها در %APPDATA%\\DLPHub ذخیره می‌شوند.",
   windowMin: "کمینه",
   windowMax: "بیشینه",
   windowClose: "بستن",

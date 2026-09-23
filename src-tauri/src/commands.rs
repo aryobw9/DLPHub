@@ -318,73 +318,95 @@ pub fn get_diagnostics() -> String {
     diag
 }
 
+#[tauri::command]
+pub fn get_app_version(app: tauri::AppHandle) -> String {
+    app.package_info().version.to_string()
+}
+
 // ---------- updater ----------
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct UpdateCheckDto {
     pub should_update: bool,
     pub current_version: String,
     pub version: String,
     pub body: Option<String>,
-    pub date: Option<String>,
+    pub download_url: Option<String>,
+    pub html_url: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct GitHubRelease {
+    tag_name: String,
+    html_url: String,
+    body: Option<String>,
+    #[serde(default)]
+    assets: Vec<GitHubAsset>,
+}
+
+#[derive(Deserialize)]
+struct GitHubAsset {
+    name: String,
+    browser_download_url: String,
+}
+
+fn parse_version_numbers(v: &str) -> Vec<u32> {
+    v.trim_start_matches('v')
+        .split('.')
+        .filter_map(|p| p.parse::<u32>().ok())
+        .collect()
+}
+
+fn is_version_greater(latest: &str, current: &str) -> bool {
+    let l = parse_version_numbers(latest);
+    let c = parse_version_numbers(current);
+    l > c
 }
 
 #[tauri::command]
 pub async fn check_for_updates(app: tauri::AppHandle) -> Result<UpdateCheckDto, String> {
-    #[cfg(windows)]
-    {
-        use tauri_plugin_updater::UpdaterExt;
-        let updater = app.updater().map_err(|e| e.to_string())?;
-        match updater.check().await {
-            Ok(Some(update)) => {
-                Ok(UpdateCheckDto {
-                    should_update: true,
-                    current_version: update.current_version.clone(),
-                    version: update.version.clone(),
-                    body: update.body.clone(),
-                    date: update.date.map(|d| d.to_string()),
-                })
-            }
-            Ok(None) => {
-                let curr = app.package_info().version.to_string();
-                Ok(UpdateCheckDto {
-                    should_update: false,
-                    current_version: curr.clone(),
-                    version: curr,
-                    body: None,
-                    date: None,
-                })
-            }
-            Err(e) => Err(e.to_string()),
-        }
+    let curr = app.package_info().version.to_string();
+
+    let client = reqwest::Client::builder()
+        .user_agent("DLPHub")
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|e| format!("HTTP client error: {e}"))?;
+
+    let res = client
+        .get("https://api.github.com/repos/aryobw9/DLPHub/releases/latest")
+        .header("Accept", "application/vnd.github.v3+json")
+        .send()
+        .await
+        .map_err(|e| format!("Network request failed: {e}"))?;
+
+    if !res.status().is_success() {
+        return Err(format!("Update server returned HTTP {}", res.status()));
     }
-    #[cfg(not(windows))]
-    {
-        let curr = app.package_info().version.to_string();
-        Ok(UpdateCheckDto {
-            should_update: false,
-            current_version: curr.clone(),
-            version: curr,
-            body: None,
-            date: None,
-        })
-    }
+
+    let release: GitHubRelease = res.json().await.map_err(|e| format!("Failed to parse release: {e}"))?;
+    let latest_tag = release.tag_name.clone();
+    let should = is_version_greater(&latest_tag, &curr);
+
+    let download_url = release
+        .assets
+        .iter()
+        .find(|a| a.name.ends_with(".exe"))
+        .map(|a| a.browser_download_url.clone())
+        .unwrap_or_else(|| release.html_url.clone());
+
+    Ok(UpdateCheckDto {
+        should_update: should,
+        current_version: curr,
+        version: latest_tag,
+        body: release.body,
+        download_url: Some(download_url),
+        html_url: Some(release.html_url),
+    })
 }
 
 #[tauri::command]
-pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
-    #[cfg(windows)]
-    {
-        use tauri_plugin_updater::UpdaterExt;
-        let updater = app.updater().map_err(|e| e.to_string())?;
-        if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
-            update.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
-        }
-        Ok(())
-    }
-    #[cfg(not(windows))]
-    {
-        Ok(())
-    }
+pub fn open_download_url(url: String) -> Result<(), String> {
+    open::that(&url).map_err(|e| e.to_string())
 }
 
 // ---------- misc ----------

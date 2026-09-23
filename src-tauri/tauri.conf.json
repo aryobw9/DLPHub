@@ -34,13 +34,5 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
-  },
-  "plugins": {
-    "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU0QUMyQUEwRUMxMTAzOTgKUldTWUF4SHNvQ3FzNUJXVWlvSmRuQkJRNjZVaDRHdW5MaUY2ZER3TmtjRzlRT3JsSS9LQ2dkZ1IK",
-      "endpoints": [
-        "https://github.com/aryobw9/DLPHub/releases/latest/download/latest.json"
-      ]
-    }
   }
 }

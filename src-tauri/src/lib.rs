@@ -33,9 +33,6 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        // Updater: silent-tolerant on 404 (no release yet) — endpoint errors
-        // surface only when a check is requested.
-        .plugin(tauri_plugin_updater::Builder::new().build())
         // Flame cursors on the native resize border (WM_SETCURSOR subclass).
         .setup(|app| {
             use tauri::Manager;
@@ -65,7 +62,8 @@ pub fn run() {
             commands::running_from_pkg,
             commands::ping_valve_servers,
             commands::check_for_updates,
-            commands::install_update,
+            commands::open_download_url,
+            commands::get_app_version,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

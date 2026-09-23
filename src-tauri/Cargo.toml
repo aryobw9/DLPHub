@@ -29,13 +29,13 @@ tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_UI_WindowsAndMessaging", "Win32_Graphics_Gdi"] }
 winreg = "0.55"
 dlp-core = { path = "dlp-core" }
 open = "5"
-tauri-plugin-updater = "2"
 tauri-plugin-dialog = "2"
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
