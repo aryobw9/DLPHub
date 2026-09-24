@@ -79,28 +79,44 @@ unsafe extern "system" {
         hinst: *mut core::ffi::c_void, name: *const u16, r#type: u32,
         cx: i32, cy: i32, fuse: u32,
     ) -> HCURSOR;
-    fn SetWindowLongPtrW(hwnd: HWND, nindex: i32, dwnewlong: isize) -> isize;
-    fn CallWindowProcW(
-        lpprevwndfunc: isize, hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM,
-    ) -> LRESULT;
     fn SetCursor(hcursor: HCURSOR) -> HCURSOR;
-    fn FindWindowExW(parent: HWND, child_after: HWND, class: *const u16, title: *const u16) -> HWND;
     fn ShowWindow(hwnd: HWND, ncmdshow: i32) -> i32;
     fn IsZoomed(hwnd: HWND) -> i32;
     fn MonitorFromWindow(hwnd: HWND, flags: u32) -> isize;
     fn GetMonitorInfoW(hmonitor: isize, lpmi: *mut MONITORINFO) -> i32;
+    fn EnumChildWindows(
+        parent: HWND,
+        lp_enum_func: unsafe extern "system" fn(HWND, LPARAM) -> i32,
+        lparam: LPARAM,
+    ) -> i32;
+}
+
+#[link(name = "comctl32")]
+unsafe extern "system" {
+    fn SetWindowSubclass(
+        hwnd: HWND,
+        pfnsubclass: unsafe extern "system" fn(HWND, u32, WPARAM, LPARAM, usize, usize) -> LRESULT,
+        uidsubclass: usize,
+        refdata: usize,
+    ) -> i32;
+    fn DefSubclassProc(
+        hwnd: HWND,
+        msg: u32,
+        wparam: WPARAM,
+        lparam: LPARAM,
+    ) -> LRESULT;
 }
 
 const IMAGE_CURSOR: u32 = 2;
 const LR_LOADFROMFILE: u32 = 0x0010;
 const CURSOR_PX: i32 = 64; // every flame cursor PNG is 64x64
-const GWLP_WNDPROC: i32 = -4;
 const WM_SETCURSOR: u32 = 0x0020;
 const WM_GETMINMAXINFO: u32 = 0x0024;
 const WM_NCLBUTTONDBLCLK: u32 = 0x00A3;
 const SW_RESTORE: i32 = 9;
 const SW_MAXIMIZE: i32 = 3;
 const MONITOR_DEFAULTTONEAREST: u32 = 2;
+const SUBCLASS_ID: usize = 0x444c50; // 'DLP'
 
 // Hit-test codes from WM_NCHITTEST, delivered in WM_SETCURSOR's WPARAM LOWORD.
 const HTCAPTION: i32 = 2;
@@ -113,15 +129,6 @@ const HTBOTTOM: i32 = 15;
 const HTBOTTOMLEFT: i32 = 16;
 const HTBOTTOMRIGHT: i32 = 17;
 const HTBORDER: i32 = 18;
-
-/// Class of the child window tauri-runtime-wry creates over the client area to
-/// own the undecorated resize band.
-const DRAG_CHILD_CLASS: &[u16] = &[
-    'T' as u16, 'A' as u16, 'U' as u16, 'R' as u16, 'I' as u16, '_' as u16, 'D' as u16,
-    'R' as u16, 'A' as u16, 'G' as u16, '_' as u16, 'R' as u16, 'E' as u16, 'S' as u16,
-    'I' as u16, 'Z' as u16, 'E' as u16, '_' as u16, 'B' as u16, 'O' as u16, 'R' as u16,
-    'D' as u16, 'E' as u16, 'R' as u16, 'S' as u16, 0,
-];
 
 struct Cursors {
     default: HCURSOR,
@@ -145,13 +152,6 @@ fn fnv1a(bytes: &[u8]) -> u64 {
     h
 }
 
-/// LoadImageW cannot read a .cur from raw memory, so each embedded cursor is
-/// materialised once into the user's temp dir and loaded from there.
-/// LR_LOADFROMFILE is mandatory for a filesystem path — without it the path is
-/// parsed as a resource name, LoadImage returns NULL and the stock Windows
-/// resize cursors stay on the border. cx/cy are the cursor's own 64px size so
-/// the native band matches the CSS cursors pixel for pixel (LR_DEFAULTSIZE
-/// would silently downscale to the 32px system size).
 fn load_cursor(bytes: &[u8]) -> Option<HCURSOR> {
     let path = std::env::temp_dir().join(format!("dlp-cursor-{:016x}.cur", fnv1a(bytes)));
     if !path.exists() {
@@ -197,38 +197,31 @@ fn cursor_for_hit_test(ht: i32) -> HCURSOR {
     }
 }
 
-/// The per-window previous proc, stored out-of-band (GWLP_WNDPROC itself will
-/// hold *our* proc once subclassed, so we keep the originals separately). One
-/// slot per subclassed window.
-static PREV_MAIN: OnceLock<isize> = OnceLock::new();
-static PREV_DRAG: OnceLock<isize> = OnceLock::new();
-
-/// Shared body: swap in a flame cursor for border hit tests, handle true maximize and double-click, otherwise defer.
-fn handle(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM, prev: Option<isize>) -> LRESULT {
+unsafe extern "system" fn flame_subclass_proc(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+    _uid: usize,
+    _data: usize,
+) -> LRESULT {
     if msg == WM_SETCURSOR {
-        // In Win32, the hit-test code is packed in the LOWORD of lParam.
-        let ht = (lparam & 0xffff) as i32;
+        let ht = (lparam & 0xffff) as i16 as i32;
         let hcursor = cursor_for_hit_test(ht);
         if hcursor != 0 {
-            unsafe { SetCursor(hcursor) };
-            return 1; // TRUE — we set the cursor, stop further processing
+            SetCursor(hcursor);
+            return 1;
         }
     } else if msg == WM_NCLBUTTONDBLCLK && (wparam as i32) == HTCAPTION {
-        // Double-clicking the titlebar toggles maximize/restore
-        let zoomed = unsafe { IsZoomed(hwnd) };
-        unsafe { ShowWindow(hwnd, if zoomed != 0 { SW_RESTORE } else { SW_MAXIMIZE }) };
+        let zoomed = IsZoomed(hwnd);
+        ShowWindow(hwnd, if zoomed != 0 { SW_RESTORE } else { SW_MAXIMIZE });
         return 0;
     }
 
-    let res = match prev {
-        Some(prev) => unsafe { CallWindowProcW(prev, hwnd, msg, wparam, lparam) },
-        None => 0,
-    };
+    let res = DefSubclassProc(hwnd, msg, wparam, lparam);
 
     if msg == WM_GETMINMAXINFO {
-        // Undecorated windows maximize over the full screen (covering the taskbar)
-        // unless ptMaxPosition and ptMaxSize are constrained to the monitor's work area.
-        let hmon = unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) };
+        let hmon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
         if hmon != 0 {
             let mut mi = MONITORINFO {
                 cb_size: std::mem::size_of::<MONITORINFO>() as u32,
@@ -236,8 +229,8 @@ fn handle(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM, prev: Option<isi
                 rc_work: RECT { left: 0, top: 0, right: 0, bottom: 0 },
                 dw_flags: 0,
             };
-            if unsafe { GetMonitorInfoW(hmon, &mut mi) } != 0 {
-                let mmi = unsafe { &mut *(lparam as *mut MINMAXINFO) };
+            if GetMonitorInfoW(hmon, &mut mi) != 0 {
+                let mmi = &mut *(lparam as *mut MINMAXINFO);
                 mmi.pt_max_position.x = mi.rc_work.left - mi.rc_monitor.left;
                 mmi.pt_max_position.y = mi.rc_work.top - mi.rc_monitor.top;
                 mmi.pt_max_size.x = mi.rc_work.right - mi.rc_work.left;
@@ -249,25 +242,11 @@ fn handle(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM, prev: Option<isi
     res
 }
 
-unsafe extern "system" fn flame_proc_main(
-    hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM,
-) -> LRESULT {
-    handle(hwnd, msg, wparam, lparam, PREV_MAIN.get().copied())
+unsafe extern "system" fn enum_subclass_child(child: HWND, _lparam: LPARAM) -> i32 {
+    SetWindowSubclass(child, flame_subclass_proc, SUBCLASS_ID, 0);
+    1
 }
 
-unsafe extern "system" fn flame_proc_drag(
-    hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM,
-) -> LRESULT {
-    handle(hwnd, msg, wparam, lparam, PREV_DRAG.get().copied())
-}
-
-fn subclass(hwnd: HWND, proc: unsafe extern "system" fn(HWND, u32, WPARAM, LPARAM) -> LRESULT) -> Option<isize> {
-    let prev = unsafe { SetWindowLongPtrW(hwnd, GWLP_WNDPROC, proc as *const () as isize) };
-    (prev != 0).then_some(prev)
-}
-
-/// Subclass the main window and the drag-resize child so the native resize
-/// border shows the flame cursors. Best-effort: logs and no-ops on failure.
 pub fn install(window: &tauri::WebviewWindow) {
     if let Err(e) = install_impl(window) {
         eprintln!("[native_cursor] not installed: {e}");
@@ -277,34 +256,19 @@ pub fn install(window: &tauri::WebviewWindow) {
 fn install_impl(window: &tauri::WebviewWindow) -> Result<(), String> {
     let hwnd = window.hwnd().map_err(|e| format!("no hwnd: {e}"))?.0 as HWND;
 
-    if PREV_MAIN.get().is_none() {
-        let prev = subclass(hwnd, flame_proc_main).ok_or("SetWindowLongPtrW failed on main window")?;
-        let _ = PREV_MAIN.set(prev);
+    unsafe {
+        SetWindowSubclass(hwnd, flame_subclass_proc, SUBCLASS_ID, 0);
+        EnumChildWindows(hwnd, enum_subclass_child, 0);
     }
 
-    try_subclass_drag_child(hwnd);
     std::thread::spawn(move || {
-        for _ in 0..15 {
-            std::thread::sleep(std::time::Duration::from_millis(100));
-            if PREV_DRAG.get().is_some() {
-                break;
+        for _ in 0..20 {
+            std::thread::sleep(std::time::Duration::from_millis(150));
+            unsafe {
+                EnumChildWindows(hwnd, enum_subclass_child, 0);
             }
-            try_subclass_drag_child(hwnd);
         }
     });
-    Ok(())
-}
 
-fn try_subclass_drag_child(hwnd: HWND) {
-    if PREV_DRAG.get().is_some() {
-        return;
-    }
-    let child = unsafe {
-        FindWindowExW(hwnd, 0, DRAG_CHILD_CLASS.as_ptr(), std::ptr::null())
-    };
-    if child != 0 {
-        if let Some(prev_child) = subclass(child, flame_proc_drag) {
-            let _ = PREV_DRAG.set(prev_child);
-        }
-    }
+    Ok(())
 }

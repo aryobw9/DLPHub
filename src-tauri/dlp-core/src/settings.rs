@@ -13,6 +13,8 @@ pub struct Settings {
     pub fps_max: Option<u32>,  // None: default (untouched), Some(0): uncapped, Some(n): limit
     pub custom_autoexec: String, // custom user lines
     pub renderer: String,        // "default" | "dx11" | "vulkan"
+    pub stop_cloth_anim: bool,   // true = stop cloth simulation updates (cloth_update 0, cloth_sim_on_tick 0)
+    pub ragdoll_fade: bool,      // true = FPS boost mode (cl_ragdoll_limit 0), false = normal solid corpses & Doorman clone (-1)
 }
 
 impl Default for Settings {
@@ -26,6 +28,8 @@ impl Default for Settings {
             fps_max: None,
             custom_autoexec: String::new(),
             renderer: "default".into(),
+            stop_cloth_anim: false,
+            ragdoll_fade: false,
         }
     }
 }
@@ -183,6 +187,8 @@ mod tests {
             fps_max: Some(165),
             custom_autoexec: "bind f6 kill".into(),
             renderer: "vulkan".into(),
+            stop_cloth_anim: true,
+            ragdoll_fade: true,
         };
         save_to(&tmp, &s).unwrap();
         let s2 = load_from(&tmp);
@@ -190,6 +196,8 @@ mod tests {
         assert!(s2.unlocked);
         assert_eq!(s2.last_path.as_deref(), Some("D:\\SteamLibrary\\steamapps\\common\\Deadlock"));
         assert!(s2.unit_status_new);
+        assert!(s2.stop_cloth_anim);
+        assert!(s2.ragdoll_fade);
         assert_eq!(s2.fps_max, Some(165));
         assert_eq!(s2.custom_autoexec, "bind f6 kill");
         assert_eq!(s2.renderer, "vulkan");

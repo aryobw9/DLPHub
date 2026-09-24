@@ -185,6 +185,8 @@ pub struct SettingsDto {
     pub fps_max: Option<u32>,
     pub custom_autoexec: String,
     pub renderer: String,
+    pub stop_cloth_anim: bool,
+    pub ragdoll_fade: bool,
 }
 
 impl From<settings::Settings> for SettingsDto {
@@ -198,6 +200,8 @@ impl From<settings::Settings> for SettingsDto {
             fps_max: s.fps_max,
             custom_autoexec: s.custom_autoexec,
             renderer: s.renderer,
+            stop_cloth_anim: s.stop_cloth_anim,
+            ragdoll_fade: s.ragdoll_fade,
         }
     }
 }
@@ -212,6 +216,8 @@ pub struct SettingsPatch {
     pub fps_max: Option<i32>, // -1: None (default/untouched), >=0: Some(n)
     pub custom_autoexec: Option<String>,
     pub renderer: Option<String>,
+    pub stop_cloth_anim: Option<bool>,
+    pub ragdoll_fade: Option<bool>,
 }
 
 fn verify_vip_code(input: &str) -> bool {
@@ -251,6 +257,12 @@ pub fn set_settings(patch: SettingsPatch) -> Result<SettingsDto, String> {
     if let Some(u) = patch.unit_status_new {
         s.unit_status_new = u;
     }
+    if let Some(ca_stop) = patch.stop_cloth_anim {
+        s.stop_cloth_anim = ca_stop;
+    }
+    if let Some(rf) = patch.ragdoll_fade {
+        s.ragdoll_fade = rf;
+    }
     if let Some(fm) = patch.fps_max {
         s.fps_max = if fm < 0 { None } else { Some(fm as u32) };
     }
@@ -285,8 +297,8 @@ pub fn get_diagnostics() -> String {
     diag.push_str(&format!("Log Path: {:?}\n", dlp_core::logger::log_path(&data_dir)));
 
     let s = settings::load();
-    diag.push_str(&format!("Settings: lang={}, unlocked={}, last_path={:?}, fov={}, fps_max={:?}, unit_status={}\n",
-        s.lang, s.unlocked, s.last_path, s.fov, s.fps_max, s.unit_status_new
+    diag.push_str(&format!("Settings: lang={}, unlocked={}, last_path={:?}, fov={}, fps_max={:?}, unit_status={}, stop_cloth_anim={}, ragdoll_fade={}\n",
+        s.lang, s.unlocked, s.last_path, s.fov, s.fps_max, s.unit_status_new, s.stop_cloth_anim, s.ragdoll_fade
     ));
 
     let vram_bytes = detect::detect_vram_bytes();
@@ -656,3 +668,177 @@ pub async fn ping_valve_servers() -> Result<Vec<ServerPing>, String> {
     results.sort_by_key(|r| r.ping_ms.unwrap_or(9999));
     Ok(results)
 }
+
+// ---------- Doorman Visual Debug / Test ConVars ----------
+const TEST_CVAR_KEYS: [&str; 10] = [
+    "cl_ragdoll_limit",
+    "g_ragdoll_maxcount",
+    "g_ragdoll_important_maxcount",
+    "cl_disable_ragdolls",
+    "r_particle_model_new8",
+    "r_size_cull_threshold",
+    "r_physics_particle_op_spawn_scale",
+    "r_citadel_npr_outlines_max_dist",
+    "r_drawmodeldecals",
+    "cl_simulate_dormant_entities",
+];
+
+fn extract_cvar_value(content: &str, key: &str) -> Option<String> {
+    for line in content.lines() {
+        let line_clean = if let Some(idx) = line.find("//") {
+            &line[..idx]
+        } else {
+            line
+        };
+        let t = line_clean.trim();
+        if t.is_empty() {
+            continue;
+        }
+        let mut tokens = t.split_whitespace();
+        if let Some(first) = tokens.next() {
+            let first_clean = first.trim_matches('"');
+            if first_clean.eq_ignore_ascii_case(key) {
+                if let Some(second) = tokens.next() {
+                    return Some(second.trim_matches('"').to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+#[tauri::command]
+pub fn get_cvar_test_states() -> Result<std::collections::HashMap<String, String>, String> {
+    let s = settings::load();
+    let deadlock_path = s.last_path.ok_or_else(|| "Deadlock folder not set in settings".to_string())?;
+    let gi_path = std::path::Path::new(&deadlock_path).join("game").join("citadel").join("gameinfo.gi");
+    if !gi_path.exists() {
+        return Err(format!("gameinfo.gi not found at {:?}", gi_path));
+    }
+    let content = std::fs::read_to_string(&gi_path).map_err(|e| format!("read gameinfo.gi: {e}"))?;
+
+    let mut map = std::collections::HashMap::new();
+    for &k in &TEST_CVAR_KEYS {
+        let val = extract_cvar_value(&content, k).unwrap_or_else(|| "default".to_string());
+        map.insert(k.to_string(), val);
+    }
+    Ok(map)
+}
+
+#[tauri::command]
+pub fn apply_cvar_test_states(states: std::collections::HashMap<String, String>) -> Result<String, String> {
+    let s = settings::load();
+    let deadlock_path = s.last_path.ok_or_else(|| "Deadlock folder not set in settings".to_string())?;
+    let citadel_dir = std::path::Path::new(&deadlock_path).join("game").join("citadel");
+    let gi_path = citadel_dir.join("gameinfo.gi");
+    if !gi_path.exists() {
+        return Err(format!("gameinfo.gi not found at {:?}", gi_path));
+    }
+    let content = std::fs::read_to_string(&gi_path).map_err(|e| format!("read gameinfo.gi: {e}"))?;
+
+    let mut new_lines = Vec::new();
+    let mut found_keys = std::collections::HashSet::new();
+
+    for line in content.lines() {
+        let mut replaced = false;
+        let mut comment = "";
+        let mut content_part = line;
+        if let Some(idx) = line.find("//") {
+            comment = &line[idx..];
+            content_part = &line[..idx];
+        }
+
+        let tokens: Vec<&str> = content_part.split_whitespace().collect();
+        if tokens.len() >= 2 {
+            let k = tokens[0].trim_matches('"');
+            for (test_k, test_v) in &states {
+                if k.eq_ignore_ascii_case(test_k) {
+                    let lead = &line[..line.len() - line.trim_start().len()];
+                    let sep = if comment.is_empty() { "" } else { "\t" };
+                    let new_line = format!("{}{tokens_0} {test_v}{sep}{comment}", lead, tokens_0 = tokens[0]);
+                    new_lines.push(new_line);
+                    found_keys.insert(test_k.clone());
+                    replaced = true;
+                    break;
+                }
+            }
+        }
+        if !replaced {
+            new_lines.push(line.to_string());
+        }
+    }
+
+    // Insert any missing keys into ConVars block
+    let missing_keys: Vec<_> = states.keys().filter(|k| !found_keys.contains(*k)).collect();
+    if !missing_keys.is_empty() {
+        let mut in_convars = false;
+        let mut brace_depth = 0;
+        let mut insert_idx = None;
+
+        for (idx, l) in new_lines.iter().enumerate() {
+            if l.contains("ConVars") && !l.trim().starts_with("//") {
+                in_convars = true;
+            }
+            if in_convars {
+                brace_depth += l.matches('{').count() as i32 - l.matches('}').count() as i32;
+                if brace_depth == 0 && new_lines[..=idx].iter().any(|s| s.contains('{')) {
+                    insert_idx = Some(idx);
+                    break;
+                }
+            }
+        }
+
+        if let Some(idx) = insert_idx {
+            for k in missing_keys {
+                let v = &states[k];
+                new_lines.insert(idx, format!("\t\t\"{k}\"\t\t\"{v}\""));
+            }
+        }
+    }
+
+    let mut gi_out = new_lines.join("\r\n");
+    if !gi_out.ends_with("\r\n") {
+        gi_out.push_str("\r\n");
+    }
+    std::fs::write(&gi_path, gi_out).map_err(|e| format!("write gameinfo.gi: {e}"))?;
+
+    // Also update cfg/autoexec.cfg with DLP TEST BLOCK
+    let cfg_dir = citadel_dir.join("cfg");
+    let ae_path = cfg_dir.join("autoexec.cfg");
+    let mut ae_content = if ae_path.exists() {
+        std::fs::read_to_string(&ae_path).unwrap_or_default()
+    } else {
+        String::new()
+    };
+
+    let start_tag = "// DLP TEST BLOCK START";
+    let end_tag = "// DLP TEST BLOCK END";
+
+    let mut test_block = String::new();
+    test_block.push_str(start_tag);
+    test_block.push('\n');
+    for (k, v) in &states {
+        test_block.push_str(&format!("\t{} \"{}\"\n", k, v));
+    }
+    test_block.push_str(end_tag);
+
+    if let (Some(s_idx), Some(e_idx)) = (ae_content.find(start_tag), ae_content.find(end_tag)) {
+        if s_idx <= e_idx {
+            let after = &ae_content[e_idx + end_tag.len()..];
+            let before = &ae_content[..s_idx];
+            ae_content = format!("{}{}{}", before, test_block, after);
+        }
+    } else {
+        if !ae_content.is_empty() && !ae_content.ends_with('\n') {
+            ae_content.push('\n');
+        }
+        ae_content.push_str(&test_block);
+        ae_content.push('\n');
+    }
+
+    let _ = std::fs::create_dir_all(&cfg_dir);
+    std::fs::write(&ae_path, ae_content).map_err(|e| format!("write autoexec.cfg: {e}"))?;
+
+    Ok("Applied to gameinfo.gi & autoexec.cfg successfully!".to_string())
+}
+

@@ -38,6 +38,8 @@ const state = {
   detectedTier: null,
   running: false,
   unitStatusNew: false,
+  stopClothAnim: false,
+  ragdollFade: false,
   fpsMax: 0,
   renderer: 'default',
   customAutoexec: '',
@@ -195,6 +197,8 @@ async function boot() {
   state.unlocked = !!s.unlocked;
   state.lastPath = s.last_path || null;
   state.unitStatusNew = !!s.unit_status_new;
+  state.stopClothAnim = !!s.stop_cloth_anim;
+  state.ragdollFade = !!s.ragdoll_fade;
   state.fpsMax = s.fps_max;
   state.customAutoexec = s.custom_autoexec || '';
   state.renderer = s.renderer || 'default';
@@ -210,6 +214,7 @@ async function boot() {
     if (await call('running_from_pkg')) {
       showModal(t('guardTitle'), t('tempPkgTitle'), [{ label: t('ok') }]);
     }
+  } catch (_) {}
   try {
     const ver = await call('get_app_version');
     if (ver) {
@@ -251,6 +256,12 @@ async function boot() {
 function syncSettingsToUi() {
   const swUnit = document.getElementById('sw-unit-status');
   if (swUnit) swUnit.checked = !!state.unitStatusNew;
+
+  const swCloth = document.getElementById('sw-cloth-anim');
+  if (swCloth) swCloth.checked = !!state.stopClothAnim;
+
+  const swFade = document.getElementById('sw-ragdoll-fade');
+  if (swFade) swFade.checked = !!state.ragdollFade;
 
   const fps = state.fpsMax;
   document.querySelectorAll('#fps-radio-group .renderer-pill').forEach((btn) => {
@@ -472,12 +483,7 @@ function stepLine(text, cls) {
   log.scrollTop = log.scrollHeight;
 }
 
-// ---------- cursor states & virtual cursor follower ----------
-// Chromium enforces a security restriction that forces any CSS cursor: url()
-// to revert to the system cursor whenever the cursor image intersects the window
-// boundary (edges/corners). The DOM follower below completely bypasses this
-// limitation by rendering right up to the 0th pixel of the viewport without ever
-// reverting to standard Windows cursors.
+// ---------- custom flame cursor follower (100% viewport & corners coverage) ----------
 const CURSOR_HOTSPOTS = {
   default: { file: 'assets/cursors/default.png', x: 19, y: 16, w: 64, h: 64 },
   pointer: { file: 'assets/cursors/pointer.png', x: 16, y: 19, w: 64, h: 64 },
@@ -497,9 +503,37 @@ const CURSOR_HOTSPOTS = {
 
 let updateCursorFollower = () => {};
 
-(function setupCursorStates() {
-  const root = document.documentElement;
+function isInteractiveTarget(t) {
+  if (!(t instanceof Element)) return false;
+  const el = t.closest('button, [role="button"], a, select, .win-ctl, .lang-pill-btn, .pro-card, .sci-card, .tier-card, .social-card, .option-item, .neon-checkbox, .hud-switch-card, .launch-opt-btn, .renderer-pill, .chip-btn, .fov-default-tick, [onclick]');
+  if (!el) return false;
+  if (el.matches('button:disabled, [disabled], [aria-disabled="true"], .disabled')) return false;
+  return true;
+}
 
+function getCornerOrEdge(x, y) {
+  if (document.documentElement.classList.contains('is-maximized')) return null;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const CORNER = 24;
+  const EDGE = 8;
+
+  // Corners must take precedence over plain edges:
+  if (x <= CORNER && y <= CORNER) return 'nw';
+  if (x >= w - CORNER && y <= CORNER) return 'ne';
+  if (x <= CORNER && y >= h - CORNER) return 'sw';
+  if (x >= w - CORNER && y >= h - CORNER) return 'se';
+
+  // Edges:
+  if (y <= EDGE) return 'n';
+  if (y >= h - EDGE) return 's';
+  if (x <= EDGE) return 'w';
+  if (x >= w - EDGE) return 'e';
+
+  return null;
+}
+
+(function setupCursorStates() {
   Object.values(CURSOR_HOTSPOTS).forEach((c) => {
     const img = new Image();
     img.src = c.file;
@@ -520,16 +554,14 @@ let updateCursorFollower = () => {};
     };
     if (document.body) mount();
     else window.addEventListener('DOMContentLoaded', mount);
-  } else if (!cursorInner) {
-    cursorInner = document.createElement('div');
-    cursorInner.id = 'dlp-custom-cursor-inner';
-    cursorEl.appendChild(cursorInner);
   }
 
   let currentType = '';
-  let isMouseIn = false;
-  let lastX = -100, lastY = -100;
+  let isPressed = false;
+  let isRightClick = false;
   let rightTimer = null;
+  let lastX = Math.round(window.innerWidth / 2) || 400;
+  let lastY = Math.round(window.innerHeight / 2) || 300;
 
   function setCursorType(type) {
     if (!CURSOR_HOTSPOTS[type]) type = 'default';
@@ -538,7 +570,8 @@ let updateCursorFollower = () => {};
     const meta = CURSOR_HOTSPOTS[type];
     cursorEl.style.width = (meta.w || 64) + 'px';
     cursorEl.style.height = (meta.h || 64) + 'px';
-    cursorInner.style.backgroundImage = `url("${meta.file}")`;
+    if (!cursorInner) cursorInner = document.getElementById('dlp-custom-cursor-inner');
+    if (cursorInner) cursorInner.style.backgroundImage = `url("${meta.file}")`;
     if (type === 'busy') {
       cursorEl.classList.add('is-spinning');
     } else {
@@ -551,56 +584,11 @@ let updateCursorFollower = () => {};
     cursorEl.style.transform = `translate3d(${x - meta.x}px, ${y - meta.y}px, 0)`;
   }
 
-  function isUsableInteractive(t) {
-    if (!(t instanceof Element)) return false;
-    const btn = t.closest('button, [role="button"], a, [data-url], .win-ctl, .lang-pill-btn, .pro-card, .sci-card, select, .hud-switch-card, .neon-checkbox, .option-item, .tier-card, .social-card, [onclick]');
-    if (!btn) return false;
-    if (btn.matches('button:disabled, [disabled], [aria-disabled="true"], .disabled')) return false;
-    return true;
-  }
+  function determineCursor(t, x, y) {
+    if (isRightClick) return 'click_right';
 
-  function determineCursor(t) {
-    if (root.classList.contains('right-click')) return 'click_right';
-
-    const isBusyNow = state.busyTab && (state.busyTab === 'global' || state.busyTab === state.activeTab);
-    if (isBusyNow) {
-      if (isUsableInteractive(t)) {
-        return root.classList.contains('is-pressed') ? 'click' : 'pointer';
-      }
-      return 'busy';
-    }
-
-    if (t instanceof Element && t.closest('.action-footer, #action-footer, .active-profile, .step-log')) {
-      if (t.closest('button, [role="button"], .btn-apply, .btn-reset')) {
-        return root.classList.contains('is-pressed') ? 'click' : 'pointer';
-      }
-      return 'default';
-    }
-
-    if (t instanceof Element) {
-      if (t.closest('input[type="range"]')) {
-        return root.classList.contains('is-pressed') ? 'grab' : 'pointer';
-      }
-      if (t.closest('input[type="text"], input[type="password"], textarea, .path-input, .step-log')) {
-        return 'text';
-      }
-      if (t.closest('.social-card, a, [data-url]')) {
-        return 'link';
-      }
-      if (t.closest('button, [role="button"], select, .option-item, .tier-card, .pro-card, .win-ctl, .btn-play, .lang-pill-btn, .neon-checkbox, .hud-switch-wrap, .btn-apply, .btn-reset, .btn-refresh-ping-top, .border-beam, [onclick]')) {
-        return root.classList.contains('is-pressed') ? 'click' : 'pointer';
-      }
-      if (t.closest('.app-titlebar, .titlebar-drag-spacer, .brand-meta, [data-tauri-drag-region]')) {
-        return 'move';
-      }
-      if (t.closest('.hint-trigger, .hint-tooltip, [title]:not(button):not(a):not(input):not(.social-card):not(.win-ctl)')) {
-        return 'help';
-      }
-    }
-
-    if (root.classList.contains('is-pressed')) return 'click';
-
-    const edge = root.getAttribute('data-edge');
+    // 1. Window corners and edges take highest priority at the outer borders
+    const edge = getCornerOrEdge(x, y);
     if (edge) {
       if (edge === 'nw' || edge === 'se') return 'nwse-resize';
       if (edge === 'ne' || edge === 'sw') return 'nesw-resize';
@@ -608,80 +596,137 @@ let updateCursorFollower = () => {};
       if (edge === 'w' || edge === 'e') return 'ew-resize';
     }
 
-    return 'default';
+    // 2. Busy state across panels
+    const isBusyNow = state.busyTab && (state.busyTab === 'global' || state.busyTab === state.activeTab);
+    if (isBusyNow) {
+      if (isInteractiveTarget(t)) {
+        return isPressed ? 'click' : 'pointer';
+      }
+      return 'busy';
+    }
+
+    // 3. Interactive buttons, cards, pills, options
+    if (isInteractiveTarget(t)) {
+      return isPressed ? 'click' : 'pointer';
+    }
+
+    // 4. Text inputs & logs
+    if (t instanceof Element && t.closest('input[type="text"], input[type="password"], textarea, .path-input, .step-log')) {
+      return 'text';
+    }
+
+    // 5. Sliders
+    if (t instanceof Element && t.closest('input[type="range"]')) {
+      return isPressed ? 'grab' : 'pointer';
+    }
+
+    // 6. Help tooltips
+    if (t instanceof Element && t.closest('.hint-trigger, .hint-tooltip')) {
+      return 'help';
+    }
+
+    // 7. Titlebar drag region (away from the top corners)
+    if (t instanceof Element && t.closest('.app-titlebar, .titlebar-drag-spacer, [data-tauri-drag-region]')) {
+      return 'move';
+    }
+
+    return isPressed ? 'click' : 'default';
   }
 
   updateCursorFollower = (target, x, y) => {
     if (typeof x === 'number') { lastX = x; lastY = y; }
-    const type = determineCursor(target || (document.elementFromPoint ? document.elementFromPoint(lastX, lastY) : null));
+    const t = target || (document.elementFromPoint ? document.elementFromPoint(lastX, lastY) : null);
+    const type = determineCursor(t, lastX, lastY);
     setCursorType(type);
     render(lastX, lastY);
   };
 
-  window.addEventListener('mousemove', (e) => {
+  const onPointerMove = (e) => {
+    if (e.pointerType === 'touch') return;
     lastX = e.clientX;
     lastY = e.clientY;
-    if (!isMouseIn) {
-      isMouseIn = true;
-      cursorEl.style.display = 'block';
-    }
-    const type = determineCursor(e.target);
+    cursorEl.style.opacity = '1';
+    const type = determineCursor(e.target, lastX, lastY);
     setCursorType(type);
     render(lastX, lastY);
-  }, { passive: true });
+  };
+
+  window.addEventListener('pointermove', onPointerMove, { passive: true });
+  window.addEventListener('mousemove', onPointerMove, { passive: true });
 
   window.addEventListener('mousedown', (e) => {
+    if (e.pointerType === 'touch') return;
     lastX = e.clientX;
     lastY = e.clientY;
+    cursorEl.style.opacity = '1';
     if (e.button === 2) {
-      root.classList.add('right-click');
+      isRightClick = true;
       clearTimeout(rightTimer);
       rightTimer = setTimeout(() => {
-        root.classList.remove('right-click');
+        isRightClick = false;
         updateCursorFollower(null, lastX, lastY);
       }, 400);
     } else if (e.button === 0) {
-      root.classList.add('is-pressed');
+      isPressed = true;
     }
     updateCursorFollower(e.target, lastX, lastY);
-  });
 
-  const release = (e) => {
-    root.classList.remove('is-pressed');
-    root.classList.remove('right-click');
-    if (e && typeof e.clientX === 'number') {
-      updateCursorFollower(e.target, e.clientX, e.clientY);
-    } else {
-      updateCursorFollower(null, lastX, lastY);
+    if (e.button === 0) {
+      const edge = getCornerOrEdge(e.clientX, e.clientY);
+      if (edge) {
+        const RESIZE_DIR_NAMES = {
+          n: 'North', s: 'South', e: 'East', w: 'West',
+          nw: 'NorthWest', ne: 'NorthEast', sw: 'SouthWest', se: 'SouthEast',
+        };
+        const win = getWin();
+        if (win && typeof win.startResizeDragging === 'function') {
+          win.startResizeDragging(RESIZE_DIR_NAMES[edge]).catch(() => {});
+        } else {
+          call('plugin:window|start_resize_dragging', { label: 'main', direction: RESIZE_DIR_NAMES[edge] }).catch(() => {});
+        }
+      }
     }
-  };
+  });
 
-  window.addEventListener('mouseup', release);
-  window.addEventListener('blur', () => {
-    release();
-    isMouseIn = false;
-    cursorEl.style.display = 'none';
+  window.addEventListener('mouseup', (e) => {
+    isPressed = false;
+    isRightClick = false;
+    updateCursorFollower(e.target, e.clientX, e.clientY);
   });
-  document.addEventListener('mouseleave', () => {
-    release();
-    isMouseIn = false;
-    cursorEl.style.display = 'none';
-  });
-  document.addEventListener('mouseenter', () => {
-    isMouseIn = true;
-    cursorEl.style.display = 'block';
-  });
+
   window.addEventListener('contextmenu', () => {
-    root.classList.remove('right-click');
+    isRightClick = false;
     updateCursorFollower(null, lastX, lastY);
   });
 
+  document.addEventListener('mouseleave', (e) => {
+    isPressed = false;
+    isRightClick = false;
+    if (e.clientX < 0 || e.clientY < 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+      cursorEl.style.opacity = '0';
+    }
+  });
+
+  document.addEventListener('mouseenter', () => {
+    cursorEl.style.opacity = '1';
+  });
+
+  window.addEventListener('blur', () => {
+    isPressed = false;
+    isRightClick = false;
+  });
+
+  window.addEventListener('focus', () => {
+    cursorEl.style.opacity = '1';
+  });
+
   setCursorType('default');
+  cursorEl.style.opacity = '1';
+  render(lastX, lastY);
 })();
 
 function setBusyCursor(on, tabKey) {
   state.busyTab = on ? (tabKey || state.activeTab || 'global') : null;
-  document.documentElement.classList.toggle('is-busy', !!on);
   updateCursorFollower();
 }
 
@@ -967,6 +1012,8 @@ async function doResetSettings() {
     state.fov = s.fov;
     state.fpsMax = s.fps_max;
     state.unitStatusNew = s.unit_status_new;
+    state.stopClothAnim = !!s.stop_cloth_anim;
+    state.ragdollFade = !!s.ragdoll_fade;
     state.customAutoexec = s.custom_autoexec;
     state.renderer = s.renderer || 'default';
 
@@ -1105,6 +1152,238 @@ function showModal(title, body, actions) {
     overlay.style.display = 'flex';
   });
 }
+
+// ---------- Doorman Ult Diagnostic Modal ----------
+const DOORMAN_TEST_CVARS = [
+  {
+    key: 'cl_ragdoll_limit',
+    labelEn: 'Ragdoll Limit (Doorman Fix)',
+    labelFa: 'محدودیت رگ‌دال (فیکس محو شدن آلتیمیت)',
+    descEn: 'Setting to 0/1 causes Doorman ult indicator to slowly fade away! Set to -1 to fix.',
+    descFa: 'تنظیم روی 0 یا 1 باعث می‌شود نشانگر آلتیمیت دورمن آرام‌آرام محو شود! روی 1- بگذارید.',
+    safeVal: '-1',
+    buggyVal: '0'
+  },
+  {
+    key: 'g_ragdoll_maxcount',
+    labelEn: 'Max Ragdoll Count',
+    labelFa: 'حداکثر تعداد رگ‌دال در بازی',
+    descEn: 'Controls total simultaneous ragdolls in the world (T1 sets to 0)',
+    descFa: 'حداکثر تعداد رگ‌دال‌های همزمان در صحنه (T1 روی 0 می‌گذارد)',
+    safeVal: '-1',
+    buggyVal: '0'
+  },
+  {
+    key: 'g_ragdoll_important_maxcount',
+    labelEn: 'Important Ragdoll Count',
+    labelFa: 'تعداد رگ‌دال‌های مهم (هیروها)',
+    descEn: 'Limits important entity ragdolls like hero corpses and ult clones',
+    descFa: 'تعداد رگ‌دال‌های مهم مثل جنازه هیرو و کلون نشانگر توانایی',
+    safeVal: '-1',
+    buggyVal: '0'
+  },
+  {
+    key: 'cl_disable_ragdolls',
+    labelEn: 'Disable Ragdolls',
+    labelFa: 'غیرفعال‌سازی کامل رگ‌دال‌ها',
+    descEn: 'If enabled (1), completely kills hero ragdolls and Doorman clone',
+    descFa: 'اگر فعال (1) باشد، رگ‌دال‌ها و کلون نشانگر دورمن را کلاً حذف می‌کند',
+    safeVal: '0',
+    buggyVal: '1'
+  },
+  {
+    key: 'r_particle_model_new8',
+    labelEn: '3D Particle Models',
+    labelFa: 'مدل‌های سه‌بعدی ذرات (Particle Models)',
+    descEn: 'Disables newer 3D models instanced inside particle systems',
+    descFa: 'مدل‌های سه‌بعدی ساخته‌شده درون سیستم پارتیکل را غیرفعال می‌کند',
+    safeVal: '1',
+    buggyVal: '0'
+  },
+  {
+    key: 'r_size_cull_threshold',
+    labelEn: 'Screen Size Culling',
+    labelFa: 'حذف آبجکت‌ها بر اساس اندازه تصویر (Size Cull)',
+    descEn: 'Aggressively culls/hides objects & meshes taking <1.2% of screen',
+    descFa: 'آبجکت‌ها و افکت‌های کوچکتر از ۱.۲ درصد صفحه را کلاً مخفی می‌کند',
+    safeVal: '0',
+    buggyVal: '1.2'
+  },
+  {
+    key: 'r_physics_particle_op_spawn_scale',
+    labelEn: 'Physics Particles Spawn',
+    labelFa: 'اسپاون ذرات مبتنی بر فیزیک',
+    descEn: 'Prevents physics-based particle operator from spawning',
+    descFa: 'از ساخت و تولید پارتیکل‌های دارای محاسبات فیزیک جلوگیری می‌کند',
+    safeVal: '1',
+    buggyVal: '0'
+  },
+  {
+    key: 'r_citadel_npr_outlines_max_dist',
+    labelEn: 'Outlines Max Distance',
+    labelFa: 'حداکثر برد خطوط دور هیروها (Outlines)',
+    descEn: 'Limits hero/marker outlines rendering distance to 600 units (~15m)',
+    descFa: 'رندر خطوط و هایلایت دور هیرو را به فاصله ۶۰۰ یونیت محدود می‌کند',
+    safeVal: '0',
+    buggyVal: '600'
+  },
+  {
+    key: 'r_drawmodeldecals',
+    labelEn: 'Model Decals',
+    labelFa: 'دکال‌های روی مدل‌ها (Model Decals)',
+    descEn: 'Disables decals projected on models/ground surfaces',
+    descFa: 'رندر دکال‌ها و نشانه‌های افکت روی مدل‌ها را غیرفعال می‌کند',
+    safeVal: '1',
+    buggyVal: '0'
+  },
+  {
+    key: 'cl_simulate_dormant_entities',
+    labelEn: 'Dormant Entities Simulation',
+    labelFa: 'شبیه‌سازی انتیتی‌های دور (Dormant)',
+    descEn: 'Stops simulating/updating entities when out of direct sight',
+    descFa: 'شبیه‌سازی و آپدیت کاراکترهایی که دور هستند یا تلپورت شدند را قطع می‌کند',
+    safeVal: '1',
+    buggyVal: '0'
+  }
+];
+
+let doormanTestState = {};
+
+window.openDoormanModal = async function() {
+  const overlay = document.getElementById('modal-doorman-test');
+  if (!overlay) return;
+  const statusEl = document.getElementById('doorman-modal-status');
+  if (statusEl) statusEl.style.display = 'none';
+
+  overlay.style.display = 'flex';
+
+  try {
+    const states = await call('get_cvar_test_states');
+    if (states && typeof states === 'object') {
+      doormanTestState = { ...states };
+    }
+  } catch (e) {
+    console.warn('[doorman-test] failed to load live states:', e);
+  }
+
+  for (const item of DOORMAN_TEST_CVARS) {
+    if (doormanTestState[item.key] === undefined || doormanTestState[item.key] === 'default') {
+      doormanTestState[item.key] = item.buggyVal;
+    }
+  }
+
+  renderDoormanToggles();
+};
+
+window.closeDoormanModal = function() {
+  const overlay = document.getElementById('modal-doorman-test');
+  if (overlay) overlay.style.display = 'none';
+};
+
+window.renderDoormanToggles = function() {
+  const list = document.getElementById('doorman-toggles-list');
+  if (!list) return;
+  const isFa = document.body.classList.contains('lang-fa');
+  const t = window.I18N && window.I18N[isFa ? 'fa' : 'en'] ? window.I18N[isFa ? 'fa' : 'en'] : {};
+
+  list.innerHTML = '';
+  for (const item of DOORMAN_TEST_CVARS) {
+    const currentVal = doormanTestState[item.key] !== undefined ? String(doormanTestState[item.key]) : item.buggyVal;
+    const isSafe = currentVal === item.safeVal;
+
+    const card = document.createElement('div');
+    card.className = 'doorman-toggle-card' + (isSafe ? ' is-active' : '');
+
+    const info = document.createElement('div');
+    info.className = 'doorman-card-info';
+
+    const top = document.createElement('div');
+    top.className = 'doorman-card-top';
+
+    const key = document.createElement('span');
+    key.className = 'doorman-card-key';
+    key.textContent = item.key;
+
+    const lbl = document.createElement('span');
+    lbl.className = 'doorman-card-label';
+    lbl.textContent = isFa ? item.labelFa : item.labelEn;
+
+    top.appendChild(key);
+    top.appendChild(lbl);
+
+    const desc = document.createElement('div');
+    desc.className = 'doorman-card-detail';
+    desc.textContent = isFa ? item.descFa : item.descEn;
+
+    info.appendChild(top);
+    info.appendChild(desc);
+
+    const ctrl = document.createElement('div');
+    ctrl.className = 'doorman-card-control';
+
+    const valTag = document.createElement('span');
+    valTag.className = 'doorman-state-val ' + (isSafe ? 'is-fixed' : 'is-buggy');
+    valTag.textContent = `${currentVal} (${isSafe ? (t.cvarSafeFixed || 'Fixed') : (t.cvarBuggyT1 || 'T1')})`;
+
+    const swWrap = document.createElement('label');
+    swWrap.className = 'switch-toggle';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.checked = isSafe;
+    chk.onchange = (e) => {
+      doormanTestState[item.key] = e.target.checked ? item.safeVal : item.buggyVal;
+      renderDoormanToggles();
+    };
+    const slider = document.createElement('span');
+    slider.className = 'slider-toggle';
+
+    swWrap.appendChild(chk);
+    swWrap.appendChild(slider);
+
+    ctrl.appendChild(valTag);
+    ctrl.appendChild(swWrap);
+
+    card.appendChild(info);
+    card.appendChild(ctrl);
+    list.appendChild(card);
+  }
+};
+
+window.setAllDoormanToggles = function(preset) {
+  for (const item of DOORMAN_TEST_CVARS) {
+    doormanTestState[item.key] = preset === 'safe' ? item.safeVal : item.buggyVal;
+  }
+  renderDoormanToggles();
+};
+
+window.applyDoormanTestStates = async function() {
+  const btn = document.getElementById('btn-apply-doorman-test');
+  const statusEl = document.getElementById('doorman-modal-status');
+  const isFa = document.body.classList.contains('lang-fa');
+  const t = window.I18N && window.I18N[isFa ? 'fa' : 'en'] ? window.I18N[isFa ? 'fa' : 'en'] : {};
+
+  if (btn) btn.disabled = true;
+  if (statusEl) {
+    statusEl.style.display = 'none';
+  }
+
+  try {
+    const res = await call('apply_cvar_test_states', { states: doormanTestState });
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      statusEl.className = 'doorman-modal-status';
+      statusEl.textContent = t.doormanAppliedMsg || res;
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      statusEl.className = 'doorman-modal-status is-error';
+      statusEl.textContent = (t.doormanErrorMsg || 'Error: ') + err;
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
 
 // ---------- FOV ----------
 function setFov(v) {
@@ -1432,7 +1711,6 @@ function selectCardByKey(tabKey) {
   const pingBtn = document.getElementById('btn-refresh-ping');
   if (pingBtn) pingBtn.style.display = tabKey === 'latency' ? '' : 'none';
   const isBusyNow = state.busyTab && (state.busyTab === 'global' || state.busyTab === tabKey);
-  document.documentElement.classList.toggle('is-busy', !!isBusyNow);
   updateCursorFollower();
   if (tabKey === 'latency') {
     if (!state.lastValvePings || state.lastValvePings.length === 0) {
@@ -1497,94 +1775,12 @@ async function handleWinClose() {
   call('plugin:window|close', { label: 'main' }).catch(() => {});
 }
 
-// ---------- window edge zones (flame resize cursors) ----------
-// No overlay elements: a global mousemove classifies the pointer into a
-// non-overlapping edge zone by coordinates and sets html[data-edge], which the
-// CSS maps to the flame resize cursors. Zones cover the webview-accessible
-// band just inside the OS-owned native resize border. mousedown in a zone
-// delegates the drag to Tauri's startResizeDragging.
-const EDGE_ZONE = 20;          // px band along each side/bottom edge
-const EDGE_TOP = 12;           // px band along the top — the 40px titlebar lives
-                               // there, so the top grab strip stays thin (9px of
-                               // it is ours; the rest of the bar still drags)
-const EDGE_CORNER = 64;        // px square grab zone at each corner
-// The top 4px of the client area belong to tauri-runtime-wry's
-// `TAURI_DRAG_RESIZE_BORDERS` child, whose window region is exactly the top
-// strip (SetWindowRgn cut-out, 4px at 96dpi). It always answers HTTOP, so
-// Windows paints that strip and swallows the click — our zone starts below it.
-// Left/right/bottom insets are *outside* the client area entirely, so the
-// webview owns those edges and the flame cursors come from CSS; the 8px OS
-// band beyond them is covered by the WM_SETCURSOR subclass in
-// src-tauri/src/native_cursor.rs.
-const EDGE_TOP_NATIVE = 4;
-
-const RESIZE_DIR_NAMES = {
-  n: 'North', s: 'South', e: 'East', w: 'West',
-  nw: 'NorthWest', ne: 'NorthEast', sw: 'SouthWest', se: 'SouthEast',
-};
-
-function edgeZoneFor(x, y, w, h) {
-  // corners first (they win over plain edges). Corners need both axes inside
-  // the client area: x/y 0..3 on the top edge belongs to tao's native border.
-  if (x >= EDGE_TOP_NATIVE && x <= EDGE_CORNER && y >= EDGE_TOP_NATIVE && y <= EDGE_CORNER) return 'nw';
-  if (x >= w - EDGE_CORNER && y >= EDGE_TOP_NATIVE && y <= EDGE_CORNER) return 'ne';
-  if (x <= EDGE_CORNER && y >= h - EDGE_CORNER) return 'sw';
-  if (x >= w - EDGE_CORNER && y >= h - EDGE_CORNER) return 'se';
-  // edges, offset inward past the OS-owned native band
-  const nearN = y >= EDGE_TOP_NATIVE && y <= EDGE_TOP;
-  const nearS = y >= h - EDGE_ZONE;
-  const nearW = x <= EDGE_ZONE;
-  const nearE = x >= w - EDGE_ZONE;
-  if (nearN) return 'n';
-  if (nearS) return 's';
-  if (nearW) return 'w';
-  if (nearE) return 'e';
-  return null;
-}
-
-// The Tauri IPC (for delegating the actual resize drag) — absent in a plain
-// browser, where the zones still style the cursor but can't resize.
-const IN_TAURI = !!(window.__TAURI__ && (window.__TAURI__.webviewWindow || window.__TAURI__.window));
-
-function isEdgeZonesActive() {
-  // Zones are visual in every host; only actual resizing is Tauri-only.
-  // Never while maximized (nothing to resize then).
-  return !document.documentElement.classList.contains('is-maximized');
-}
-
-function updateEdgeZone(x, y, target) {
-  if (!isEdgeZonesActive()) return;
-  const root = document.documentElement;
-
-  // Buttons, titlebar controls, action footer, and titlebar drag region win over resize zones:
-  if (target && target.closest && target.closest('button, [role="button"], a, [data-url], input, select, textarea, .social-card, .win-ctl, .btn-play, .lang-pill-btn, .app-titlebar, [data-tauri-drag-region], [onclick], .action-footer, #action-footer, .active-profile, #active-profile, .step-log, #step-log, .app-version-badge, #app-version-badge, .social-cluster, #social-cluster')) {
-    if (root.hasAttribute('data-edge')) {
-      root.removeAttribute('data-edge');
-      updateCursorFollower(target, x, y);
-    }
-    return;
-  }
-
-  const dir = edgeZoneFor(x, y, window.innerWidth, window.innerHeight);
-  const oldDir = root.getAttribute('data-edge');
-  if (dir) {
-    if (oldDir !== dir) {
-      root.setAttribute('data-edge', dir);
-      updateCursorFollower(target, x, y);
-    }
-  } else if (oldDir) {
-    root.removeAttribute('data-edge');
-    updateCursorFollower(target, x, y);
-  }
-}
-
 async function updateMaximizedState() {
   const w = getWin();
   if (!w || typeof w.isMaximized !== 'function') return;
   try {
     const maxed = await w.isMaximized();
     document.documentElement.classList.toggle('is-maximized', !!maxed);
-    if (maxed) document.documentElement.removeAttribute('data-edge');
     const btnMax = document.getElementById('btn-max');
     if (btnMax) {
       btnMax.title = maxed ? 'Restore' : 'Maximize';
@@ -1594,69 +1790,6 @@ async function updateMaximizedState() {
         : '<i class="fa-regular fa-square" style="font-size:10px"></i>';
     }
   } catch (e) { /* ignore */ }
-}
-
-// Edge-zone debug view: hold Alt+Shift+E to outline the live zones and show
-// the current classification. z-order is below the resize strips.
-function setupEdgeZoneDebug() {
-  const box = document.createElement('div');
-  box.id = 'edge-zone-debug';
-  box.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99998;display:none;';
-  const label = document.createElement('div');
-  label.style.cssText = 'position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#7ef29a;font:600 12px monospace;padding:6px 12px;border-radius:6px;border:1px solid #2f6f4a;white-space:nowrap;';
-  box.appendChild(label);
-  const zones = document.createElement('div');
-  zones.style.cssText = 'position:absolute;inset:0;';
-  const mk = (css) => { const d = document.createElement('div'); d.style.cssText = css + ';position:absolute;background:rgba(126,242,154,.16);border:1px solid rgba(126,242,154,.5);'; return d; };
-  const C = EDGE_CORNER, Z = EDGE_ZONE, T = EDGE_TOP, W = () => window.innerWidth, H = () => window.innerHeight;
-  const defs = [
-    [`top:0;left:0;width:${C}px;height:${C}px`, 'nw'], [`top:0;right:0;width:${C}px;height:${C}px`, 'ne'],
-    [`bottom:0;left:0;width:${C}px;height:${C}px`, 'sw'], [`bottom:0;right:0;width:${C}px;height:${C}px`, 'se'],
-    [`top:${EDGE_TOP_NATIVE}px;left:${C}px;right:${C}px;height:${T - EDGE_TOP_NATIVE}px`, 'n'],
-    [`bottom:0;left:${C}px;right:${C}px;height:${Z}px`, 's'],
-    [`left:0;top:${C}px;bottom:${C}px;width:${Z}px`, 'w'], [`right:0;top:${C}px;bottom:${C}px;width:${Z}px`, 'e'],
-  ];
-  for (const [css, dir] of defs) { const d = mk(css); d.dataset.dir = dir; zones.appendChild(d); }
-  box.appendChild(zones);
-  document.body.appendChild(box);
-  let on = false;
-  window.addEventListener('keydown', (e) => { if (e.altKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) { on = !on; box.style.display = on ? '' : 'none'; } });
-  window.addEventListener('mousemove', (e) => {
-    if (!on) return;
-    const dir = document.documentElement.getAttribute('data-edge') || '—';
-    label.textContent = `edge=${dir}  x=${e.clientX} y=${e.clientY}  ${window.innerWidth}x${window.innerHeight}`;
-    zones.querySelectorAll('[data-dir]').forEach((d) => { d.style.background = d.dataset.dir === dir ? 'rgba(126,242,154,.45)' : 'rgba(126,242,154,.16)'; });
-  }, { passive: true });
-}
-
-function setupResizeEdges() {
-  window.addEventListener('mousemove', (e) => updateEdgeZone(e.clientX, e.clientY, e.target), { passive: true });
-  window.addEventListener('mousedown', (e) => {
-    if (e.button !== 0 || !IN_TAURI) return;
-    const dir = edgeZoneFor(e.clientX, e.clientY, window.innerWidth, window.innerHeight);
-    if (!dir || !isEdgeZonesActive()) return;
-    // Buttons, inputs, and footer controls win over edge zones:
-    if (e.target.closest('button, input, select, textarea, a, [onclick], .action-footer, #action-footer, .active-profile, #active-profile, .step-log, #step-log, .app-version-badge, #app-version-badge, .social-cluster, #social-cluster')) return;
-    // Titlebar drag region wins over edge zones (drag window instead of resize):
-    if (e.target.closest('.app-titlebar, [data-tauri-drag-region]')) return;
-    e.preventDefault();
-    // Claim the event: Tauri's own drag.js (and setupTitlebarDrag) also listen
-    // for mousedown, and the top band overlaps the titlebar — without this the
-    // window would get start_dragging *and* start_resize_dragging at once.
-    e.stopImmediatePropagation();
-    const win = getWin();
-    if (win && typeof win.startResizeDragging === 'function') {
-      win.startResizeDragging(RESIZE_DIR_NAMES[dir]).catch(() => {});
-    } else {
-      call('plugin:window|start_resize_dragging', { label: 'main', direction: RESIZE_DIR_NAMES[dir] }).catch(() => {});
-    }
-  }, true);
-  window.addEventListener('blur', () => document.documentElement.removeAttribute('data-edge'));
-  document.addEventListener('mouseleave', () => document.documentElement.removeAttribute('data-edge'));
-  window.addEventListener('mouseup', updateMaximizedState);
-  window.addEventListener('resize', () => { clearTimeout(updateMaximizedState._t); updateMaximizedState._t = setTimeout(updateMaximizedState, 120); });
-  updateMaximizedState();
-  setupEdgeZoneDebug();
 }
 
 function setupTitlebarDrag() {
@@ -1782,7 +1915,12 @@ function setupCustomTooltips() {
 function init() {
   try {
     updateScale();
-    window.addEventListener('resize', updateScale);
+    window.addEventListener('resize', () => {
+      updateScale();
+      clearTimeout(updateMaximizedState._t);
+      updateMaximizedState._t = setTimeout(updateMaximizedState, 120);
+    });
+    updateMaximizedState();
     setupCustomTooltips();
     window.__animateStyle = !!document.querySelector('link[href*="animate.min.css"]');
     if (window.__animateStyle) {
@@ -1799,21 +1937,27 @@ function init() {
     const btnClose = document.getElementById('btn-close');
     if (btnClose) btnClose.onclick = handleWinClose;
     setupTitlebarDrag();
-    setupResizeEdges();
 
     const btnLang = document.getElementById('btn-lang-toggle');
     if (btnLang) btnLang.onclick = window.toggleLang;
 
-    document.getElementById('btn-pick-folder').onclick = pickFolder;
-    document.getElementById('btn-confirm-path').onclick = confirmPath;
-    document.getElementById('btn-launch').onclick = launchGame;
+    const btnPick = document.getElementById('btn-pick-folder');
+    if (btnPick) btnPick.onclick = pickFolder;
+    const btnConfirm = document.getElementById('btn-confirm-path');
+    if (btnConfirm) btnConfirm.onclick = confirmPath;
+    const btnLaunch = document.getElementById('btn-launch');
+    if (btnLaunch) btnLaunch.onclick = launchGame;
     document.querySelectorAll('.social-card[data-url]').forEach((b) => {
       b.onclick = () => openExternal(b.dataset.url);
     });
-    document.getElementById('btn-install').onclick = doInstall;
-    document.getElementById('btn-backup').onclick = doBackupNow;
-    document.getElementById('btn-revert-vanilla').onclick = doRevertVanilla;
-    document.getElementById('btn-unlock').onclick = doUnlock;
+    const btnInstall = document.getElementById('btn-install');
+    if (btnInstall) btnInstall.onclick = doInstall;
+    const btnBackup = document.getElementById('btn-backup');
+    if (btnBackup) btnBackup.onclick = doBackupNow;
+    const btnRevert = document.getElementById('btn-revert-vanilla');
+    if (btnRevert) btnRevert.onclick = doRevertVanilla;
+    const btnUnlock = document.getElementById('btn-unlock');
+    if (btnUnlock) btnUnlock.onclick = doUnlock;
     const btnResetSettings = document.getElementById('btn-reset-settings');
     if (btnResetSettings) btnResetSettings.onclick = doResetSettings;
     const btnCopyDiag = document.getElementById('btn-copy-diag');
@@ -1824,6 +1968,22 @@ function init() {
       swUnit.onchange = (e) => {
         state.unitStatusNew = e.target.checked;
         call('set_settings', { patch: { unit_status_new: e.target.checked } }).catch(() => {});
+      };
+    }
+
+    const swCloth = document.getElementById('sw-cloth-anim');
+    if (swCloth) {
+      swCloth.onchange = (e) => {
+        state.stopClothAnim = e.target.checked;
+        call('set_settings', { patch: { stop_cloth_anim: e.target.checked } }).catch(() => {});
+      };
+    }
+
+    const swFade = document.getElementById('sw-ragdoll-fade');
+    if (swFade) {
+      swFade.onchange = (e) => {
+        state.ragdollFade = e.target.checked;
+        call('set_settings', { patch: { ragdoll_fade: e.target.checked } }).catch(() => {});
       };
     }
 
@@ -1854,6 +2014,18 @@ function init() {
     document.querySelectorAll('.pro-card[id^="card-"], .sci-card[id^="card-"]').forEach((card) => {
       const key = card.id.replace('card-', '');
       card.addEventListener('click', () => selectCardByKey(key));
+    });
+
+    const doormanModal = document.getElementById('modal-doorman-test');
+    if (doormanModal) {
+      doormanModal.addEventListener('click', (e) => {
+        if (e.target === doormanModal) closeDoormanModal();
+      });
+    }
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeDoormanModal();
+      }
     });
 
     boot();

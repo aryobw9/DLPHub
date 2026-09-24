@@ -246,7 +246,7 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
     if let Some(fps) = s.fps_max {
         full_tier_cmds.push_str(&format!("fps_max {}\n", fps));
     }
-    let new_ae = kvedit::upsert_autoexec_full(&existing, s.unit_status_new, &full_tier_cmds, &s.custom_autoexec);
+    let new_ae = kvedit::upsert_autoexec_full(&existing, s.unit_status_new, s.stop_cloth_anim, s.ragdoll_fade, &full_tier_cmds, &s.custom_autoexec);
     let after_revert = match std::fs::read_to_string(&ae) {
         Ok(text) => text,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
@@ -256,7 +256,7 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
         std::fs::write(&ae, new_ae).map_err(|e| e.to_string())?;
         log.push(StepLog {
             step: "autoexec.cfg".into(),
-            detail: if s.unit_status_new || !tier_ae.trim().is_empty() || !s.custom_autoexec.trim().is_empty() {
+            detail: if s.unit_status_new || s.stop_cloth_anim || s.ragdoll_fade || !tier_ae.trim().is_empty() || !s.custom_autoexec.trim().is_empty() {
                 "managed block written".into()
             } else {
                 "managed block removed".into()

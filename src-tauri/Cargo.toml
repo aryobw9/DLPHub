@@ -3,7 +3,7 @@ members = [".", "dlp-core"]
 
 [package]
 name = "dlpbooster"
-version = "0.1.1"
+version = "0.1.2"
 description = "DLPHub - Deadlock FPS/graphics GUI"
 authors = ["aryobw9"]
 edition = "2021"

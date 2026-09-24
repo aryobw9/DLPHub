@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="vendor/fontawesome/css/regular.min.css" />
   <link rel="stylesheet" href="vendor/fontawesome/css/brands.min.css" />
   <link rel="stylesheet" href="vendor/animate.css/animate.min.css" />
-  <link rel="stylesheet" href="style.css?v=41" />
+  <link rel="stylesheet" href="style.css?v=44" />
 </head>
 <body>
   <div class="ambient-glow">
@@ -164,6 +164,7 @@
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="tier-card-header">
                   <span class="tier-badge t1"><svg class="dlp-icon-badge" viewBox="0 0 64 64" fill="currentColor"><path d="M 30.5 7.5 C 31.2 6.3 32.8 6.3 33.5 7.5 L 56.5 47 C 57.3 48.4 56.3 50.5 54.6 50.5 L 9.4 50.5 C 7.7 50.5 6.7 48.4 7.5 47 Z"/></svg> T1</span>
+                  <span class="fps-impact-badge impact-high" data-i18n-tooltip="fpsImpactHigh"><span class="impact-chevrons"><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i></span> FPS</span>
                 </div>
                 <div class="tier-name" data-i18n="tierHigh">گرافیک بالا</div>
               </div>
@@ -171,6 +172,7 @@
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="tier-card-header">
                   <span class="tier-badge t2"><svg class="dlp-icon-badge" viewBox="0 0 64 64" fill="currentColor"><path d="M 30.4 6.5 C 31.2 5.1 32.8 5.1 33.6 6.5 L 50.8 36.8 C 51.7 38.3 50.6 40 48.9 40 L 15.1 40 C 13.4 40 12.3 38.3 13.2 36.8 Z"/><rect x="12.5" y="49" width="39" height="9.5" rx="3"/></svg> T2</span>
+                  <span class="fps-impact-badge impact-high" data-i18n-tooltip="fpsImpactHigh"><span class="impact-chevrons"><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i></span> FPS</span>
                 </div>
                 <div class="tier-name" data-i18n="tierMed">گرافیک متوسط</div>
               </div>
@@ -178,6 +180,7 @@
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="tier-card-header">
                   <span class="tier-badge t3"><svg class="dlp-icon-badge" viewBox="0 0 64 64" fill="currentColor"><path d="M 30.4 5.5 C 31.2 4.1 32.8 4.1 33.6 5.5 L 47.3 27 C 48.2 28.5 47.1 30 45.4 30 L 18.6 30 C 16.9 30 15.8 28.5 16.7 27 Z"/><rect x="17" y="38" width="30" height="6.5" rx="2.5"/><rect x="17" y="53" width="30" height="6.5" rx="2.5"/></svg> T3</span>
+                  <span class="fps-impact-badge impact-high" data-i18n-tooltip="fpsImpactHigh"><span class="impact-chevrons"><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i></span> FPS</span>
                 </div>
                 <div class="tier-name" data-i18n="tierLow">گرافیگ پایین</div>
               </div>
@@ -185,6 +188,7 @@
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="tier-card-header">
                   <span class="tier-badge potato"><img src="assets/icons_norm/t4_vault.png" class="dlp-icon-badge" alt="" /> POTATO</span>
+                  <span class="fps-impact-badge impact-high" data-i18n-tooltip="fpsImpactHigh"><span class="impact-chevrons"><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i></span> FPS</span>
                 </div>
                 <div class="tier-name" data-i18n="tierPotato">گرافیک ذغالی</div>
               </div>
@@ -196,6 +200,7 @@
                     <i class="fa-solid fa-eye" style="font-size:14px"></i>
                     <span class="fov-box-title" data-i18n="fovTitle">FIELD OF VIEW</span>
                   </div>
+                  <span class="fps-impact-badge impact-none" data-i18n-tooltip="fpsImpactNone"><i class="fa-solid fa-minus"></i> FPS</span>
                 </div>
                 <div class="fov-value-hero">
                   <span class="fov-current" id="fov-current">90°</span>
@@ -218,8 +223,9 @@
                     <i class="fa-solid fa-heart-pulse" style="font-size:14px"></i>
                     <span class="fov-box-title" data-i18n="hudTitle">HUD CONFIGURATION</span>
                   </div>
+                  <span class="fps-impact-badge impact-none" data-i18n-tooltip="fpsImpactNone"><i class="fa-solid fa-minus"></i> FPS</span>
                 </div>
-                <label class="hud-switch-card" for="sw-unit-status">
+                <label class="hud-switch-card" for="sw-unit-status" data-i18n-tooltip="unitStatusDesc">
                   <div class="hud-switch-info">
                     <span class="hud-switch-label" data-i18n="unitStatus">New Health Bars</span>
                   </div>
@@ -245,25 +251,62 @@
                   Show updated health bar visuals
                 </div>
               </div>
-              <div class="setting-box renderer-box" style="justify-content: space-between;">
+              <div class="setting-box anim-box">
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
-                    <i class="fa-solid fa-microchip" style="font-size:14px"></i>
-                    <span class="fov-box-title" data-i18n="rendererTitle">RENDERING API</span>
+                    <i class="fa-solid fa-person-running" style="font-size:14px"></i>
+                    <span class="fov-box-title" data-i18n="animTitle">ANIMATION SETTINGS</span>
                   </div>
-                  <div class="hint-trigger">
-                    <i class="fa-solid fa-circle-question"></i>
-                    <div class="hint-tooltip" data-i18n="rendererHint">This option applies when you launch the game using the 'Launch Game' button in DLPHub, or by adding -dx11 / -vulkan to your Steam Launch Options.</div>
-                  </div>
+                  <span class="fps-impact-badge impact-high" data-i18n-tooltip="fpsImpactHigh"><span class="impact-chevrons"><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i></span> FPS</span>
                 </div>
-                <div class="renderer-radio-group" id="renderer-radio-group" style="margin: auto 0;">
-                  <span class="renderer-glider" id="renderer-glider"></span>
-                  <button type="button" class="renderer-pill" data-renderer="dx11" onclick="selectRenderer('dx11')">DX 11</button>
-                  <button type="button" class="renderer-pill active" data-renderer="default" onclick="selectRenderer('default')" data-i18n="rendererDefault">DEFAULT</button>
-                  <button type="button" class="renderer-pill" data-renderer="vulkan" onclick="selectRenderer('vulkan')">VULKAN</button>
+                <div class="anim-switches-wrap">
+                  <label class="anim-switch-card" for="sw-cloth-anim" id="lbl-cloth-anim" data-i18n-tooltip="clothSwitchDesc">
+                    <div class="anim-switch-info">
+                      <span class="anim-switch-label" data-i18n="clothAnim">Cloth Animations</span>
+                    </div>
+                    <div class="neon-checkbox">
+                      <input type="checkbox" id="sw-cloth-anim">
+                      <div class="neon-checkbox__frame">
+                        <div class="neon-checkbox__box">
+                          <div class="neon-checkbox__check-container">
+                            <svg viewBox="0 0 24 24" class="neon-checkbox__check"><path d="M3,12.5l7,7L21,5" /></svg>
+                          </div>
+                          <div class="neon-checkbox__glow"></div>
+                          <div class="neon-checkbox__borders"><span></span><span></span><span></span><span></span></div>
+                        </div>
+                        <div class="neon-checkbox__effects">
+                          <div class="neon-checkbox__particles"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                          <div class="neon-checkbox__rings"><div class="ring"></div><div class="ring"></div><div class="ring"></div></div>
+                          <div class="neon-checkbox__sparks"><span></span><span></span><span></span><span></span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                  <label class="anim-switch-card" for="sw-ragdoll-fade" id="lbl-ragdoll-fade" data-i18n-tooltip="ragdollFadeDesc">
+                    <div class="anim-switch-info">
+                      <span class="anim-switch-label" data-i18n="ragdollFade">Fade Hero Ragdolls</span>
+                    </div>
+                    <div class="neon-checkbox">
+                      <input type="checkbox" id="sw-ragdoll-fade">
+                      <div class="neon-checkbox__frame">
+                        <div class="neon-checkbox__box">
+                          <div class="neon-checkbox__check-container">
+                            <svg viewBox="0 0 24 24" class="neon-checkbox__check"><path d="M3,12.5l7,7L21,5" /></svg>
+                          </div>
+                          <div class="neon-checkbox__glow"></div>
+                          <div class="neon-checkbox__borders"><span></span><span></span><span></span><span></span></div>
+                        </div>
+                        <div class="neon-checkbox__effects">
+                          <div class="neon-checkbox__particles"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                          <div class="neon-checkbox__rings"><div class="ring"></div><div class="ring"></div><div class="ring"></div></div>
+                          <div class="neon-checkbox__sparks"><span></span><span></span><span></span><span></span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
                 </div>
-                <div class="renderer-desc" data-i18n="rendererDesc">
-                  DirectX 11 / Vulkan switch
+                <div class="anim-desc" id="anim-desc" data-i18n="animDefaultDesc">
+                  Hero ragdolls & cloth animation tweaks
                 </div>
               </div>
             </div>
@@ -274,6 +317,7 @@
                     <i class="fa-solid fa-gauge-high" style="font-size:14px"></i>
                     <span class="fov-box-title" data-i18n="fpsLimitTitle">FPS LIMIT</span>
                   </div>
+                  <span class="fps-impact-badge impact-none" data-i18n-tooltip="fpsImpactNone"><i class="fa-solid fa-minus"></i> FPS</span>
                 </div>
                 <div class="fps-pill-grid" id="fps-radio-group">
                   <span class="fps-glider" id="fps-glider"></span>
@@ -295,10 +339,11 @@
                     <i class="fa-brands fa-steam" style="font-size:14px"></i>
                     <span class="fov-box-title" data-i18n="launchOptionsTitle">LAUNCH OPTIONS</span>
                   </div>
+                  <span class="fps-impact-badge impact-mid" data-i18n-tooltip="fpsImpactMid"><span class="impact-chevrons"><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i></span> FPS</span>
                 </div>
                 <div class="launch-options-content">
                   <div class="launch-options-desc" id="launch-options-desc" data-i18n="launchOptionsDesc">
-                    روی هر گزینه کلیک کنید تا کپی شود، سپس در استیم روی ددلاک راست کلیک کن و در مسیر Properties → Launch Options متن را قرار دهید
+                    روی هر گزینه کلیک کنید تا کپی شود، سپس در استیم در مسیر Properties → Launch Options متن را قرار دهید
                   </div>
                   <div class="launch-buttons-grid">
                     <div class="launch-buttons-row">
@@ -307,6 +352,30 @@
                       <button type="button" class="launch-opt-btn" onclick="copyLaunchOpt('-high', this)" data-launch="-high" data-i18n-tooltip="launchOptHigh"><code>-high</code></button>
                     </div>
                   </div>
+                </div>
+              </div>
+              <div class="setting-box renderer-box" style="justify-content: space-between;">
+                <div class="fov-box-header">
+                  <div class="fov-box-title-wrap">
+                    <i class="fa-solid fa-microchip" style="font-size:14px"></i>
+                    <span class="fov-box-title" data-i18n="rendererTitle">RENDERING API</span>
+                  </div>
+                  <div class="header-tools-group">
+                    <span class="fps-impact-badge impact-mid" data-i18n-tooltip="fpsImpactMid"><span class="impact-chevrons"><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i></span> FPS</span>
+                    <div class="hint-trigger">
+                      <i class="fa-solid fa-circle-question"></i>
+                      <div class="hint-tooltip" data-i18n="rendererHint">This option applies when you launch the game using the 'Launch Game' button in DLPHub, or by adding -dx11 / -vulkan to your Steam Launch Options.</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="renderer-radio-group" id="renderer-radio-group" style="margin: auto 0;">
+                  <span class="renderer-glider" id="renderer-glider"></span>
+                  <button type="button" class="renderer-pill" data-renderer="dx11" onclick="selectRenderer('dx11')">DX 11</button>
+                  <button type="button" class="renderer-pill active" data-renderer="default" onclick="selectRenderer('default')" data-i18n="rendererDefault">DEFAULT</button>
+                  <button type="button" class="renderer-pill" data-renderer="vulkan" onclick="selectRenderer('vulkan')">VULKAN</button>
+                </div>
+                <div class="renderer-desc" data-i18n="rendererDesc">
+                  DirectX 11 / Vulkan switch
                 </div>
               </div>
             </div>
@@ -379,7 +448,12 @@
                   <input type="password" class="path-input tester-code-input" id="unlock-input" placeholder="VIP Code..." />
                   <button class="btn-apply btn-sm" id="btn-unlock" onclick="doUnlock()"><span data-i18n="unlock">ثبت</span></button>
                 </div>
-                <div id="tester-modes" style="display:none;" class="tester-modes-bar"></div>
+                <div id="tester-modes" style="display:none;" class="tester-modes-bar">
+                  <button class="btn-apply btn-sm" id="btn-vip-doorman-test" onclick="openDoormanModal()">
+                    <i class="fa-solid fa-flask" style="color:var(--deadlock-cyan)"></i>
+                    <span data-i18n="btnDoormanTest">Doorman Diagnostic</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -422,7 +496,7 @@
     </div>
   </div>
   <div class="app-version-badge" id="app-version-badge" dir="ltr">
-    <span class="ver-tag" id="app-ver-tag">v0.1.1 <span class="ver-beta">BETA</span></span>
+    <span class="ver-tag" id="app-ver-tag">v0.1.2 <span class="ver-beta">BETA</span></span>
     <span class="ver-sep">•</span>
     <span class="ver-by">by <span class="ver-author">aryobw9</span></span>
   </div>
@@ -434,10 +508,41 @@
       <div class="modal-actions" id="modal-actions"></div>
     </div>
   </div>
+  <div class="modal-overlay" id="modal-doorman-test" style="display:none">
+    <div class="modal-box doorman-test-modal-box">
+      <div class="doorman-modal-header">
+        <div class="doorman-modal-title-group">
+          <i class="fa-solid fa-flask" style="color:var(--deadlock-cyan);font-size:16px;"></i>
+          <span class="doorman-modal-title" data-i18n="doormanModalTitle">Doorman Ult Bug Diagnostic (Temp)</span>
+        </div>
+        <button class="doorman-close-btn" id="btn-close-doorman-modal" onclick="closeDoormanModal()">&times;</button>
+      </div>
+      <div class="doorman-modal-desc" data-i18n="doormanModalDesc">
+        Toggle each candidate ConVar 1-by-1 to identify which option hides the Doorman ultimate return indicator.
+      </div>
+      <div class="doorman-toggles-list" id="doorman-toggles-list"></div>
+      <div class="doorman-modal-status" id="doorman-modal-status" style="display:none;"></div>
+      <div class="doorman-modal-actions">
+        <div class="doorman-quick-buttons">
+          <button class="btn-reset btn-sm" id="btn-reset-t1-cvars" onclick="setAllDoormanToggles('t1')">
+            <span data-i18n="btnResetT1">Reset to T1 (Original)</span>
+          </button>
+          <button class="btn-reset btn-sm" id="btn-set-safe-cvars" onclick="setAllDoormanToggles('safe')">
+            <span data-i18n="btnSetSafe">Set All to Safe (Fixed)</span>
+          </button>
+        </div>
+        <button class="btn-apply btn-sm doorman-btn-apply" id="btn-apply-doorman-test" onclick="applyDoormanTestStates()">
+          <i class="fa-solid fa-bolt"></i>
+          <span data-i18n="btnApplyDoorman">Apply to Deadlock Now</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="dlp-custom-cursor" aria-hidden="true"><div id="dlp-custom-cursor-inner"></div></div>
   <script src="vendor/motion/motion.js"></script>
   <script src="i18n/fa.js"></script>
   <script src="i18n/en.js"></script>
-  <script src="app.js?v=26"></script>
+  <script src="app.js?v=30"></script>
   <script>
     // expose opener global (withGlobalTauri injects plugin APIs lazily via plugins object)
     window.addEventListener('DOMContentLoaded', () => {

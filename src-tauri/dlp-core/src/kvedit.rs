@@ -119,18 +119,47 @@ pub fn set_fov(gi_content: &str, ar: &str) -> String {
 /// Managed autoexec block. File = user's own content untouched, plus one marked
 /// block we own. enabled=false removes the block; user content always preserved.
 pub fn upsert_autoexec(existing: &str, enabled: bool) -> String {
-    upsert_autoexec_full(existing, enabled, "", "")
+    if !enabled {
+        let text = strip_bom(existing);
+        let mut user_lines: Vec<&str> = Vec::new();
+        let mut in_block = false;
+        for line in text.lines() {
+            if line.trim() == "// DLP BEGIN" {
+                in_block = true;
+                continue;
+            }
+            if line.trim() == "// DLP END" {
+                in_block = false;
+                continue;
+            }
+            if !in_block {
+                user_lines.push(line);
+            }
+        }
+        let mut s = user_lines.join("\n");
+        if !s.is_empty() && (text.ends_with('\n') || s.contains('\n')) {
+            s.push('\n');
+        }
+        return s;
+    }
+    upsert_autoexec_full(existing, enabled, false, false, "", "")
 }
 
 /// Managed autoexec block with optional custom cvars.
 pub fn upsert_autoexec_custom(existing: &str, enabled_unit_status: bool, custom_commands: &str) -> String {
-    upsert_autoexec_full(existing, enabled_unit_status, "", custom_commands)
+    let active = enabled_unit_status || !custom_commands.trim().is_empty();
+    if !active {
+        return upsert_autoexec(existing, false);
+    }
+    upsert_autoexec_full(existing, enabled_unit_status, false, false, "", custom_commands)
 }
 
 /// Managed autoexec block with tier commands (e.g. from t1 autoexec.cfg) and custom commands.
 pub fn upsert_autoexec_full(
     existing: &str,
     enabled_unit_status: bool,
+    stop_cloth_anim: bool,
+    ragdoll_fade: bool,
     tier_commands: &str,
     custom_commands: &str,
 ) -> String {
@@ -154,7 +183,7 @@ pub fn upsert_autoexec_full(
     }
     let has_tier = tier_commands.lines().any(|l| !l.trim().is_empty());
     let has_custom = custom_commands.lines().any(|l| !l.trim().is_empty());
-    if !enabled_unit_status && !has_tier && !has_custom {
+    if !enabled_unit_status && !stop_cloth_anim && !ragdoll_fade && !has_tier && !has_custom {
         let mut s = user_lines.join("\n");
         if !s.is_empty() && (text.ends_with('\n') || s.contains('\n')) {
             s.push('\n');
@@ -170,6 +199,15 @@ pub fn upsert_autoexec_full(
     s.push('\n');
     if enabled_unit_status {
         s.push_str("\tcitadel_unit_status_use_new \"true\"\n");
+    }
+    if stop_cloth_anim {
+        s.push_str("\tcloth_update \"0\"\n");
+        s.push_str("\tcloth_sim_on_tick \"0\"\n");
+    }
+    if ragdoll_fade {
+        s.push_str("\tcl_ragdoll_limit \"0\"\n");
+    } else {
+        s.push_str("\tcl_ragdoll_limit \"-1\"\n");
     }
     for line in tier_commands.lines() {
         let trimmed = line.trim();
@@ -283,8 +321,10 @@ mod tests {
     #[test]
     fn autoexec_upsert_empty() {
         let out = upsert_autoexec("", true);
-        assert!(out.contains("// DLP BEGIN\n\tcitadel_unit_status_use_new \"true\"\n// DLP END\n"));
-        assert_eq!(out.lines().count(), 3);
+        assert!(out.contains("// DLP BEGIN\n"));
+        assert!(out.contains("\tcitadel_unit_status_use_new \"true\"\n"));
+        assert!(out.contains("\tcl_ragdoll_limit \"-1\"\n"));
+        assert!(out.contains("// DLP END\n"));
     }
 
     #[test]
@@ -325,11 +365,39 @@ mod tests {
     #[test]
     fn autoexec_tier_commands_and_custom() {
         let existing = "// base\n";
-        let out = upsert_autoexec_full(existing, true, "r_drawviewmodel 0\nmat_viewportscale 0.8", "fps_max 165");
+        let out = upsert_autoexec_full(existing, true, false, false, "r_drawviewmodel 0\nmat_viewportscale 0.8", "fps_max 165");
         assert!(out.contains("citadel_unit_status_use_new \"true\""));
         assert!(out.contains("\tr_drawviewmodel 0\n"));
         assert!(out.contains("\tmat_viewportscale 0.8\n"));
         assert!(out.contains("\tfps_max 165\n"));
+        assert!(out.contains("cl_ragdoll_limit \"-1\""));
+        assert!(!out.contains("g_ragdoll_maxcount"));
+    }
+
+    #[test]
+    fn autoexec_stop_cloth_anim() {
+        let existing = "// base\n";
+        let out = upsert_autoexec_full(existing, false, true, false, "", "");
+        assert!(out.contains("cloth_update \"0\""));
+        assert!(out.contains("cloth_sim_on_tick \"0\""));
+        assert!(out.contains("cl_ragdoll_limit \"-1\""));
+    }
+
+    #[test]
+    fn autoexec_ragdoll_fade_toggle() {
+        let existing = "// base\n";
+        // Default mode (boost OFF): keep corpses & Doorman clone solid (-1)
+        let out_default = upsert_autoexec_full(existing, true, false, false, "", "");
+        assert!(out_default.contains("cl_ragdoll_limit \"-1\""));
+        assert!(!out_default.contains("g_ragdoll_maxcount"));
+        assert!(!out_default.contains("cl_disable_ragdolls"));
+
+        // FPS boost mode (boost ON): fade corpses immediately (0)
+        let out_boost = upsert_autoexec_full(existing, false, false, true, "", "");
+        assert!(out_boost.contains("cl_ragdoll_limit \"0\""));
+        assert!(!out_boost.contains("cl_ragdoll_limit \"-1\""));
+        assert!(!out_boost.contains("g_ragdoll_maxcount"));
+        assert!(!out_boost.contains("cl_disable_ragdolls"));
     }
 
     #[test]
