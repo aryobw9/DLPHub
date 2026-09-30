@@ -31,3 +31,5 @@ src-tauri/gen/schemas/
 
 # build scripts / generated
 src-tauri/nsis_hooks.nsh
+__pycache__/
+*.pyc

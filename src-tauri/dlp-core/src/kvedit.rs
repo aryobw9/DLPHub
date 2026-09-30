@@ -197,6 +197,8 @@ pub fn upsert_autoexec_full(
     }
     s.push_str(BEGIN);
     s.push('\n');
+    s.push_str("\tcon_enable \"1\"\n");
+    s.push_str("\tcon_logfile \"console.log\"\n");
     if enabled_unit_status {
         s.push_str("\tcitadel_unit_status_use_new \"true\"\n");
     }

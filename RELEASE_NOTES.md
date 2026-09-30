@@ -1,15 +1,27 @@
-# DLPHub v0.1.2
+# DLPHub v0.1.3
 
 ## What's Changed
-- **Animation Settings:** Added dedicated animation controls with Cloth Simulation toggle and Hero Ragdoll Fade toggle. By default, ragdolls and Doorman's ultimate marker remain solid; opt-in to fade them quickly for extra FPS.
-- **FPS Impact Indicators:** Added colored FPS impact badges (None, Low, Medium, High) across all presets and settings to help you choose the best options for your hardware.
-- **Window Border Cursor Fix:** Fixed Windows native cursor appearing at the window borders and corners; flame cursor is now consistently applied everywhere.
-- **Seamless Language Transition:** Polished skeleton shimmer and smooth blur-to-clear transitions when switching between English and Persian.
+- **New Generation Config Presets:** Upgraded all graphics tiers (T1, T2, T3) to the latest Deadlock engine architecture based on OptimizationLock v3.2.1 and modern competitive benchmarks (over 300+ optimized ConVars).
+- **Modern Subsystem Optimizations:**
+  - **Panorama & V8 Engine:** Doubled V8 JavaScript heap to 1024MB and enabled aggressive UI caching to eliminate in-fight HUD micro-stuttering.
+  - **SteamAudio DSP Bypass:** Streamlined audio raycasting passes and enclosure calculations to reduce audio thread CPU bottlenecks.
+  - **Multithreaded Spatial Partitioning:** Enabled parallel spatial bounds updates, parallel physics invalidation, and reduced simulation cadence latency.
+  - **Dynamic Particle Load-Shedding:** Intelligently drops particle detail during chaotic teamfights to preserve framerate stability.
+  - **Mouse Responsiveness:** Disabled camera viewmodel smoothing for raw, snappy input response.
+- **Gameplay Integrity Maintained:** Ability ground decals (Lash Ground Slam, Warden Binding Cage, bullet hits), hero outlines, and colored hero shop portraits remain visible and clear.
+- **Potato Mode Temporarily Retired:** The Potato preset card has been replaced with a "Coming Soon..." placeholder pending community mod pack compatibility with the latest game patch.
+- **Custom Match ID Auto-Sync:** Integrated console log match detection and customizable webhook reporting API.
 
 ---
 
-## تغییرات نسخه ۰.۱.۲
-- **تنظیمات انیمیشن و فیزیک:** اضافه شدن کنترل‌های اختصاصی انیمیشن شامل غیرفعال‌سازی شبیه‌سازی لباس و محو سریع اجساد هیروها. به صورت پیش‌فرض اجساد و مارکر اولتیمیت Doorman ثابت می‌مانند؛ با فعال‌سازی محو سریع می‌توانید فریم بیشتری دریافت کنید.
-- **نشانگرهای میزان تاثیر بر FPS:** اضافه شدن نشانگرهای رنگی (بدون تاثیر، کم، متوسط، زیاد) روی تمامی پریست‌ها و باکس‌های تنظیمات برای تصمیم‌گیری بهتر.
-- **اصلاح نشانگر ماوس در حاشیه‌های برنامه:** رفع مشکل نمایش کرسر پیش‌فرض ویندوز در لبه‌ها و گوشه‌های پنجره و یکپارچه‌سازی کامل نشانگر اختصاصی آتشین.
-- **بهبود افکت تغییر زبان:** انیمیشن شیمر و بلور نرم هنگام سوئیچ بین زبان فارسی و انگلیسی روی تمامی بخش‌ها و باکس‌ها.
+## تغییرات نسخه ۰.۱.۳
+- **نسل جدید پریست‌های بهینه‌سازی:** ارتقای تمامی سطوح گرافیکی (T1، T2، T3) بر پایه آخرین تغییرات موتور ددلاک و تنظیمات بهینه‌سازی OptimizationLock v3.2.1 (بیش از ۳۰۰ متغیر ConVar بهینه‌سازی شده).
+- **بهینه‌سازی زیرسیستم‌های مدرن سورس ۲:**
+  - **موتور V8 و رابط کاربری Panorama:** دو برابر کردن حافظه جاوااسکریپت رابط کاربری (۱۰۲۴ مگابایت) و فعال‌سازی کش لایه‌ها جهت حذف لگ‌های ریز در درگیری‌های سنگین.
+  - **بهینه‌سازی پردازش صوتی SteamAudio:** سبک‌سازی محاسبات بازتاب و اکوی صدا برای آزادسازی منابع پردازنده (CPU).
+  - **چندرشته‌ای‌سازی محاسبات موتور بازی:** بهینه‌سازی پارتیشن‌بندی فضایی، ابطال فیزیک موازی و بهبود Cadence فریم‌ها.
+  - **کاهش پویای بار افکت‌ها و ذرات:** کاهش خودکار کیفیت ذرات و افکت‌ها در شلوغی فایت‌ها به منظور حفظ پایداری فریم‌ریت.
+  - **واکنش‌پذیری ماوس:** حذف نرم‌کننده دید و انیمیشن برای ثبت دقیق‌تر و بدون تاخیر حرکت ماوس.
+- **حفظ نشانگرهای حیاتی گیم‌پلی:** خطوط روی زمین ابیلیتی‌ها (مانند اسلم Lash و قفس Warden)، کادربندی دور هیروها و رنگ پرتره هیروها در شاپ کاملاً حفظ شده‌اند.
+- **حالت ذغالی (Potato) به زودی:** پریست ذغالی موقتاً با نشانگر «به زودی...» جایگزین شده تا مدهای هماهنگ با آپدیت جدید بازی آماده شوند.
+- **سینک خودکار Match ID:** شناسایی هوشمند شناسه بازی‌های کاستوم از لاگ و قابلیت ارسال به وب‌هوک و API دلخواه.

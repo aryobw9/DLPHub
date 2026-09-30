@@ -184,13 +184,13 @@
                 </div>
                 <div class="tier-name" data-i18n="tierLow">گرافیگ پایین</div>
               </div>
-              <div class="tier-card" data-mode="POTATO" onclick="selectPreset('POTATO')">
+              <div class="tier-card tier-card-disabled soon-card" data-mode="SOON">
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="tier-card-header">
-                  <span class="tier-badge potato"><img src="assets/icons_norm/t4_vault.png" class="dlp-icon-badge" alt="" /> POTATO</span>
-                  <span class="fps-impact-badge impact-high" data-i18n-tooltip="fpsImpactHigh"><span class="impact-chevrons"><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i><i class="fa-solid fa-angle-up"></i></span> FPS</span>
+                  <span class="tier-badge soon"><i class="fa-solid fa-hourglass-half"></i> SOON</span>
+                  <span class="fps-impact-badge impact-none" data-i18n="soonBadge">Soon...</span>
                 </div>
-                <div class="tier-name" data-i18n="tierPotato">گرافیک ذغالی</div>
+                <div class="tier-name" data-i18n="tierSoon">به زودی...</div>
               </div>
             </div>
             <div class="settings-duo settings-row-3">
@@ -398,6 +398,20 @@
                 <button class="btn-reset btn-danger" id="btn-revert-vanilla" onclick="doRevertVanilla()">
                   <i class="fa-solid fa-triangle-exclamation" style="font-size:16px;color:#ef4444"></i>
                   <span data-i18n="btnRevertVanilla">بازگردانی تمام تغییرات</span>
+                </button>
+              </div>
+              <div class="adv-card adv-match-card">
+                <button class="btn-apply btn-sync-match" id="btn-sync-match" onclick="doSyncMatch()">
+                  <div class="sync-btn-content">
+                    <i class="fa-solid fa-trophy" id="icon-sync-match" style="font-size:15px;color:var(--deadlock-orange)"></i>
+                    <span id="btn-sync-match-text" data-i18n="btnSyncMatch">ثبت آخرین مسابقه (Sync Match)</span>
+                  </div>
+                  <div class="sync-btn-actions">
+                    <span class="match-help-icon" id="match-help-icon" data-i18n-tooltip="matchSyncHelp" onclick="event.stopPropagation(); showMatchHelp();">
+                      <i class="fa-solid fa-circle-question"></i>
+                    </span>
+                    <span class="match-sync-badge badge-idle" id="match-sync-badge">READY</span>
+                  </div>
                 </button>
               </div>
               <div class="adv-card adv-update-card">

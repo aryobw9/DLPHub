@@ -109,6 +109,10 @@ function applyLang() {
   if (p) p.placeholder = t('pathPlaceholder');
   renderBackups();
   renderActiveBadge();
+  if (state.lastMatchId) {
+    const textEl = document.getElementById('btn-sync-match-text');
+    if (textEl) textEl.textContent = `${t('btnCopyMatch')} (#${state.lastMatchId})`;
+  }
   if (pingingActive) {
     const lbl = document.querySelector('.latency-loading-content .dlp-load-label');
     if (lbl) lbl.textContent = t('pingTesting').replace(/\.{2,}$/, '');
@@ -1051,6 +1055,96 @@ async function doCopyDiagnostics() {
   }
 }
 
+// ---------- custom match sync ----------
+async function doSyncMatch() {
+  const btn = document.getElementById('btn-sync-match');
+  const icon = document.getElementById('icon-sync-match');
+  const badge = document.getElementById('match-sync-badge');
+  const textEl = document.getElementById('btn-sync-match-text');
+
+  // If match was already detected, clicking again copies the match ID
+  if (state.lastMatchId) {
+    await doCopyMatchId();
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
+  if (badge) {
+    badge.className = 'match-sync-badge badge-syncing';
+    badge.textContent = 'SYNCING';
+  }
+
+  try {
+    const res = await call('sync_last_match', { customEndpoint: null, customToken: null });
+    if (res && res.success) {
+      state.lastMatchId = res.match_id;
+      if (badge) {
+        badge.className = 'match-sync-badge badge-success';
+        badge.textContent = `#${res.match_id}`;
+      }
+      if (textEl) {
+        textEl.textContent = `${t('btnCopyMatch')} (#${res.match_id})`;
+      }
+      showModal(t('matchSyncTitle') || 'CUSTOM MATCH SYNC', res.message, [
+        { label: t('btnCopyMatch') || 'Copy Match ID', value: true, kind: 'apply' },
+        { label: t('ok') || 'OK', value: false },
+      ]).then((copy) => {
+        if (copy) doCopyMatchId();
+      });
+    } else {
+      if (badge) {
+        badge.className = 'match-sync-badge badge-error';
+        badge.textContent = 'ERROR';
+      }
+      showModal(t('matchSyncTitle') || 'CUSTOM MATCH SYNC', (res && res.message) ? res.message : 'Match sync failed.', [{ label: t('ok') || 'OK' }]);
+    }
+  } catch (err) {
+    if (badge) {
+      badge.className = 'match-sync-badge badge-error';
+      badge.textContent = 'FAILED';
+    }
+    showModal(t('matchSyncTitle') || 'CUSTOM MATCH SYNC', String(err), [{ label: t('ok') || 'OK' }]);
+  } finally {
+    if (btn) btn.disabled = false;
+    if (icon) icon.className = 'fa-solid fa-trophy';
+  }
+}
+
+async function doCopyMatchId() {
+  if (!state.lastMatchId) return;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(state.lastMatchId);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = state.lastMatchId;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    const badge = document.getElementById('match-sync-badge');
+    if (badge) {
+      const orig = badge.textContent;
+      badge.textContent = 'COPIED!';
+      setTimeout(() => { badge.textContent = `#${state.lastMatchId}` || orig; }, 1800);
+    }
+  } catch (err) {
+    console.error('Failed to copy match ID:', err);
+  }
+}
+
+function showMatchHelp() {
+  showModal(t('matchHelpTitle') || 'DEADLOCK MATCH ID GUIDE', t('matchHelpBody') || 'Guide', [
+    { label: t('ok') || 'OK', kind: 'apply' },
+  ]);
+}
+
+window.doSyncMatch = doSyncMatch;
+window.doCopyMatchId = doCopyMatchId;
+window.showMatchHelp = showMatchHelp;
+
 // ---------- revert vanilla ----------
 async function doRevertVanilla() {
   if (!state.gamePath) {
@@ -1832,6 +1926,7 @@ function updateScale() {
 }
 
 function selectPreset(mode) {
+  if (mode === 'SOON' || mode === 'POTATO') return;
   state.selectedMode = mode;
   document.querySelectorAll('.tier-card, .tier-card-sm, .option-item.preset').forEach((p) => {
     const was = p.classList.contains('selected');
@@ -2005,6 +2100,7 @@ function init() {
 
     document.querySelectorAll('.tier-card, .tier-card-sm, .option-item.preset').forEach((el) => {
       el.addEventListener('click', () => {
+        if (el.dataset.mode === 'SOON' || el.dataset.mode === 'POTATO') return;
         selectPreset(el.dataset.mode);
       });
     });

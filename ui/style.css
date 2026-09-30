@@ -910,7 +910,7 @@
 .modal-overlay { position: fixed; inset: 0; background: rgba(3,6,10,.75); backdrop-filter: blur(8px); z-index: 100; display: flex; align-items: center; justify-content: center; }
 .modal-box { background: var(--bg-surface); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px; padding: 26px 30px; max-width: 440px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.75), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
 .modal-title { font-family: 'Vazirmatn', sans-serif; font-weight: 700; color: var(--deadlock-orange); margin-bottom: 12px; font-size: 1.05rem; }
-.modal-body { color: var(--text-main); font-size: .95rem; line-height: 1.7; margin-bottom: 20px; }
+.modal-body { color: var(--text-main); font-size: .95rem; line-height: 1.7; margin-bottom: 20px; white-space: pre-line; word-break: break-word; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .modal-actions .btn-apply, .modal-actions .btn-reset { padding: 9px 22px; }
 
@@ -1172,6 +1172,26 @@ button:active,
   background: rgba(234, 179, 8, 0.15);
   color: #facc15;
   border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.tier-badge.soon {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.tier-card.soon-card,
+.tier-card.tier-card-disabled {
+  opacity: 0.52;
+  cursor: not-allowed !important;
+  filter: grayscale(0.45);
+}
+
+.tier-card.soon-card:hover,
+.tier-card.tier-card-disabled:hover {
+  transform: none !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
 }
 
 .tier-pick { display: none; 
@@ -1593,6 +1613,11 @@ button:active,
   box-sizing: border-box;
 }
 
+.adv-col-actions {
+  gap: 6px !important;
+  justify-content: flex-start !important;
+}
+
 .adv-card {
   background: rgba(11, 19, 33, 0.7);
   border: 1px solid rgba(59, 130, 246, 0.15);
@@ -1656,13 +1681,13 @@ button:active,
 
 .adv-revert-only {
   flex: 0 0 auto;
-  height: 90px !important;
-  min-height: 90px !important;
-  max-height: 90px !important;
+  height: 70px !important;
+  min-height: 70px !important;
+  max-height: 70px !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
+  padding: 11px 12px;
   box-sizing: border-box;
 }
 
@@ -1670,10 +1695,10 @@ button:active,
   width: 100% !important;
   min-width: 100% !important;
   max-width: 100% !important;
-  height: 52px !important;
-  min-height: 52px !important;
-  max-height: 52px !important;
-  font-size: 0.88rem !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  font-size: 0.84rem !important;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -1702,13 +1727,13 @@ button:active,
 
 .adv-update-card {
   flex: 0 0 auto;
-  height: 90px !important;
-  min-height: 90px !important;
-  max-height: 90px !important;
+  height: 70px !important;
+  min-height: 70px !important;
+  max-height: 70px !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
+  padding: 11px 12px;
   box-sizing: border-box;
 }
 
@@ -1716,10 +1741,10 @@ button:active,
   width: 100% !important;
   min-width: 100% !important;
   max-width: 100% !important;
-  height: 52px !important;
-  min-height: 52px !important;
-  max-height: 52px !important;
-  font-size: 0.88rem !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  font-size: 0.84rem !important;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -1743,41 +1768,41 @@ button:active,
 
 .adv-actions-row {
   flex: 0 0 auto;
-  height: 90px !important;
-  min-height: 90px !important;
-  max-height: 90px !important;
+  height: 70px !important;
+  min-height: 70px !important;
+  max-height: 70px !important;
   display: flex;
   flex-direction: row;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 11px 12px;
   box-sizing: border-box;
   align-items: center;
 }
 
 .adv-actions-row .btn-reset {
   flex: 1;
-  height: 52px !important;
-  min-height: 52px !important;
-  max-height: 52px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 0.78rem !important;
-  border-radius: 6px;
+  font-size: 0.76rem !important;
+  border-radius: 8px;
   box-sizing: border-box;
   white-space: nowrap;
 }
 
 .adv-support-card {
   flex: 0 0 auto;
-  height: 88px !important;
-  min-height: 88px !important;
-  max-height: 88px !important;
+  height: 70px !important;
+  min-height: 70px !important;
+  max-height: 70px !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 14px;
+  padding: 11px 14px;
   box-sizing: border-box;
 }
 
@@ -1790,13 +1815,13 @@ button:active,
 }
 
 .adv-support-text {
-  font-size: 0.74rem !important;
-  line-height: 1.45 !important;
+  font-size: 0.72rem !important;
+  line-height: 1.4 !important;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -5610,5 +5635,146 @@ body.lang-fa .doorman-modal-status {
   color: var(--btn-primary-text) !important;
   font-weight: 700;
   box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
+}
+
+/* ---------- Custom Match Sync Card ---------- */
+.adv-match-card {
+  flex: 0 0 auto;
+  height: 70px !important;
+  min-height: 70px !important;
+  max-height: 70px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 12px;
+  box-sizing: border-box;
+  border-color: rgba(249, 115, 22, 0.28) !important;
+  background: rgba(28, 18, 12, 0.5) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(249, 115, 22, 0.1);
+}
+
+.adv-match-card:hover {
+  border-color: rgba(249, 115, 22, 0.5) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(249, 115, 22, 0.2);
+}
+
+.adv-match-card #btn-sync-match {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  font-size: 0.84rem !important;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(249, 115, 22, 0.45);
+  color: #fed7aa;
+  border-radius: 8px;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.15);
+  cursor: var(--cur-pointer);
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.adv-match-card #btn-sync-match:hover {
+  background: rgba(249, 115, 22, 0.3);
+  border-color: var(--deadlock-orange);
+  color: #fff;
+  box-shadow: 0 0 24px rgba(249, 115, 22, 0.4);
+}
+
+.sync-btn-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.lang-fa .sync-btn-content {
+  direction: rtl;
+}
+
+body.lang-fa #btn-sync-match {
+  direction: rtl !important;
+}
+
+.sync-btn-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+body.lang-fa .sync-btn-actions {
+  direction: ltr;
+}
+
+.match-help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: rgba(254, 215, 170, 0.75);
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  font-size: 13px;
+  cursor: var(--cur-pointer);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.match-help-icon:hover {
+  color: #fff;
+  background: rgba(249, 115, 22, 0.38);
+  border-color: var(--deadlock-orange);
+  transform: scale(1.18);
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.55);
+}
+
+.match-help-icon i {
+  pointer-events: none;
+}
+
+.match-sync-badge {
+  font-size: 0.65rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.match-sync-badge.badge-idle {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.match-sync-badge.badge-syncing {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  animation: pulse 1s infinite alternate;
+}
+
+.match-sync-badge.badge-success {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.45);
+}
+
+.match-sync-badge.badge-error {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.45);
 }
 

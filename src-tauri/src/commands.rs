@@ -52,7 +52,7 @@ pub async fn install_mode(mode: String, fov: u32, path: String) -> Result<Vec<in
             "T1" => install::Mode::T1,
             "T2" => install::Mode::T2,
             "T3" => install::Mode::T3,
-            "POTATO" => install::Mode::Potato,
+            "POTATO" | "SOON" => return Err("Potato mode is temporarily disabled (mods outdated). Coming soon!".to_string()),
             "T1MODS" => install::Mode::T1Mods,
             "T2MODS" => install::Mode::T2Mods,
             other => return Err(format!("unknown mode: {other}")),
@@ -426,9 +426,9 @@ pub fn open_download_url(url: String) -> Result<(), String> {
 pub fn launch_game() -> Result<(), String> {
     let s = settings::load();
     let uri = match s.renderer.as_str() {
-        "dx11" => "steam://run/1422450//-dx11/",
-        "vulkan" => "steam://run/1422450//-vulkan/",
-        _ => "steam://rungameid/1422450",
+        "dx11" => "steam://run/1422450//-dx11%20-condebug%20-conclearlog/",
+        "vulkan" => "steam://run/1422450//-vulkan%20-condebug%20-conclearlog/",
+        _ => "steam://run/1422450//-condebug%20-conclearlog/",
     };
     open::that(uri).map_err(|e| e.to_string())
 }

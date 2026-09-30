@@ -1,4 +1,5 @@
 mod commands;
+mod deadlock_sync;
 mod native_cursor;
 mod webview_check;
 
@@ -66,6 +67,8 @@ pub fn run() {
             commands::get_app_version,
             commands::get_cvar_test_states,
             commands::apply_cvar_test_states,
+            deadlock_sync::sync_last_match,
+            deadlock_sync::get_last_match_id,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

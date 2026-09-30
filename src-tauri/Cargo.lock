@@ -891,10 +891,11 @@ dependencies = [
 
 [[package]]
 name = "dlp-core"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "dirs",
  "md-5",
+ "regex",
  "serde",
  "serde_json",
  "sysinfo",
@@ -904,7 +905,7 @@ dependencies = [
 
 [[package]]
 name = "dlpbooster"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "dlp-core",
  "open",
