@@ -9,7 +9,7 @@
   - **Dynamic Particle Load-Shedding:** Intelligently drops particle detail during chaotic teamfights to preserve framerate stability.
   - **Mouse Responsiveness:** Disabled camera viewmodel smoothing for raw, snappy input response.
 - **Gameplay Integrity Maintained:** Ability ground decals (Lash Ground Slam, Warden Binding Cage, bullet hits), hero outlines, and colored hero shop portraits remain visible and clear.
-- **Potato Mode Temporarily Retired:** The Potato preset card has been replaced with a "Coming Soon..." placeholder pending community mod pack compatibility with the latest game patch.
+- **Potato Mode & HUD New Health Bar Temporarily Retired:** The Potato preset and HUD New Health Bar options have been replaced with a "Coming Soon..." placeholder pending community mod and engine compatibility with the latest game patch.
 - **Custom Match ID Auto-Sync:** Integrated console log match detection and customizable webhook reporting API.
 
 ---
@@ -23,5 +23,5 @@
   - **کاهش پویای بار افکت‌ها و ذرات:** کاهش خودکار کیفیت ذرات و افکت‌ها در شلوغی فایت‌ها به منظور حفظ پایداری فریم‌ریت.
   - **واکنش‌پذیری ماوس:** حذف نرم‌کننده دید و انیمیشن برای ثبت دقیق‌تر و بدون تاخیر حرکت ماوس.
 - **حفظ نشانگرهای حیاتی گیم‌پلی:** خطوط روی زمین ابیلیتی‌ها (مانند اسلم Lash و قفس Warden)، کادربندی دور هیروها و رنگ پرتره هیروها در شاپ کاملاً حفظ شده‌اند.
-- **حالت ذغالی (Potato) به زودی:** پریست ذغالی موقتاً با نشانگر «به زودی...» جایگزین شده تا مدهای هماهنگ با آپدیت جدید بازی آماده شوند.
+- **حالت ذغالی (Potato) و نوار سلامتی جدید HUD به زودی:** پریست ذغالی و گزینه نوار سلامتی جدید به دلیل تغییرات کلاینت بازی موقتاً با نشانگر «به زودی...» جایگزین شده‌اند تا آپدیت‌های هماهنگ آماده شوند.
 - **سینک خودکار Match ID:** شناسایی هوشمند شناسه بازی‌های کاستوم از لاگ و قابلیت ارسال به وب‌هوک و API دلخواه.

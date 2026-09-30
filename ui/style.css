@@ -1194,6 +1194,37 @@ button:active,
   box-shadow: none !important;
 }
 
+.hud-box.soon-box {
+  opacity: 0.72;
+}
+
+.hud-switch-card.soon-card-disabled {
+  opacity: 0.6;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.hud-soon-tag {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+body.lang-fa .hud-soon-tag {
+  margin-left: 0;
+  margin-right: 6px;
+}
+
 .tier-pick { display: none; 
 
   width: 14px;

@@ -259,7 +259,10 @@ async function boot() {
 
 function syncSettingsToUi() {
   const swUnit = document.getElementById('sw-unit-status');
-  if (swUnit) swUnit.checked = !!state.unitStatusNew;
+  if (swUnit) {
+    swUnit.checked = false;
+    swUnit.disabled = true;
+  }
 
   const swCloth = document.getElementById('sw-cloth-anim');
   if (swCloth) swCloth.checked = !!state.stopClothAnim;
@@ -2060,9 +2063,11 @@ function init() {
 
     const swUnit = document.getElementById('sw-unit-status');
     if (swUnit) {
+      swUnit.disabled = true;
+      swUnit.checked = false;
       swUnit.onchange = (e) => {
-        state.unitStatusNew = e.target.checked;
-        call('set_settings', { patch: { unit_status_new: e.target.checked } }).catch(() => {});
+        e.preventDefault();
+        swUnit.checked = false;
       };
     }
 

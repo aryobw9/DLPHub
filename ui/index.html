@@ -217,20 +217,21 @@
                 </div>
                 <input type="hidden" id="fov-number" value="90" />
               </div>
-              <div class="setting-box hud-box">
+              <div class="setting-box hud-box soon-box">
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
                     <i class="fa-solid fa-heart-pulse" style="font-size:14px"></i>
                     <span class="fov-box-title" data-i18n="hudTitle">HUD CONFIGURATION</span>
                   </div>
-                  <span class="fps-impact-badge impact-none" data-i18n-tooltip="fpsImpactNone"><i class="fa-solid fa-minus"></i> FPS</span>
+                  <span class="fps-impact-badge impact-none" data-i18n="soonBadge">Soon...</span>
                 </div>
-                <label class="hud-switch-card" for="sw-unit-status" data-i18n-tooltip="unitStatusDesc">
+                <label class="hud-switch-card soon-card-disabled" for="sw-unit-status" data-i18n-tooltip="unitStatusDesc">
                   <div class="hud-switch-info">
                     <span class="hud-switch-label" data-i18n="unitStatus">New Health Bars</span>
+                    <span class="hud-soon-tag" data-i18n="soonBadge">Soon...</span>
                   </div>
                   <div class="neon-checkbox">
-                    <input type="checkbox" id="sw-unit-status">
+                    <input type="checkbox" id="sw-unit-status" disabled>
                     <div class="neon-checkbox__frame">
                       <div class="neon-checkbox__box">
                         <div class="neon-checkbox__check-container">
