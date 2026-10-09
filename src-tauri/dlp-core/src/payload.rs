@@ -75,18 +75,18 @@ mod tests {
         std::fs::write(tmp.join("stale.vpk"), "stale").unwrap();
         let pkg = extract_to(&tmp).unwrap();
         assert!(!tmp.join("stale.vpk").exists());
-        assert!(pkg.join("addons/pak04_dir.vpk").is_file());
+        assert!(pkg.join("addons/pak03_dir.vpk").is_file());
         crate::backup::rm_ro(&tmp);
     }
 
     #[test]
     fn payload_contains_tiers_and_addons() {
         let pkg = extract().unwrap();
-        for d in ["t1", "t2", "t3", "potato", "addons"] {
+        for d in ["t1", "t2", "t3", "potato", "russian_potato", "addons"] {
             assert!(pkg.join(d).is_dir(), "missing {d}");
         }
         assert!(pkg.join("t1").join("gameinfo.gi").is_file());
-        assert!(pkg.join("addons").join("pak04_dir.vpk").is_file());
+        assert!(pkg.join("addons").join("pak03_dir.vpk").is_file());
         crate::backup::rm_ro(&pkg);
     }
 }

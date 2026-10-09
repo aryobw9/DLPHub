@@ -9,6 +9,7 @@ pub enum Tier {
     T2,
     T3,
     Potato,
+    RussianPotato,
     Missing,
     Unknown,
 }
@@ -20,6 +21,7 @@ impl Tier {
             Tier::T2 => "T2",
             Tier::T3 => "T3",
             Tier::Potato => "POTATO",
+            Tier::RussianPotato => "RUSSIAN_POTATO",
             Tier::Missing => "MISSING",
             Tier::Unknown => "UNKNOWN",
         }
@@ -32,15 +34,27 @@ pub fn normalize(text: &str) -> String {
     let t = strip_bom_line(text);
     let mut out = String::with_capacity(t.len());
     for line in t.split_inclusive('\n') {
-        // PS1 drops only lines matching "r_aspectratio"\s+"[0-9.]+"\r?\n
-        if let Some(rest) = line.trim_start().strip_prefix("\"r_aspectratio\"") {
-            let after = rest.trim_start();
-            if let Some(v) = after.strip_prefix('"') {
-                let num: String = v.chars().take_while(|c| c.is_ascii_digit() || *c == '.').collect();
-                if !num.is_empty() && v[num.len()..].starts_with('"') {
-                    continue;
-                }
-            }
+        let trimmed = line.trim_start();
+        let is_dynamic = trimmed.starts_with("\"r_aspectratio\"")
+            || trimmed.starts_with("r_aspectratio ")
+            || trimmed.starts_with("r_aspectratio\t")
+            || trimmed.starts_with("r_aspectratio\"")
+            || trimmed.starts_with("// \"r_aspectratio\"")
+            || trimmed.starts_with("//\"r_aspectratio\"")
+            || trimmed.starts_with("// r_aspectratio \"")
+            || trimmed.starts_with("//r_aspectratio \"")
+            || trimmed.starts_with("// r_aspectratio\"")
+            || trimmed.starts_with("//r_aspectratio\"")
+            || trimmed.starts_with("// r_aspectratio\t\"")
+            || trimmed.starts_with("//r_aspectratio\t\"")
+            || trimmed.starts_with("\"cloth_sim_on_tick\"")
+            || trimmed.starts_with("cloth_sim_on_tick ")
+            || trimmed.starts_with("cloth_sim_on_tick\t")
+            || trimmed.starts_with("\"cl_ragdoll_limit\"")
+            || trimmed.starts_with("cl_ragdoll_limit ")
+            || trimmed.starts_with("cl_ragdoll_limit\t");
+        if is_dynamic {
+            continue;
         }
         out.push_str(line);
     }
@@ -79,6 +93,7 @@ pub fn detect_tier(citadel: &Path, pkg: &Path) -> Tier {
         (Tier::T2, "t2"),
         (Tier::T3, "t3"),
         (Tier::Potato, "potato"),
+        (Tier::RussianPotato, "russian_potato"),
     ] {
         let p = pkg.join(dir).join("gameinfo.gi");
         if p.is_file() && norm_hash_file(&p).as_deref() == Some(h.as_str()) {

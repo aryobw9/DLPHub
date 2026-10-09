@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="vendor/fontawesome/css/regular.min.css" />
   <link rel="stylesheet" href="vendor/fontawesome/css/brands.min.css" />
   <link rel="stylesheet" href="vendor/animate.css/animate.min.css" />
-  <link rel="stylesheet" href="style.css?v=44" />
+  <link rel="stylesheet" href="style.css?v=46" />
 </head>
 <body>
   <div class="ambient-glow">
@@ -184,13 +184,21 @@
                 </div>
                 <div class="tier-name" data-i18n="tierLow">گرافیگ پایین</div>
               </div>
-              <div class="tier-card tier-card-disabled soon-card" data-mode="SOON">
+              <div class="tier-card" data-mode="POTATO" onclick="selectPreset('POTATO')">
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="tier-card-header">
-                  <span class="tier-badge soon"><i class="fa-solid fa-hourglass-half"></i> SOON</span>
-                  <span class="fps-impact-badge impact-none" data-i18n="soonBadge">Soon...</span>
+                  <span class="tier-badge potato"><i class="fa-solid fa-bolt"></i> POTATO</span>
+                  <span class="fps-impact-badge impact-ultra" data-i18n-tooltip="fpsImpactUltra"><span class="impact-chevrons"><i class="fa-solid fa-angles-up"></i></span> MAX</span>
                 </div>
-                <div class="tier-name" data-i18n="tierSoon">به زودی...</div>
+                <div class="tier-name" data-i18n="tierPotato">سیستم ضعیف</div>
+              </div>
+              <div class="tier-card" data-mode="RUSSIAN_POTATO" onclick="selectPreset('RUSSIAN_POTATO')">
+                <span class="border-beam"><span class="beam"></span></span>
+                <div class="tier-card-header">
+                  <span class="tier-badge russian-potato"><i class="fa-solid fa-fire"></i> RUSSIAN</span>
+                  <span class="fps-impact-badge impact-ultra" data-i18n-tooltip="fpsImpactUltra"><span class="impact-chevrons"><i class="fa-solid fa-angles-up"></i></span> MAX</span>
+                </div>
+                <div class="tier-name" data-i18n="tierRussianPotato">ذغالی روس</div>
               </div>
             </div>
             <div class="settings-duo settings-row-3">
@@ -198,58 +206,153 @@
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
                     <i class="fa-solid fa-eye" style="font-size:14px"></i>
-                    <span class="fov-box-title" data-i18n="fovTitle">FIELD OF VIEW</span>
+                    <span class="fov-box-title" data-i18n="fovTitle">FOV & ASPECT RATIO</span>
                   </div>
                   <span class="fps-impact-badge impact-none" data-i18n-tooltip="fpsImpactNone"><i class="fa-solid fa-minus"></i> FPS</span>
                 </div>
-                <div class="fov-value-hero">
-                  <span class="fov-current" id="fov-current">90°</span>
+
+                <!-- Part 1: In-game FOV (video.txt, max 90) -->
+                <div class="fov-part-section fov-part-video">
+                  <div class="fov-sub-header">
+                    <span class="fov-sub-title">
+                      <i class="fa-solid fa-gamepad" style="color:var(--deadlock-cyan);font-size:9.5px"></i>
+                      <span data-i18n="videoFovTitle">In-Game FOV (video.txt)</span>
+                    </span>
+                    <span class="fov-val-chip" id="fov-video-val">90°</span>
+                  </div>
+                  <div class="fov-slider-bar fov-sub-slider-bar">
+                    <span class="fov-bound">70°</span>
+                    <input type="range" id="fov-slider" min="70" max="90" step="5" value="90" class="fov-range-input" oninput="setVideoFov(Number(this.value))" />
+                    <span class="fov-bound">90° <span class="fov-max-tag">(MAX)</span></span>
+                  </div>
                 </div>
-                <div class="fov-slider-bar">
-                  <span class="fov-bound">70°</span>
-                  <input type="range" id="fov-slider" min="70" max="120" step="5" value="90" class="fov-range-input" />
-                  <span class="fov-bound">120°</span>
+
+                <!-- Part 2: Aspect Ratio (gameinfo.gi, real number, can be disabled) -->
+                <div class="fov-part-section fov-part-aspect">
+                  <div class="fov-sub-header">
+                    <span class="fov-sub-title">
+                      <i class="fa-solid fa-arrows-left-right-to-line" style="color:var(--deadlock-orange);font-size:9.5px"></i>
+                      <span data-i18n="giAspectTitle">Aspect Ratio (gameinfo.gi)</span>
+                    </span>
+                    <div style="display:flex;align-items:center;gap:4px">
+                      <input type="text" id="ar-input" class="ar-real-input" value="2.15" placeholder="2.15" onchange="setAspectRatio(this.value)" data-tooltip="Real aspect ratio number (e.g. 1.78, 2.15, 2.40)" />
+                      <label class="neon-checkbox ar-toggle-check" data-tooltip="Enable or disable aspect ratio in gameinfo.gi">
+                        <input type="checkbox" id="sw-ar-enable" checked onchange="toggleAspectRatio(this.checked)" />
+                        <div class="neon-checkbox__frame">
+                          <div class="neon-checkbox__box">
+                            <div class="neon-checkbox__check-container">
+                              <svg viewBox="0 0 24 24" class="neon-checkbox__check"><path d="M3,12.5l7,7L21,5" /></svg>
+                            </div>
+                            <div class="neon-checkbox__glow"></div>
+                            <div class="neon-checkbox__borders"><span></span><span></span><span></span><span></span></div>
+                          </div>
+                          <div class="neon-checkbox__effects">
+                            <div class="neon-checkbox__particles"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                            <div class="neon-checkbox__rings"><div class="ring"></div><div class="ring"></div><div class="ring"></div></div>
+                            <div class="neon-checkbox__sparks"><span></span><span></span><span></span><span></span></div>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="ar-controls-body" id="ar-controls-body">
+                    <div class="fov-slider-bar fov-sub-slider-bar">
+                      <span class="fov-bound">1.33</span>
+                      <input type="range" id="ar-slider" min="1.33" max="3.50" step="0.01" value="2.15" class="fov-range-input" oninput="setAspectRatio(this.value)" />
+                      <span class="fov-bound">3.50</span>
+                    </div>
+                    <div class="ar-presets-row">
+                      <button type="button" class="ar-pill" onclick="setAspectRatio('1.78')">1.78</button>
+                      <button type="button" class="ar-pill active" onclick="setAspectRatio('2.15')">2.15 <span class="pill-hint">(90°)</span></button>
+                      <button type="button" class="ar-pill" onclick="setAspectRatio('2.33')">2.33 <span class="pill-hint">(21:9)</span></button>
+                      <button type="button" class="ar-pill" onclick="setAspectRatio('2.49')">2.49 <span class="pill-hint">(100°)</span></button>
+                      <button type="button" class="ar-pill" onclick="setAspectRatio('3.09')">3.09 <span class="pill-hint">(120°)</span></button>
+                    </div>
+                  </div>
+                  <div class="ar-disabled-msg" id="ar-disabled-msg" style="display:none" data-i18n="arDisabledMsg">
+                    Aspect ratio override disabled (uses default game aspect ratio)
+                  </div>
                 </div>
-                <div class="fov-scale-labels">
-                  <span data-i18n="fovNarrow">NARROW</span>
-                  <span class="fov-default-tick" id="fov-default-tick" onclick="setFov(90)" style="cursor:pointer;" data-i18n="fovDefaultTick">DEFAULT · 90°</span>
-                  <span data-i18n="fovWide">WIDE</span>
-                </div>
+
                 <input type="hidden" id="fov-number" value="90" />
               </div>
-              <div class="setting-box hud-box soon-box">
+              <div class="setting-box hud-box">
                 <div class="fov-box-header">
                   <div class="fov-box-title-wrap">
                     <i class="fa-solid fa-heart-pulse" style="font-size:14px"></i>
-                    <span class="fov-box-title" data-i18n="hudTitle">HUD CONFIGURATION</span>
+                    <span class="fov-box-title" data-i18n="hudTitle">VISUAL & HUD MODS</span>
                   </div>
-                  <span class="fps-impact-badge impact-none" data-i18n="soonBadge">Soon...</span>
                 </div>
-                <label class="hud-switch-card soon-card-disabled" for="sw-unit-status" data-i18n-tooltip="unitStatusDesc">
-                  <div class="hud-switch-info">
-                    <span class="hud-switch-label" data-i18n="unitStatus">New Health Bars</span>
-                    <span class="hud-soon-tag" data-i18n="soonBadge">Soon...</span>
-                  </div>
-                  <div class="neon-checkbox">
-                    <input type="checkbox" id="sw-unit-status" disabled>
-                    <div class="neon-checkbox__frame">
-                      <div class="neon-checkbox__box">
-                        <div class="neon-checkbox__check-container">
-                          <svg viewBox="0 0 24 24" class="neon-checkbox__check"><path d="M3,12.5l7,7L21,5" /></svg>
+                <div class="hud-switches-wrap">
+                  <label class="hud-switch-card" for="sw-better-breakables" id="lbl-better-breakables" data-i18n-tooltip="betterBreakablesDesc">
+                    <div class="hud-switch-info">
+                      <span class="hud-switch-label" data-i18n="betterBreakables">Better Breakables</span>
+                      <span class="fps-impact-badge impact-none" data-i18n-tooltip="fpsImpactNone"><i class="fa-solid fa-minus"></i> 0 FPS</span>
+                    </div>
+                    <div class="neon-checkbox">
+                      <input type="checkbox" id="sw-better-breakables">
+                      <div class="neon-checkbox__frame">
+                        <div class="neon-checkbox__box">
+                          <div class="neon-checkbox__check-container">
+                            <svg viewBox="0 0 24 24" class="neon-checkbox__check"><path d="M3,12.5l7,7L21,5" /></svg>
+                          </div>
+                          <div class="neon-checkbox__glow"></div>
+                          <div class="neon-checkbox__borders"><span></span><span></span><span></span><span></span></div>
                         </div>
-                        <div class="neon-checkbox__glow"></div>
-                        <div class="neon-checkbox__borders"><span></span><span></span><span></span><span></span></div>
-                      </div>
-                      <div class="neon-checkbox__effects">
-                        <div class="neon-checkbox__particles"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="neon-checkbox__rings"><div class="ring"></div><div class="ring"></div><div class="ring"></div></div>
-                        <div class="neon-checkbox__sparks"><span></span><span></span><span></span><span></span></div>
+                        <div class="neon-checkbox__effects">
+                          <div class="neon-checkbox__particles"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                          <div class="neon-checkbox__rings"><div class="ring"></div><div class="ring"></div><div class="ring"></div></div>
+                          <div class="neon-checkbox__sparks"><span></span><span></span><span></span><span></span></div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </label>
-                <div class="hud-desc" data-i18n="hudSwitchDesc">
-                  Show updated health bar visuals
+                  </label>
+                  <label class="hud-switch-card" for="sw-higher-brightness" id="lbl-higher-brightness" data-i18n-tooltip="higherBrightnessDesc">
+                    <div class="hud-switch-info">
+                      <span class="hud-switch-label" data-i18n="higherBrightness">Higher Brightness</span>
+                      <span class="fps-impact-badge impact-downgrade" data-i18n-tooltip="fpsImpactDowngrade"><span class="impact-chevrons"><i class="fa-solid fa-angle-down"></i></span> -FPS</span>
+                    </div>
+                    <div class="neon-checkbox">
+                      <input type="checkbox" id="sw-higher-brightness">
+                      <div class="neon-checkbox__frame">
+                        <div class="neon-checkbox__box">
+                          <div class="neon-checkbox__check-container">
+                            <svg viewBox="0 0 24 24" class="neon-checkbox__check"><path d="M3,12.5l7,7L21,5" /></svg>
+                          </div>
+                          <div class="neon-checkbox__glow"></div>
+                          <div class="neon-checkbox__borders"><span></span><span></span><span></span><span></span></div>
+                        </div>
+                        <div class="neon-checkbox__effects">
+                          <div class="neon-checkbox__particles"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                          <div class="neon-checkbox__rings"><div class="ring"></div><div class="ring"></div><div class="ring"></div></div>
+                          <div class="neon-checkbox__sparks"><span></span><span></span><span></span><span></span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                  <label class="hud-switch-card" for="sw-reduce-clutter" id="lbl-reduce-clutter" data-i18n-tooltip="reduceClutterDesc">
+                    <div class="hud-switch-info">
+                      <span class="hud-switch-label" data-i18n="reduceClutter">Reduce Clutter</span>
+                      <span class="fps-impact-badge impact-ultra" data-i18n-tooltip="fpsImpactUltra"><span class="impact-chevrons"><i class="fa-solid fa-angles-up"></i></span> MAX</span>
+                    </div>
+                    <div class="neon-checkbox">
+                      <input type="checkbox" id="sw-reduce-clutter">
+                      <div class="neon-checkbox__frame">
+                        <div class="neon-checkbox__box">
+                          <div class="neon-checkbox__check-container">
+                            <svg viewBox="0 0 24 24" class="neon-checkbox__check"><path d="M3,12.5l7,7L21,5" /></svg>
+                          </div>
+                          <div class="neon-checkbox__glow"></div>
+                          <div class="neon-checkbox__borders"><span></span><span></span><span></span><span></span></div>
+                        </div>
+                        <div class="neon-checkbox__effects">
+                          <div class="neon-checkbox__particles"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                          <div class="neon-checkbox__rings"><div class="ring"></div><div class="ring"></div><div class="ring"></div></div>
+                          <div class="neon-checkbox__sparks"><span></span><span></span><span></span><span></span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
                 </div>
               </div>
               <div class="setting-box anim-box">
@@ -383,15 +486,328 @@
           </div>
         </div>
         <div class="panel" id="panel-latency" style="display:none">
-          <div class="valve-ping-view" style="flex:1;min-height:0">
-            <div class="latency-scroll">
-              <div id="best-route-slot"></div>
-              <div class="ping-grid" id="ping-grid">
+          <div class="latency-container">
+            <!-- Admin Security Gate (Shown when NOT Admin) -->
+            <div class="latency-admin-gate" id="latency-admin-gate" style="display:none">
+              <div class="lag-inner-card">
+                <div class="lag-shield-glow">
+                  <i class="fa-solid fa-shield-halved lag-shield-icon"></i>
+                </div>
+                <h2 class="lag-title" data-i18n="adminGateTitle">دسترسی مدیر سیستم (Administrator) الزامی است</h2>
+                <p class="lag-desc" data-i18n="adminGateDesc">
+                  برای جلوگیری از بروز خطا و اطمینان از عملکرد صحیح فایروال بازی، تنظیم مستقیم دی‌ان‌اس کارت شبکه و اعمال توئیک‌های سیستم، استفاده از بخش پینگ و شبکه نیازمند اجرای DLPHub با دسترسی کامل Administrator است.
+                </p>
+                <div class="lag-features">
+                  <div class="lag-feature-item">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span data-i18n="adminGateFeat1">تنظیم قوانین فایروال اختصاصی ددلاک بدون اختلال در سایر برنامه‌ها</span>
+                  </div>
+                  <div class="lag-feature-item">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span data-i18n="adminGateFeat2">تنظیم و تغییر بدون درنگ آدرس‌های DNS کارت شبکه با یک کلیک</span>
+                  </div>
+                  <div class="lag-feature-item">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span data-i18n="adminGateFeat3">اعمال توئیک‌های سیستمی ویندوز (Bandwidth Shield و QoS اولویت پکت‌ها)</span>
+                  </div>
+                </div>
+                <button class="btn-cyber-primary btn-lag-action" id="btn-admin-gate-restart" onclick="restartAsAdmin()">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                  <span data-i18n="btnRestartAdminGate">اجرا با دسترسی Administrator (Run as Admin)</span>
+                </button>
               </div>
+            </div>
+
+            <!-- Latency Content Wrapper (Shown ONLY when Admin) -->
+            <div class="latency-content-wrapper" id="latency-content-wrapper">
+              <!-- Windows Firewall Disabled Warning Banner -->
+              <div class="latency-firewall-warning" id="latency-firewall-warning" style="display:none">
+                <div class="lfw-left">
+                  <div class="lfw-icon-ring"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                  <div class="lfw-text">
+                    <span class="lfw-title" data-i18n="firewallWarnTitle">فایروال ویندوز خاموش است!</span>
+                    <span class="lfw-desc" data-i18n="firewallWarnDesc">سرور بلاکر برای مسدودسازی سرورهای با پینگ بالا نیازمند فایروال ویندوز است. در حالت خاموش، پکت‌های سرور مسدود نمی‌شوند.</span>
+                  </div>
+                </div>
+                <button class="btn-cyber-primary btn-lfw-enable" id="btn-enable-firewall" onclick="enableWindowsFirewall()">
+                  <i class="fa-solid fa-shield-halved"></i>
+                  <span data-i18n="btnEnableFirewall">روشن کردن فایروال ویندوز</span>
+                </button>
+              </div>
+
+              <!-- Command Center Hero Banner -->
+              <div class="latency-hero-card" id="latency-hero-card">
+              <div class="lhc-left">
+                <div class="lhc-title-row">
+                  <div class="lhc-icon-ring"><i class="fa-solid fa-network-wired"></i></div>
+                  <div>
+                    <h2 class="lhc-title" data-i18n="latencyHeroTitle">تنظیمات پینگ و مسیریابی ددلاک</h2>
+                    <p class="lhc-subtitle" data-i18n="latencyHeroSub">مدیریت سرورهای Valve SDR، دی‌ان‌اس‌های ضد تحریم و ایزولاسیون شبکه</p>
+                  </div>
+                </div>
+                <div class="lhc-status-pills">
+                  <div class="status-pill pill-dns" id="pill-active-dns">
+                    <span class="pill-dot"></span>
+                    <span class="pill-label" data-i18n="pillDns">دی‌ان‌اس فعال</span>
+                    <span class="pill-colon">:</span>
+                    <strong class="pill-val" id="pill-dns-val">DHCP</strong>
+                  </div>
+                  <div class="status-pill pill-servers" id="pill-active-servers">
+                    <span class="pill-dot green"></span>
+                    <span class="pill-label" data-i18n="pillAllowed">سرورهای مجاز</span>
+                    <span class="pill-colon">:</span>
+                    <strong class="pill-val" id="pill-servers-val">31 سرور</strong>
+                  </div>
+                  <div class="status-pill pill-shield" id="pill-active-shield">
+                    <span class="pill-dot orange"></span>
+                    <span class="pill-label" data-i18n="pillShield">سپر ترافیک</span>
+                    <span class="pill-colon">:</span>
+                    <strong class="pill-val" id="pill-shield-val">غیرفعال</strong>
+                  </div>
+                </div>
+              </div>
+              <div class="lhc-actions">
+                <button class="btn-cyber-primary" id="btn-smart-optimize" onclick="doSmartOptimize()" data-tooltip="تنظیم بهترین DNS و انتخاب خودکار سرورهای با کمترین پینگ">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  <span data-i18n="btnSmartOptimize">بهینه‌سازی هوشمند (سرورهای بهینه + DNS)</span>
+                </button>
+                <div class="lhc-secondary-btns">
+                  <button class="btn-cyber-ghost btn-deep-bench" id="btn-deep-benchmark" onclick="doDeepBenchmark()" data-tooltip="تست پیوسته ۳۰ ثانیه‌ای برای محاسبه میانگین واقعی و پکت‌لاس بدون خطا">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span data-i18n="btnDeepBenchmark">تست دقیق (۳۰ ثانیه)</span>
+                  </button>
+                  <button class="btn-cyber-ghost" id="btn-benchmark-all" onclick="refreshLatencySuite(true)" data-tooltip="تست همزمان تمام سرورها و دی‌ان‌اس‌ها در کمتر از ۴ ثانیه">
+                    <i class="fa-solid fa-bolt-lightning"></i>
+                    <span data-i18n="btnBenchmarkAll">تست سریع</span>
+                  </button>
+                  <button class="btn-cyber-ghost" id="btn-revert-network" onclick="doRevertNetwork()" data-tooltip="حذف تمام رول‌های فایروال و بازگردانی دی‌ان‌اس به حالت عادی">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span data-i18n="btnResetVanilla">بازگردانی پیش‌فرض</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- High-Speed Live Progress Bar -->
+            <div class="latency-progress-wrap" id="latency-progress-wrap" style="display:none">
+              <div class="latency-progress-header">
+                <span class="latency-progress-title" id="latency-progress-title" data-i18n="benchmarkingTitle">در حال پایش موازی سرورها و دی‌ان‌اس‌ها...</span>
+                <span class="latency-progress-pct" id="latency-progress-pct">0%</span>
+              </div>
+              <div class="latency-progress-track">
+                <div class="latency-progress-bar" id="latency-progress-bar"></div>
+              </div>
+            </div>
+
+            <!-- Sub-Tab Switcher Navigation -->
+            <div class="latency-subtabs" id="latency-subtabs">
+              <button class="subtab-btn active" id="subtab-btn-servers" onclick="switchLatencySubtab('servers')">
+                <i class="fa-solid fa-server"></i>
+                <span data-i18n="subtabServers">انتخاب سرور (Server Picker)</span>
+                <span class="subtab-count" id="badge-servers-count">36</span>
+              </button>
+              <button class="subtab-btn" id="subtab-btn-dns" onclick="switchLatencySubtab('dns')">
+                <i class="fa-solid fa-globe"></i>
+                <span data-i18n="subtabDns">دی‌ان‌اس گیمینگ و ضد تحریم</span>
+                <span class="subtab-count" id="badge-dns-count">17</span>
+              </button>
+              <button class="subtab-btn" id="subtab-btn-tweaks" onclick="switchLatencySubtab('tweaks')">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span data-i18n="subtabTweaks">سپر ترافیک و توئیک‌های پینگ</span>
+              </button>
+            </div>
+
+            <!-- Sub-View 1: Server Picker -->
+            <div class="latency-subview" id="subview-servers">
+              <!-- Server Preset Manager Bar -->
+              <div class="server-preset-bar" id="server-preset-bar">
+                <div class="spb-left">
+                  <div class="spb-icon-title">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span class="spb-label" data-i18n="presetBarLabel">پروفایل‌های آماده سرور:</span>
+                  </div>
+                  <div class="spb-controls">
+                    <select class="spb-select" id="preset-select" onchange="onPresetSelected(this.value)">
+                      <option value="all_open" data-i18n="presetAllOpen">همه سرورها باز (پیش‌فرض)</option>
+                      <option value="bypass_germany" data-i18n="presetBypassGermany">حذف کامل آلمان و فالکنشتاین</option>
+                      <option value="eu_only" data-i18n="presetEuOnly">فقط اروپا (همه ۱۵ سرور)</option>
+                      <option value="eu_west_north" data-i18n="presetEuWestNorth">فقط غرب و شمال اروپا</option>
+                      <option value="dubai_only" data-i18n="presetDubai">فقط خاورمیانه (دبی)</option>
+                      <option value="nordic_only" data-i18n="presetNordic">فقط اسکاندیناوی (سوئد و فنلاند)</option>
+                      <option value="top5" data-i18n="presetTop5">سرورهای بهینه و کم‌پینگ (خودکار)</option>
+                    </select>
+                    <button class="spb-btn-save" onclick="openSavePresetModal()" data-tooltip="ذخیره وضعیت سرورهای فعلی به عنوان یک پروفایل شخصی">
+                      <i class="fa-solid fa-floppy-disk"></i>
+                      <span data-i18n="btnSavePreset">ذخیره چیدمان فعلی</span>
+                    </button>
+                    <button class="spb-btn-del" id="btn-del-preset" onclick="deleteCurrentCustomPreset()" style="display:none;" data-tooltip="حذف این پروفایل">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="spb-active-badge" id="spb-active-info">
+                  <span class="spb-status-text" id="spb-status-text"></span>
+                </div>
+              </div>
+
+              <!-- Filter & Actions Bar -->
+              <div class="server-toolbar">
+                <div class="server-filters">
+                  <button class="filter-pill active" onclick="filterServersByRegion('all')" data-region="all">همه (36)</button>
+                  <button class="filter-pill" onclick="filterServersByRegion('europe')" data-region="europe">اروپا (15)</button>
+                  <button class="filter-pill" onclick="filterServersByRegion('middle_east')" data-region="middle_east">خاورمیانه (3)</button>
+                  <button class="filter-pill" onclick="filterServersByRegion('asia')" data-region="asia">شرق آسیا (4)</button>
+                  <button class="filter-pill" onclick="filterServersByRegion('north_america')" data-region="north_america">آمریکا (7)</button>
+                  <button class="filter-pill" onclick="filterServersByRegion('south_america')" data-region="south_america">سایر (7)</button>
+                </div>
+                <div class="server-quick-actions">
+                  <button class="btn-tool-action btn-tool-top5" onclick="lockToTop5()" data-tooltip="انتخاب خودکار تمام سرورهای با پینگ بهینه و همگن (یکپارچه با ریجن)">
+                    <i class="fa-solid fa-star"></i>
+                    <bdi data-i18n="btnLockTop5">انتخاب خودکار سرورهای بهینه</bdi>
+                  </button>
+                  <button class="btn-tool-action btn-tool-eu" onclick="allowEuropeOnly()" data-tooltip="فقط سرورهای اروپا باز بمانند">
+                    <i class="fa-solid fa-earth-europe"></i>
+                    <bdi data-i18n="btnAllowEu">فقط سرورهای اروپا</bdi>
+                  </button>
+                  <button class="btn-tool-action btn-tool-unblock" onclick="unblockAllRelays()" data-tooltip="باز کردن تمام سرورها در فایروال">
+                    <i class="fa-solid fa-lock-open"></i>
+                    <bdi data-i18n="btnUnblockAll">باز کردن همه سرورها</bdi>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Best Route Highlight Slot -->
+              <div id="best-route-slot"></div>
+
+              <!-- Server Cards Grid -->
+              <div class="ping-grid" id="ping-grid"></div>
+
+              <!-- Footer info -->
               <div class="net-footer" id="net-footer" style="display:none"></div>
             </div>
-          </div>
-        </div>
+
+            <!-- Sub-View 2: Gaming & Anti-Sanction DNS -->
+            <div class="latency-subview" id="subview-dns" style="display:none">
+              <div class="dns-header-bar">
+                <div class="dns-header-info">
+                  <div class="dns-header-title" data-i18n="dnsHeaderTitle">سرویس‌های دی‌ان‌اس بهینه‌ساز بازی و ضد تحریم</div>
+                  <div class="dns-header-desc" data-i18n="dnsHeaderDesc">تنظیم مستقیم دی‌ان‌اس روی کارت شبکه به کاهش جهش‌های پینگ و رفع خطای عدم اتصال به سرورهای ددلاک کمک می‌کند.</div>
+                </div>
+                <div class="dns-actions-top">
+                  <button class="btn-tool-action" onclick="resetDnsToDhcp()" data-tooltip="بازگردانی تنظیمات کارت شبکه به دریافت خودکار">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span data-i18n="btnResetDhcp">دریافت خودکار (DHCP)</span>
+                  </button>
+                  <button class="btn-tool-action" onclick="doFlushDns()" data-tooltip="پاکسازی کش دی‌ان‌اس ویندوز (ipconfig /flushdns)">
+                    <i class="fa-solid fa-broom"></i>
+                    <span data-i18n="btnFlushDns">پاکسازی کش (Flush)</span>
+                  </button>
+                </div>
+              </div>
+              <div class="dns-grid" id="dns-grid"></div>
+            </div>
+
+            <!-- Sub-View 3: Bandwidth Shield & Latency Tweaks -->
+            <div class="latency-subview" id="subview-tweaks" style="display:none">
+              <div class="tweaks-header-bar">
+                <div class="tweaks-header-info">
+                  <div class="tweaks-header-title" data-i18n="tweaksHeaderTitle">توئیک‌های تخصصی سیستم و ایزولاسیون ترافیک</div>
+                  <div class="tweaks-header-desc" data-i18n="tweaksHeaderDesc">تمام گزینه‌ها کاملاً اختیاری هستند و با یک کلیک به حالت پیش‌فرض ویندوز بازمی‌گردند.</div>
+                </div>
+                <div class="tweaks-actions-top">
+                  <button class="btn-cyber-primary btn-save-tweaks" onclick="saveLatencyTweaks()">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span data-i18n="btnApplyTweaks">اعمال توئیک‌ها</span>
+                  </button>
+                  <button class="btn-cyber-ghost" onclick="revertLatencyTweaks()">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span data-i18n="btnRevertTweaks">بازگردانی تنظیمات ویندوز</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="tweaks-list-grid">
+                <!-- Tweak 1: Bandwidth Shield -->
+                <div class="tweak-card">
+                  <div class="tweak-card-left">
+                    <div class="tweak-icon-box"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="tweak-info">
+                      <div class="tweak-name" data-i18n="tweakShieldName">سپر ترافیک ددلاک (Bandwidth Shield)</div>
+                      <div class="tweak-desc" data-i18n="tweakShieldDesc">توقف سرویس‌های آپلود پس‌زمینه ویندوز (Delivery Optimization P2P و BITS) که عامل اصلی پکت‌لاس و لگ‌های ناگهانی هستند.</div>
+                    </div>
+                  </div>
+                  <label class="switch-ios">
+                    <input type="checkbox" id="tweak-check-shield">
+                    <span class="slider-ios"></span>
+                  </label>
+                </div>
+
+                <!-- Tweak 2: Windows Policy-based QoS -->
+                <div class="tweak-card">
+                  <div class="tweak-card-left">
+                    <div class="tweak-icon-box"><i class="fa-solid fa-traffic-light"></i></div>
+                    <div class="tweak-info">
+                      <div class="tweak-name" data-i18n="tweakQosName">اولویت‌بندی پکت‌های بازی (QoS DSCP 46)</div>
+                      <div class="tweak-desc" data-i18n="tweakQosDesc">علامت‌گذاری پکت‌های deadlock.exe با بالاترین اولویت شبکه (Expedited Forwarding) برای ارسال بدون صف در مودم و ویندوز.</div>
+                    </div>
+                  </div>
+                  <label class="switch-ios">
+                    <input type="checkbox" id="tweak-check-qos" checked>
+                    <span class="slider-ios"></span>
+                  </label>
+                </div>
+
+                <!-- Tweak 4: Network Throttling Index -->
+                <div class="tweak-card">
+                  <div class="tweak-card-left">
+                    <div class="tweak-icon-box"><i class="fa-solid fa-gauge-high"></i></div>
+                    <div class="tweak-info">
+                      <div class="tweak-name" data-i18n="tweakThrottlingName">غیرفعال‌سازی محدودکننده شبکه مالتی‌مدیا ویندوز</div>
+                      <div class="tweak-desc" data-i18n="tweakThrottlingDesc">تنظیم NetworkThrottlingIndex روی حداکثر تا هنگام پخش موزیک، دیسکورد یا بازی، ترافیک محدود نشود.</div>
+                    </div>
+                  </div>
+                  <label class="switch-ios">
+                    <input type="checkbox" id="tweak-check-throttling" checked>
+                    <span class="slider-ios"></span>
+                  </label>
+                </div>
+
+
+                <!-- Tweak 6: NIC Hardware Offload & Interrupt Moderation -->
+                <div class="tweak-card">
+                  <div class="tweak-card-left">
+                    <div class="tweak-icon-box"><i class="fa-solid fa-microchip"></i></div>
+                    <div class="tweak-info">
+                      <div class="tweak-name" data-i18n="tweakNicName">کاهش تاخیر کارت شبکه (Interrupt Moderation Off)</div>
+                      <div class="tweak-desc" data-i18n="tweakNicDesc">پردازش بدون درنگ بسته‌های ورودی به محض دریافت روی چیپ شبکه به جای تجمیع دسته‌ای.</div>
+                    </div>
+                  </div>
+                  <label class="switch-ios">
+                    <input type="checkbox" id="tweak-check-nic" checked>
+                    <span class="slider-ios"></span>
+                  </label>
+                </div>
+
+                <!-- Tweak 7: Deadlock Netcode ConVars -->
+                <div class="tweak-card">
+                  <div class="tweak-card-left">
+                    <div class="tweak-icon-box"><i class="fa-solid fa-terminal"></i></div>
+                    <div class="tweak-info">
+                      <div class="tweak-name" data-i18n="tweakNetcodeName">دستورات بهینه‌ساز نت‌کد ددلاک (Autoexec ConVars)</div>
+                      <div class="tweak-desc" data-i18n="tweakNetcodeDesc">تنظیم نرخ تبادل دیتا روی حداکثر (rate 1000000, cl_updaterate 64, cl_interp_ratio 1) در فایل کانفیگ بازی.</div>
+                    </div>
+                  </div>
+                  <label class="switch-ios">
+                    <input type="checkbox" id="tweak-check-netcode" checked>
+                    <span class="slider-ios"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div> <!-- Close latency-content-wrapper -->
+
+        </div> <!-- Close latency-container -->
+      </div> <!-- Close panel-latency -->
         <div class="panel" id="panel-advanced" style="display:none">
           <div class="advanced-grid">
             <div class="adv-col adv-col-actions">
@@ -411,7 +827,7 @@
                     <span class="match-help-icon" id="match-help-icon" data-i18n-tooltip="matchSyncHelp" onclick="event.stopPropagation(); showMatchHelp();">
                       <i class="fa-solid fa-circle-question"></i>
                     </span>
-                    <span class="match-sync-badge badge-idle" id="match-sync-badge">READY</span>
+                    <span class="match-sync-badge badge-idle" id="match-sync-badge" data-i18n="matchSyncBadgeReady">READY</span>
                   </div>
                 </button>
               </div>
@@ -420,6 +836,21 @@
                   <i class="fa-solid fa-arrows-rotate" style="font-size:15px;color:var(--deadlock-cyan)"></i>
                   <span data-i18n="btnCheckUpdates">بروزرسانی اپ</span>
                 </button>
+              </div>
+              <div class="adv-card adv-motion-card">
+                <div class="adv-card-header">
+                  <div class="adv-card-title-group">
+                    <i class="fa-solid fa-battery-half" style="font-size:15px;color:var(--deadlock-cyan)"></i>
+                    <span class="adv-card-title" data-i18n="reducedMotionTitle">REDUCED MOTION (LAPTOP / BATTERY)</span>
+                  </div>
+                  <label class="neon-checkbox" style="margin:0" data-tooltip="Disable custom mouse and heavy animations">
+                    <input type="checkbox" id="sw-reduced-motion" onchange="toggleReducedMotion(this.checked)" />
+                    <span class="neon-checkbox-box"></span>
+                  </label>
+                </div>
+                <div class="adv-card-desc" data-i18n="reducedMotionDesc">
+                  Disables custom flame cursor and heavy animations for low-end / battery laptops.
+                </div>
               </div>
               <div class="adv-card adv-actions-row">
                 <button class="btn-reset" id="btn-reset-settings" onclick="doResetSettings()">
@@ -511,7 +942,7 @@
     </div>
   </div>
   <div class="app-version-badge" id="app-version-badge" dir="ltr">
-    <span class="ver-tag" id="app-ver-tag">v0.1.2 <span class="ver-beta">BETA</span></span>
+    <span class="ver-tag" id="app-ver-tag">v0.1.4 <span class="ver-beta">BETA</span></span>
     <span class="ver-sep">•</span>
     <span class="ver-by">by <span class="ver-author">aryobw9</span></span>
   </div>
@@ -553,11 +984,38 @@
       </div>
     </div>
   </div>
-  <div id="dlp-custom-cursor" aria-hidden="true"><div id="dlp-custom-cursor-inner"></div></div>
+  <!-- Modal: Save Custom Preset -->
+  <div class="modal-overlay" id="modal-save-preset" style="display:none">
+    <div class="modal-box preset-modal-box">
+      <div class="doorman-modal-header">
+        <div class="doorman-modal-title-group">
+          <i class="fa-solid fa-floppy-disk" style="color:var(--deadlock-cyan);font-size:16px;"></i>
+          <span class="doorman-modal-title" data-i18n="modalPresetTitle">ذخیره پروفایل شخصی</span>
+        </div>
+        <button class="doorman-close-btn" onclick="closeSavePresetModal()">&times;</button>
+      </div>
+      <div class="doorman-modal-desc" data-i18n="modalPresetDesc">
+        یک نام برای وضعیت انتخاب سرورهای فعلی وارد کنید:
+      </div>
+      <div class="preset-modal-body" style="padding: 12px 0 16px 0;">
+        <input type="text" id="input-preset-name" class="preset-name-input" placeholder="مثلاً: سرورهای پینگ زیر ۹۰" maxlength="32" onkeydown="if(event.key==='Enter')confirmSavePreset()" />
+      </div>
+      <div class="doorman-modal-actions" style="justify-content: flex-end; gap: 8px;">
+        <button class="btn-reset btn-sm" onclick="closeSavePresetModal()">
+          <span data-i18n="btnCancel">انصراف</span>
+        </button>
+        <button class="btn-apply btn-sm" onclick="confirmSavePreset()">
+          <i class="fa-solid fa-check"></i>
+          <span data-i18n="btnSave">ذخیره</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="dlp-custom-cursor" aria-hidden="true"><div id="dlp-custom-cursor-inner"></div><div id="dlp-cursor-target-dot"></div></div>
   <script src="vendor/motion/motion.js"></script>
   <script src="i18n/fa.js"></script>
   <script src="i18n/en.js"></script>
-  <script src="app.js?v=30"></script>
+  <script src="app.js?v=34"></script>
   <script>
     // expose opener global (withGlobalTauri injects plugin APIs lazily via plugins object)
     window.addEventListener('DOMContentLoaded', () => {

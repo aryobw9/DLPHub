@@ -31,6 +31,8 @@ pub fn high_slot_name(name: &str) -> String {
         "pak08_dir.vpk" => "pak97_dir.vpk".to_string(),
         "pak26_dir.vpk" => "pak98_dir.vpk".to_string(),
         "pak54_dir.vpk" => "pak99_dir.vpk".to_string(),
+        "pak30_dir.vpk" => "pak90_dir.vpk".to_string(),
+        "pak31_dir.vpk" => "pak95_dir.vpk".to_string(),
         other => other.to_string(),
     }
 }

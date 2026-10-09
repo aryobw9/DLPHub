@@ -46,13 +46,20 @@ pub fn check_running() -> Vec<String> {
 
 // ---------- install ----------
 #[tauri::command]
-pub async fn install_mode(mode: String, fov: u32, path: String) -> Result<Vec<install::StepLog>, String> {
+pub async fn install_mode(
+    mode: String,
+    fov: Option<u32>,
+    aspect_ratio: Option<String>,
+    aspect_ratio_enabled: Option<bool>,
+    path: String,
+) -> Result<Vec<install::StepLog>, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let m = match mode.as_str() {
             "T1" => install::Mode::T1,
             "T2" => install::Mode::T2,
             "T3" => install::Mode::T3,
-            "POTATO" | "SOON" => return Err("Potato mode is temporarily disabled (mods outdated). Coming soon!".to_string()),
+            "POTATO" => install::Mode::Potato,
+            "RUSSIAN_POTATO" => install::Mode::RussianPotato,
             "T1MODS" => install::Mode::T1Mods,
             "T2MODS" => install::Mode::T2Mods,
             other => return Err(format!("unknown mode: {other}")),
@@ -60,7 +67,20 @@ pub async fn install_mode(mode: String, fov: u32, path: String) -> Result<Vec<in
         let deadlock = resolve_path(&path)?;
         let pkg = payload::extract_cached().map_err(|e| e.to_string())?;
         let data = settings::data_dir();
-        install::install(m, fov, &deadlock, &pkg, &data)
+
+        let mut s = settings::load();
+        if let Some(f) = fov {
+            s.fov = f.min(90);
+        }
+        if let Some(ar) = aspect_ratio {
+            s.aspect_ratio = ar;
+        }
+        if let Some(are) = aspect_ratio_enabled {
+            s.aspect_ratio_enabled = are;
+        }
+        let _ = settings::save(&s);
+
+        install::install(m, s.fov, &deadlock, &pkg, &data)
     })
     .await
     .map_err(|e| e.to_string())?
@@ -180,8 +200,13 @@ pub struct SettingsDto {
     pub lang: String,
     pub unlocked: bool,
     pub last_path: Option<String>,
-    pub unit_status_new: bool,
+    pub better_breakables: bool,
+    pub higher_brightness: bool,
+    pub reduce_clutter: bool,
     pub fov: u32,
+    pub aspect_ratio: String,
+    pub aspect_ratio_enabled: bool,
+    pub reduced_motion: bool,
     pub fps_max: Option<u32>,
     pub custom_autoexec: String,
     pub renderer: String,
@@ -195,8 +220,13 @@ impl From<settings::Settings> for SettingsDto {
             lang: s.lang,
             unlocked: s.unlocked,
             last_path: s.last_path,
-            unit_status_new: s.unit_status_new,
+            better_breakables: s.better_breakables,
+            higher_brightness: s.higher_brightness,
+            reduce_clutter: s.reduce_clutter,
             fov: s.fov,
+            aspect_ratio: s.aspect_ratio,
+            aspect_ratio_enabled: s.aspect_ratio_enabled,
+            reduced_motion: s.reduced_motion,
             fps_max: s.fps_max,
             custom_autoexec: s.custom_autoexec,
             renderer: s.renderer,
@@ -211,8 +241,13 @@ pub struct SettingsPatch {
     pub lang: Option<String>,
     pub unlock_code: Option<String>,
     pub last_path: Option<String>,
-    pub unit_status_new: Option<bool>,
+    pub better_breakables: Option<bool>,
+    pub higher_brightness: Option<bool>,
+    pub reduce_clutter: Option<bool>,
     pub fov: Option<u32>,
+    pub aspect_ratio: Option<String>,
+    pub aspect_ratio_enabled: Option<bool>,
+    pub reduced_motion: Option<bool>,
     pub fps_max: Option<i32>, // -1: None (default/untouched), >=0: Some(n)
     pub custom_autoexec: Option<String>,
     pub renderer: Option<String>,
@@ -253,9 +288,18 @@ pub fn set_settings(patch: SettingsPatch) -> Result<SettingsDto, String> {
     if let Some(p) = patch.last_path {
         s.last_path = if p.trim().is_empty() { None } else { Some(p) };
     }
-    if let Some(fov) = patch.fov { s.fov = fov; }
-    if let Some(u) = patch.unit_status_new {
-        s.unit_status_new = u;
+    if let Some(fov) = patch.fov { s.fov = fov.min(90); }
+    if let Some(ar) = patch.aspect_ratio { s.aspect_ratio = ar; }
+    if let Some(are) = patch.aspect_ratio_enabled { s.aspect_ratio_enabled = are; }
+    if let Some(rm) = patch.reduced_motion { s.reduced_motion = rm; }
+    if let Some(b) = patch.better_breakables {
+        s.better_breakables = b;
+    }
+    if let Some(hb) = patch.higher_brightness {
+        s.higher_brightness = hb;
+    }
+    if let Some(rc) = patch.reduce_clutter {
+        s.reduce_clutter = rc;
     }
     if let Some(ca_stop) = patch.stop_cloth_anim {
         s.stop_cloth_anim = ca_stop;
@@ -297,8 +341,8 @@ pub fn get_diagnostics() -> String {
     diag.push_str(&format!("Log Path: {:?}\n", dlp_core::logger::log_path(&data_dir)));
 
     let s = settings::load();
-    diag.push_str(&format!("Settings: lang={}, unlocked={}, last_path={:?}, fov={}, fps_max={:?}, unit_status={}, stop_cloth_anim={}, ragdoll_fade={}\n",
-        s.lang, s.unlocked, s.last_path, s.fov, s.fps_max, s.unit_status_new, s.stop_cloth_anim, s.ragdoll_fade
+    diag.push_str(&format!("Settings: lang={}, unlocked={}, last_path={:?}, fov={}, aspect_ratio={}, aspect_ratio_enabled={}, reduced_motion={}, fps_max={:?}, better_breakables={}, higher_brightness={}, reduce_clutter={}, stop_cloth_anim={}, ragdoll_fade={}\n",
+        s.lang, s.unlocked, s.last_path, s.fov, s.aspect_ratio, s.aspect_ratio_enabled, s.reduced_motion, s.fps_max, s.better_breakables, s.higher_brightness, s.reduce_clutter, s.stop_cloth_anim, s.ragdoll_fade
     ));
 
     let vram_bytes = detect::detect_vram_bytes();
@@ -667,6 +711,219 @@ pub async fn ping_valve_servers() -> Result<Vec<ServerPing>, String> {
 
     results.sort_by_key(|r| r.ping_ms.unwrap_or(9999));
     Ok(results)
+}
+
+// ---------- Latency & Server Picker Commands ----------
+
+#[tauri::command]
+pub fn check_admin_status() -> bool {
+    crate::latency::is_elevated()
+}
+
+#[tauri::command]
+pub fn check_firewall_status() -> bool {
+    crate::latency::is_firewall_enabled()
+}
+
+#[tauri::command]
+pub async fn enable_firewall_cmd() -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(crate::latency::enable_windows_firewall)
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub fn restart_as_admin() -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        if let Ok(exe) = std::env::current_exe() {
+            let path_str = exe.to_string_lossy().replace('\'', "''");
+            let _ = std::process::Command::new("powershell")
+                .args(["-NoProfile", "-Command", &format!("Start-Process -FilePath '{}' -Verb RunAs", path_str)])
+                .spawn();
+            std::process::exit(0);
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_valve_clusters() -> Result<Vec<crate::latency::ValveCluster>, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let blocked = crate::latency::get_firewall_blocked_clusters_raw();
+        let mut list = Vec::new();
+        for def in crate::latency::VALVE_CLUSTERS_RAW {
+            let is_blocked = blocked.contains(def.id);
+            list.push(crate::latency::ValveCluster {
+                id: def.id.to_string(),
+                name: def.name.to_string(),
+                name_fa: def.name_fa.to_string(),
+                region: def.region.to_string(),
+                region_name: def.region_name.to_string(),
+                region_name_fa: def.region_name_fa.to_string(),
+                primary_ip: def.primary_ip.to_string(),
+                relay_ips: def.relay_ips.iter().map(|s| s.to_string()).collect(),
+                ping_ms: None,
+                avg_ms: None,
+                jitter_ms: None,
+                loss_pct: 0.0,
+                stability: None,
+                is_blocked,
+                is_top5: false,
+            });
+        }
+        list
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn ping_valve_clusters() -> Result<Vec<crate::latency::ValveCluster>, String> {
+    tauri::async_runtime::spawn_blocking(crate::latency::benchmark_clusters_parallel)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn deep_benchmark_clusters_cmd(duration_secs: Option<u32>) -> Result<Vec<crate::latency::ValveCluster>, String> {
+    let secs = duration_secs.unwrap_or(30);
+    tauri::async_runtime::spawn_blocking(move || crate::latency::deep_benchmark_clusters(secs))
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn toggle_cluster_block(id: String, blocked: bool) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        if blocked {
+            if let Some(def) = crate::latency::VALVE_CLUSTERS_RAW.iter().find(|c| c.id == id) {
+                let ips: Vec<String> = def.relay_ips.iter().map(|s| s.to_string()).collect();
+                crate::latency::block_cluster_relay(&id, &ips)?;
+            }
+        } else {
+            crate::latency::unblock_cluster_relay(&id)?;
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn apply_top5_clusters(top5_ids: Vec<String>) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::latency::apply_top5_firewall_rules(&top5_ids)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn unblock_all_clusters() -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(crate::latency::unblock_all_clusters_relays)
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn apply_cluster_preset_cmd(blocked_ids: Vec<String>) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::latency::apply_cluster_preset_rules(&blocked_ids)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn get_dns_profiles() -> Result<Vec<crate::latency::DnsProfile>, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let active_ips = crate::latency::get_active_dns_ips();
+        let mut list = Vec::new();
+        for &(id, name, name_fa, desc, desc_fa, tag, tag_fa, primary, secondary) in crate::latency::DNS_PROFILES_RAW {
+            let is_active = active_ips.iter().any(|ip| ip == primary || ip == secondary);
+            list.push(crate::latency::DnsProfile {
+                id: id.to_string(),
+                name: name.to_string(),
+                name_fa: name_fa.to_string(),
+                desc: desc.to_string(),
+                desc_fa: desc_fa.to_string(),
+                tag: tag.to_string(),
+                tag_fa: tag_fa.to_string(),
+                primary: primary.to_string(),
+                secondary: secondary.to_string(),
+                is_active,
+                ping_ms: None,
+            });
+        }
+        list
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn ping_dns_profiles() -> Result<Vec<crate::latency::DnsProfile>, String> {
+    tauri::async_runtime::spawn_blocking(crate::latency::benchmark_dns_profiles_parallel)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn deep_benchmark_dns_cmd(duration_secs: Option<u32>) -> Result<Vec<crate::latency::DnsProfile>, String> {
+    let secs = duration_secs.unwrap_or(30);
+    tauri::async_runtime::spawn_blocking(move || crate::latency::deep_benchmark_dns_profiles(secs))
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn apply_dns_profile(id: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        if let Some(&(_, _, _, _, _, _, _, primary, secondary)) =
+            crate::latency::DNS_PROFILES_RAW.iter().find(|p| p.0 == id)
+        {
+            crate::latency::apply_dns_to_adapters(primary, secondary)
+        } else {
+            Err("DNS profile not found".into())
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn reset_dns_dhcp() -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(crate::latency::reset_dns_to_dhcp_adapters)
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn flush_dns_cmd() -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(crate::latency::flush_dns_cache)
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn apply_latency_tweaks_cmd(tweaks: crate::latency::LatencyTweaksState) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let deadlock_path = settings::load().last_path;
+        crate::latency::apply_latency_tweaks(&tweaks, deadlock_path.as_deref())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn revert_latency_tweaks_cmd() -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let deadlock_path = settings::load().last_path;
+        crate::latency::revert_latency_tweaks(deadlock_path.as_deref())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 // ---------- Doorman Visual Debug / Test ConVars ----------

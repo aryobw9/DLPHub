@@ -147,7 +147,14 @@ pub fn list_backups(data_dir: &Path) -> Vec<String> {
 /// Check if the configuration in citadel is already one of DLPHub's tiers.
 pub fn is_our_config(citadel: &Path, pkg: &Path) -> bool {
     let tier = crate::detect::detect_tier(citadel, pkg);
-    matches!(tier, crate::detect::Tier::T1 | crate::detect::Tier::T2 | crate::detect::Tier::T3 | crate::detect::Tier::Potato)
+    matches!(
+        tier,
+        crate::detect::Tier::T1
+            | crate::detect::Tier::T2
+            | crate::detect::Tier::T3
+            | crate::detect::Tier::Potato
+            | crate::detect::Tier::RussianPotato
+    )
 }
 
 /// Check if the current state in citadel is byte-for-byte identical to a backup directory.

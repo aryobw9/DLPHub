@@ -93,22 +93,94 @@ pub fn merge_video(user: &str, template: &str) -> String {
     out
 }
 
-/// set_fov.ps1: replace the r_aspectratio value; 6 tabs indent, no BOM.
-pub fn set_fov(gi_content: &str, ar: &str) -> String {
+/// set_aspect_ratio: replace or disable the r_aspectratio value; 6 tabs indent, no BOM.
+/// If ar is Some(val), sets "r_aspectratio" to val (uncommenting if previously commented).
+/// If ar is None, disables (comments out) "r_aspectratio".
+pub fn set_aspect_ratio(gi_content: &str, ar: Option<&str>) -> String {
     let mut out = String::with_capacity(gi_content.len());
     let mut replaced = false;
     for line in strip_bom(gi_content).split_inclusive('\n') {
         let t = line.trim_start();
-        if !replaced && t.starts_with("\"r_aspectratio\"") {
+        let is_target = !replaced && (
+            t.starts_with("\"r_aspectratio\"")
+            || t.starts_with("r_aspectratio ")
+            || t.starts_with("r_aspectratio\t")
+            || t.starts_with("r_aspectratio\"")
+            || t.starts_with("// \"r_aspectratio\"")
+            || t.starts_with("//\"r_aspectratio\"")
+            || t.starts_with("// r_aspectratio \"")
+            || t.starts_with("//r_aspectratio \"")
+            || t.starts_with("// r_aspectratio\"")
+            || t.starts_with("//r_aspectratio\"")
+            || t.starts_with("// r_aspectratio\t\"")
+            || t.starts_with("//r_aspectratio\t\"")
+        );
+        if is_target {
+            let indent = &line[..line.len() - t.len()];
+            match ar {
+                Some(val) => {
+                    out.push_str(indent);
+                    out.push_str("\"r_aspectratio\"\t\t\t\t\t\t\"");
+                    out.push_str(val);
+                    out.push('"');
+                    if line.ends_with('\n') {
+                        out.push('\n');
+                    }
+                }
+                None => {
+                    out.push_str(indent);
+                    out.push_str("// \"r_aspectratio\"\t\t\t\t\t\t\"disabled\"");
+                    if line.ends_with('\n') {
+                        out.push('\n');
+                    }
+                }
+            }
+            replaced = true;
+        } else {
+            out.push_str(line);
+        }
+    }
+    out
+}
+
+/// set_fov.ps1: replace the r_aspectratio value; 6 tabs indent, no BOM.
+pub fn set_fov(gi_content: &str, ar: &str) -> String {
+    set_aspect_ratio(gi_content, Some(ar))
+}
+
+/// patch_gameinfo_options:
+/// Updates gameinfo.gi directly for user settings:
+/// 1) "r_aspectratio" -> ar (or comments it out if None)
+/// 2) "cloth_sim_on_tick" -> "0" if stop_cloth_anim else "1"
+/// 3) "cl_ragdoll_limit" -> "0" if ragdoll_fade else "-1"
+pub fn patch_gameinfo_options(
+    gi_content: &str,
+    ar: Option<&str>,
+    stop_cloth_anim: bool,
+    ragdoll_fade: bool,
+) -> String {
+    let with_ar = set_aspect_ratio(gi_content, ar);
+    let mut out = String::with_capacity(with_ar.len());
+
+    let cloth_val = if stop_cloth_anim { "0" } else { "1" };
+    let ragdoll_val = if ragdoll_fade { "0" } else { "-1" };
+
+    for line in strip_bom(&with_ar).split_inclusive('\n') {
+        let t = line.trim_start();
+        if t.starts_with("\"cloth_sim_on_tick\"") || t.starts_with("cloth_sim_on_tick") {
             let indent = &line[..line.len() - t.len()];
             out.push_str(indent);
-            out.push_str("\"r_aspectratio\"\t\t\t\t\t\t\"");
-            out.push_str(ar);
-            out.push('"');
+            out.push_str(&format!("\"cloth_sim_on_tick\"\t\t\t\t\t\t\"{}\"", cloth_val));
             if line.ends_with('\n') {
                 out.push('\n');
             }
-            replaced = true;
+        } else if t.starts_with("\"cl_ragdoll_limit\"") || t.starts_with("cl_ragdoll_limit") {
+            let indent = &line[..line.len() - t.len()];
+            out.push_str(indent);
+            out.push_str(&format!("\"cl_ragdoll_limit\"\t\t\t\t\t\t\"{}\"", ragdoll_val));
+            if line.ends_with('\n') {
+                out.push('\n');
+            }
         } else {
             out.push_str(line);
         }
@@ -142,24 +214,21 @@ pub fn upsert_autoexec(existing: &str, enabled: bool) -> String {
         }
         return s;
     }
-    upsert_autoexec_full(existing, enabled, false, false, "", "")
+    upsert_autoexec_full(existing, "", "")
 }
 
 /// Managed autoexec block with optional custom cvars.
-pub fn upsert_autoexec_custom(existing: &str, enabled_unit_status: bool, custom_commands: &str) -> String {
-    let active = enabled_unit_status || !custom_commands.trim().is_empty();
+pub fn upsert_autoexec_custom(existing: &str, _enabled: bool, custom_commands: &str) -> String {
+    let active = !custom_commands.trim().is_empty();
     if !active {
         return upsert_autoexec(existing, false);
     }
-    upsert_autoexec_full(existing, enabled_unit_status, false, false, "", custom_commands)
+    upsert_autoexec_full(existing, "", custom_commands)
 }
 
 /// Managed autoexec block with tier commands (e.g. from t1 autoexec.cfg) and custom commands.
 pub fn upsert_autoexec_full(
     existing: &str,
-    enabled_unit_status: bool,
-    stop_cloth_anim: bool,
-    ragdoll_fade: bool,
     tier_commands: &str,
     custom_commands: &str,
 ) -> String {
@@ -183,7 +252,7 @@ pub fn upsert_autoexec_full(
     }
     let has_tier = tier_commands.lines().any(|l| !l.trim().is_empty());
     let has_custom = custom_commands.lines().any(|l| !l.trim().is_empty());
-    if !enabled_unit_status && !stop_cloth_anim && !ragdoll_fade && !has_tier && !has_custom {
+    if !has_tier && !has_custom {
         let mut s = user_lines.join("\n");
         if !s.is_empty() && (text.ends_with('\n') || s.contains('\n')) {
             s.push('\n');
@@ -199,18 +268,6 @@ pub fn upsert_autoexec_full(
     s.push('\n');
     s.push_str("\tcon_enable \"1\"\n");
     s.push_str("\tcon_logfile \"console.log\"\n");
-    if enabled_unit_status {
-        s.push_str("\tcitadel_unit_status_use_new \"true\"\n");
-    }
-    if stop_cloth_anim {
-        s.push_str("\tcloth_update \"0\"\n");
-        s.push_str("\tcloth_sim_on_tick \"0\"\n");
-    }
-    if ragdoll_fade {
-        s.push_str("\tcl_ragdoll_limit \"0\"\n");
-    } else {
-        s.push_str("\tcl_ragdoll_limit \"-1\"\n");
-    }
     for line in tier_commands.lines() {
         let trimmed = line.trim();
         if !trimmed.is_empty() {
@@ -234,8 +291,10 @@ pub fn upsert_autoexec_full(
 
 /// Patch key-values in a video.txt formatted string.
 /// Matches `"setting.<key>"` or `"<key>"`, replacing value while preserving structure.
+/// If a patch key does not exist in the file, it is inserted before the closing '}' of "video.cfg".
 pub fn patch_video_kv(content: &str, patches: &[(&str, &str)]) -> String {
     let mut out = String::with_capacity(content.len() + 64);
+    let mut matched_patches = std::collections::HashSet::new();
     for ln in content.lines() {
         let mut replaced = false;
         if let Some((k, prefix_end, trailing_start)) = parse_line(ln) {
@@ -248,6 +307,7 @@ pub fn patch_video_kv(content: &str, patches: &[(&str, &str)]) -> String {
                     out.push_str(&ln[trailing_start..]);
                     out.push('\n');
                     replaced = true;
+                    matched_patches.insert(*pk);
                     break;
                 }
             }
@@ -257,6 +317,24 @@ pub fn patch_video_kv(content: &str, patches: &[(&str, &str)]) -> String {
             out.push('\n');
         }
     }
+
+    let missing: Vec<_> = patches.iter().filter(|(pk, _)| !matched_patches.contains(pk)).collect();
+    if !missing.is_empty() {
+        if let Some(last_brace_idx) = out.rfind('}') {
+            let mut final_out = String::with_capacity(out.len() + missing.len() * 40);
+            final_out.push_str(&out[..last_brace_idx]);
+            for (k, v) in missing {
+                final_out.push_str(&format!("\t\"{}\"\t\t\"{}\"\n", k, v));
+            }
+            final_out.push_str(&out[last_brace_idx..]);
+            return final_out;
+        } else {
+            for (k, v) in missing {
+                out.push_str(&format!("\t\"{}\"\t\t\"{}\"\n", k, v));
+            }
+        }
+    }
+
     out
 }
 
@@ -323,23 +401,20 @@ mod tests {
     #[test]
     fn autoexec_upsert_empty() {
         let out = upsert_autoexec("", true);
-        assert!(out.contains("// DLP BEGIN\n"));
-        assert!(out.contains("\tcitadel_unit_status_use_new \"true\"\n"));
-        assert!(out.contains("\tcl_ragdoll_limit \"-1\"\n"));
-        assert!(out.contains("// DLP END\n"));
+        assert!(!out.contains("// DLP BEGIN"));
     }
 
     #[test]
     fn autoexec_replace_no_duplicate() {
-        let existing = "fps_max 0\n// DLP BEGIN\n\tcitadel_unit_status_use_new \"true\"\n// DLP END\n";
-        let out = upsert_autoexec(existing, true);
+        let existing = "fps_max 0\n// DLP BEGIN\n\tcon_enable \"1\"\n// DLP END\n";
+        let out = upsert_autoexec_custom(existing, true, "fps_max 144");
         assert_eq!(out.matches("// DLP BEGIN").count(), 1);
         assert!(out.starts_with("fps_max 0\n"));
     }
 
     #[test]
     fn autoexec_disable_removes_block_only() {
-        let existing = "my_cvar 1\n// DLP BEGIN\n\tcitadel_unit_status_use_new \"true\"\n// DLP END\nafter_cvar 2\n";
+        let existing = "my_cvar 1\n// DLP BEGIN\n\tcon_enable \"1\"\n// DLP END\nafter_cvar 2\n";
         let out = upsert_autoexec(existing, false);
         assert!(!out.contains("DLP"));
         assert!(out.contains("my_cvar 1\n"));
@@ -349,7 +424,7 @@ mod tests {
     #[test]
     fn autoexec_user_content_untouched() {
         let existing = "// my own tweaks\nr_thing \"3\"\n";
-        let out = upsert_autoexec(existing, true);
+        let out = upsert_autoexec_custom(existing, true, "fps_max 144");
         assert!(out.starts_with("// my own tweaks\nr_thing \"3\"\n"));
         assert!(out.contains("// DLP BEGIN"));
         assert_eq!(upsert_autoexec(existing, false), existing);
@@ -359,7 +434,6 @@ mod tests {
     fn autoexec_custom_commands_appended() {
         let existing = "// base\n";
         let out = upsert_autoexec_custom(existing, true, "fps_max 165\nsensitivity 1.2");
-        assert!(out.contains("citadel_unit_status_use_new \"true\""));
         assert!(out.contains("\tfps_max 165\n"));
         assert!(out.contains("\tsensitivity 1.2\n"));
     }
@@ -367,39 +441,24 @@ mod tests {
     #[test]
     fn autoexec_tier_commands_and_custom() {
         let existing = "// base\n";
-        let out = upsert_autoexec_full(existing, true, false, false, "r_drawviewmodel 0\nmat_viewportscale 0.8", "fps_max 165");
-        assert!(out.contains("citadel_unit_status_use_new \"true\""));
+        let out = upsert_autoexec_full(existing, "r_drawviewmodel 0\nmat_viewportscale 0.8", "fps_max 165");
         assert!(out.contains("\tr_drawviewmodel 0\n"));
         assert!(out.contains("\tmat_viewportscale 0.8\n"));
         assert!(out.contains("\tfps_max 165\n"));
-        assert!(out.contains("cl_ragdoll_limit \"-1\""));
-        assert!(!out.contains("g_ragdoll_maxcount"));
     }
 
     #[test]
-    fn autoexec_stop_cloth_anim() {
-        let existing = "// base\n";
-        let out = upsert_autoexec_full(existing, false, true, false, "", "");
-        assert!(out.contains("cloth_update \"0\""));
-        assert!(out.contains("cloth_sim_on_tick \"0\""));
-        assert!(out.contains("cl_ragdoll_limit \"-1\""));
-    }
+    fn gameinfo_patch_options_test() {
+        let gi = "\t\t\"cloth_sim_on_tick\"\t\t\"1\"\n\t\t\"cl_ragdoll_limit\"\t\t\"-1\"\n\t\t\"r_aspectratio\"\t\t\"2.15\"\n";
+        let patched = patch_gameinfo_options(gi, Some("2.40"), true, true);
+        assert!(patched.contains("\"cloth_sim_on_tick\"\t\t\t\t\t\t\"0\""));
+        assert!(patched.contains("\"cl_ragdoll_limit\"\t\t\t\t\t\t\"0\""));
+        assert!(patched.contains("\"r_aspectratio\"\t\t\t\t\t\t\"2.40\""));
 
-    #[test]
-    fn autoexec_ragdoll_fade_toggle() {
-        let existing = "// base\n";
-        // Default mode (boost OFF): keep corpses & Doorman clone solid (-1)
-        let out_default = upsert_autoexec_full(existing, true, false, false, "", "");
-        assert!(out_default.contains("cl_ragdoll_limit \"-1\""));
-        assert!(!out_default.contains("g_ragdoll_maxcount"));
-        assert!(!out_default.contains("cl_disable_ragdolls"));
-
-        // FPS boost mode (boost ON): fade corpses immediately (0)
-        let out_boost = upsert_autoexec_full(existing, false, false, true, "", "");
-        assert!(out_boost.contains("cl_ragdoll_limit \"0\""));
-        assert!(!out_boost.contains("cl_ragdoll_limit \"-1\""));
-        assert!(!out_boost.contains("g_ragdoll_maxcount"));
-        assert!(!out_boost.contains("cl_disable_ragdolls"));
+        let patched_off = patch_gameinfo_options(gi, None, false, false);
+        assert!(patched_off.contains("\"cloth_sim_on_tick\"\t\t\t\t\t\t\"1\""));
+        assert!(patched_off.contains("\"cl_ragdoll_limit\"\t\t\t\t\t\t\"-1\""));
+        assert!(patched_off.contains("// \"r_aspectratio\"\t\t\t\t\t\t\"disabled\""));
     }
 
     #[test]
@@ -409,5 +468,27 @@ mod tests {
         assert!(patched.contains("\"setting.r_low_latency\" \"1\""));
         assert!(patched.contains("\"setting.fps_max\" \"144\""));
         assert!(patched.contains("\"setting.mat_vsync\" \"0\""));
+    }
+
+    #[test]
+    fn patch_video_kv_inserts_missing_keys_before_brace() {
+        let video = "\"video.cfg\"\n{\n\t\"setting.fps_max\" \"0\"\n}\n";
+        let patched = patch_video_kv(video, &[("setting.fov", "90")]);
+        assert!(patched.contains("\"setting.fov\"\t\t\"90\""));
+        assert!(patched.ends_with("}\n"));
+    }
+
+    #[test]
+    fn set_aspect_ratio_real_number_and_disable() {
+        let gi = "\t\t\"r_aspectratio\"\t\t\t\t\t\t\"2.15\"\n";
+        let custom = set_aspect_ratio(gi, Some("2.40"));
+        assert!(custom.contains("\"r_aspectratio\"\t\t\t\t\t\t\"2.40\""));
+
+        let disabled = set_aspect_ratio(gi, None);
+        assert!(disabled.contains("// \"r_aspectratio\"\t\t\t\t\t\t\"disabled\""));
+
+        let reenabled = set_aspect_ratio(&disabled, Some("1.78"));
+        assert!(reenabled.contains("\"r_aspectratio\"\t\t\t\t\t\t\"1.78\""));
+        assert!(!reenabled.contains("// \"r_aspectratio\""));
     }
 }

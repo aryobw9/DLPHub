@@ -34,6 +34,9 @@ const state = {
   lastPath: null,
   gamePath: null,
   fov: 90,
+  aspectRatio: '2.15',
+  aspectRatioEnabled: true,
+  reducedMotion: false,
   selectedMode: null,
   detectedTier: null,
   running: false,
@@ -112,12 +115,30 @@ function applyLang() {
   if (state.lastMatchId) {
     const textEl = document.getElementById('btn-sync-match-text');
     if (textEl) textEl.textContent = `${t('btnCopyMatch')} (#${state.lastMatchId})`;
+    const badge = document.getElementById('match-sync-badge');
+    if (badge) {
+      badge.className = 'match-sync-badge badge-success';
+      badge.textContent = `#${state.lastMatchId}`;
+    }
+  } else {
+    const badge = document.getElementById('match-sync-badge');
+    if (badge && !badge.classList.contains('badge-syncing')) {
+      badge.textContent = t('matchSyncBadgeReady');
+    }
   }
-  if (pingingActive) {
+  if (typeof updateLatencyHeroPills === 'function') {
+    updateLatencyHeroPills();
+  }
+  if (typeof pingingActive !== 'undefined' && pingingActive) {
     const lbl = document.querySelector('.latency-loading-content .dlp-load-label');
     if (lbl) lbl.textContent = t('pingTesting').replace(/\.{2,}$/, '');
-  } else if (state.lastValvePings) {
-    renderValvePings(state.lastValvePings);
+  } else {
+    if (typeof renderServerGrid === 'function' && Array.isArray(state.valveClusters)) {
+      renderServerGrid();
+    }
+    if (typeof renderDnsGrid === 'function' && Array.isArray(state.dnsProfiles)) {
+      renderDnsGrid();
+    }
   }
   if (!isLangSwitching) {
     setTimeout(() => {
@@ -199,18 +220,26 @@ async function boot() {
   try { s = await call('get_settings'); } catch (e) { console.warn('[boot] get_settings failed:', e); }
   state.lang = s.lang || 'fa';
   state.unlocked = !!s.unlocked;
-  state.lastPath = s.last_path || null;
-  state.unitStatusNew = !!s.unit_status_new;
+  state.betterBreakables = !!s.better_breakables;
+  state.higherBrightness = !!s.higher_brightness;
+  state.reduceClutter = !!s.reduce_clutter;
   state.stopClothAnim = !!s.stop_cloth_anim;
   state.ragdollFade = !!s.ragdoll_fade;
   state.fpsMax = s.fps_max;
   state.customAutoexec = s.custom_autoexec || '';
   state.renderer = s.renderer || 'default';
+  state.reducedMotion = !!s.reduced_motion;
+  state.aspectRatio = s.aspect_ratio || '2.15';
+  state.aspectRatioEnabled = s.aspect_ratio_enabled !== false;
 
   applyLang();
   syncSettingsToUi();
-  setFov(typeof s.fov === 'number' && s.fov >= 70 && s.fov <= 120 ? s.fov : 90);
+  applyReducedMotion(state.reducedMotion);
+  setVideoFov(typeof s.fov === 'number' && s.fov >= 70 && s.fov <= 90 ? s.fov : 90, false);
+  setAspectRatio(state.aspectRatio, false);
+  toggleAspectRatio(state.aspectRatioEnabled, false);
   selectCardByKey('graphic');
+  checkAdminStatus().catch(() => {});
 
   if (state.unlocked) showTesterModes();
 
@@ -258,17 +287,26 @@ async function boot() {
 }
 
 function syncSettingsToUi() {
-  const swUnit = document.getElementById('sw-unit-status');
-  if (swUnit) {
-    swUnit.checked = false;
-    swUnit.disabled = true;
-  }
+  const swBreakables = document.getElementById('sw-better-breakables');
+  if (swBreakables) swBreakables.checked = !!state.betterBreakables;
+
+  const swBrightness = document.getElementById('sw-higher-brightness');
+  if (swBrightness) swBrightness.checked = !!state.higherBrightness;
+
+  const swClutter = document.getElementById('sw-reduce-clutter');
+  if (swClutter) swClutter.checked = !!state.reduceClutter;
 
   const swCloth = document.getElementById('sw-cloth-anim');
   if (swCloth) swCloth.checked = !!state.stopClothAnim;
 
   const swFade = document.getElementById('sw-ragdoll-fade');
   if (swFade) swFade.checked = !!state.ragdollFade;
+
+  const swRedMotion = document.getElementById('sw-reduced-motion');
+  if (swRedMotion) swRedMotion.checked = !!state.reducedMotion;
+
+  const swAr = document.getElementById('sw-ar-enable');
+  if (swAr) swAr.checked = state.aspectRatioEnabled !== false;
 
   const fps = state.fpsMax;
   document.querySelectorAll('#fps-radio-group .renderer-pill').forEach((btn) => {
@@ -456,7 +494,7 @@ function renderActiveBadge() {
   const apLabel = document.getElementById('active-profile-label');
   const res = state.detectedTier;
   if (!apLabel) return;
-  if (res === 'T1' || res === 'T2' || res === 'T3' || res === 'POTATO' || res === 'T1MODS' || res === 'T2MODS') {
+  if (res === 'T1' || res === 'T2' || res === 'T3' || res === 'POTATO' || res === 'RUSSIAN_POTATO' || res === 'T1MODS' || res === 'T2MODS') {
     if (apDot) { apDot.style.background = 'var(--deadlock-orange)'; apDot.style.color = 'var(--deadlock-orange)'; }
     apLabel.textContent = t('activeProfile') + ' · ' + res;
   } else if (res === 'MISSING') {
@@ -512,7 +550,7 @@ let updateCursorFollower = () => {};
 
 function isInteractiveTarget(t) {
   if (!(t instanceof Element)) return false;
-  const el = t.closest('button, [role="button"], a, select, .win-ctl, .lang-pill-btn, .pro-card, .sci-card, .tier-card, .social-card, .option-item, .neon-checkbox, .hud-switch-card, .launch-opt-btn, .renderer-pill, .chip-btn, .fov-default-tick, [onclick]');
+  const el = t.closest('button, [role="button"], a, select, .win-ctl, .lang-pill-btn, .pro-card, .sci-card, .tier-card, .social-card, .option-item, .neon-checkbox, .hud-switch-card, .launch-opt-btn, .renderer-pill, .ar-pill, .chip-btn, .fov-default-tick, [onclick]');
   if (!el) return false;
   if (el.matches('button:disabled, [disabled], [aria-disabled="true"], .disabled')) return false;
   return true;
@@ -548,6 +586,7 @@ function getCornerOrEdge(x, y) {
 
   let cursorEl = document.getElementById('dlp-custom-cursor');
   let cursorInner = document.getElementById('dlp-custom-cursor-inner');
+  let cursorDot = document.getElementById('dlp-cursor-target-dot');
   if (!cursorEl) {
     cursorEl = document.createElement('div');
     cursorEl.id = 'dlp-custom-cursor';
@@ -562,6 +601,11 @@ function getCornerOrEdge(x, y) {
     if (document.body) mount();
     else window.addEventListener('DOMContentLoaded', mount);
   }
+  if (!cursorDot && cursorEl) {
+    cursorDot = document.createElement('div');
+    cursorDot.id = 'dlp-cursor-target-dot';
+    cursorEl.appendChild(cursorDot);
+  }
 
   let currentType = '';
   let isPressed = false;
@@ -569,6 +613,12 @@ function getCornerOrEdge(x, y) {
   let rightTimer = null;
   let lastX = Math.round(window.innerWidth / 2) || 400;
   let lastY = Math.round(window.innerHeight / 2) || 300;
+  let rafPending = false;
+  let pendingTarget = null;
+
+  function isReducedMotionActive() {
+    return !!state.reducedMotion || (document.body && document.body.classList.contains('reduced-motion'));
+  }
 
   function setCursorType(type) {
     if (!CURSOR_HOTSPOTS[type]) type = 'default';
@@ -579,6 +629,11 @@ function getCornerOrEdge(x, y) {
     cursorEl.style.height = (meta.h || 64) + 'px';
     if (!cursorInner) cursorInner = document.getElementById('dlp-custom-cursor-inner');
     if (cursorInner) cursorInner.style.backgroundImage = `url("${meta.file}")`;
+    if (!cursorDot) cursorDot = document.getElementById('dlp-cursor-target-dot');
+    if (cursorDot) {
+      cursorDot.style.left = meta.x + 'px';
+      cursorDot.style.top = meta.y + 'px';
+    }
     if (type === 'busy') {
       cursorEl.classList.add('is-spinning');
     } else {
@@ -587,6 +642,7 @@ function getCornerOrEdge(x, y) {
   }
 
   function render(x, y) {
+    if (isReducedMotionActive()) return;
     const meta = CURSOR_HOTSPOTS[currentType] || CURSOR_HOTSPOTS.default;
     cursorEl.style.transform = `translate3d(${x - meta.x}px, ${y - meta.y}px, 0)`;
   }
@@ -606,9 +662,6 @@ function getCornerOrEdge(x, y) {
     // 2. Busy state across panels
     const isBusyNow = state.busyTab && (state.busyTab === 'global' || state.busyTab === state.activeTab);
     if (isBusyNow) {
-      if (isInteractiveTarget(t)) {
-        return isPressed ? 'click' : 'pointer';
-      }
       return 'busy';
     }
 
@@ -641,6 +694,7 @@ function getCornerOrEdge(x, y) {
   }
 
   updateCursorFollower = (target, x, y) => {
+    if (isReducedMotionActive()) return;
     if (typeof x === 'number') { lastX = x; lastY = y; }
     const t = target || (document.elementFromPoint ? document.elementFromPoint(lastX, lastY) : null);
     const type = determineCursor(t, lastX, lastY);
@@ -649,23 +703,33 @@ function getCornerOrEdge(x, y) {
   };
 
   const onPointerMove = (e) => {
-    if (e.pointerType === 'touch') return;
+    if (e.pointerType === 'touch' || isReducedMotionActive()) return;
     lastX = e.clientX;
     lastY = e.clientY;
-    cursorEl.style.opacity = '1';
-    const type = determineCursor(e.target, lastX, lastY);
-    setCursorType(type);
-    render(lastX, lastY);
+    pendingTarget = e.target;
+    if (!rafPending) {
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        if (isReducedMotionActive()) return;
+        cursorEl.style.opacity = '1';
+        const type = determineCursor(pendingTarget, lastX, lastY);
+        setCursorType(type);
+        render(lastX, lastY);
+      });
+    }
   };
 
   window.addEventListener('pointermove', onPointerMove, { passive: true });
-  window.addEventListener('mousemove', onPointerMove, { passive: true });
 
   window.addEventListener('mousedown', (e) => {
     if (e.pointerType === 'touch') return;
     lastX = e.clientX;
     lastY = e.clientY;
-    cursorEl.style.opacity = '1';
+    if (!isReducedMotionActive()) {
+      cursorEl.style.opacity = '1';
+      cursorEl.classList.add('is-clicking');
+    }
     if (e.button === 2) {
       isRightClick = true;
       clearTimeout(rightTimer);
@@ -698,42 +762,82 @@ function getCornerOrEdge(x, y) {
   window.addEventListener('mouseup', (e) => {
     isPressed = false;
     isRightClick = false;
+    cursorEl.classList.remove('is-clicking');
     updateCursorFollower(e.target, e.clientX, e.clientY);
   });
 
   window.addEventListener('contextmenu', () => {
     isRightClick = false;
+    cursorEl.classList.remove('is-clicking');
     updateCursorFollower(null, lastX, lastY);
   });
 
   document.addEventListener('mouseleave', (e) => {
     isPressed = false;
     isRightClick = false;
+    cursorEl.classList.remove('is-clicking');
     if (e.clientX < 0 || e.clientY < 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
       cursorEl.style.opacity = '0';
     }
   });
 
   document.addEventListener('mouseenter', () => {
-    cursorEl.style.opacity = '1';
+    if (!isReducedMotionActive()) cursorEl.style.opacity = '1';
   });
 
   window.addEventListener('blur', () => {
     isPressed = false;
     isRightClick = false;
+    cursorEl.classList.remove('is-clicking');
   });
 
   window.addEventListener('focus', () => {
-    cursorEl.style.opacity = '1';
+    if (!isReducedMotionActive()) cursorEl.style.opacity = '1';
+  });
+
+  window.addEventListener('dragstart', (e) => {
+    e.preventDefault();
   });
 
   setCursorType('default');
-  cursorEl.style.opacity = '1';
-  render(lastX, lastY);
+  if (!isReducedMotionActive()) {
+    cursorEl.style.opacity = '1';
+    render(lastX, lastY);
+  }
 })();
+
+function applyReducedMotion(enabled) {
+  const isEn = !!enabled;
+  state.reducedMotion = isEn;
+  if (document.body) {
+    document.body.classList.toggle('reduced-motion', isEn);
+  }
+  const sw = document.getElementById('sw-reduced-motion');
+  if (sw) sw.checked = isEn;
+  const cursor = document.getElementById('dlp-custom-cursor');
+  if (cursor) {
+    cursor.style.display = isEn ? 'none' : '';
+  }
+}
+
+function toggleReducedMotion(enabled) {
+  applyReducedMotion(enabled);
+  if (window.__TAURI__) {
+    call('set_settings', { patch: { reduced_motion: !!enabled } }).catch(() => {});
+  }
+}
 
 function setBusyCursor(on, tabKey) {
   state.busyTab = on ? (tabKey || state.activeTab || 'global') : null;
+  try {
+    if (on) {
+      document.body.style.cursor = 'wait';
+      document.documentElement.style.cursor = 'wait';
+    } else {
+      document.body.style.cursor = '';
+      document.documentElement.style.cursor = '';
+    }
+  } catch (_) {}
   updateCursorFollower();
 }
 
@@ -780,6 +884,8 @@ async function doInstall() {
     const log = await call('install_mode', {
       mode: state.selectedMode,
       fov: state.fov,
+      aspect_ratio: state.aspectRatio || '2.15',
+      aspect_ratio_enabled: state.aspectRatioEnabled !== false,
       path: state.gamePath,
     });
     clearInterval(reassuranceTimer);
@@ -1016,18 +1122,22 @@ async function doResetSettings() {
     const s = await call('reset_settings_cmd');
     state.lang = s.lang;
     state.unlocked = s.unlocked;
-    state.fov = s.fov;
-    state.fpsMax = s.fps_max;
-    state.unitStatusNew = s.unit_status_new;
+    state.fov = s.fov || 90;
+    state.aspectRatio = s.aspect_ratio || '2.15';
+    state.aspectRatioEnabled = s.aspect_ratio_enabled !== false;
+    state.reducedMotion = !!s.reduced_motion;
+    state.betterBreakables = !!s.better_breakables;
+    state.higherBrightness = !!s.higher_brightness;
+    state.reduceClutter = !!s.reduce_clutter;
     state.stopClothAnim = !!s.stop_cloth_anim;
     state.ragdollFade = !!s.ragdoll_fade;
     state.customAutoexec = s.custom_autoexec;
     state.renderer = s.renderer || 'default';
 
-    const fovSlider = document.getElementById('fov-slider');
-    if (fovSlider) fovSlider.value = s.fov;
-    const fovCurrent = document.getElementById('fov-current');
-    if (fovCurrent) fovCurrent.textContent = s.fov + '°';
+    applyReducedMotion(state.reducedMotion);
+    setVideoFov(state.fov, false);
+    setAspectRatio(state.aspectRatio, false);
+    toggleAspectRatio(state.aspectRatioEnabled, false);
 
     syncSettingsToUi();
 
@@ -1075,7 +1185,7 @@ async function doSyncMatch() {
   if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
   if (badge) {
     badge.className = 'match-sync-badge badge-syncing';
-    badge.textContent = 'SYNCING';
+    badge.textContent = t('matchSyncBadgeSyncing') || 'SYNCING...';
   }
 
   try {
@@ -1098,14 +1208,14 @@ async function doSyncMatch() {
     } else {
       if (badge) {
         badge.className = 'match-sync-badge badge-error';
-        badge.textContent = 'ERROR';
+        badge.textContent = t('matchSyncBadgeFailed') || 'ERROR';
       }
       showModal(t('matchSyncTitle') || 'CUSTOM MATCH SYNC', (res && res.message) ? res.message : 'Match sync failed.', [{ label: t('ok') || 'OK' }]);
     }
   } catch (err) {
     if (badge) {
       badge.className = 'match-sync-badge badge-error';
-      badge.textContent = 'FAILED';
+      badge.textContent = t('matchSyncBadgeFailed') || 'FAILED';
     }
     showModal(t('matchSyncTitle') || 'CUSTOM MATCH SYNC', String(err), [{ label: t('ok') || 'OK' }]);
   } finally {
@@ -1130,7 +1240,7 @@ async function doCopyMatchId() {
     const badge = document.getElementById('match-sync-badge');
     if (badge) {
       const orig = badge.textContent;
-      badge.textContent = 'COPIED!';
+      badge.textContent = t('matchSyncBadgeCopied') || 'COPIED!';
       setTimeout(() => { badge.textContent = `#${state.lastMatchId}` || orig; }, 1800);
     }
   } catch (err) {
@@ -1249,6 +1359,64 @@ function showModal(title, body, actions) {
     overlay.style.display = 'flex';
   });
 }
+
+// ---------- toast notification system ----------
+function showToast(message, type = 'info') {
+  if (!message) return;
+  try {
+    let container = document.getElementById('dlp-toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'dlp-toast-container';
+      document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `dlp-toast toast-${type}`;
+
+    const iconMap = {
+      success: 'fa-circle-check',
+      error: 'fa-triangle-exclamation',
+      warning: 'fa-circle-exclamation',
+      info: 'fa-circle-info'
+    };
+    const iconClass = iconMap[type] || 'fa-circle-info';
+
+    const icon = document.createElement('i');
+    icon.className = `fa-solid ${iconClass} toast-icon`;
+
+    const text = document.createElement('span');
+    text.className = 'toast-text';
+    text.textContent = String(message);
+
+    toast.appendChild(icon);
+    toast.appendChild(text);
+
+    toast.onclick = () => {
+      toast.classList.add('toast-hide');
+      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 250);
+    };
+
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+      toast.classList.add('toast-show');
+    });
+
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.classList.remove('toast-show');
+        toast.classList.add('toast-hide');
+        setTimeout(() => {
+          if (toast.parentNode) toast.remove();
+        }, 300);
+      }
+    }, 4000);
+  } catch (err) {
+    console.warn('[showToast error]', err);
+  }
+}
+window.showToast = showToast;
 
 // ---------- Doorman Ult Diagnostic Modal ----------
 const DOORMAN_TEST_CVARS = [
@@ -1482,18 +1650,65 @@ window.applyDoormanTestStates = async function() {
   }
 };
 
-// ---------- FOV ----------
-function setFov(v) {
-  const persist = (snapped) => { if (window.__TAURI__) call('set_settings', { patch: { fov: snapped } }).catch(() => {}); };
+// ---------- FOV & ASPECT RATIO ----------
+function setVideoFov(v, persistSetting = true) {
+  const num = typeof v === 'number' ? v : Number(v) || 90;
+  const snapped = Math.min(90, Math.max(70, Math.round((num - 70) / 5) * 5 + 70));
+  state.fov = snapped;
   const slider = document.getElementById('fov-slider');
   const number = document.getElementById('fov-number');
-  const current = document.getElementById('fov-current');
-  const snapped = Math.min(120, Math.max(70, Math.round((v - 70) / 5) * 5 + 70));
-  state.fov = snapped;
-  persist(snapped);
+  const chip = document.getElementById('fov-video-val');
   if (slider) slider.value = snapped;
   if (number) number.value = snapped;
-  if (current) current.textContent = snapped + '°';
+  if (chip) chip.textContent = snapped + '°';
+  if (persistSetting && window.__TAURI__) {
+    call('set_settings', { patch: { fov: snapped } }).catch(() => {});
+  }
+}
+
+function setFov(v, persistSetting = true) {
+  setVideoFov(v, persistSetting);
+}
+
+function setAspectRatio(val, persistSetting = true) {
+  let str = String(val !== undefined && val !== null ? val : '2.15').trim();
+  let num = parseFloat(str);
+  if (isNaN(num) || num < 1.0 || num > 4.0) {
+    num = 2.15;
+    str = '2.15';
+  } else {
+    str = num.toFixed(2);
+  }
+  state.aspectRatio = str;
+  const input = document.getElementById('ar-input');
+  const slider = document.getElementById('ar-slider');
+  if (input && document.activeElement !== input) input.value = str;
+  if (slider) slider.value = num;
+
+  document.querySelectorAll('.ar-presets-row .ar-pill').forEach((pill) => {
+    const pillText = pill.textContent.trim();
+    pill.classList.toggle('active', pillText.startsWith(str));
+  });
+
+  if (persistSetting && window.__TAURI__) {
+    call('set_settings', { patch: { aspect_ratio: str } }).catch(() => {});
+  }
+}
+
+function toggleAspectRatio(enabled, persistSetting = true) {
+  const isEn = !!enabled;
+  state.aspectRatioEnabled = isEn;
+  const sw = document.getElementById('sw-ar-enable');
+  if (sw) sw.checked = isEn;
+  const controlsBody = document.getElementById('ar-controls-body');
+  const disabledMsg = document.getElementById('ar-disabled-msg');
+  const input = document.getElementById('ar-input');
+  if (controlsBody) controlsBody.style.display = isEn ? '' : 'none';
+  if (disabledMsg) disabledMsg.style.display = isEn ? 'none' : '';
+  if (input) input.disabled = !isEn;
+  if (persistSetting && window.__TAURI__) {
+    call('set_settings', { patch: { aspect_ratio_enabled: isEn } }).catch(() => {});
+  }
 }
 
 // ---------- valve game servers ping ----------
@@ -1514,23 +1729,32 @@ function pushHistory(s) {
 
 function routeScore(s) {
   if (s.ping_ms === null || s.ping_ms === undefined) return -1;
-  const ms = s.ping_ms;
+  const ms = s.avg_ms !== null && s.avg_ms !== undefined ? s.avg_ms : s.ping_ms;
   const jitter = s.jitter_ms || 0;
   const loss = s.loss_pct || 0;
-  const latScore = Math.max(0, 100 - (ms / 3));
-  const jitScore = Math.max(0, 100 - jitter * 4);
-  const lossScore = Math.max(0, 100 - loss * 12);
-  return Math.round(latScore * 0.45 + jitScore * 0.35 + lossScore * 0.2);
+
+  // Severe penalty for packet loss (unplayable if loss > 15%)
+  const lossPenalty = loss * 12;
+
+  // Jitter is only a subtle tie-breaker (0.25 pt per ms, capped at 15)
+  const jitterPenalty = Math.min(15, jitter * 0.25);
+
+  // Ping dominates 85%+: 1000 base score minus ping * 3.5
+  // Frankfurt (87ms, 20ms jitter) = ~690
+  // Madrid (127ms, 8ms jitter) = ~553
+  // Lower ping ALWAYS wins decisively over jitter differences!
+  const score = 1000 - (ms * 3.5) - jitterPenalty - lossPenalty;
+  return Math.max(0, Math.round(score));
 }
 
 function qualityState(s) {
   if (s.ping_ms === null || s.ping_ms === undefined) return 'offline';
-  const ms = s.ping_ms;
-  const jitter = s.jitter_ms || 0;
+  const ms = s.avg_ms !== null && s.avg_ms !== undefined ? s.avg_ms : s.ping_ms;
   const loss = s.loss_pct || 0;
-  if (loss > 10) return 'unstable';
-  if (ms < 90 && jitter <= 8 && loss < 1) return 'excellent';
-  if (ms < 160 && jitter <= 20) return 'stable';
+  if (loss > 15) return 'unstable';
+  if (ms <= 95 && loss <= 2) return 'excellent';
+  if (ms <= 135 && loss <= 5) return 'stable';
+  if (ms <= 175 && loss <= 10) return 'stable';
   return 'unstable';
 }
 
@@ -1562,106 +1786,1248 @@ function sparkline(history, state, wide) {
 function relayCardHtml(s, featured) {
   const st = qualityState(s);
   const offline = st === 'offline';
-  const name = state.lang === 'fa' ? s.name_fa : (s.name || s.id.toUpperCase());
-  const region = (state.lang === 'fa' ? s.region_fa : s.region || '').toUpperCase();
+  const name = state.lang === 'fa' ? (s.name_fa || s.name) : (s.name || s.id.toUpperCase());
+  const region = (state.lang === 'fa' ? (s.region_name_fa || s.region_fa || s.region) : (s.region_name || s.region || '')).toUpperCase();
   const code = (s.id || '').toUpperCase();
   const jitter = s.jitter_ms !== null && s.jitter_ms !== undefined ? `±${s.jitter_ms} ms` : '—';
-  const loss = s.loss_pct !== null && s.loss_pct !== undefined ? `${s.loss_pct.toFixed(1)}%` : '—';
+  const loss = s.loss_pct !== null && s.loss_pct !== undefined ? `${s.loss_pct.toFixed(0)}%` : '0%';
   const dot = stateDot(st);
   const hist = (PING_HISTORY[s.id] || []).map((h) => h.ms);
-  const score = routeScore(s);
-  const sl = scoreLabel(score);
-  const agoSec = lastTestAt ? Math.max(0, Math.round((Date.now() - lastTestAt) / 1000)) : null;
-  const liveTxt = agoSec === null ? '●' : `● ${agoSec}s`;
-  const hs = hist;
-  const avgV = hs.length ? Math.round(hs.reduce((a, b) => a + b, 0) / hs.length) : null;
-  const minV = hs.length ? Math.min(...hs) : null;
-  const maxV = hs.length ? Math.max(...hs) : null;
+  const isBlocked = !!s.is_blocked;
+  const isTop5 = !!s.is_top5;
+
+  const toggleBtnText = isBlocked ? t('unblockServer') : t('blockServer');
+  const toggleBtnIcon = isBlocked ? 'fa-lock-open' : 'fa-ban';
+  const statusBadge = isBlocked
+    ? `<span class="pc-status-badge badge-blocked"><i class="fa-solid fa-ban"></i> ${t('serverBlocked')}</span>`
+    : `<span class="pc-status-badge badge-active"><i class="fa-solid fa-circle-check"></i> ${t('serverActive')}</span>`;
+  const optimalLabel = state.lang === 'fa' ? 'بهینه' : 'OPTIMAL';
+  const top5Badge = isTop5 ? `<span class="pc-badge-top5"><i class="fa-solid fa-star"></i> ${optimalLabel}</span>` : '';
 
   if (featured) {
     return `
-      <div class="featured-card">
-        <div class="fc-tag">✦ ${t('recommended')} — ${t('bestRoute')}</div>
-        <div class="fc-main">
-          <div class="fc-left">
-            <div class="fc-name">${name} <span class="fc-code">${code}</span></div>
-            <div class="fc-region">${region}</div>
-            <div class="fc-spark">${offline ? '<div class="spark-flat"></div>' : sparkline(hist, st, true)}</div>
-            <div class="fc-stats">
-              ${offline
-                ? `<span class="fc-dot st-text-offline">${dot} ${t('offline')}</span>`
-                : `<span class="fc-dot st-text-${st}">${dot} ${t(routeLabel(st))}</span>
-                   <span class="fc-stat mono">${t('jitter')} ${jitter}</span>
-                   <span class="fc-stat mono">${t('loss')} ${loss}</span>`}
-              <span class="fc-live">${offline ? t('offline') : `${liveTxt} ●`}</span>
-            </div>
-            <div class="fc-ip mono" data-tooltip="${s.ip}">${s.ip}</div>
+      <div class="featured-card ${isBlocked ? 'is-blocked' : ''}">
+        <div class="fc-glow-accent"></div>
+        <div class="fc-top-ribbon">
+          <div class="fc-recommend-tag">
+            <i class="fa-solid fa-crown"></i>
+            <span>${t('recommended')} — ${t('bestRoute')}</span>
           </div>
-          <div class="fc-ping-wrap">
-            <div class="fc-ping">${offline ? '—' : s.ping_ms}</div>
-            <div class="fc-ms">${offline ? '' : 'ms'}</div>
+          <div class="fc-badges-wrap">
+            ${top5Badge}
+            <span class="fc-region-badge">${region}</span>
+          </div>
+        </div>
+
+        <div class="fc-body-row">
+          <div class="fc-info-col">
+            <div class="fc-name-title">
+              <img src="assets/flags/${s.id}.png" class="featured-server-flag" alt="" onerror="this.style.display='none'">
+              <span class="fc-city-name">${name}</span>
+              <span class="fc-cluster-code">${code}</span>
+            </div>
+            <div class="fc-telemetry-chips">
+              <span class="fc-chip"><span class="pc-dot st-text-${st}">${dot}</span> ${t(routeLabel(st))}</span>
+              <span class="fc-chip"><i class="fa-solid fa-wave-square"></i> ${t('jitter')} <span class="ltr-val">${jitter}</span></span>
+              <span class="fc-chip"><i class="fa-solid fa-shield-halved"></i> ${t('loss')} <span class="ltr-val">${loss}</span></span>
+              <span class="fc-chip fc-ip-chip" data-tooltip="Relay IP"><span class="ltr-val">${s.primary_ip || s.ip}</span></span>
+            </div>
+            <div class="fc-sparkline-wrap">
+              ${offline ? '<div class="spark-flat"></div>' : sparkline(hist, st, true)}
+            </div>
+          </div>
+
+          <div class="fc-action-col">
+            <div class="fc-ping-display mono ${offline ? 'is-offline' : 'st-text-' + st}">
+              <span class="fc-ping-number">${offline ? '—' : (s.ping_ms || '—')}</span>
+              <span class="fc-ping-unit">${offline ? '' : 'ms'}</span>
+            </div>
+            <div class="fc-btn-wrap">
+              ${statusBadge}
+              <button class="fc-btn-toggle ${isBlocked ? 'is-blocked-action' : 'is-allow-action'}" onclick="toggleCluster('${s.id}', ${!isBlocked})">
+                <i class="fa-solid ${toggleBtnIcon}"></i> <span>${toggleBtnText}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>`;
   }
 
   return `
-    <div class="ping-card st-${st}">
-      <div class="pc-head">
-        <span class="pc-dot st-text-${st}">${dot}</span>
-        <div class="pc-names">
-          <div class="pc-name">${name}</div>
-          <div class="pc-region">${code} · ${offline ? t('offline') : region}</div>
+    <div class="ping-card st-${st} ${isBlocked ? 'is-blocked' : ''} ${isTop5 ? 'is-top5' : ''}">
+      <div class="pc-header-row">
+        <div class="pc-title-col">
+          <div class="pc-name-line">
+            <img src="assets/flags/${s.id}.png" class="server-flag" alt="" onerror="this.style.display='none'">
+            <span class="pc-name">${name}</span>
+            <span class="pc-cluster-code">${code}</span>
+            ${top5Badge}
+          </div>
+          <div class="pc-region-line">${region}</div>
+        </div>
+        <div class="pc-ping-badge mono ${offline ? 'is-offline' : 'st-text-' + st}">
+          <span class="pc-ping-num">${offline ? '—' : (s.ping_ms || '—')}</span>
+          <span class="pc-ping-unit">${offline ? '' : 'ms'}</span>
         </div>
       </div>
-      <div class="pc-ping mono ${offline ? 'is-offline' : 'st-text-' + st}">${offline ? '—' : s.ping_ms}<small>${offline ? '' : ' ms'}</small></div>
-      <div class="pc-stats mono">${offline ? `<span>${t('offline')}</span>` : `<span class="st-text-${st}">${dot} ${t(routeLabel(st))}</span>`}</div>
+
+      <div class="pc-metrics-row">
+        <div class="pc-metric"><span class="pc-dot st-text-${st}">${dot}</span> ${t(routeLabel(st))}</div>
+        <div class="pc-metric"><i class="fa-solid fa-wave-square"></i> <span class="ltr-val">${jitter}</span></div>
+        <div class="pc-metric"><i class="fa-solid fa-shield-halved"></i> <span class="ltr-val">${loss}</span></div>
+      </div>
+
+      <div class="pc-action-row">
+        ${statusBadge}
+        <button class="pc-btn-toggle ${isBlocked ? 'is-blocked-action' : 'is-allow-action'}" onclick="toggleCluster('${s.id}', ${!isBlocked})">
+          <i class="fa-solid ${toggleBtnIcon}"></i> <span>${toggleBtnText}</span>
+        </button>
+      </div>
     </div>`;
 }
 
-function renderValvePings(servers) {
+function dnsCardHtml(p) {
+  const name = state.lang === 'fa' ? (p.name_fa || p.name) : p.name;
+  const desc = state.lang === 'fa' ? (p.desc_fa || p.desc) : p.desc;
+  const tag = state.lang === 'fa' ? (p.tag_fa || p.tag) : p.tag;
+  const isIr = p.id.includes('radar') || p.id.includes('electro') || p.id.includes('shecan') || p.id.includes('403') || p.id.includes('begzar') || p.id.includes('shelter') || p.id.includes('beshkan') || p.id.includes('pishgaman') || p.id.includes('irancell') || p.id.includes('mci');
+  const isActive = !!p.is_active;
+  const pingVal = p.ping_ms !== null && p.ping_ms !== undefined ? `${p.ping_ms} ms` : '—';
+
+  return `
+    <div class="dns-card ${isActive ? 'is-active' : ''}" id="dns-card-${p.id}">
+      <div class="dns-top-row">
+        <div class="dns-name">${name}</div>
+        <span class="dns-tag ${isIr ? 'tag-ir' : ''}">${tag}</span>
+      </div>
+      <div class="dns-desc">${desc}</div>
+      <div class="dns-ips-box mono">
+        <span>${p.primary}</span> · <span>${p.secondary}</span>
+      </div>
+      <div class="dns-footer-row">
+        <div class="dns-latency-val mono"><i class="fa-solid fa-bolt"></i> ${pingVal}</div>
+        <button class="btn-apply-dns-card ${isActive ? 'is-active' : ''}" onclick="applyDnsProfile('${p.id}')">
+          ${isActive ? `<i class="fa-solid fa-circle-check"></i> ${t('activeDnsBadge')}` : `<i class="fa-solid fa-check"></i> ${t('applyDnsBtn')}`}
+        </button>
+      </div>
+    </div>`;
+}
+
+function renderServerGrid() {
   const grid = document.getElementById('ping-grid');
   const slot = document.getElementById('best-route-slot');
-  if (!grid || !Array.isArray(servers)) return;
+  if (!grid || !Array.isArray(state.valveClusters)) return;
 
-  grid.classList.remove('is-loading');
-  for (const s of servers) pushHistory(s);
-  const online = servers.filter((s) => s.ping_ms !== null && s.ping_ms !== undefined);
+  const reg = state.selectedServerRegion || 'all';
+  const filtered = state.valveClusters.filter((c) => {
+    if (reg === 'all') return true;
+    if (reg === 'south_america') return c.region === 'south_america' || c.region === 'africa' || c.region === 'oceania';
+    return c.region === reg;
+  });
+
+  filtered.sort((a, b) => {
+    const pA = a.avg_ms ?? a.ping_ms ?? 9999;
+    const pB = b.avg_ms ?? b.ping_ms ?? 9999;
+    if (pA !== pB) return pA - pB;
+    return routeScore(b) - routeScore(a);
+  });
+
+  const online = state.valveClusters.filter((s) => s.ping_ms !== null && s.ping_ms !== undefined);
   const best = online.length
     ? online.reduce((a, b) => (routeScore(b) > routeScore(a) ? b : a))
     : null;
 
-  if (slot) slot.innerHTML = best ? relayCardHtml(best, true) : '';
+  if (slot) {
+    if (reg === 'all' && best) {
+      slot.innerHTML = relayCardHtml(best, true);
+    } else {
+      slot.innerHTML = '';
+    }
+  }
 
   grid.innerHTML = '';
-  for (const s of servers) {
-    pushHistory(s);
-    if (best && s.id === best.id) continue;
+  for (const s of filtered) {
+    if (reg === 'all' && best && s.id === best.id) continue;
     const tpl = document.createElement('template');
     tpl.innerHTML = relayCardHtml(s, false).trim();
     const el = tpl.content.firstElementChild;
     grid.appendChild(el);
   }
-  if (window.Motion && !isLangSwitching) {
-    const anim = Motion.animate(grid.querySelectorAll('.ping-card'),
-      { opacity: [0, 1], transform: ['translateY(8px)', 'translateY(0px)'] },
-      { delay: Motion.stagger(0.05), duration: 0.3, easing: 'ease-out' });
-    if (anim && anim.finished) {
-      anim.finished.then(() => {
-        grid.querySelectorAll('.ping-card').forEach((c) => {
-          c.style.transform = '';
-        });
-      });
+
+  updateLatencyHeroPills();
+  updateServerFilterCounts();
+  updatePresetSelect();
+}
+
+function updateServerFilterCounts() {
+  if (!Array.isArray(state.valveClusters) || state.valveClusters.length === 0) return;
+  const total = state.valveClusters.length;
+  const eu = state.valveClusters.filter((c) => c.region === 'europe').length;
+  const me = state.valveClusters.filter((c) => c.region === 'middle_east').length;
+  const asia = state.valveClusters.filter((c) => c.region === 'asia').length;
+  const na = state.valveClusters.filter((c) => c.region === 'north_america').length;
+  const other = state.valveClusters.filter((c) => c.region === 'south_america' || c.region === 'africa' || c.region === 'oceania').length;
+
+  const badgeCount = document.getElementById('badge-servers-count');
+  if (badgeCount) badgeCount.textContent = total;
+
+  const pills = document.querySelectorAll('.filter-pill');
+  pills.forEach((p) => {
+    const r = p.dataset.region;
+    let label = '';
+    let count = total;
+    if (r === 'all') { label = t('filterAll'); count = total; }
+    else if (r === 'europe') { label = t('filterEurope'); count = eu; }
+    else if (r === 'middle_east') { label = t('filterMiddleEast'); count = me; }
+    else if (r === 'asia') { label = t('filterAsia'); count = asia; }
+    else if (r === 'north_america') { label = t('filterNAmerica'); count = na; }
+    else if (r === 'south_america') { label = t('filterOther'); count = other; }
+    if (label) {
+      p.textContent = `${label} (${count})`;
+    }
+  });
+}
+
+function renderDnsGrid() {
+  const grid = document.getElementById('dns-grid');
+  if (!grid || !Array.isArray(state.dnsProfiles)) return;
+  grid.innerHTML = state.dnsProfiles.map((p) => dnsCardHtml(p)).join('');
+  const badge = document.getElementById('badge-dns-count');
+  if (badge) {
+    badge.textContent = state.dnsProfiles.length;
+  }
+  updateLatencyHeroPills();
+}
+
+function updateLatencyHeroPills() {
+  const dnsValEl = document.getElementById('pill-dns-val');
+  const srvValEl = document.getElementById('pill-servers-val');
+  const shieldValEl = document.getElementById('pill-shield-val');
+
+  if (dnsValEl) {
+    const active = Array.isArray(state.dnsProfiles) ? state.dnsProfiles.find((p) => p.is_active) : null;
+    if (active) {
+      dnsValEl.textContent = state.lang === 'fa' ? (active.name_fa || active.name) : active.name;
+    } else {
+      dnsValEl.textContent = state.lang === 'fa' ? 'پیش‌فرض (DHCP)' : 'DHCP (Default)';
     }
   }
 
-  const footer = document.getElementById('net-footer');
-  lastTestAt = Date.now();
-  const time = new Date(lastTestAt).toLocaleTimeString(state.lang === 'fa' ? 'fa-IR' : 'en-GB');
-  startAgoTicker();
-  if (footer) {
-    footer.style.display = 'flex';
-    footer.innerHTML = `<span>${t('lastTest')} · ${time}</span><span>${online.length}/${servers.length} ${t('relaysOnline')}</span>`;
+  if (srvValEl) {
+    if (Array.isArray(state.valveClusters) && state.valveClusters.length > 0) {
+      const total = state.valveClusters.length;
+      const blocked = state.valveClusters.filter((c) => c.is_blocked).length;
+      const allowed = total - blocked;
+      srvValEl.textContent = state.lang === 'fa' ? `${allowed} سرور باز` : `${allowed} Open / ${blocked} Blocked`;
+    } else {
+      srvValEl.textContent = state.lang === 'fa' ? '۳۶ سرور' : '36 Servers';
+    }
+  }
+
+  if (shieldValEl) {
+    const isShieldOn = document.getElementById('tweak-check-shield')?.checked;
+    shieldValEl.textContent = isShieldOn ? (state.lang === 'fa' ? 'فعال (ایزوله)' : 'Active') : (state.lang === 'fa' ? 'غیرفعال' : 'Off');
+  }
+}
+
+function switchLatencySubtab(subtab) {
+  state.latencySubtab = subtab;
+  const tabs = ['servers', 'dns', 'tweaks'];
+  tabs.forEach((tName) => {
+    const btn = document.getElementById(`subtab-btn-${tName}`);
+    const view = document.getElementById(`subview-${tName}`);
+    if (btn) btn.classList.toggle('active', tName === subtab);
+    if (view) view.style.display = tName === subtab ? '' : 'none';
+  });
+}
+
+function filterServersByRegion(region) {
+  state.selectedServerRegion = region;
+  document.querySelectorAll('.filter-pill').forEach((pill) => {
+    pill.classList.toggle('active', pill.dataset.region === region);
+  });
+  renderServerGrid();
+}
+
+async function checkAdminStatus() {
+  try {
+    const isAdmin = await call('check_admin_status');
+    state.isAdmin = !!isAdmin;
+    const gate = document.getElementById('latency-admin-gate');
+    const content = document.getElementById('latency-content-wrapper');
+    const topPingBtn = document.getElementById('btn-refresh-ping');
+
+    if (gate && content) {
+      if (state.isAdmin) {
+        gate.style.display = 'none';
+        content.style.display = 'flex';
+        if (topPingBtn && state.activeTab === 'latency') topPingBtn.style.display = '';
+        checkFirewallStatus().catch(() => {});
+      } else {
+        gate.style.display = 'flex';
+        content.style.display = 'none';
+        if (topPingBtn) topPingBtn.style.display = 'none';
+      }
+    }
+  } catch (err) {
+    console.warn('[checkAdminStatus error]', err);
+  }
+}
+
+async function restartAsAdmin() {
+  const gateBtn = document.getElementById('btn-admin-gate-restart');
+  if (gateBtn) {
+    gateBtn.classList.add('is-loading');
+    gateBtn.disabled = true;
+  }
+  setBusyCursor(true, 'latency');
+  try {
+    await call('restart_as_admin');
+  } catch (err) {
+    if (gateBtn) {
+      gateBtn.classList.remove('is-loading');
+      gateBtn.disabled = false;
+    }
+    setBusyCursor(false, 'latency');
+      showModalAlert(
+        state.lang === 'fa' ? 'خطا در اجرای برنامه با دسترسی Admin' : 'Failed to Restart as Administrator',
+        String(err)
+      );
+    }
+  }
+
+  async function checkFirewallStatus() {
+    try {
+      const isEnabled = await call('check_firewall_status');
+      state.firewallEnabled = !!isEnabled;
+      const warn = document.getElementById('latency-firewall-warning');
+      if (warn) {
+        warn.style.display = isEnabled ? 'none' : 'flex';
+      }
+    } catch (err) {
+      console.warn('[checkFirewallStatus error]', err);
+    }
+  }
+
+  async function enableWindowsFirewall() {
+    const btn = document.getElementById('btn-enable-firewall');
+    if (btn) {
+      btn.classList.add('is-loading');
+      btn.disabled = true;
+    }
+    setBusyCursor(true, 'latency');
+    try {
+      await call('enable_firewall_cmd');
+      state.firewallEnabled = true;
+      const warn = document.getElementById('latency-firewall-warning');
+      if (warn) warn.style.display = 'none';
+      showToast(t('firewallEnabledToast') || 'Windows Firewall enabled!', 'success');
+    } catch (err) {
+      showModalAlert(
+        state.lang === 'fa' ? 'خطا در فعال‌سازی فایروال' : 'Firewall Activation Error',
+        String(err)
+      );
+    } finally {
+      if (btn) {
+        btn.classList.remove('is-loading');
+        btn.disabled = false;
+      }
+      setBusyCursor(false, 'latency');
+    }
+  }
+
+let latencyBenchmarkActive = false;
+
+async function refreshLatencySuite(forceLoading = false) {
+  if (latencyBenchmarkActive) return;
+  latencyBenchmarkActive = true;
+
+  const btn = document.getElementById('btn-benchmark-all');
+  const topBtn = document.getElementById('btn-refresh-ping');
+  const progWrap = document.getElementById('latency-progress-wrap');
+  const progBar = document.getElementById('latency-progress-bar');
+  const progPct = document.getElementById('latency-progress-pct');
+
+  if (btn) btn.disabled = true;
+  if (topBtn) topBtn.disabled = true;
+  setBusyCursor(true, 'latency');
+
+  if (progWrap && progBar && progPct) {
+    progWrap.style.display = 'flex';
+    progBar.style.width = '15%';
+    progPct.textContent = '15%';
+  }
+
+  try {
+    // 1. Initial parallel cluster & DNS ping in Rust (runs in ~2.5s)
+    if (progBar && progPct) {
+      setTimeout(() => {
+        progBar.style.width = '45%';
+        progPct.textContent = '45%';
+      }, 400);
+      setTimeout(() => {
+        progBar.style.width = '75%';
+        progPct.textContent = '75%';
+      }, 1000);
+    }
+
+    const [clusters, dnsProfiles] = await Promise.all([
+      call('ping_valve_clusters'),
+      call('ping_dns_profiles'),
+    ]);
+
+    state.valveClusters = clusters;
+    state.dnsProfiles = dnsProfiles;
+    state.lastValvePings = clusters;
+
+    for (const c of clusters) pushHistory(c);
+
+    renderServerGrid();
+    renderDnsGrid();
+
+    if (progBar && progPct) {
+      progBar.style.width = '100%';
+      progPct.textContent = '100%';
+      setTimeout(() => {
+        if (progWrap) progWrap.style.display = 'none';
+      }, 600);
+    }
+
+    lastTestAt = Date.now();
+    startAgoTicker();
+    const footer = document.getElementById('net-footer');
+    if (footer) {
+      footer.style.display = 'flex';
+      const time = new Date(lastTestAt).toLocaleTimeString(state.lang === 'fa' ? 'fa-IR' : 'en-GB');
+      const onlineCount = clusters.filter((c) => c.ping_ms !== null).length;
+      footer.innerHTML = `<span>${t('lastTest')} · ${time}</span><span>${onlineCount}/${clusters.length} ${t('relaysOnline')}</span>`;
+    }
+  } catch (err) {
+    console.error('[refreshLatencySuite error]', err);
+    showToast(String(err), 'error');
+  } finally {
+    setBusyCursor(false, 'latency');
+    if (btn) btn.disabled = false;
+    if (topBtn) topBtn.disabled = false;
+    latencyBenchmarkActive = false;
+  }
+}
+
+async function doDeepBenchmark() {
+  if (latencyBenchmarkActive) return;
+  latencyBenchmarkActive = true;
+
+  const deepBtn = document.getElementById('btn-deep-benchmark');
+  const btn = document.getElementById('btn-benchmark-all');
+  const topBtn = document.getElementById('btn-refresh-ping');
+  const progWrap = document.getElementById('latency-progress-wrap');
+  const progBar = document.getElementById('latency-progress-bar');
+  const progPct = document.getElementById('latency-progress-pct');
+  const progTitle = document.getElementById('latency-progress-title');
+
+  if (deepBtn) deepBtn.disabled = true;
+  if (btn) btn.disabled = true;
+  if (topBtn) topBtn.disabled = true;
+  setBusyCursor(true, 'latency');
+
+  if (progWrap && progBar && progPct) {
+    progWrap.style.display = 'flex';
+    progBar.style.width = '3%';
+    progPct.textContent = '3%';
+    if (progTitle) progTitle.textContent = t('deepBenchmarkingTitle');
+  }
+
+  // Smooth live progress ticker over 30 seconds
+  const startTime = Date.now();
+  const totalDuration = 30500;
+  const progressTimer = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const pct = Math.min(96, Math.floor((elapsed / totalDuration) * 96));
+    if (progBar && progPct) {
+      progBar.style.width = `${pct}%`;
+      progPct.textContent = `${pct}%`;
+    }
+  }, 400);
+
+  try {
+    const [clusters, dnsProfiles] = await Promise.all([
+      call('deep_benchmark_clusters_cmd', { durationSecs: 30 }),
+      call('deep_benchmark_dns_cmd', { durationSecs: 30 }),
+    ]);
+
+    clearInterval(progressTimer);
+
+    state.valveClusters = clusters;
+    state.dnsProfiles = dnsProfiles;
+    state.lastValvePings = clusters;
+
+    for (const c of clusters) pushHistory(c);
+
+    renderServerGrid();
+    renderDnsGrid();
+
+    if (progBar && progPct) {
+      progBar.style.width = '100%';
+      progPct.textContent = '100%';
+      setTimeout(() => {
+        if (progWrap) progWrap.style.display = 'none';
+        if (progTitle) progTitle.textContent = t('benchmarkingTitle');
+      }, 700);
+    }
+
+    lastTestAt = Date.now();
+    startAgoTicker();
+    const footer = document.getElementById('net-footer');
+    if (footer) {
+      footer.style.display = 'flex';
+      const time = new Date(lastTestAt).toLocaleTimeString(state.lang === 'fa' ? 'fa-IR' : 'en-GB');
+      const onlineCount = clusters.filter((c) => c.ping_ms !== null).length;
+      footer.innerHTML = `<span>${t('lastTest')} · ${time} (Deep 30s)</span><span>${onlineCount}/${clusters.length} ${t('relaysOnline')}</span>`;
+    }
+
+    showToast(t('deepBenchmarkDoneToast'), 'success');
+  } catch (err) {
+    clearInterval(progressTimer);
+    console.error('[doDeepBenchmark error]', err);
+    showToast(String(err), 'error');
+  } finally {
+    clearInterval(progressTimer);
+    setBusyCursor(false, 'latency');
+    if (deepBtn) deepBtn.disabled = false;
+    if (btn) btn.disabled = false;
+    if (topBtn) topBtn.disabled = false;
+    latencyBenchmarkActive = false;
+  }
+}
+
+// ---------- Regional Metro Hub Grouping ----------
+const METRO_GROUPS = [
+  ['sto', 'sto2', 'dsto'],      // Stockholm, Sweden (Kista, Bromma, Datapacket)
+  ['fra', 'dfra', 'fsn'],       // Germany (Frankfurt, Frankfurt 2, Falkenstein)
+  ['vie', 'dvie'],              // Vienna, Austria
+  ['lhr', 'dlhr'],              // London, UK
+  ['bom2', 'maa2'],             // India (Mumbai & Chennai)
+];
+
+function getMetroSiblings(id) {
+  for (const group of METRO_GROUPS) {
+    if (group.includes(id)) return group;
+  }
+  return [id];
+}
+
+function getOptimalServerIds(clusters) {
+  const online = (clusters || []).filter(c => c.ping_ms != null && c.ping_ms > 0);
+  if (!online.length) return [];
+
+  // Sort ascending by effective ping
+  online.sort((a, b) => {
+    const pA = a.avg_ms ?? a.ping_ms ?? 9999;
+    const pB = b.avg_ms ?? b.ping_ms ?? 9999;
+    return pA - pB;
+  });
+
+  const best = online[0];
+  const minPing = best.avg_ms ?? best.ping_ms;
+  // Threshold: servers within 15ms of lowest ping (or 15% delta)
+  const maxAllowed = Math.max(minPing + 15, Math.round(minPing * 1.15));
+
+  const optimalSet = new Set();
+  for (const c of online) {
+    const p = c.avg_ms ?? c.ping_ms;
+    if (p <= maxAllowed && (c.loss_pct == null || c.loss_pct <= 3)) {
+      // Include this cluster AND all siblings in its metro group!
+      for (const sib of getMetroSiblings(c.id)) {
+        optimalSet.add(sib);
+      }
+    }
+  }
+
+  // Fallback: ensure at least the best server's entire metro group is included
+  if (optimalSet.size === 0 && online.length > 0) {
+    for (const sib of getMetroSiblings(best.id)) {
+      optimalSet.add(sib);
+    }
+  }
+
+  return Array.from(optimalSet);
+}
+
+async function toggleCluster(id, blocked) {
+  if (state.firewallEnabled === false) {
+    showToast(t('firewallDisabledAlert'), 'warning');
+  }
+  const siblings = getMetroSiblings(id);
+  try {
+    for (const sibId of siblings) {
+      await call('toggle_cluster_block', { id: sibId, blocked });
+      if (Array.isArray(state.valveClusters)) {
+        const c = state.valveClusters.find((item) => item.id === sibId);
+        if (c) c.is_blocked = blocked;
+      }
+    }
+    renderServerGrid();
+    const sibNames = siblings.map(s => s.toUpperCase()).join(' & ');
+    const msg = blocked
+      ? (state.lang === 'fa' ? `سرورهای منطقه (${sibNames}) مسدود شدند` : `Region servers (${sibNames}) blocked`)
+      : (state.lang === 'fa' ? `سرورهای منطقه (${sibNames}) مجاز شدند` : `Region servers (${sibNames}) unblocked`);
+    showToast(msg, 'success');
+  } catch (err) {
+    showToast(String(err), 'error');
+    showModalAlert(state.lang === 'fa' ? 'خطا در فایروال' : 'Firewall Error', String(err.message || err));
+  }
+}
+
+async function lockToTop5() {
+  if (!Array.isArray(state.valveClusters)) return;
+  const online = state.valveClusters.filter((c) => c.ping_ms !== null);
+  if (online.length === 0) {
+    showToast(state.lang === 'fa' ? 'هنوز سروری تست نشده است. ابتدا پایش سرورها انجام می‌شود...' : 'No servers tested yet. Running benchmark first...', 'info');
+    await refreshLatencySuite(true);
+  }
+
+  const btn = document.querySelector('.btn-tool-top5');
+  const progWrap = document.getElementById('latency-progress-wrap');
+  const progBar = document.getElementById('latency-progress-bar');
+  const progPct = document.getElementById('latency-progress-pct');
+  const progTitle = document.getElementById('latency-progress-title');
+
+  let origHtml = '';
+  if (btn) {
+    origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${state.lang === 'fa' ? 'در حال اعمال...' : 'Applying...'}</span>`;
+  }
+  setBusyCursor(true, 'latency');
+
+  if (progWrap && progBar && progPct && progTitle) {
+    progWrap.style.display = 'flex';
+    progBar.style.width = '35%';
+    progPct.textContent = '35%';
+    progTitle.textContent = state.lang === 'fa' ? 'در حال محاسبه و اعمال سرورهای بهینه...' : 'Calculating & applying optimal servers...';
+  }
+
+  try {
+    const optimalIds = getOptimalServerIds(state.valveClusters);
+    if (progBar && progPct) {
+      progBar.style.width = '75%';
+      progPct.textContent = '75%';
+    }
+
+    await call('apply_top5_clusters', { top5Ids: optimalIds });
+    for (const c of state.valveClusters) {
+      c.is_blocked = !optimalIds.includes(c.id);
+      c.is_top5 = optimalIds.includes(c.id);
+    }
+    renderServerGrid();
+
+    if (progBar && progPct && progTitle) {
+      progBar.style.width = '100%';
+      progPct.textContent = '100%';
+      progTitle.textContent = state.lang === 'fa' ? 'سرورهای بهینه با موفقیت اعمال شدند!' : 'Optimal servers applied successfully!';
+    }
+
+    const srvNames = optimalIds.map((id) => id.toUpperCase()).join(', ');
+    showToast(state.lang === 'fa' ? `سرورهای بهینه فعال شدند: ${srvNames}` : `Optimal servers activated: ${srvNames}`, 'success');
+  } catch (err) {
+    if (progBar) progBar.style.background = '#ef4444';
+    showToast(String(err), 'error');
+    showModal(state.lang === 'fa' ? 'خطا در اعمال سرورها' : 'Server Apply Error', String(err.message || err), [{ label: t('ok') }]);
+  } finally {
+    setTimeout(() => {
+      if (progWrap) {
+        progWrap.style.display = 'none';
+        if (progBar) progBar.style.background = '';
+      }
+    }, 700);
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('is-loading');
+      if (origHtml) btn.innerHTML = origHtml;
+    }
+    setBusyCursor(false, 'latency');
+  }
+}
+
+async function allowEuropeOnly() {
+  if (!Array.isArray(state.valveClusters)) return;
+  const euClusters = state.valveClusters.filter((c) => c.region === 'europe');
+  const euIds = euClusters.map((c) => c.id);
+
+  try {
+    await call('apply_top5_clusters', { top5Ids: euIds });
+    for (const c of state.valveClusters) {
+      c.is_blocked = !euIds.includes(c.id);
+    }
+    renderServerGrid();
+    showToast(t('btnAllowEu'), 'success');
+  } catch (err) {
+    showToast(String(err), 'error');
+    showModal(state.lang === 'fa' ? 'خطا در فایروال' : 'Firewall Error', String(err.message || err), [{ label: t('ok') }]);
+  }
+}
+
+async function unblockAllRelays() {
+  const btn = document.querySelector('.btn-tool-unblock');
+  const icon = btn ? btn.querySelector('i') : null;
+  const origIconClass = icon ? icon.className : '';
+  if (btn) btn.disabled = true;
+  if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
+  setBusyCursor(true, 'latency');
+
+  try {
+    await call('unblock_all_clusters');
+    if (Array.isArray(state.valveClusters)) {
+      for (const c of state.valveClusters) {
+        c.is_blocked = false;
+      }
+    }
+    state.activePresetId = 'all_open';
+    renderServerGrid();
+    updatePresetSelect();
+    updatePresetStatusText();
+    updateLatencyHeroPills();
+    showToast(t('unblockedAllToast'), 'success');
+  } catch (err) {
+    showToast(String(err), 'error');
+    showModal(state.lang === 'fa' ? 'خطا در فایروال' : 'Firewall Error', String(err.message || err), [{ label: t('ok') }]);
+  } finally {
+    if (btn) btn.disabled = false;
+    if (icon) icon.className = origIconClass;
+    setBusyCursor(false, 'latency');
+  }
+}
+
+// ---------- Server Presets Engine ----------
+const DEFAULT_SERVER_PRESETS = [
+  {
+    id: 'all_open',
+    nameKey: 'presetAllOpen',
+    getBlockedIds: () => []
+  },
+  {
+    id: 'bypass_germany',
+    nameKey: 'presetBypassGermany',
+    // Blocks all Germany (fra, dfra, fsn) + Austria & Poland transit bridges (vie, dvie, waw) + non-EU
+    // Leaves only: Stockholm, Helsinki, London, Amsterdam, Paris, Madrid
+    getBlockedIds: (clusters) => {
+      const safeEu = new Set(['sto', 'sto2', 'dsto', 'hel', 'lhr', 'dlhr', 'ams', 'par', 'mad']);
+      return clusters.filter(c => !safeEu.has(c.id)).map(c => c.id);
+    }
+  },
+  {
+    id: 'eu_only',
+    nameKey: 'presetEuOnly',
+    getBlockedIds: (clusters) => clusters.filter(c => c.region !== 'europe').map(c => c.id)
+  },
+  {
+    id: 'eu_west_north',
+    nameKey: 'presetEuWestNorth',
+    getBlockedIds: (clusters) => {
+      const euWestNorth = new Set(['fra', 'dfra', 'fsn', 'ams', 'lhr', 'dlhr', 'par', 'mad', 'sto', 'sto2', 'dsto', 'hel']);
+      return clusters.filter(c => !euWestNorth.has(c.id)).map(c => c.id);
+    }
+  },
+  {
+    id: 'dubai_only',
+    nameKey: 'presetDubai',
+    getBlockedIds: (clusters) => clusters.filter(c => c.id !== 'dxb').map(c => c.id)
+  },
+  {
+    id: 'nordic_only',
+    nameKey: 'presetNordic',
+    getBlockedIds: (clusters) => {
+      const nordic = new Set(['sto', 'sto2', 'dsto', 'hel']);
+      return clusters.filter(c => !nordic.has(c.id)).map(c => c.id);
+    }
+  },
+  {
+    id: 'top5',
+    nameKey: 'presetTop5',
+    getBlockedIds: (clusters) => {
+      const optimalIds = getOptimalServerIds(clusters);
+      const optimalSet = new Set(optimalIds);
+      return clusters.filter(c => !optimalSet.has(c.id)).map(c => c.id);
+    }
+  }
+];
+
+function loadCustomPresets() {
+  try {
+    const raw = localStorage.getItem('dlphub_custom_server_presets');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveCustomPresets(list) {
+  try {
+    localStorage.setItem('dlphub_custom_server_presets', JSON.stringify(list));
+  } catch (e) {}
+}
+
+function updatePresetSelect() {
+  const sel = document.getElementById('preset-select');
+  const delBtn = document.getElementById('btn-del-preset');
+  if (!sel) return;
+
+  const currentPresetId = state.activePresetId || 'all_open';
+  const customPresets = loadCustomPresets();
+
+  sel.innerHTML = '';
+  // Built-in presets
+  DEFAULT_SERVER_PRESETS.forEach((p) => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = t(p.nameKey);
+    if (p.id === currentPresetId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  // Custom presets
+  if (customPresets.length > 0) {
+    const optGroup = document.createElement('optgroup');
+    optGroup.label = state.lang === 'fa' ? 'پروفایل‌های شخصی شما' : 'Your Custom Presets';
+    customPresets.forEach((cp) => {
+      const opt = document.createElement('option');
+      opt.value = cp.id;
+      opt.textContent = `★ ${cp.name}`;
+      if (cp.id === currentPresetId) opt.selected = true;
+      optGroup.appendChild(opt);
+    });
+    sel.appendChild(optGroup);
+  }
+
+  // Show delete button only if currently selected preset is a custom one
+  const isCustom = customPresets.some(cp => cp.id === currentPresetId);
+  if (delBtn) {
+    delBtn.style.display = isCustom ? 'inline-flex' : 'none';
+  }
+
+  updatePresetStatusText();
+}
+
+function updatePresetStatusText() {
+  const statusEl = document.getElementById('spb-status-text');
+  if (!statusEl || !Array.isArray(state.valveClusters)) return;
+  const total = state.valveClusters.length;
+  const blocked = state.valveClusters.filter(c => c.is_blocked).length;
+  const allowed = total - blocked;
+  if (state.lang === 'fa') {
+    statusEl.textContent = `${allowed} سرور فعال / ${blocked} مسدود`;
+  } else {
+    statusEl.textContent = `${allowed} active / ${blocked} blocked`;
+  }
+}
+
+async function onPresetSelected(presetId) {
+  if (!Array.isArray(state.valveClusters) || state.valveClusters.length === 0) return;
+  state.activePresetId = presetId;
+
+  let blockedIds = [];
+  let presetName = '';
+
+  const defaultPreset = DEFAULT_SERVER_PRESETS.find(p => p.id === presetId);
+  if (defaultPreset) {
+    presetName = t(defaultPreset.nameKey);
+    blockedIds = defaultPreset.getBlockedIds(state.valveClusters);
+  } else {
+    const customPresets = loadCustomPresets();
+    const custom = customPresets.find(cp => cp.id === presetId);
+    if (custom) {
+      presetName = custom.name;
+      blockedIds = custom.blocked_ids || [];
+    }
+  }
+
+  try {
+    await call('apply_cluster_preset_cmd', { blockedIds });
+    for (const c of state.valveClusters) {
+      c.is_blocked = blockedIds.includes(c.id);
+    }
+    renderServerGrid();
+    updatePresetSelect();
+    updatePresetStatusText();
+    updateLatencyHeroPills();
+    showToast(t('presetAppliedToast').replace('{name}', presetName), 'success');
+  } catch (err) {
+    showToast(String(err), 'error');
+  }
+}
+
+function openSavePresetModal() {
+  const modal = document.getElementById('modal-save-preset');
+  const input = document.getElementById('input-preset-name');
+  if (modal) modal.style.display = 'flex';
+  if (input) {
+    input.value = '';
+    setTimeout(() => input.focus(), 50);
+  }
+}
+
+function closeSavePresetModal() {
+  const modal = document.getElementById('modal-save-preset');
+  if (modal) modal.style.display = 'none';
+}
+
+function confirmSavePreset() {
+  const input = document.getElementById('input-preset-name');
+  const name = (input ? input.value : '').trim();
+  if (!name) {
+    showToast(state.lang === 'fa' ? 'لطفاً یک نام وارد کنید' : 'Please enter a name', 'warning');
+    return;
+  }
+
+  if (!Array.isArray(state.valveClusters)) return;
+  const blockedIds = state.valveClusters.filter(c => c.is_blocked).map(c => c.id);
+  const customPresets = loadCustomPresets();
+
+  const newId = 'custom_' + Date.now();
+  customPresets.push({
+    id: newId,
+    name,
+    blocked_ids: blockedIds
+  });
+
+  saveCustomPresets(customPresets);
+  closeSavePresetModal();
+  state.activePresetId = newId;
+  updatePresetSelect();
+  showToast(t('presetSavedToast').replace('{name}', name), 'success');
+}
+
+function deleteCurrentCustomPreset() {
+  const currentPresetId = state.activePresetId;
+  const customPresets = loadCustomPresets();
+  const target = customPresets.find(cp => cp.id === currentPresetId);
+  if (!target) return;
+
+  const msg = t('confirmDeletePreset').replace('{name}', target.name);
+  if (!confirm(msg)) return;
+
+  const filtered = customPresets.filter(cp => cp.id !== currentPresetId);
+  saveCustomPresets(filtered);
+
+  showToast(t('presetDeletedToast'), 'info');
+  // Revert selection to all_open
+  onPresetSelected('all_open');
+}
+
+async function applyDnsProfile(id) {
+  try {
+    await call('apply_dns_profile', { id });
+    if (Array.isArray(state.dnsProfiles)) {
+      for (const p of state.dnsProfiles) {
+        p.is_active = p.id === id;
+      }
+    }
+    renderDnsGrid();
+    const prof = state.dnsProfiles.find((p) => p.id === id);
+    const pName = prof ? (state.lang === 'fa' ? prof.name_fa : prof.name) : id;
+    showToast(t('appliedDnsToast').replace('{name}', pName), 'success');
+  } catch (err) {
+    showToast(String(err), 'error');
+  }
+}
+
+async function resetDnsToDhcp() {
+  try {
+    await call('reset_dns_dhcp');
+    if (Array.isArray(state.dnsProfiles)) {
+      for (const p of state.dnsProfiles) {
+        p.is_active = false;
+      }
+    }
+    renderDnsGrid();
+    showToast(t('resetDhcpToast'), 'success');
+  } catch (err) {
+    showToast(String(err), 'error');
+  }
+}
+
+async function doFlushDns() {
+  try {
+    await call('flush_dns_cmd');
+    showToast(t('btnFlushDns'), 'success');
+  } catch (err) {
+    showToast(String(err), 'error');
+  }
+}
+
+async function doSmartOptimize() {
+  if (state.firewallEnabled === false) {
+    showToast(t('firewallDisabledAlert'), 'warning');
+  }
+  const btn = document.getElementById('btn-smart-optimize');
+  const revertBtn = document.getElementById('btn-revert-network');
+  const benchBtn = document.getElementById('btn-benchmark-all');
+  const deepBtn = document.getElementById('btn-deep-benchmark');
+
+  const progWrap = document.getElementById('latency-progress-wrap');
+  const progBar = document.getElementById('latency-progress-bar');
+  const progPct = document.getElementById('latency-progress-pct');
+  const progTitle = document.getElementById('latency-progress-title');
+
+  let origBtnHtml = '';
+  if (btn) {
+    origBtnHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${state.lang === 'fa' ? 'در حال بهینه‌سازی...' : 'Optimizing...'}</span>`;
+  }
+  if (revertBtn) revertBtn.disabled = true;
+  if (benchBtn) benchBtn.disabled = true;
+  if (deepBtn) deepBtn.disabled = true;
+
+  setBusyCursor(true, 'latency');
+
+  if (progWrap && progBar && progPct && progTitle) {
+    progWrap.style.display = 'flex';
+    progBar.style.width = '15%';
+    progPct.textContent = '15%';
+    progTitle.textContent = state.lang === 'fa' ? 'در حال پایش و سنجش پینگ سرورها...' : 'Measuring cluster latencies...';
+  }
+
+  try {
+    if (!state.valveClusters || state.valveClusters.length === 0 || !state.dnsProfiles) {
+      if (progBar && progPct) {
+        progBar.style.width = '30%';
+        progPct.textContent = '30%';
+      }
+      await refreshLatencySuite(true);
+    }
+
+    if (progBar && progPct && progTitle) {
+      progBar.style.width = '50%';
+      progPct.textContent = '50%';
+      progTitle.textContent = state.lang === 'fa' ? 'در حال فعال‌سازی بهترین دی‌ان‌اس ضد تحریم...' : 'Activating optimal anti-sanction DNS...';
+    }
+
+    // 1. Find Best DNS (lowest ping)
+    const onlineDns = [...(state.dnsProfiles || [])].sort((a, b) => (a.ping_ms || 9999) - (b.ping_ms || 9999));
+    const bestDns = onlineDns.length ? onlineDns[0] : null;
+
+    if (bestDns) {
+      await call('apply_dns_profile', { id: bestDns.id });
+      for (const p of state.dnsProfiles) {
+        p.is_active = p.id === bestDns.id;
+      }
+    }
+
+    if (progBar && progPct && progTitle) {
+      progBar.style.width = '75%';
+      progPct.textContent = '75%';
+      progTitle.textContent = state.lang === 'fa' ? 'در حال کانفیگ فایروال برای سرورهای کم‌پینگ و هم‌منطقه...' : 'Configuring firewall for optimal regional clusters...';
+    }
+
+    // 2. Find Optimal Servers (within 15ms of lowest ping + metro cohesion)
+    const optimalIds = getOptimalServerIds(state.valveClusters);
+    await call('apply_top5_clusters', { top5Ids: optimalIds });
+
+    for (const c of state.valveClusters) {
+      c.is_blocked = !optimalIds.includes(c.id);
+      c.is_top5 = optimalIds.includes(c.id);
+    }
+
+    renderServerGrid();
+    renderDnsGrid();
+
+    if (progBar && progPct && progTitle) {
+      progBar.style.width = '100%';
+      progPct.textContent = '100%';
+      progTitle.textContent = state.lang === 'fa' ? 'بهینه‌سازی هوشمند شبکه با موفقیت اعمال شد!' : 'Smart network optimization completed successfully!';
+    }
+
+    const dnsName = bestDns ? (state.lang === 'fa' ? bestDns.name_fa : bestDns.name) : 'DNS';
+    const srvNames = optimalIds.map((id) => id.toUpperCase()).join(', ');
+    showToast(t('smartOptimizeToast').replace('{servers}', srvNames).replace('{dns}', dnsName), 'success');
+  } catch (err) {
+    if (progBar) progBar.style.background = '#ef4444';
+    if (progTitle) progTitle.textContent = state.lang === 'fa' ? 'خطا در بهینه‌سازی شبکه' : 'Smart Optimization Error';
+    showToast(String(err), 'error');
+    showModal(state.lang === 'fa' ? 'خطا در بهینه‌سازی شبکه' : 'Optimization Failed', String(err.message || err), [{ label: t('ok') }]);
+  } finally {
+    setTimeout(() => {
+      if (progWrap) {
+        progWrap.style.display = 'none';
+        if (progBar) progBar.style.background = '';
+      }
+    }, 700);
+
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('is-loading');
+      if (origBtnHtml) btn.innerHTML = origBtnHtml;
+    }
+    if (revertBtn) revertBtn.disabled = false;
+    if (benchBtn) benchBtn.disabled = false;
+    if (deepBtn) deepBtn.disabled = false;
+
+    setBusyCursor(false, 'latency');
+  }
+}
+
+async function doRevertNetwork() {
+  const btn = document.getElementById('btn-revert-network');
+  const optBtn = document.getElementById('btn-smart-optimize');
+  const benchBtn = document.getElementById('btn-benchmark-all');
+  const deepBtn = document.getElementById('btn-deep-benchmark');
+
+  const progWrap = document.getElementById('latency-progress-wrap');
+  const progBar = document.getElementById('latency-progress-bar');
+  const progPct = document.getElementById('latency-progress-pct');
+  const progTitle = document.getElementById('latency-progress-title');
+
+  let origBtnHtml = '';
+  if (btn) {
+    origBtnHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${state.lang === 'fa' ? 'در حال بازگردانی...' : 'Reverting...'}</span>`;
+  }
+  if (optBtn) optBtn.disabled = true;
+  if (benchBtn) benchBtn.disabled = true;
+  if (deepBtn) deepBtn.disabled = true;
+
+  setBusyCursor(true, 'latency');
+
+  if (progWrap && progBar && progPct && progTitle) {
+    progWrap.style.display = 'flex';
+    progBar.style.width = '25%';
+    progPct.textContent = '25%';
+    progTitle.textContent = state.lang === 'fa' ? 'در حال حذف رول‌های فایروال سرورها...' : 'Removing server firewall rules...';
+  }
+
+  try {
+    await call('unblock_all_clusters');
+
+    if (progBar && progPct && progTitle) {
+      progBar.style.width = '60%';
+      progPct.textContent = '60%';
+      progTitle.textContent = state.lang === 'fa' ? 'در حال بازگردانی دی‌ان‌اس به حالت خودکار (DHCP)...' : 'Resetting DNS adapter to DHCP...';
+    }
+
+    await call('reset_dns_dhcp');
+
+    if (progBar && progPct && progTitle) {
+      progBar.style.width = '85%';
+      progPct.textContent = '85%';
+      progTitle.textContent = state.lang === 'fa' ? 'در حال پاکسازی کش شبکه و DNS...' : 'Flushing DNS cache...';
+    }
+
+    await call('flush_dns_cmd').catch(() => {});
+
+    if (Array.isArray(state.valveClusters)) {
+      for (const c of state.valveClusters) {
+        c.is_blocked = false;
+      }
+    }
+    if (Array.isArray(state.dnsProfiles)) {
+      for (const p of state.dnsProfiles) {
+        p.is_active = false;
+      }
+    }
+    renderServerGrid();
+    renderDnsGrid();
+
+    if (progBar && progPct && progTitle) {
+      progBar.style.width = '100%';
+      progPct.textContent = '100%';
+      progTitle.textContent = state.lang === 'fa' ? 'تمام تنظیمات شبکه با موفقیت بازگردانده شدند!' : 'All network settings reverted to defaults!';
+    }
+
+    showToast(t('unblockedAllToast'), 'success');
+  } catch (err) {
+    if (progBar) progBar.style.background = '#ef4444';
+    if (progTitle) progTitle.textContent = state.lang === 'fa' ? 'خطا در بازگردانی شبکه' : 'Network Reset Error';
+    showToast(String(err), 'error');
+    showModal(state.lang === 'fa' ? 'خطا در بازگردانی شبکه' : 'Revert Failed', String(err.message || err), [{ label: t('ok') }]);
+  } finally {
+    setTimeout(() => {
+      if (progWrap) {
+        progWrap.style.display = 'none';
+        if (progBar) progBar.style.background = '';
+      }
+    }, 700);
+
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('is-loading');
+      if (origBtnHtml) btn.innerHTML = origBtnHtml;
+    }
+    if (optBtn) optBtn.disabled = false;
+    if (benchBtn) benchBtn.disabled = false;
+    if (deepBtn) deepBtn.disabled = false;
+
+    setBusyCursor(false, 'latency');
+  }
+}
+
+async function saveLatencyTweaks() {
+  const btn = document.querySelector('.btn-save-tweaks');
+  let origHtml = '';
+  if (btn) {
+    origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${state.lang === 'fa' ? 'در حال اعمال...' : 'Applying...'}</span>`;
+  }
+  setBusyCursor(true, 'latency');
+
+  const tweaks = {
+    bandwidth_shield: !!document.getElementById('tweak-check-shield')?.checked,
+    qos_enabled: !!document.getElementById('tweak-check-qos')?.checked,
+    throttling_disabled: !!document.getElementById('tweak-check-throttling')?.checked,
+    nic_opt_enabled: !!document.getElementById('tweak-check-nic')?.checked,
+    netcode_opt_enabled: !!document.getElementById('tweak-check-netcode')?.checked,
+  };
+
+  try {
+    const res = await call('apply_latency_tweaks_cmd', { tweaks });
+    updateLatencyHeroPills();
+    showToast(t('tweaksAppliedToast'), 'success');
+  } catch (err) {
+    showToast(String(err), 'error');
+    showModal(state.lang === 'fa' ? 'خطا در اعمال توئیک‌ها' : 'Tweaks Error', String(err.message || err), [{ label: t('ok') }]);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('is-loading');
+      if (origHtml) btn.innerHTML = origHtml;
+    }
+    setBusyCursor(false, 'latency');
+  }
+}
+
+async function revertLatencyTweaks() {
+  const btn = document.querySelector('#subview-tweaks .btn-cyber-ghost');
+  let origHtml = '';
+  if (btn) {
+    origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${state.lang === 'fa' ? 'در حال بازگردانی...' : 'Reverting...'}</span>`;
+  }
+  setBusyCursor(true, 'latency');
+
+  try {
+    await call('revert_latency_tweaks_cmd');
+    const shieldChk = document.getElementById('tweak-check-shield');
+    if (shieldChk) shieldChk.checked = false;
+    updateLatencyHeroPills();
+    showToast(t('tweaksRevertedToast'), 'success');
+  } catch (err) {
+    showToast(String(err), 'error');
+    showModal(state.lang === 'fa' ? 'خطا در بازگردانی توئیک‌ها' : 'Tweaks Revert Error', String(err.message || err), [{ label: t('ok') }]);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('is-loading');
+      if (origHtml) btn.innerHTML = origHtml;
+    }
+    setBusyCursor(false, 'latency');
   }
 }
 
@@ -1690,69 +3056,16 @@ function renderMeteorsHtml(count = 16) {
   return html;
 }
 
+// Backward-compatibility alias
+function renderValvePings(pings) {
+  if (typeof renderServerGrid === 'function') {
+    renderServerGrid();
+  }
+}
+window.renderValvePings = renderValvePings;
+
 async function refreshValvePings(forceLoading = false) {
-  if (pingingActive) return;
-  pingingActive = true;
-  const btn = document.getElementById('btn-refresh-ping');
-  const grid = document.getElementById('ping-grid');
-  const slot = document.getElementById('best-route-slot');
-  const footer = document.getElementById('net-footer');
-  const spinIcon = btn ? btn.querySelector('.refresh-icon') : null;
-  if (btn) {
-    btn.disabled = true;
-    btn.classList.add('is-pinging');
-  }
-  if (spinIcon) spinIcon.classList.add('spin');
-  setBusyCursor(true, 'latency');
-
-  const shouldShowLoading = forceLoading || !state.lastValvePings || state.lastValvePings.length === 0;
-
-  if (shouldShowLoading) {
-    if (slot) slot.innerHTML = '';
-    if (footer) footer.style.display = 'none';
-    if (grid) {
-      grid.classList.add('is-loading');
-      grid.innerHTML = `
-        <div class="latency-loading-wrap">
-          <div class="vf-meteors-container" aria-hidden="true">
-            ${renderMeteorsHtml(16)}
-          </div>
-          <div class="latency-loading-content">
-            <div class="dlp-loader">
-              <div class="l1"><div class="l2"><div class="l3"></div></div></div>
-            </div>
-            <div class="vf-loading-dots-wrap" role="status">
-              <span class="dlp-load-label">${t('pingTesting').replace(/\.{2,}$/, '')}</span>
-              <span class="vf-loading-dots" aria-hidden="true">
-                <span class="vf-dot"></span>
-                <span class="vf-dot"></span>
-                <span class="vf-dot"></span>
-              </span>
-            </div>
-          </div>
-        </div>`;
-    }
-  }
-
-  try {
-    const servers = await call('ping_valve_servers');
-    state.lastValvePings = servers;
-    renderValvePings(servers);
-  } catch (err) {
-    console.error('[ping_valve_servers error]', err);
-    if (grid) {
-      grid.classList.remove('is-loading');
-      grid.innerHTML = `<div class="ping-loading-msg text-danger">${String(err)}</div>`;
-    }
-  } finally {
-    setBusyCursor(false, 'latency');
-    if (btn) {
-      btn.disabled = false;
-      btn.classList.remove('is-pinging');
-    }
-    if (spinIcon) spinIcon.classList.remove('spin');
-    pingingActive = false;
-  }
+  return refreshLatencySuite(forceLoading);
 }
 
 function selectCardByKey(tabKey) {
@@ -1806,13 +3119,28 @@ function selectCardByKey(tabKey) {
     }, 750);
   }
   const pingBtn = document.getElementById('btn-refresh-ping');
-  if (pingBtn) pingBtn.style.display = tabKey === 'latency' ? '' : 'none';
+  if (pingBtn) pingBtn.style.display = tabKey === 'latency' && state.isAdmin ? '' : 'none';
   const isBusyNow = state.busyTab && (state.busyTab === 'global' || state.busyTab === tabKey);
   updateCursorFollower();
   if (tabKey === 'latency') {
-    if (!state.lastValvePings || state.lastValvePings.length === 0) {
-      refreshValvePings();
-    }
+    checkAdminStatus().then(() => {
+      if (state.isAdmin) {
+        if (!state.valveClusters || state.valveClusters.length === 0) {
+          call('get_valve_clusters').then((cl) => {
+            state.valveClusters = cl;
+            renderServerGrid();
+          }).catch(() => {});
+          call('get_dns_profiles').then((dp) => {
+            state.dnsProfiles = dp;
+            renderDnsGrid();
+          }).catch(() => {});
+          refreshLatencySuite(false);
+        } else {
+          renderServerGrid();
+          renderDnsGrid();
+        }
+      }
+    });
   }
   if (tabKey === 'advanced') renderBackups();
   if (tabKey === 'graphic') {
@@ -1929,7 +3257,7 @@ function updateScale() {
 }
 
 function selectPreset(mode) {
-  if (mode === 'SOON' || mode === 'POTATO') return;
+  if (mode === 'SOON') return;
   state.selectedMode = mode;
   document.querySelectorAll('.tier-card, .tier-card-sm, .option-item.preset').forEach((p) => {
     const was = p.classList.contains('selected');
@@ -1961,7 +3289,27 @@ window.doResetSettings = doResetSettings;
 window.doCopyDiagnostics = doCopyDiagnostics;
 window.selectRenderer = selectRenderer;
 window.setFov = setFov;
+window.setVideoFov = setVideoFov;
+window.setAspectRatio = setAspectRatio;
+window.toggleAspectRatio = toggleAspectRatio;
+window.applyReducedMotion = applyReducedMotion;
+window.toggleReducedMotion = toggleReducedMotion;
 window.copyLaunchOpt = copyLaunchOpt;
+window.restartAsAdmin = restartAsAdmin;
+window.refreshLatencySuite = refreshLatencySuite;
+window.switchLatencySubtab = switchLatencySubtab;
+window.filterServersByRegion = filterServersByRegion;
+window.toggleCluster = toggleCluster;
+window.lockToTop5 = lockToTop5;
+window.allowEuropeOnly = allowEuropeOnly;
+window.unblockAllRelays = unblockAllRelays;
+window.applyDnsProfile = applyDnsProfile;
+window.resetDnsToDhcp = resetDnsToDhcp;
+window.doFlushDns = doFlushDns;
+window.doSmartOptimize = doSmartOptimize;
+window.doRevertNetwork = doRevertNetwork;
+window.saveLatencyTweaks = saveLatencyTweaks;
+window.revertLatencyTweaks = revertLatencyTweaks;
 // ---------- Custom Info Tooltip & Launch Options Hover Preview ----------
 function positionTooltip(el, tooltip) {
   const rect = el.getBoundingClientRect();
@@ -2061,13 +3409,27 @@ function init() {
     const btnCopyDiag = document.getElementById('btn-copy-diag');
     if (btnCopyDiag) btnCopyDiag.onclick = doCopyDiagnostics;
 
-    const swUnit = document.getElementById('sw-unit-status');
-    if (swUnit) {
-      swUnit.disabled = true;
-      swUnit.checked = false;
-      swUnit.onchange = (e) => {
-        e.preventDefault();
-        swUnit.checked = false;
+    const swBreakables = document.getElementById('sw-better-breakables');
+    if (swBreakables) {
+      swBreakables.onchange = (e) => {
+        state.betterBreakables = e.target.checked;
+        call('set_settings', { patch: { better_breakables: e.target.checked } }).catch(() => {});
+      };
+    }
+
+    const swBrightness = document.getElementById('sw-higher-brightness');
+    if (swBrightness) {
+      swBrightness.onchange = (e) => {
+        state.higherBrightness = e.target.checked;
+        call('set_settings', { patch: { higher_brightness: e.target.checked } }).catch(() => {});
+      };
+    }
+
+    const swClutter = document.getElementById('sw-reduce-clutter');
+    if (swClutter) {
+      swClutter.onchange = (e) => {
+        state.reduceClutter = e.target.checked;
+        call('set_settings', { patch: { reduce_clutter: e.target.checked } }).catch(() => {});
       };
     }
 
@@ -2089,23 +3451,45 @@ function init() {
 
     const slider = document.getElementById('fov-slider');
     const number = document.getElementById('fov-number');
-    if (slider) slider.oninput = () => setFov(Number(slider.value));
-    if (number) number.onchange = () => setFov(Number(number.value) || 90);
+    if (slider) slider.oninput = () => setVideoFov(Number(slider.value));
+    if (number) number.onchange = () => setVideoFov(Number(number.value) || 90);
     const fovBox = document.querySelector('.setting-box.fov-box');
     if (fovBox) {
       fovBox.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        setFov(Number(slider ? slider.value : 90) + (e.deltaY < 0 ? 5 : -5));
+        if (e.target && e.target.closest && e.target.closest('.fov-part-video')) {
+          e.preventDefault();
+          setVideoFov(Number(slider ? slider.value : 90) + (e.deltaY < 0 ? 5 : -5));
+        }
       }, { passive: false });
     }
     const fovDefaultTick = document.getElementById('fov-default-tick');
     if (fovDefaultTick) {
-      fovDefaultTick.onclick = () => setFov(90);
+      fovDefaultTick.onclick = () => setVideoFov(90);
+    }
+
+    const swRedMotion = document.getElementById('sw-reduced-motion');
+    if (swRedMotion) {
+      swRedMotion.onchange = (e) => toggleReducedMotion(e.target.checked);
+    }
+
+    const swAr = document.getElementById('sw-ar-enable');
+    if (swAr) {
+      swAr.onchange = (e) => toggleAspectRatio(e.target.checked);
+    }
+
+    const arInput = document.getElementById('ar-input');
+    if (arInput) {
+      arInput.onchange = (e) => setAspectRatio(e.target.value);
+    }
+
+    const arSlider = document.getElementById('ar-slider');
+    if (arSlider) {
+      arSlider.oninput = (e) => setAspectRatio(e.target.value);
     }
 
     document.querySelectorAll('.tier-card, .tier-card-sm, .option-item.preset').forEach((el) => {
       el.addEventListener('click', () => {
-        if (el.dataset.mode === 'SOON' || el.dataset.mode === 'POTATO') return;
+        if (el.dataset.mode === 'SOON') return;
         selectPreset(el.dataset.mode);
       });
     });
@@ -2123,11 +3507,25 @@ function init() {
         if (e.target === doormanModal) closeDoormanModal();
       });
     }
+    const presetModal = document.getElementById('modal-save-preset');
+    if (presetModal) {
+      presetModal.addEventListener('click', (e) => {
+        if (e.target === presetModal) closeSavePresetModal();
+      });
+    }
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeDoormanModal();
+        closeSavePresetModal();
       }
     });
+
+    window.onPresetSelected = onPresetSelected;
+    window.openSavePresetModal = openSavePresetModal;
+    window.closeSavePresetModal = closeSavePresetModal;
+    window.confirmSavePreset = confirmSavePreset;
+    window.deleteCurrentCustomPreset = deleteCurrentCustomPreset;
+    window.enableWindowsFirewall = enableWindowsFirewall;
 
     boot();
   } catch (err) {

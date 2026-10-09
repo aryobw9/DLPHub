@@ -1,27 +1,51 @@
-# DLPHub v0.1.3
+# DLPHub v0.1.4
 
 ## What's Changed
-- **New Generation Config Presets:** Upgraded all graphics tiers (T1, T2, T3) to the latest Deadlock engine architecture based on OptimizationLock v3.2.1 and modern competitive benchmarks (over 300+ optimized ConVars).
-- **Modern Subsystem Optimizations:**
-  - **Panorama & V8 Engine:** Doubled V8 JavaScript heap to 1024MB and enabled aggressive UI caching to eliminate in-fight HUD micro-stuttering.
-  - **SteamAudio DSP Bypass:** Streamlined audio raycasting passes and enclosure calculations to reduce audio thread CPU bottlenecks.
-  - **Multithreaded Spatial Partitioning:** Enabled parallel spatial bounds updates, parallel physics invalidation, and reduced simulation cadence latency.
-  - **Dynamic Particle Load-Shedding:** Intelligently drops particle detail during chaotic teamfights to preserve framerate stability.
-  - **Mouse Responsiveness:** Disabled camera viewmodel smoothing for raw, snappy input response.
-- **Gameplay Integrity Maintained:** Ability ground decals (Lash Ground Slam, Warden Binding Cage, bullet hits), hero outlines, and colored hero shop portraits remain visible and clear.
-- **Potato Mode & HUD New Health Bar Temporarily Retired:** The Potato preset and HUD New Health Bar options have been replaced with a "Coming Soon..." placeholder pending community mod and engine compatibility with the latest game patch.
-- **Custom Match ID Auto-Sync:** Integrated console log match detection and customizable webhook reporting API.
+- **New Preset: Russian Potato ("ذغالی روس"):**
+  - Added a dedicated ultra-low-end performance preset featuring custom asset-reduction VPKs and aggressive engine LOD optimizations.
+  - **Trooper Health Bar Fix:** Raised Panorama UI update framerate to 120 FPS (`panorama_max_fps "120"`), resolving the issue where minion/trooper health bars failed to render.
+  - **Particle & Ability FX Fixes:** Configured `r_particle_skip_postsim "0"`, `particle_cluster_nodraw "0"`, `r_particle_max_size_cull "0"`, and `r_directlighting "1"` so hero ability particles, weapon tracers, and beams (Bebop laser, Celeste gun, projectile trails) remain fully visible during combat.
+- **New Visual & HUD Mods:**
+  - **Better Breakables ("دید راحت‌تر باکس و خفاش‌ها"):** Enhances visibility of breakable wooden loot crates and flying golden bats across the map without performance cost (`0 FPS` impact).
+  - **Higher Brightness ("روشنایی بیشتر"):** Amplifies ambient lighting in darker corridors, alleys, and underground tunnels (`-FPS` low downgrade impact).
+  - **Reduce Clutter ("کاهش شلوغی بصری"):** Strips away distracting debris, trash props, and non-essential ambient clutter for maximum frame pacing (`MAX` impact).
+- **FOV & True Aspect Ratio Overhaul:**
+  - Separated in-game FOV control (`video.txt`, up to 90°) from the true aspect ratio override (`gameinfo.gi`).
+  - Added fine-tuned Aspect Ratio slider (1.33 to 3.50) with quick-select presets (1.78, 2.15, 2.33, 2.49, 3.09) and an on/off toggle.
+- **Physics & Animation Controls:**
+  - Added toggle to stop CPU-heavy cloth simulations (`cloth_update "0"`, `cloth_sim_on_tick "0"`).
+  - Added toggle to immediately fade dead hero ragdolls (`cl_ragdoll_limit "0"`).
+- **Latency & Server Routing Overhaul:**
+  - **Live Valve Relay Ping Tester:** Real-time ICMP ping measurement across 8 official Valve regions with packet loss, jitter analysis, and sparkline latency graphs.
+  - **DNS Benchmarker & Switcher:** 1-Click benchmarking and switching between 8 leading global and Iranian DNS providers.
+  - **Server Blocker:** Integrated Windows Firewall IP filtering to block high-ping server regions.
+- **UI / UX Polish:**
+  - Added individual color-coded FPS impact badges to each HUD switch and presets (`None`, `Low`, `Medium`, `High`, `VeryHigh / MAX`, `Downgrade / -FPS`).
+  - Fixed tooltip hover text localization (`FPS Impact: VeryHigh` / `تاثیر بر فریم‌ریت: بسیار زیاد`).
+  - Reverted HUD box header icon to `fa-heart-pulse`.
 
 ---
 
-## تغییرات نسخه ۰.۱.۳
-- **نسل جدید پریست‌های بهینه‌سازی:** ارتقای تمامی سطوح گرافیکی (T1، T2، T3) بر پایه آخرین تغییرات موتور ددلاک و تنظیمات بهینه‌سازی OptimizationLock v3.2.1 (بیش از ۳۰۰ متغیر ConVar بهینه‌سازی شده).
-- **بهینه‌سازی زیرسیستم‌های مدرن سورس ۲:**
-  - **موتور V8 و رابط کاربری Panorama:** دو برابر کردن حافظه جاوااسکریپت رابط کاربری (۱۰۲۴ مگابایت) و فعال‌سازی کش لایه‌ها جهت حذف لگ‌های ریز در درگیری‌های سنگین.
-  - **بهینه‌سازی پردازش صوتی SteamAudio:** سبک‌سازی محاسبات بازتاب و اکوی صدا برای آزادسازی منابع پردازنده (CPU).
-  - **چندرشته‌ای‌سازی محاسبات موتور بازی:** بهینه‌سازی پارتیشن‌بندی فضایی، ابطال فیزیک موازی و بهبود Cadence فریم‌ها.
-  - **کاهش پویای بار افکت‌ها و ذرات:** کاهش خودکار کیفیت ذرات و افکت‌ها در شلوغی فایت‌ها به منظور حفظ پایداری فریم‌ریت.
-  - **واکنش‌پذیری ماوس:** حذف نرم‌کننده دید و انیمیشن برای ثبت دقیق‌تر و بدون تاخیر حرکت ماوس.
-- **حفظ نشانگرهای حیاتی گیم‌پلی:** خطوط روی زمین ابیلیتی‌ها (مانند اسلم Lash و قفس Warden)، کادربندی دور هیروها و رنگ پرتره هیروها در شاپ کاملاً حفظ شده‌اند.
-- **حالت ذغالی (Potato) و نوار سلامتی جدید HUD به زودی:** پریست ذغالی و گزینه نوار سلامتی جدید به دلیل تغییرات کلاینت بازی موقتاً با نشانگر «به زودی...» جایگزین شده‌اند تا آپدیت‌های هماهنگ آماده شوند.
-- **سینک خودکار Match ID:** شناسایی هوشمند شناسه بازی‌های کاستوم از لاگ و قابلیت ارسال به وب‌هوک و API دلخواه.
+## تغییرات نسخه ۰.۱.۴
+- **پریست جدید: ذغالی روس (Russian Potato):**
+  - اضافه شدن پریست گرافیکی فوق‌سبک اختصاصی با VPK فشرده بافت‌ها و بهینه‌سازی‌های سنگین LOD.
+  * **رفع مشکل عدم نمایش جان مینیون‌ها:** افزایش سقف فریم‌ریت رابط کاربری Panorama به ۱۲۰ فریم (`panorama_max_fps "120"`) که مشکل ناپدید شدن نوار سلامت مینیون‌ها/تروپرها را به طور کامل برطرف کرد.
+  * **اصلاح نمایش پارتیکل‌ها و تیرها:** تنظیم دستورات `r_particle_skip_postsim "0"`، `particle_cluster_nodraw "0"`، `r_particle_max_size_cull "0"` و `r_directlighting "1"` برای رندر کامل پارتیکل‌ها و تیرهای هیروها (مانند لیزر بیباپ، شلیک‌های سلست و اثر پرتابه‌ها).
+- **مادهای جدید بصری و رابط کاربری (HUD):**
+  - **دید راحت‌تر باکس و خفاش‌ها (Better Breakables):** متمایزسازی جعبه‌های چوبی لوت و خفاش‌های طلایی پرنده در آسمان برای فارم سریع‌تر (بدون افت فریم - `0 FPS`).
+  - **روشنایی بیشتر (Higher Brightness):** افزایش نور محیط در راهروها و بخش‌های تاریک نقشه (`-FPS` افت جزئی).
+  - **کاهش شلوغی بصری (Reduce Clutter):** حذف آوارها، زباله‌ها و آبجکت‌های تزیینی زمین برای دستیابی به حداکثر فریم‌ریت (`MAX` بیشترین تاثیر).
+- **بهینه‌سازی کامل زاویه دید و نسبت تصویر (FOV & Aspect Ratio):**
+  - تفکیک کامل زاویه دید بازی (`video.txt` تا ۹۰ درجه) از نسبت تصویر واقعی (`gameinfo.gi`).
+  - اسلایدر تنظیم پیوسته نسبت تصویر از `1.33` تا `3.50` همراه با کلیدهای سریع (1.78, 2.15, 2.33, 2.49, 3.09) و کلید روشن/خاموش.
+- **تنظیمات فیزیک و انیمیشن:**
+  - کلید توقف پردازش فیزیک لباس برای آزادسازی توان پردازنده (`cloth_update "0"`, `cloth_sim_on_tick "0"`).
+  - کلید محو سریع اجساد کشته‌شده در فایت‌ها (`cl_ragdoll_limit "0"`).
+- **پایش پینگ، DNS و مسیریابی شبکه:**
+  - **تست زنده پینگ سرورها:** سنجش لحظه‌ای پینگ با ۸ منطقه سرور رسمی ولو همراه با نمودار اسپارک‌لاین، محاسبه نوسان (Jitter) و پکت‌لاس.
+  - **تست و تغییر ۱ کلیکی DNS:** مقایسه پینگ و تغییر خودکار DNS بین ۸ ارائه‌دهنده مطرح ایرانی و خارجی.
+  - **سرور بلاکر:** مسدودسازی سرورهای با پینگ بالا از طریق فایروال ویندوز با یک کلیک.
+- **بهبودهای طراحی و رابط کاربری (UI/UX):**
+  - نشانگرهای مجزای نئونی تاثیر بر فریم‌ریت (FPS Impact Badges) برای گزینه‌های HUD و پریست‌ها.
+  - رفع مشکل نمایش متن تولتیپ‌ها هنگام هاور ماوس.
+  - بازگردانی آیکون ضربان قلب (`fa-heart-pulse`) در هدر بخش HUD.

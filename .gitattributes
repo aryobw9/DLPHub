@@ -1,0 +1,1 @@
+src-tauri/payload.zip filter=lfs diff=lfs merge=lfs -text

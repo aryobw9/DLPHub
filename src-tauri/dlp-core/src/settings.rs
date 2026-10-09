@@ -8,8 +8,13 @@ pub struct Settings {
     pub lang: String,     // "fa" | "en"
     pub unlocked: bool,   // tester TEMP modes unlocked
     pub last_path: Option<String>,
-    pub unit_status_new: bool, // citadel_unit_status_use_new autoexec block
-    pub fov: u32,              // per-user draft FOV 70..=120, applied on install
+    pub better_breakables: bool, // pak03_dir.vpk (neon breakables & bats)
+    pub higher_brightness: bool, // pak01_dir.vpk (daylock / midtown)
+    pub reduce_clutter: bool,    // pak02_dir.vpk (reduce particle/visual clutter)
+    pub fov: u32,              // per-user draft FOV in video.txt, max 90
+    pub aspect_ratio: String,  // real number for gameinfo.gi r_aspectratio (e.g. "2.15")
+    pub aspect_ratio_enabled: bool, // true = active in gameinfo.gi, false = disabled/commented
+    pub reduced_motion: bool,  // true = disable custom cursor & heavy animations
     pub fps_max: Option<u32>,  // None: default (untouched), Some(0): uncapped, Some(n): limit
     pub custom_autoexec: String, // custom user lines
     pub renderer: String,        // "default" | "dx11" | "vulkan"
@@ -23,8 +28,13 @@ impl Default for Settings {
             lang: "fa".into(),
             unlocked: false,
             last_path: None,
-            unit_status_new: false,
+            better_breakables: false,
+            higher_brightness: false,
+            reduce_clutter: false,
             fov: 90,
+            aspect_ratio: "2.15".into(),
+            aspect_ratio_enabled: true,
+            reduced_motion: false,
             fps_max: None,
             custom_autoexec: String::new(),
             renderer: "default".into(),
@@ -43,6 +53,11 @@ impl Settings {
         }
         if self.custom_autoexec.len() > 65536 || self.custom_autoexec.contains('\0') { return Err("invalid custom_autoexec".into()); }
         if !["default", "dx11", "vulkan"].contains(&self.renderer.as_str()) { return Err("renderer must be default, dx11, or vulkan".into()); }
+        if self.aspect_ratio_enabled {
+            if self.aspect_ratio.trim().is_empty() || self.aspect_ratio.parse::<f64>().is_err() {
+                return Err("aspect_ratio must be a valid number".into());
+            }
+        }
         Ok(())
     }
 }
@@ -168,7 +183,9 @@ mod tests {
         assert_eq!(s.lang, "fa");
         assert!(!s.unlocked);
         assert!(s.last_path.is_none());
-        assert!(!s.unit_status_new);
+        assert!(!s.better_breakables);
+        assert!(!s.higher_brightness);
+        assert!(!s.reduce_clutter);
         assert_eq!(s.fps_max, None);
         assert!(s.custom_autoexec.is_empty());
         crate::backup::rm_ro(&tmp);
@@ -182,8 +199,13 @@ mod tests {
             lang: "en".into(),
             unlocked: true,
             last_path: Some("D:\\SteamLibrary\\steamapps\\common\\Deadlock".into()),
-            unit_status_new: true,
+            better_breakables: true,
+            higher_brightness: true,
+            reduce_clutter: true,
             fov: 110,
+            aspect_ratio: "2.40".into(),
+            aspect_ratio_enabled: true,
+            reduced_motion: true,
             fps_max: Some(165),
             custom_autoexec: "bind f6 kill".into(),
             renderer: "vulkan".into(),
@@ -195,7 +217,12 @@ mod tests {
         assert_eq!(s2.lang, "en");
         assert!(s2.unlocked);
         assert_eq!(s2.last_path.as_deref(), Some("D:\\SteamLibrary\\steamapps\\common\\Deadlock"));
-        assert!(s2.unit_status_new);
+        assert!(s2.better_breakables);
+        assert!(s2.higher_brightness);
+        assert!(s2.reduce_clutter);
+        assert_eq!(s2.aspect_ratio, "2.40");
+        assert!(s2.aspect_ratio_enabled);
+        assert!(s2.reduced_motion);
         assert!(s2.stop_cloth_anim);
         assert!(s2.ragdoll_fade);
         assert_eq!(s2.fps_max, Some(165));

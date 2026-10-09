@@ -1,5 +1,6 @@
 mod commands;
 mod deadlock_sync;
+mod latency;
 mod native_cursor;
 mod webview_check;
 
@@ -62,6 +63,25 @@ pub fn run() {
             commands::launch_game,
             commands::running_from_pkg,
             commands::ping_valve_servers,
+            commands::check_admin_status,
+            commands::check_firewall_status,
+            commands::enable_firewall_cmd,
+            commands::restart_as_admin,
+            commands::get_valve_clusters,
+            commands::ping_valve_clusters,
+            commands::deep_benchmark_clusters_cmd,
+            commands::toggle_cluster_block,
+            commands::apply_top5_clusters,
+            commands::unblock_all_clusters,
+            commands::apply_cluster_preset_cmd,
+            commands::get_dns_profiles,
+            commands::ping_dns_profiles,
+            commands::deep_benchmark_dns_cmd,
+            commands::apply_dns_profile,
+            commands::reset_dns_dhcp,
+            commands::flush_dns_cmd,
+            commands::apply_latency_tweaks_cmd,
+            commands::revert_latency_tweaks_cmd,
             commands::check_for_updates,
             commands::open_download_url,
             commands::get_app_version,

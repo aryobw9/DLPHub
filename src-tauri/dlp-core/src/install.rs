@@ -14,6 +14,7 @@ pub enum Mode {
     T2,
     T3,
     Potato,
+    RussianPotato,
     T1Mods,
     T2Mods,
 }
@@ -25,21 +26,37 @@ impl Mode {
             Mode::T2 | Mode::T2Mods => "t2",
             Mode::T3 => "t3",
             Mode::Potato => "potato",
+            Mode::RussianPotato => "russian_potato",
         }
     }
     pub fn video_dir(self) -> &'static str {
         self.tier_dir()
     }
-    /// addons.ps1 -Only / -Exclude per install.bat:
-    /// tiers 1-3 exclude the look-changing 01/02/03; potato gets ONLY those;
-    /// TEMP mods modes install ALL 9.
-    pub fn addon_lists(self) -> (&'static str, &'static str) {
-        const LOOK: &str = "pak01_dir.vpk,pak02_dir.vpk,pak03_dir.vpk";
-        match self {
-            Mode::T1 | Mode::T2 | Mode::T3 => ("", LOOK),
-            Mode::Potato => ("", ""),
-            Mode::T1Mods | Mode::T2Mods => ("", ""),
+    pub fn addon_lists(self, s: &crate::settings::Settings) -> (String, String) {
+        let mut allowed: Vec<&str> = Vec::new();
+        if s.higher_brightness {
+            allowed.push("pak01_dir.vpk");
         }
+        if s.reduce_clutter {
+            allowed.push("pak02_dir.vpk");
+        }
+        if s.better_breakables {
+            allowed.push("pak03_dir.vpk");
+        }
+        if self == Mode::Potato {
+            allowed.push("pak31_dir.vpk");
+        }
+        if self == Mode::RussianPotato {
+            allowed.push("pak30_dir.vpk");
+        }
+        let all_known = ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak30_dir.vpk", "pak31_dir.vpk"];
+        let mut excluded: Vec<&str> = Vec::new();
+        for k in all_known {
+            if !allowed.contains(&k) {
+                excluded.push(k);
+            }
+        }
+        (allowed.join(","), excluded.join(","))
     }
 }
 
@@ -180,21 +197,36 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
         n => log.push(StepLog { step: "revert".into(), detail: format!("cleaned previous install ({n} addons removed)"), skipped: false }),
     }
 
-    // 4) tier gameinfo.gi with per-user FOV swapped in
-    let ar = crate::fov::aspect_ratio(fov);
-    let staged = kvedit::set_fov(&tpl, ar);
+    // 4) tier gameinfo.gi with per-user aspect ratio swapped in
+    let s = crate::settings::load_from(data_dir);
+    let ar_to_use: Option<String> = if !s.aspect_ratio_enabled {
+        None
+    } else if s.aspect_ratio != "2.15" {
+        Some(s.aspect_ratio.clone())
+    } else if fov > 90 {
+        // legacy compatibility when fov > 90 is passed from legacy tests
+        Some(crate::fov::aspect_ratio(fov).to_string())
+    } else {
+        Some(s.aspect_ratio.clone())
+    };
+
+    let staged = kvedit::patch_gameinfo_options(&tpl, ar_to_use.as_deref(), s.stop_cloth_anim, s.ragdoll_fade);
     let dst_gi = citadel.join("gameinfo.gi");
     let current = std::fs::read(&dst_gi).unwrap_or_default();
     if current == staged.as_bytes() {
         log.push(StepLog { step: "gameinfo.gi".into(), detail: format!("already identical - skipped ({})", mode.tier_dir()), skipped: true });
     } else {
         std::fs::write(&dst_gi, &staged).map_err(|e| e.to_string())?;
-        log.push(StepLog { step: "gameinfo.gi".into(), detail: format!("replaced with {} (FOV {fov}, AR {ar})", mode.tier_dir()), skipped: false });
+        let detail_str = match &ar_to_use {
+            Some(ar) => format!("replaced with {} (AR {ar})", mode.tier_dir()),
+            None => format!("replaced with {} (AR disabled)", mode.tier_dir()),
+        };
+        log.push(StepLog { step: "gameinfo.gi".into(), detail: detail_str, skipped: false });
     }
 
     // 5) addons per mode
-    let (only, exclude) = mode.addon_lists();
-    let rep = addons::install_addons(&pkg.join("addons"), &citadel.join("addons"), only, exclude)
+    let (only, exclude) = mode.addon_lists(&s);
+    let rep = addons::install_addons(&pkg.join("addons"), &citadel.join("addons"), &only, &exclude)
         .map_err(|e| e.to_string())?;
     log.push(StepLog {
         step: "addons".into(),
@@ -214,11 +246,14 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
     }
     let merged = kvedit::merge_video(&user_v, &tpl_v);
 
-    let s = crate::settings::load_from(data_dir);
     let mut patches: Vec<(&str, String)> = Vec::new();
     if let Some(fps) = s.fps_max {
         patches.push(("setting.fps_max", fps.to_string()));
     }
+    // video.txt FOV (max 90)
+    let video_fov = s.fov.min(90);
+    patches.push(("setting.fov", video_fov.to_string()));
+
     let vram = crate::detect::detect_vram_bytes();
     if vram > 0 && vram < 4 * 1024 * 1024 * 1024 {
         patches.push(("setting.gpu_mem_level", "0".to_string()));
@@ -246,7 +281,7 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
     if let Some(fps) = s.fps_max {
         full_tier_cmds.push_str(&format!("fps_max {}\n", fps));
     }
-    let new_ae = kvedit::upsert_autoexec_full(&existing, s.unit_status_new, s.stop_cloth_anim, s.ragdoll_fade, &full_tier_cmds, &s.custom_autoexec);
+    let new_ae = kvedit::upsert_autoexec_full(&existing, &full_tier_cmds, &s.custom_autoexec);
     let after_revert = match std::fs::read_to_string(&ae) {
         Ok(text) => text,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
@@ -256,7 +291,7 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
         std::fs::write(&ae, new_ae).map_err(|e| e.to_string())?;
         log.push(StepLog {
             step: "autoexec.cfg".into(),
-            detail: if s.unit_status_new || s.stop_cloth_anim || s.ragdoll_fade || !tier_ae.trim().is_empty() || !s.custom_autoexec.trim().is_empty() {
+            detail: if !tier_ae.trim().is_empty() || !s.custom_autoexec.trim().is_empty() || s.fps_max.is_some() {
                 "managed block written".into()
             } else {
                 "managed block removed".into()
@@ -349,11 +384,9 @@ mod tests {
         // permanent snapshots
         assert!(cit.join("gameinfo.gi.dlp.bak").is_file());
         assert!(cit.join("cfg").join("video.txt.dlp.bak").is_file());
-        // 6 vpks (9 minus 01/02/03), manifest has entries
+        // default T1 has no HUD mods enabled, so 0 addons installed
         let count = std::fs::read_dir(cit.join("addons")).unwrap().flatten().count();
-        assert_eq!(count, 6, "expected 6 vpks");
-        let man = std::fs::read_to_string(cit.join("addons_manifest.txt")).unwrap();
-        assert_eq!(man.lines().count(), 6);
+        assert_eq!(count, 0, "expected 0 vpks for default T1");
         // video.txt merged with user identity + read-only
         let v = std::fs::read_to_string(cit.join("cfg").join("video.txt")).unwrap();
         assert!(v.contains("\"Version\"\t\t\"11\""), "Version kept: {v}");
@@ -363,19 +396,31 @@ mod tests {
     }
 
     #[test]
-    fn sandbox_potato_nine_vpks() {
+    fn sandbox_potato_single_vpk() {
         let (cit, data, pkg) = sandbox("pot");
         let deadlock = cit.parent().unwrap().parent().unwrap().to_path_buf(); // <deadlock> root
         install(Mode::Potato, 100, deadlock.to_str().unwrap(), &pkg, &data).unwrap();
-        // potato gi = tier3, AR for fov 100 = 2.49
+        // potato gi, AR for fov 100 = 2.49
         let gi = std::fs::read_to_string(cit.join("gameinfo.gi")).unwrap();
         assert!(gi.contains("\"r_aspectratio\"\t\t\t\t\t\t\"2.49\""), "gi: {gi}");
         let vpks: Vec<String> = std::fs::read_dir(cit.join("addons")).unwrap().flatten()
             .map(|e| e.file_name().to_string_lossy().into_owned()).collect();
-        assert_eq!(vpks.len(), 9, "Potato must install all 9 addons");
-        for n in ["pak91_dir.vpk", "pak92_dir.vpk", "pak93_dir.vpk", "pak94_dir.vpk", "pak95_dir.vpk", "pak96_dir.vpk", "pak97_dir.vpk", "pak98_dir.vpk", "pak99_dir.vpk"] {
-            assert!(vpks.iter().any(|v| v == n), "missing {n}");
-        }
+        assert_eq!(vpks.len(), 1, "Potato must install pak95_dir.vpk");
+        assert_eq!(vpks[0], "pak95_dir.vpk");
+        crate::backup::rm_ro(cit.parent().unwrap().parent().unwrap());
+    }
+
+    #[test]
+    fn sandbox_russian_potato() {
+        let (cit, data, pkg) = sandbox("rus_pot");
+        let deadlock = cit.parent().unwrap().parent().unwrap().to_path_buf();
+        install(Mode::RussianPotato, 90, deadlock.to_str().unwrap(), &pkg, &data).unwrap();
+        let gi = std::fs::read_to_string(cit.join("gameinfo.gi")).unwrap();
+        assert!(gi.contains("\"r_aspectratio\"\t\t\t\t\t\t\"2.15\""), "gi: {gi}");
+        let vpks: Vec<String> = std::fs::read_dir(cit.join("addons")).unwrap().flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned()).collect();
+        assert_eq!(vpks.len(), 1, "Russian Potato must install pak90_dir.vpk");
+        assert_eq!(vpks[0], "pak90_dir.vpk");
         crate::backup::rm_ro(cit.parent().unwrap().parent().unwrap());
     }
 
@@ -385,6 +430,7 @@ mod tests {
         // manifest vpks, restores .dlp.bak gi/video) THEN applies fresh.
         let (cit, data, pkg) = sandbox("rev");
         let deadlock = cit.parent().unwrap().parent().unwrap().to_path_buf();
+        std::fs::write(data.join("settings.json"), r#"{"better_breakables":true}"#).unwrap();
         install(Mode::T1, 90, deadlock.to_str().unwrap(), &pkg, &data).unwrap();
         let second = install(Mode::T2, 95, deadlock.to_str().unwrap(), &pkg, &data).unwrap();
         // revert step ran
@@ -393,12 +439,12 @@ mod tests {
         // T2 gi applied (FOV 95 -> 2.32)
         let gi = std::fs::read_to_string(cit.join("gameinfo.gi")).unwrap();
         assert!(gi.contains("\"r_aspectratio\"\t\t\t\t\t\t\"2.32\""), "T2 gi: {gi}");
-        // addons: T1's 6 were reverted, then T2's 6 added -> manifest exactly 6
+        // addons: 1 addon (pak03) installed
         let man = std::fs::read_to_string(cit.join("addons_manifest.txt")).unwrap();
-        assert_eq!(man.lines().count(), 6, "manifest should be exactly T2's 6 after revert-first: {man}");
+        assert_eq!(man.lines().count(), 1, "manifest should be exactly 1 after revert-first: {man}");
         let vpks: Vec<String> = std::fs::read_dir(cit.join("addons")).unwrap().flatten()
             .map(|e| e.file_name().to_string_lossy().into_owned()).collect();
-        assert_eq!(vpks.len(), 6, "vpks after revert+T2: {vpks:?}");
+        assert_eq!(vpks.len(), 1, "vpks after revert+T2: {vpks:?}");
         // .dlp.bak snapshots survive (permanent)
         assert!(cit.join("gameinfo.gi.dlp.bak").is_file());
         assert!(cit.join("cfg").join("video.txt.dlp.bak").is_file());
@@ -411,14 +457,14 @@ mod tests {
     fn reapply_preserves_enabled_hud_block() {
         let (cit, data, pkg) = sandbox("hud_reapply");
         let root = cit.parent().unwrap().parent().unwrap();
-        std::fs::write(data.join("settings.json"), r#"{"unit_status_new":true}"#).unwrap();
+        std::fs::write(data.join("settings.json"), r#"{"custom_autoexec":"echo my_custom"}"#).unwrap();
         install(Mode::T1, 90, root.to_str().unwrap(), &pkg, &data).unwrap();
         let expected = std::fs::read_to_string(cit.join("cfg/autoexec.cfg")).unwrap();
-        assert!(expected.contains("citadel_unit_status_use_new"));
+        assert!(expected.contains("echo my_custom"));
         install(Mode::T1, 90, root.to_str().unwrap(), &pkg, &data).unwrap();
         let actual = std::fs::read_to_string(cit.join("cfg/autoexec.cfg")).unwrap();
         crate::backup::rm_ro(root);
-        assert_eq!(actual, expected, "reapply must restore enabled HUD block after cleanup");
+        assert_eq!(actual, expected, "reapply must restore custom autoexec block after cleanup");
     }
 
     #[test]

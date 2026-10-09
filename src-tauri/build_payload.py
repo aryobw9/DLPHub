@@ -6,7 +6,8 @@ import zipfile
 
 SRC = Path(os.environ.get("DEADLOCK_CONFIGS_DIR", r"D:\Claude\DeadlockConfigs"))
 OUT = Path(__file__).with_name('payload.zip')
-FOLDERS = ('t1', 't2', 't3', 'potato', 'addons')
+TIERS = ('t1', 't2', 't3', 'potato', 'russian_potato')
+FOLDERS = TIERS + ('addons',)
 
 
 def build_payload(source=SRC, output=OUT):
@@ -16,8 +17,8 @@ def build_payload(source=SRC, output=OUT):
             print(f"Configs dir {source} not found; using existing {output} ({output.stat().st_size} bytes)")
             return output
         raise FileNotFoundError(f"Configs dir {source} not found and no existing payload at {output}")
-    required = [source / tier / 'gameinfo.gi' for tier in FOLDERS[:4]]
-    required += [source / tier / 'video.txt' for tier in FOLDERS[:4]]
+    required = [source / tier / 'gameinfo.gi' for tier in TIERS]
+    required += [source / tier / 'video.txt' for tier in TIERS]
     for path in required:
         if not path.is_file():
             raise FileNotFoundError(f'Required payload file missing: {path}')
