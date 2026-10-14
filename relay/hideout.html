@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Hyperline</title>
+    <!--
+  Hyperline hideout feed. The hideout HUD's HTML panel loads this page and reads
+  document.title. The title reads "hyperline-hideout-waiting" once the page has
+  loaded; the page then retries the desktop on loopback itself, so the game
+  never reloads it while the desktop is away. Each streamed HideoutState line,
+  prefixed "hyperline-hideout:", arrives as acknowledged "modlock:snapshot:"
+  parts, so a state of any size passes the game's 4096 character title limit.
+  The panel acknowledges a part by setting the hash to {"frameAck", "offset"}
+  and requests a HideoutAction with {"action", "nonce"}. The title reads
+  "hyperline-hideout:offline" once a stream that delivered a state ends, and
+  the game then loads the page again.
+-->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline'; connect-src 'self' http://127.0.0.1:*"
+    />
+  </head>
+  <body>
+    <script>
+      'use strict'
+      // Served over https, this page is the hyperline.gg relay: Deadlock loads only
+      // https pages into Panorama, so the page reaches the desktop on loopback.
+      const local =
+        location.protocol === 'https:' ? 'http://127.0.0.1:4321' : ''
+      const prefix = 'hyperline-hideout:'
+      const snapshotPrefix = 'modlock:snapshot:'
+      const chunkSize = 3072
+      let frameId = 0
+      let acknowledgment = null
+      // acknowledge releases the one part waiting on the hideout surface.
+      function acknowledge() {
+        if (!acknowledgment) return
+        clearTimeout(acknowledgment.timer)
+        acknowledgment.resolve(true)
+        acknowledgment = null
+      }
+      // A bare 0 or 1 hash acknowledges the waiting part; the surface flips
+      // between them so acknowledgments add no history entries to the game's
+      // browser. A JSON hash carries one action.
+      addEventListener('hashchange', () => {
+        const hash = location.hash.slice(1)
+        if (hash === '0' || hash === '1') {
+          acknowledge()
+          return
+        }
+        let reply
+        try {
+          reply = JSON.parse(decodeURIComponent(hash))
+        } catch {
+          return
+        }
+        if (reply.action && typeof reply.action === 'object') {
+          void fetch(local + '/hideout/action', {
+            method: 'POST',
+            body: JSON.stringify(reply.action),
+          }).catch(() => {})
+        } else if (
+          acknowledgment &&
+          reply.frameAck === acknowledgment.id &&
+          reply.offset === acknowledgment.offset
+        )
+          acknowledge()
+      })
+      // present shows one line in parts, each held until the panel acknowledges it.
+      // A part the panel never acknowledges drops the line; the next state follows.
+      async function present(line) {
+        const source = encodeURIComponent(prefix + line)
+        const id = ++frameId
+        for (let offset = 0; offset < source.length; offset += chunkSize) {
+          const chunk = source.slice(offset, offset + chunkSize)
+          const acknowledged = await new Promise((resolve) => {
+            const timer = setTimeout(() => {
+              acknowledgment = null
+              resolve(false)
+            }, 6000)
+            acknowledgment = {
+              id,
+              offset: offset + chunk.length,
+              resolve,
+              timer,
+            }
+            document.title =
+              snapshotPrefix +
+              JSON.stringify({ id, offset, total: source.length, chunk })
+          })
+          if (!acknowledged) return
+        }
+      }
+      // stream presents the desktop's hideout states until the stream ends. It
+      // reports whether the desktop delivered a state.
+      async function stream() {
+        const response = await fetch(local + '/hideout/stream')
+        if (!response.ok || !response.body) return false
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+        let delivered = false
+        try {
+          for (;;) {
+            const { value, done } = await reader.read()
+            if (done) return delivered
+            buffer += decoder.decode(value, { stream: true })
+            // Each line is a whole state, so only the newest one is worth presenting.
+            const newline = buffer.lastIndexOf('\n')
+            if (newline < 0) continue
+            const lines = buffer.slice(0, newline).split('\n')
+            buffer = buffer.slice(newline + 1)
+            delivered = true
+            await present(lines[lines.length - 1])
+          }
+        } catch {
+          return delivered
+        }
+      }
+
+      // run waits for the desktop on loopback, backing off from 2 to 30
+      // seconds, and says nothing until it delivers a state. Once that stream
+      // ends the page reports offline and the game loads it again.
+      ;(async function run() {
+        document.title = 'hyperline-hideout-waiting'
+        for (let wait = 2000; ; wait = Math.min(wait * 2, 30000)) {
+          if (await stream().catch(() => false)) break
+          await new Promise((resolve) => setTimeout(resolve, wait))
+        }
+        document.title = prefix + 'offline'
+      })()
+    </script>
+  </body>
+</html>
