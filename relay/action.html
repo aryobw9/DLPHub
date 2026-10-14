@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline'; connect-src 'self' http://127.0.0.1:*"
+    />
+    <title></title>
+  </head>
+  <body>
+    <script>
+      'use strict'
+      const candidatePorts = [4320, 4318]
+      const titleBytes = 3600
+      const encoder = new TextEncoder()
+      let draft = null
+
+      function nextChunk() {
+        const reply = {
+          id: draft.id,
+          offset: draft.offset,
+          total: draft.source.length,
+        }
+        const field = draft.reply ? 'replyChunk' : 'sourceChunk'
+        let size = titleBytes
+        let title
+        for (;;) {
+          reply[field] = draft.source.slice(draft.offset, draft.offset + size)
+          title = JSON.stringify(reply)
+          const bytes = encoder.encode(title).length
+          if (bytes <= titleBytes) break
+          size = Math.max(1, Math.floor((size * titleBytes) / bytes) - 16)
+        }
+        document.title = title
+        draft.offset += reply[field].length
+        if (draft.offset === draft.source.length) draft = null
+      }
+
+      async function postAction(body) {
+        for (const port of candidatePorts) {
+          try {
+            const base = location.protocol === 'https:' ? 'http://127.0.0.1:' + port : ''
+            const response = await fetch(base + '/panorama/action', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify(body),
+            })
+            if (response.ok) {
+              return await response.json()
+            }
+          } catch {
+            // try next
+          }
+        }
+        return { error: 'The local game connection is unavailable.' }
+      }
+
+      async function submit() {
+        const hash = location.hash.slice(1)
+        if (hash === '0' || hash === '1') {
+          if (draft) nextChunk()
+          return
+        }
+        const packet = JSON.parse(decodeURIComponent(hash))
+        if (packet.ack !== undefined) {
+          if (
+            draft &&
+            packet.ack === draft.id &&
+            packet.offset === draft.offset
+          )
+            nextChunk()
+          return
+        }
+        draft = null
+        const result = await postAction(packet.body)
+        const whole = JSON.stringify({ id: packet.id, ...result })
+        if (encoder.encode(whole).length <= titleBytes) {
+          document.title = whole
+        } else if (typeof result.source === 'string') {
+          draft = { id: packet.id, source: result.source, offset: 0 }
+          nextChunk()
+        } else {
+          draft = {
+            id: packet.id,
+            source: JSON.stringify(result),
+            offset: 0,
+            reply: true,
+          }
+          nextChunk()
+        }
+      }
+      addEventListener('hashchange', submit)
+      if (location.hash) void submit()
+    </script>
+  </body>
+</html>
