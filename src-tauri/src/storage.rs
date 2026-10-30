@@ -27,8 +27,8 @@ pub struct PackageMeta {
 
 pub const OFFICIAL_SERVER_LOADER: PackageMeta = PackageMeta {
     filename: "server_loader.zip",
-    size_bytes: 5_677_952,
-    sha256: "27d4bc4b38f30d61c8b9b6541c8e801d0d9cd09b34097d4af7addfa5a2aeb27f",
+    size_bytes: 5_709_059,
+    sha256: "33e1952d4597170e807bc47e833baf7aecaccca71bf8e4344f3505bddc919f2c",
 };
 
 pub const OFFICIAL_CLIENT_BOOTSTRAP: PackageMeta = PackageMeta {
@@ -512,6 +512,38 @@ pub fn resolve_open_pak_slot(
     preferred_name.to_string()
 }
 
+/// Safely deletes a file with retry and Windows reboot-deletion fallback if locked
+pub fn safe_remove_file_with_retry(path: &Path) -> Result<(), std::io::Error> {
+    if !path.exists() {
+        return Ok(());
+    }
+    // Attempt 1: direct removal
+    if let Ok(()) = std::fs::remove_file(path) {
+        return Ok(());
+    }
+    // Attempt 2: brief delay for handles to close
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    if let Ok(()) = std::fs::remove_file(path) {
+        return Ok(());
+    }
+    // Attempt 3: Windows delay until reboot fallback
+    #[cfg(windows)]
+    {
+        use std::os::windows::ffi::OsStrExt;
+        let mut wide: Vec<u16> = path.as_os_str().encode_wide().collect();
+        wide.push(0);
+        #[link(name = "kernel32")]
+        extern "system" {
+            fn MoveFileExW(lpExistingFileName: *const u16, lpNewFileName: *const u16, dwFlags: u32) -> i32;
+        }
+        const MOVEFILE_DELAY_UNTIL_REBOOT: u32 = 0x4;
+        unsafe {
+            MoveFileExW(wide.as_ptr(), std::ptr::null(), MOVEFILE_DELAY_UNTIL_REBOOT);
+        }
+    }
+    Ok(())
+}
+
 /// Copies a file with smart version/size checking. If destination already exists with
 /// the exact same byte size, the copy is skipped completely for instant staging.
 pub fn link_or_copy_file(src: &Path, dst: &Path) -> Result<(), String> {
@@ -528,7 +560,7 @@ pub fn link_or_copy_file(src: &Path, dst: &Path) -> Result<(), String> {
             }
         }
         // Different size/version, remove existing file before copying fresh one
-        let _ = std::fs::remove_file(dst);
+        let _ = safe_remove_file_with_retry(dst);
     }
 
     std::fs::copy(src, dst)
@@ -558,6 +590,30 @@ impl DeadworksManifest {
         }
         if let Ok(data) = serde_json::to_string_pretty(self) {
             let _ = std::fs::write(path, data);
+        }
+    }
+
+    pub fn revert_all(&mut self, deadlock_dir: &Path) -> Result<(), String> {
+        let mut errs = Vec::new();
+        for rel in &self.deployed_files {
+            let full = deadlock_dir.join(rel.replace('/', std::path::MAIN_SEPARATOR_STR));
+            if full.is_file() {
+                if let Err(e) = safe_remove_file_with_retry(&full) {
+                    errs.push(format!("Failed to remove {:?}: {e}", full));
+                }
+            }
+        }
+        self.deployed_files.clear();
+
+        let manifest_path = Self::manifest_path(deadlock_dir);
+        if manifest_path.is_file() {
+            let _ = safe_remove_file_with_retry(&manifest_path);
+        }
+
+        if errs.is_empty() {
+            Ok(())
+        } else {
+            Err(errs.join("; "))
         }
     }
 
@@ -677,9 +733,20 @@ pub fn deploy_deadworks_to_game(deadlock_dir: &Path, mode: &str) -> Result<(), S
         }
     }
 
-    // 2. Plugins target folder
+    // 2. Plugins target folder (clean prior game mode plugins to prevent collision)
     let plugins_target = target_game.join("bin").join("win64").join("managed").join("plugins");
     let _ = std::fs::create_dir_all(&plugins_target);
+    if let Ok(entries) = std::fs::read_dir(&plugins_target) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                let fname = path.file_name().unwrap_or_default().to_string_lossy().to_lowercase();
+                if fname.starts_with("abilitydraft") || fname.starts_with("cursedarena") || fname.starts_with("automatch") {
+                    let _ = std::fs::remove_file(&path);
+                }
+            }
+        }
+    }
 
     // 3. Stage selected plugin from DLPHubStorage
     let clean_mode = mode.trim().to_lowercase();
@@ -749,4 +816,72 @@ pub fn deploy_client_modded_assets(deadlock_dir: &Path, mode: &str) -> Result<()
 
     manifest.save(deadlock_dir);
     Ok(())
+}
+
+/// Sweeps and cleans all deployed custom game mode files and restores vanilla gameinfo.gi
+pub fn clean_all_mods_and_restore_vanilla() {
+    let found = match dlp_core::discovery::find_game() {
+        Some(f) => f,
+        None => return,
+    };
+    let deadlock_dir = Path::new(&found.deadlock);
+    let manifest_path = DeadworksManifest::manifest_path(deadlock_dir);
+    let gameinfo_path = deadlock_dir.join("game").join("citadel").join("gameinfo.gi");
+
+    let mut needs_cleanup = manifest_path.is_file();
+    if !needs_cleanup {
+        if let Ok(c) = std::fs::read_to_string(&gameinfo_path) {
+            if c.contains("deadworks_mods") || c.contains("citadel/custom") || c.contains("// #DLP_DEADWORKS_START#") {
+                needs_cleanup = true;
+            }
+        }
+    }
+
+    if !needs_cleanup {
+        return;
+    }
+
+    println!("[cleanup] Detected modded custom files or patched search paths. Cleaning up...");
+
+    // Close deadlock to release VPK handles so files are not locked
+    crate::lan_supervisor::close_deadlock_game();
+    std::thread::sleep(std::time::Duration::from_millis(250));
+
+    // Revert manifest deployed files
+    let mut manifest = DeadworksManifest::load(deadlock_dir);
+    let _ = manifest.revert_all(deadlock_dir);
+
+    // Remove deadworks_mods directory completely
+    let deadworks_mods_dir = deadlock_dir.join("game").join("citadel").join("deadworks_mods");
+    if deadworks_mods_dir.is_dir() {
+        let _ = std::fs::remove_dir_all(&deadworks_mods_dir);
+    }
+
+    // Clean any orphaned custom game mode plugins from managed/plugins
+    let plugins_target = deadlock_dir.join("game").join("bin").join("win64").join("managed").join("plugins");
+    if let Ok(entries) = std::fs::read_dir(&plugins_target) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                let fname = path.file_name().unwrap_or_default().to_string_lossy().to_lowercase();
+                if fname.starts_with("abilitydraft") || fname.starts_with("cursedarena") || fname.starts_with("automatch") {
+                    let _ = safe_remove_file_with_retry(&path);
+                }
+            }
+        }
+    }
+
+    // Clean empty addons folder if created by us and now empty
+    let addons_dir = deadlock_dir.join("game").join("citadel").join("addons");
+    if addons_dir.is_dir() {
+        if let Ok(mut entries) = std::fs::read_dir(&addons_dir) {
+            if entries.next().is_none() {
+                let _ = std::fs::remove_dir(&addons_dir);
+            }
+        }
+    }
+
+    // Restore gameinfo to vanilla
+    let _ = crate::lan_supervisor::restore_gameinfo_vanilla(deadlock_dir);
+    println!("[cleanup] Vanilla state restored successfully.");
 }

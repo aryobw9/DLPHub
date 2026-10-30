@@ -1377,8 +1377,9 @@ pub fn is_deadlock_running_cmd() -> bool {
 
 #[tauri::command]
 pub fn restore_vanilla_client_cmd() -> Result<(), String> {
-    if let Some(found) = dlp_core::discovery::find_game() {
-        lan_supervisor::restore_gameinfo_vanilla(std::path::Path::new(&found.deadlock))
+    if let Some(_found) = dlp_core::discovery::find_game() {
+        crate::storage::clean_all_mods_and_restore_vanilla();
+        Ok(())
     } else {
         Err("Deadlock installation folder not found".into())
     }

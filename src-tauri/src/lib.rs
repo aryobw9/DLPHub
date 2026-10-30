@@ -11,6 +11,48 @@ mod latency;
 mod mod_cache;
 mod native_cursor;
 pub mod storage;
+
+/// Global safe shutdown handler: stops server, terminates VPN tunnels, and wipes all custom mods
+pub fn perform_safe_shutdown_cleanup() {
+    static CLEANED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    if CLEANED.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        return;
+    }
+
+    println!("[shutdown] Performing safe application shutdown...");
+
+    // 1. Stop dedicated server and proxy if running
+    let _ = crate::lan_supervisor::stop_dedicated_server();
+
+    // 2. Stop VPN / relay / tunnels
+    crate::lan_engine::stop_lan_engine();
+    crate::lan_relay::stop_relay();
+
+    // 3. Clean custom game mode mods and restore vanilla gameinfo
+    crate::storage::clean_all_mods_and_restore_vanilla();
+
+    println!("[shutdown] Safe shutdown cleanup completed.");
+}
+
+#[cfg(windows)]
+fn register_console_ctrl_handler() {
+    unsafe extern "system" fn handler(_ctrl_type: u32) -> i32 {
+        crate::perform_safe_shutdown_cleanup();
+        0 // FALSE: continue to default exit handler
+    }
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn SetConsoleCtrlHandler(
+            handler_routine: Option<unsafe extern "system" fn(u32) -> i32>,
+            add: i32,
+        ) -> i32;
+    }
+
+    unsafe {
+        let _ = SetConsoleCtrlHandler(Some(handler), 1);
+    }
+}
 mod webview_check;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -19,6 +61,7 @@ pub fn run() {
     // window would fail silently — show the guided download dialog instead.
     #[cfg(windows)]
     {
+        register_console_ctrl_handler();
         webview_check::ensure_embedded_dlls();
 
         if webview_check::runtime_version().is_none() {
@@ -43,9 +86,14 @@ pub fn run() {
         }
     }
 
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .on_window_event(|_window, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                perform_safe_shutdown_cleanup();
+            }
+        })
         // Flame cursors on the native resize border (WM_SETCURSOR subclass).
         .setup(|app| {
             use tauri::Manager;
@@ -54,6 +102,10 @@ pub fn run() {
             }
             let data_dir = dlp_core::settings::data_dir();
             dlp_core::backup::purge_legacy_addon_backups(&data_dir);
+
+            // Startup Auto-Recovery: if a previous run crashed or was force-closed
+            // while custom mods were deployed, cleanly restore vanilla gameinfo & files.
+            crate::storage::clean_all_mods_and_restore_vanilla();
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -142,6 +194,18 @@ pub fn run() {
             commands::get_storage_path_cmd,
             commands::ensure_server_loader_cmd,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        ;
+
+    let app = builder
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|_app_handle, event| {
+        match event {
+            tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit => {
+                perform_safe_shutdown_cleanup();
+            }
+            _ => {}
+        }
+    });
 }

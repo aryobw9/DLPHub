@@ -5593,6 +5593,13 @@ if (document.readyState === 'loading') {
   init();
 }
 
+window.addEventListener('beforeunload', () => {
+  try {
+    if (typeof call === 'function') {
+      call('restore_vanilla_client_cmd');
+    }
+  } catch (_) {}
+});
 window.addEventListener('error', (e) => console.error('[window error]', e.error || e.message));
 window.addEventListener('unhandledrejection', (e) => console.warn('[unhandledrejection]', e.reason));
 

@@ -40,6 +40,9 @@ release_dist/
 payload.zip.full
 *.zip
 !src-tauri/payload.zip
+DLPHub.exe
+*.exe
+
 
 # Runtime storage & local matches
 DLPHubStorage/
