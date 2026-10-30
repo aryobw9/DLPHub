@@ -1,0 +1,8 @@
+# Custom maps & content addons | Deadworks API
+URL: https://docs.deadworks.net/getting-started/server-admins/custom-content
+
+Getting started for server admins
+5. Custom maps & content addons (coming soon)
+Custom maps & content addons
+Coming soon
+A new way to add custom maps and content addons to your server is on its way.

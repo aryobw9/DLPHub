@@ -1,0 +1,87 @@
+# ClientDisconnectedEvent | Deadworks API
+URL: https://docs.deadworks.net/api-reference/events/clientdisconnectedevent
+
+API Reference
+Events
+ClientDisconnectedEvent
+On this page
+ClientDisconnectedEvent
+Passed to
+IDeadworksPlugin.OnClientDisconnecting
+and
+IDeadworksPlugin.OnClientDisconnect
+.
+public
+sealed
+class
+ClientDisconnectedEvent
+Namespace:
+DeadworksManaged.Api
+Source:
+Events/ClientDisconnectedEvent.cs#L6
+Properties
+​
+ClientDisconnectedEvent.Slot
+​
+The player's slot.
+Signature
+public
+required
+int
+Slot
+{
+get
+;
+init
+;
+}
+Source:
+Events/ClientDisconnectedEvent.cs#L8
+ClientDisconnectedEvent.Reason
+​
+Why they left, e.g.
+ENetworkDisconnectionReason.NetworkDisconnectKicked
+.
+Signature
+public
+required
+ENetworkDisconnectionReason
+Reason
+{
+get
+;
+init
+;
+}
+Source:
+Events/ClientDisconnectedEvent.cs#L11
+ClientDisconnectedEvent.IsMapChange
+​
+True when the player isn't leaving: the map is changing, and every player gets this as the old map shuts down, then reconnects to the new one (see
+ClientConnectEvent.IsMapChangeReconnect
+). Anything done to them now is lost with the old map anyway.
+Signature
+public
+bool
+IsMapChange
+{
+get
+;
+}
+Source:
+Events/ClientDisconnectedEvent.cs#L18
+ClientDisconnectedEvent.Controller
+​
+The player's controller, or null if it's already gone.
+Signature
+public
+unsafe
+CCitadelPlayerController
+?
+Controller
+{
+get
+;
+}
+Source:
+Events/ClientDisconnectedEvent.cs#L22

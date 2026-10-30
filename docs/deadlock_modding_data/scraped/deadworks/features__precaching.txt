@@ -1,0 +1,102 @@
+# Precaching | Deadworks API
+URL: https://docs.deadworks.net/features/precaching
+
+Features
+Precaching
+On this page
+Precaching
+Namespace:
+DeadworksManaged.Api
+Precaching loads a file while the map loads, so it's ready when your plugin uses it. Models and particle effects must be precached.
+Precache a model or particle effect
+​
+Override
+OnPrecacheResources
+and list each file with
+Precache.AddResource
+.
+public
+override
+void
+OnPrecacheResources
+(
+)
+{
+Precache
+.
+AddResource
+(
+"models/hideout/hideout_sandbox_ball.vmdl"
+)
+;
+Precache
+.
+AddResource
+(
+"particles/upgrades/mystical_piano_hit.vpcf"
+)
+;
+}
+warning
+Precache.AddResource
+only works inside
+OnPrecacheResources
+. Calls anywhere else do nothing.
+Write the path the right way
+​
+Use the file's plain name, not the compiled one ending in
+_c
+.
+// Right
+Precache
+.
+AddResource
+(
+"models/abilities/viscous_cube.vmdl"
+)
+;
+// Wrong. It won't load, and may crash when you use it
+Precache
+.
+AddResource
+(
+"models/abilities/viscous_cube.vmdl_c"
+)
+;
+Browse the game's files with
+Source2Viewer
+to find paths.
+Precache a hero
+​
+If your plugin switches players to a hero, precache that hero.
+public
+override
+void
+OnPrecacheResources
+(
+)
+{
+Precache
+.
+AddHero
+(
+Heroes
+.
+Warden
+)
+;
+Precache
+.
+AddHero
+(
+Heroes
+.
+Astro
+)
+;
+}
+Use your own models, sounds or maps
+​
+Precaching only loads files the player already has. To get your own files onto players' computers, see
+Uploading content
+.

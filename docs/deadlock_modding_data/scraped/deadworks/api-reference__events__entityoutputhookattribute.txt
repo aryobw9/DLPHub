@@ -1,0 +1,154 @@
+# EntityOutputHookAttribute | Deadworks API
+URL: https://docs.deadworks.net/api-reference/events/entityoutputhookattribute
+
+API Reference
+Events
+EntityOutputHookAttribute
+On this page
+EntityOutputHookAttribute
+Marks a method as an entity-output hook. The method is auto-registered on plugin load and dropped on unload.
+public
+sealed
+class
+EntityOutputHookAttribute
+:
+Attribute
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+Attribute
+Source:
+Events/EntityOutputHookAttribute.cs#L22
+Notes
+​
+Pre handlers must return
+HookResult
+. Post handlers must return
+void
+. Use
+"*"
+as a wildcard for either
+className
+or
+outputName
+.
+Example
+​
+[
+EntityOutputHook
+(
+"trigger_multiple"
+,
+"OnStartTouch"
+)
+]
+public
+HookResult
+OnTriggerTouched
+(
+EntityOutputEvent
+e
+)
+{
+return
+HookResult
+.
+Continue
+;
+}
+[
+EntityOutputHook
+(
+"*"
+,
+"OnPlayerPickup"
+,
+HookMode
+.
+Post
+)
+]
+public
+void
+OnAnyPickup
+(
+EntityOutputEvent
+e
+)
+{
+/* observer only */
+}
+Constructors
+​
+new EntityOutputHookAttribute()
+​
+Signature
+public
+EntityOutputHookAttribute
+(
+string
+className
+,
+string
+outputName
+,
+HookMode
+mode
+=
+HookMode
+.
+Pre
+)
+Source:
+Events/EntityOutputHookAttribute.cs#L32
+Properties
+​
+EntityOutputHookAttribute.ClassName
+​
+Designer name of the entity firing the output (e.g.
+"trigger_multiple"
+) or
+"*"
+for any.
+Signature
+public
+string
+ClassName
+{
+get
+;
+}
+Source:
+Events/EntityOutputHookAttribute.cs#L24
+EntityOutputHookAttribute.OutputName
+​
+Output name (e.g.
+"OnStartTouch"
+) or
+"*"
+for any.
+Signature
+public
+string
+OutputName
+{
+get
+;
+}
+Source:
+Events/EntityOutputHookAttribute.cs#L27
+EntityOutputHookAttribute.Mode
+​
+When the handler runs relative to the original output. Defaults to
+HookMode.Pre
+.
+Signature
+public
+HookMode
+Mode
+{
+get
+;
+}
+Source:
+Events/EntityOutputHookAttribute.cs#L30

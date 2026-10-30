@@ -1,0 +1,451 @@
+# UIPanel | Deadworks API
+URL: https://docs.deadworks.net/api-reference/ui/uipanel
+
+API Reference
+UI
+UIPanel
+On this page
+UIPanel
+Handle for a logical UI panel. Methods enqueue updates onto each recipient's rate-limited queue; the actual subtitles are emitted from the host runtime's per-frame tick. Field updates are coalesced latest-wins per
+(panel, key)
+.
+public
+sealed
+class
+UIPanel
+Namespace:
+DeadworksManaged.Api.UI
+Source:
+UI/UI.cs#L252
+Properties
+​
+UIPanel.Id
+​
+Signature
+public
+string
+Id
+{
+get
+;
+}
+Source:
+UI/UI.cs#L253
+Methods
+​
+UIPanel.Set()
+​
+Reliable field update — eventually delivered, latest value wins.
+Signature
+public
+void
+Set
+(
+RecipientFilter
+to
+,
+string
+key
+,
+object
+value
+)
+Source:
+UI/UI.cs#L259
+UIPanel.SetUnreliable()
+​
+Best-effort field update — dropped under bandwidth pressure, latest value wins.
+Signature
+public
+void
+SetUnreliable
+(
+RecipientFilter
+to
+,
+string
+key
+,
+object
+value
+)
+Source:
+UI/UI.cs#L263
+UIPanel.SetStyle()
+​
+Change one style property on a node already in the panel's tree, without rebuilding it.
+nodeId
+is the node's
+Id
+, resolved client-side. Patches coalesce latest-wins per
+(node, property)
+, so calling this every frame is safe: offering updates faster than the channel drains costs nothing but intermediate values.
+BuildLayout
+has no such coalescing — driving it per-frame grows an unbounded backlog and the panel falls progressively further behind.
+For anything whose path is known in advance, prefer one patch plus a CSS transition over a stream of them:
+UI
+.
+Panel
+(
+"hud"
+)
+.
+SetStyle
+(
+to
+,
+"bar"
+,
+"transition-duration"
+,
+"30s"
+)
+;
+UI
+.
+Panel
+(
+"hud"
+)
+.
+SetStyle
+(
+to
+,
+"bar"
+,
+"width"
+,
+"0%"
+)
+;
+The client then interpolates at its own framerate, which is smoother than this channel could ever be and costs nothing after the first patch.
+Signature
+public
+void
+SetStyle
+(
+RecipientFilter
+to
+,
+string
+nodeId
+,
+string
+property
+,
+string
+value
+)
+Source:
+UI/UI.cs#L286
+UIPanel.SetStyles()
+​
+Change several style properties on one node at once. Cheaper than separate
+SetStyle
+calls — they share the node id on the wire.
+Signature
+public
+void
+SetStyles
+(
+RecipientFilter
+to
+,
+string
+nodeId
+,
+params
+(
+string
+Name
+,
+string
+Value
+)
+[
+]
+entries
+)
+Source:
+UI/UI.cs#L293
+UIPanel.Animate()
+​
+Change
+property
+to
+value
+over
+duration
+, letting the client interpolate.
+This is the form to reach for whenever the destination is known in advance. A thirty-second bar is one call, not one call per frame: the client animates at its own rate, the result is smoother than this channel could deliver, and it keeps running through a server hitch because the server is no longer involved.
+Equivalent to declaring
+UINodeExtensions.WithTransition
+on the node and then calling
+SetStyle
+, and safe to call on a node that already declares one.
+Signature
+public
+void
+Animate
+(
+RecipientFilter
+to
+,
+string
+nodeId
+,
+string
+property
+,
+string
+value
+,
+string
+duration
+,
+string
+timing
+=
+"linear"
+)
+Source:
+UI/UI.cs#L339
+UIPanel.Clear()
+​
+Tells the panel script to clear its state.
+Signature
+public
+void
+Clear
+(
+RecipientFilter
+to
+)
+Source:
+UI/UI.cs#L348
+UIPanel.RequestCursor()
+​
+Frees the mouse cursor for each recipient so they can click this panel's buttons. While it's free they can't move, aim or cast. It stays free until
+ReleaseCursor
+or
+DestroyLayout
+; when several panels ask for it, it stays free until the last one lets go.
+Signature
+public
+void
+RequestCursor
+(
+RecipientFilter
+to
+)
+Source:
+UI/UI.cs#L356
+UIPanel.ReleaseCursor()
+​
+Gives back the cursor this panel asked for with
+RequestCursor
+.
+Signature
+public
+void
+ReleaseCursor
+(
+RecipientFilter
+to
+)
+Source:
+UI/UI.cs#L360
+UIPanel.SendRaw()
+​
+Sends an opaque text payload to the panel script's onRaw handler.
+Signature
+public
+void
+SendRaw
+(
+RecipientFilter
+to
+,
+string
+text
+)
+Source:
+UI/UI.cs#L364
+UIPanel.BuildLayout()
+​
+Replace the panel's DOM tree on each recipient. The bootstrap creates a host panel under the HUD root if needed, wipes any existing children, and walks the tree calling
+$.CreatePanel
+for each node. Subsequent
+Set
+calls on the same panel auto-bind to Labels by id.
+Signature
+public
+void
+BuildLayout
+(
+RecipientFilter
+to
+,
+UINode
+root
+)
+Source:
+UI/UI.cs#L373
+UIPanel.DestroyLayout()
+​
+Destroy the panel's host on each recipient and forget its registration.
+Signature
+public
+void
+DestroyLayout
+(
+RecipientFilter
+to
+)
+Source:
+UI/UI.cs#L379
+UIPanel.Precache()
+​
+Ship the layout to each recipient and let the bootstrap parse + cache it without instantiating a host. After this completes, a much smaller
+Show
+call (a single chunk, no payload) renders the panel instantly. Useful for HUDs whose structure stays fixed and only field values change at runtime — precache once, set fields freely.
+Signature
+public
+void
+Precache
+(
+RecipientFilter
+to
+,
+UINode
+root
+)
+Source:
+UI/UI.cs#L389
+UIPanel.Show()
+​
+Render a previously-precached panel on each recipient. No-op (and logs on the client) if the panel was never precached. Pre-existing state from
+Set
+calls is auto-applied to matching Labels after the host is created.
+Signature
+public
+void
+Show
+(
+RecipientFilter
+to
+)
+Source:
+UI/UI.cs#L400
+UIPanel.LoadXml()
+​
+Tell the bootstrap to
+BLoadLayout
+an XML file from the client's mod tree under a fresh host panel. The XML's own
+<scripts>
+block runs in an isolated domain, so the addon must be self-contained (no
+DW
+access from inside). Use
+DestroyLayout
+to tear it down.
+Signature
+public
+void
+LoadXml
+(
+RecipientFilter
+to
+,
+string
+xmlPath
+)
+Source:
+UI/UI.cs#L410
+UIPanel.Reload()
+​
+Re-send whatever layout each recipient was last given for this panel, tearing the addon down and rebuilding it. The path comes from what the channel already retained, so you don't have to pass it again.
+Exists for the edit loop: change an addon's .xml or .js and reload it without restarting the client. Returns how many recipients had a layout to reload.
+Signature
+public
+int
+Reload
+(
+RecipientFilter
+to
+)
+Source:
+UI/UI.cs#L424
+UIPanel.AppendChild()
+​
+Append a subtree under an existing node in the panel's host. Far cheaper than
+BuildLayout
+when only a small piece of the tree is changing — typical row addition fits in 1–2 wire chunks.
+parentId
+must match a node id inside the existing tree (resolved client-side via
+FindChildTraverse
+).
+Signature
+public
+void
+AppendChild
+(
+RecipientFilter
+to
+,
+string
+parentId
+,
+UINode
+child
+)
+Source:
+UI/UI.cs#L434
+UIPanel.RemoveChild()
+​
+Remove a child node by id from the panel's host. Single-chunk wire op.
+Signature
+public
+void
+RemoveChild
+(
+RecipientFilter
+to
+,
+string
+targetId
+)
+Source:
+UI/UI.cs#L442
+UIPanel.Build()
+​
+Begin building a multi-op message that ships in one logical send.
+Signature
+public
+UIUpdate
+Build
+(
+)
+Source:
+UI/UI.cs#L449
+UIPanel.On()
+​
+Register a handler for an event the panel fires client-side via
+DW.send(panelId, eventName, ...args)
+. Latest registration wins.
+Signature
+public
+UIPanel
+On
+(
+string
+eventName
+,
+Action
+<
+UIEvent
+>
+handler
+)
+Source:
+UI/UI.cs#L455

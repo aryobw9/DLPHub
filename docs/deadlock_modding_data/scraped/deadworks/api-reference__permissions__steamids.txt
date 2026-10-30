@@ -1,0 +1,79 @@
+# SteamIds | Deadworks API
+URL: https://docs.deadworks.net/api-reference/permissions/steamids
+
+API Reference
+Permissions
+SteamIds
+On this page
+SteamIds
+Helpers for parsing and formatting Steam2, Steam3, and SteamID64 identifiers.
+public
+static
+class
+SteamIds
+Namespace:
+DeadworksManaged.Api
+Source:
+Permissions/SteamIds.cs#L7
+Methods
+​
+SteamIds.TryParse()
+​
+Attempts to parse Steam2, bracketed Steam3, or SteamID64 text into a SteamID64. Only IDs of individual Steam accounts parse, so a mistyped leading digit is refused rather than read as a different account.
+Signature
+public
+static
+bool
+TryParse
+(
+string
+value
+,
+out
+ulong
+steamId64
+)
+Source:
+Permissions/SteamIds.cs#L15
+SteamIds.ToPermissionKey()
+​
+Formats a SteamID64 as the canonical permission-file key.
+Signature
+public
+static
+string
+ToPermissionKey
+(
+ulong
+steamId64
+)
+Source:
+Permissions/SteamIds.cs#L57
+SteamIds.ToSteam2()
+​
+Formats a SteamID64 as a Steam2 ID.
+Signature
+public
+static
+string
+ToSteam2
+(
+ulong
+steamId64
+)
+Source:
+Permissions/SteamIds.cs#L60
+SteamIds.ToSteam3()
+​
+Formats a SteamID64 as a bracketed Steam3 ID.
+Signature
+public
+static
+string
+ToSteam3
+(
+ulong
+steamId64
+)
+Source:
+Permissions/SteamIds.cs#L67

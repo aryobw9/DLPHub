@@ -1,0 +1,31 @@
+# HookMode | Deadworks API
+URL: https://docs.deadworks.net/api-reference/enums/hookmode
+
+API Reference
+Enums
+HookMode
+On this page
+HookMode
+When an entity I/O hook fires relative to the original handler.
+public
+enum
+HookMode
+Namespace:
+DeadworksManaged.Api
+Source:
+Enums/HookMode.cs#L4
+Values
+​
+Name
+Value
+Description
+Pre
+0
+Fires before the original. Return
+HookResult.Stop
+or
+HookResult.Handled
+to block it.
+Post
+1
+Fires after the original ran. Handler returns void; cannot block.

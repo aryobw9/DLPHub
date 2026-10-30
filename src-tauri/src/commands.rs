@@ -47,43 +47,152 @@ pub fn check_running() -> Vec<String> {
 // ---------- install ----------
 #[tauri::command]
 pub async fn install_mode(
+    app: tauri::AppHandle,
     mode: String,
     fov: Option<u32>,
     aspect_ratio: Option<String>,
     aspect_ratio_enabled: Option<bool>,
     path: String,
 ) -> Result<Vec<install::StepLog>, String> {
+    let m = match mode.as_str() {
+        "T1" => install::Mode::T1,
+        "T2" => install::Mode::T2,
+        "T3" => install::Mode::T3,
+        "POTATO" | "RUSSIAN_POTATO" => install::Mode::Potato,
+        "T1MODS" => install::Mode::T1Mods,
+        "T2MODS" => install::Mode::T2Mods,
+        other => return Err(format!("unknown mode: {other}")),
+    };
+
+    let mut s = settings::load();
+    if let Some(f) = fov {
+        s.fov = f.min(90);
+    }
+    if let Some(ar) = aspect_ratio {
+        s.aspect_ratio = ar;
+    }
+    if let Some(are) = aspect_ratio_enabled {
+        s.aspect_ratio_enabled = are;
+    }
+    let _ = settings::save(&s);
+
+    let (only, _) = m.addon_lists(&s);
+    let required_addons: Vec<&str> = only
+        .split(',')
+        .map(str::trim)
+        .filter(|x| !x.is_empty())
+        .collect();
+
+    // 1. Download & verify required mods if not cached yet
+    if !required_addons.is_empty() {
+        crate::mod_cache::ensure_mods_cached(&required_addons, Some(&app)).await?;
+    }
+
+    let cache_dir = crate::mod_cache::get_cache_dir();
+
+    // 2. Run blocking install with verified cache directory
     tauri::async_runtime::spawn_blocking(move || {
-        let m = match mode.as_str() {
-            "T1" => install::Mode::T1,
-            "T2" => install::Mode::T2,
-            "T3" => install::Mode::T3,
-            "POTATO" => install::Mode::Potato,
-            "RUSSIAN_POTATO" => install::Mode::RussianPotato,
-            "T1MODS" => install::Mode::T1Mods,
-            "T2MODS" => install::Mode::T2Mods,
-            other => return Err(format!("unknown mode: {other}")),
-        };
         let deadlock = resolve_path(&path)?;
         let pkg = payload::extract_cached().map_err(|e| e.to_string())?;
         let data = settings::data_dir();
 
-        let mut s = settings::load();
-        if let Some(f) = fov {
-            s.fov = f.min(90);
-        }
-        if let Some(ar) = aspect_ratio {
-            s.aspect_ratio = ar;
-        }
-        if let Some(are) = aspect_ratio_enabled {
-            s.aspect_ratio_enabled = are;
-        }
-        let _ = settings::save(&s);
-
-        install::install(m, s.fov, &deadlock, &pkg, &data)
+        install::install_with_addons(m, s.fov, &deadlock, &pkg, &cache_dir, &data)
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub fn get_mod_cache_status_cmd() -> Vec<crate::mod_cache::ModStatusDto> {
+    crate::mod_cache::get_all_mod_statuses()
+}
+
+#[tauri::command]
+pub fn clear_mod_cache_cmd() -> Result<u64, String> {
+    crate::mod_cache::clear_mod_cache()
+}
+
+#[tauri::command]
+pub async fn apply_perf_optimization_cmd(
+    app: tauri::AppHandle,
+    req: dlp_core::perf_overlay::OptimizationRequest,
+) -> Result<Vec<install::StepLog>, String> {
+    let deadlock = resolve_path(&req.deadlock_path)?;
+    let mut req_mut = req;
+    req_mut.deadlock_path = deadlock;
+
+    // Check which VPKs are required based on level
+    let mut required_addons: Vec<&str> = Vec::new();
+    if req_mut.level == 2 {
+        // Level 2: Cpu + Gpu Optimization (gameinfo.gi + video.txt + mods)
+        required_addons.push("pak01_dir.vpk");
+        required_addons.push("pak02_dir.vpk");
+        required_addons.push("pak03_dir.vpk");
+    } else if req_mut.level >= 3 {
+        // Level 3: Potato Mode (pak31 downscaled textures + mods)
+        required_addons.push("pak31_dir.vpk");
+        required_addons.push("pak01_dir.vpk");
+        required_addons.push("pak02_dir.vpk");
+        required_addons.push("pak03_dir.vpk");
+    }
+
+    if !required_addons.is_empty() {
+        crate::mod_cache::ensure_mods_cached(&required_addons, Some(&app)).await?;
+    }
+
+    let cache_dir = crate::mod_cache::get_cache_dir();
+    let data_dir = settings::data_dir();
+
+    tauri::async_runtime::spawn_blocking(move || {
+        dlp_core::perf_overlay::apply_optimization_flow(req_mut, &data_dir, &cache_dir)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub fn revert_perf_optimization_cmd(path: String) -> Result<Vec<install::StepLog>, String> {
+    let deadlock = resolve_path(&path)?;
+    let data_dir = settings::data_dir();
+    dlp_core::perf_overlay::revert_optimization_flow(&deadlock, &data_dir)
+}
+
+#[tauri::command]
+pub fn detect_perf_optimization_cmd(path: String) -> Result<dlp_core::perf_overlay::DetectPerfStatus, String> {
+    let deadlock = resolve_path(&path)?;
+    Ok(dlp_core::perf_overlay::detect_optimization_flow(&deadlock))
+}
+
+#[tauri::command]
+pub fn apply_fov_only_cmd(
+    path: String,
+    fov: u32,
+    aspect_ratio: String,
+    aspect_ratio_enabled: bool,
+) -> Result<String, String> {
+    let deadlock = resolve_path(&path)?;
+    let data_dir = settings::data_dir();
+    dlp_core::perf_overlay::apply_fov_only_flow(
+        std::path::Path::new(&deadlock),
+        fov,
+        &aspect_ratio,
+        aspect_ratio_enabled,
+        Some(&data_dir),
+    )
+}
+
+#[tauri::command]
+pub fn apply_fps_only_cmd(
+    path: String,
+    fps_limit: String,
+) -> Result<String, String> {
+    let deadlock = resolve_path(&path)?;
+    let data_dir = settings::data_dir();
+    dlp_core::perf_overlay::apply_fps_only_flow(
+        std::path::Path::new(&deadlock),
+        &fps_limit,
+        Some(&data_dir),
+    )
 }
 
 fn resolve_path(path: &str) -> Result<String, String> {
@@ -463,6 +572,21 @@ pub async fn check_for_updates(app: tauri::AppHandle) -> Result<UpdateCheckDto, 
 #[tauri::command]
 pub fn open_download_url(url: String) -> Result<(), String> {
     open::that(&url).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn open_logs_folder() -> Result<(), String> {
+    let data_dir = settings::data_dir();
+    let logs_dir = data_dir.join("logs");
+    let _ = std::fs::create_dir_all(&logs_dir);
+    open::that(&logs_dir).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn log_client_error(level: String, message: String) -> Result<(), String> {
+    let data_dir = settings::data_dir();
+    dlp_core::logger::log(&data_dir, &level, &message);
+    Ok(())
 }
 
 // ---------- misc ----------
@@ -1098,4 +1222,249 @@ pub fn apply_cvar_test_states(states: std::collections::HashMap<String, String>)
 
     Ok("Applied to gameinfo.gi & autoexec.cfg successfully!".to_string())
 }
+
+// ---------- LAN Connection ----------
+use crate::lan_supervisor::{self, LanHostConfig, LanServerStatus, LocalIpInfo};
+use crate::lan_query::{self, A2SServerInfo};
+use crate::lan_vip::{self, VipCreateResponse, VipJoinResponse, VipRedeemResponse, VipRoomStatus, VipStatusResponse};
+
+#[tauri::command]
+pub fn get_lan_local_ips() -> Vec<LocalIpInfo> {
+    lan_supervisor::get_local_ipv4_addresses()
+}
+
+#[tauri::command]
+pub async fn start_lan_server(config: LanHostConfig) -> Result<LanServerStatus, String> {
+    lan_supervisor::start_dedicated_server(config).await
+}
+
+#[tauri::command]
+pub fn stop_lan_server() -> Result<(), String> {
+    lan_supervisor::stop_dedicated_server()
+}
+
+#[tauri::command]
+pub fn get_lan_server_status() -> LanServerStatus {
+    lan_supervisor::get_server_status()
+}
+
+#[tauri::command]
+pub fn connect_lan_client(ip: String, port: u16) -> Result<(), String> {
+    lan_supervisor::launch_deadlock_client(&ip, port)
+}
+
+#[tauri::command]
+pub fn list_lan_matches() -> Vec<String> {
+    lan_supervisor::list_lan_matches()
+}
+
+#[tauri::command]
+pub fn get_lan_match_metadata(
+    match_id: Option<String>,
+    #[allow(non_snake_case)] matchId: Option<String>,
+) -> Result<String, String> {
+    let id = match_id.or(matchId).ok_or_else(|| "Missing matchId parameter".to_string())?;
+    lan_supervisor::get_lan_match_metadata(&id)
+        .ok_or_else(|| format!("Match report {} not found", id))
+}
+
+#[tauri::command]
+pub fn send_lan_server_command(command: String) -> Result<(), String> {
+    lan_supervisor::send_server_command(&command)
+}
+
+#[tauri::command]
+pub fn get_lan_lobby_status() -> Option<String> {
+    lan_supervisor::get_lobby_status()
+}
+
+#[tauri::command]
+pub async fn query_lan_server(ip: String, port: u16) -> Result<A2SServerInfo, String> {
+    lan_query::query_a2s_info(&ip, port).await
+}
+
+#[tauri::command]
+pub async fn create_vip_room_cmd(
+    api_url: Option<String>,
+    nickname: String,
+    mode: Option<String>,
+    is_modded: Option<bool>,
+    mod_mode: Option<String>,
+    enable_sdr: Option<bool>,
+) -> Result<VipCreateResponse, String> {
+    lan_vip::create_vip_room(api_url, nickname, mode, is_modded, mod_mode, enable_sdr).await
+}
+
+#[tauri::command]
+pub async fn join_vip_room_cmd(
+    api_url: Option<String>,
+    room_code: String,
+    nickname: String,
+) -> Result<VipJoinResponse, String> {
+    lan_vip::join_vip_room(api_url, room_code, nickname).await
+}
+
+#[tauri::command]
+pub async fn get_vip_room_status_cmd(
+    api_url: Option<String>,
+    room_code: String,
+) -> Result<VipRoomStatus, String> {
+    lan_vip::get_vip_room_status(api_url, room_code).await
+}
+
+#[tauri::command]
+pub async fn leave_vip_room_cmd(
+    api_url: Option<String>,
+    room_code: String,
+) -> Result<(), String> {
+    lan_vip::leave_vip_room(api_url, room_code).await
+}
+
+#[tauri::command]
+pub async fn kick_vip_peer_cmd(
+    api_url: Option<String>,
+    room_code: String,
+    peer_name: String,
+) -> Result<(), String> {
+    lan_vip::kick_vip_peer(api_url, room_code, peer_name).await
+}
+
+#[tauri::command]
+pub async fn ban_vip_peer_cmd(
+    api_url: Option<String>,
+    room_code: String,
+    peer_name: String,
+) -> Result<(), String> {
+    lan_vip::ban_vip_peer(api_url, room_code, peer_name).await
+}
+
+#[tauri::command]
+pub async fn unban_vip_peer_cmd(
+    api_url: Option<String>,
+    room_code: String,
+    peer_name: String,
+) -> Result<(), String> {
+    lan_vip::unban_vip_peer(api_url, room_code, peer_name).await
+}
+
+#[tauri::command]
+pub async fn list_vip_rooms_cmd(
+    api_url: Option<String>,
+) -> Result<Vec<lan_vip::VipRoomSummary>, String> {
+    lan_vip::list_vip_rooms(api_url).await
+}
+
+#[tauri::command]
+pub async fn prepare_modded_client_cmd(mode: String) -> Result<(), String> {
+    lan_supervisor::prepare_modded_client(&mode).await
+}
+
+#[tauri::command]
+pub async fn setup_host_server_env_cmd(mode: String) -> Result<(), String> {
+    lan_supervisor::setup_host_server_environment(&mode).await
+}
+
+#[tauri::command]
+pub fn close_deadlock_game_cmd() -> Result<(), String> {
+    lan_supervisor::close_deadlock_game();
+    Ok(())
+}
+
+#[tauri::command]
+pub fn is_deadlock_running_cmd() -> bool {
+    lan_supervisor::is_deadlock_running()
+}
+
+#[tauri::command]
+pub fn restore_vanilla_client_cmd() -> Result<(), String> {
+    if let Some(found) = dlp_core::discovery::find_game() {
+        lan_supervisor::restore_gameinfo_vanilla(std::path::Path::new(&found.deadlock))
+    } else {
+        Err("Deadlock installation folder not found".into())
+    }
+}
+
+#[tauri::command]
+pub async fn auto_join_deadlock_cmd(connect_target: String, mode: Option<String>) -> Result<(), String> {
+    if let Some(m) = mode {
+        if !m.trim().is_empty() {
+            let _ = lan_supervisor::prepare_modded_client(&m).await;
+        }
+    }
+    lan_supervisor::launch_deadlock_target(&connect_target)
+}
+
+#[tauri::command]
+pub fn check_deadworks_env_cmd() -> serde_json::Value {
+    let dotnet_ok = crate::storage::check_dotnet10_installed();
+    let found = dlp_core::discovery::find_game();
+    let game_found = found.is_some();
+    let bootstrap_cached = crate::storage::get_client_bootstrap_file().is_file();
+    let ability_brawl_cached = crate::storage::get_client_addon_file("ability_brawl").is_file();
+    let cursed_arena_cached = crate::storage::get_client_addon_file("cursed_arena").is_file()
+        || crate::storage::get_client_addon_loose_dir("cursed_arena").is_dir();
+    let automatch_cached = crate::storage::get_server_loader_dir().join("plugins").join("automatch").exists();
+
+    let mut gameinfo_patched = false;
+    if let Some(ref g) = found {
+        let gi_path = std::path::Path::new(&g.deadlock).join("game").join("citadel").join("gameinfo.gi");
+        if let Ok(c) = std::fs::read_to_string(gi_path) {
+            gameinfo_patched = c.contains("citadel/custom") && c.contains("deadworks_mods");
+        }
+    }
+
+    serde_json::json!({
+        "dotnet10": dotnet_ok,
+        "game_found": game_found,
+        "bootstrap_cached": bootstrap_cached,
+        "ability_brawl_cached": ability_brawl_cached,
+        "cursed_arena_cached": cursed_arena_cached,
+        "automatch_cached": automatch_cached,
+        "gameinfo_patched": gameinfo_patched
+    })
+}
+
+#[tauri::command]
+pub fn check_vip_binaries_cmd() -> bool {
+    lan_vip::check_vip_binaries_installed()
+}
+
+#[tauri::command]
+pub fn launch_deadlock_target_cmd(target: String) -> Result<(), String> {
+    lan_supervisor::launch_deadlock_target(&target)
+}
+
+#[tauri::command]
+pub async fn redeem_vip_key_cmd(
+    api_url: Option<String>,
+    key: String,
+    nickname: Option<String>,
+) -> Result<VipRedeemResponse, String> {
+    lan_vip::redeem_vip_license(api_url, key, nickname).await
+}
+
+#[tauri::command]
+pub async fn check_vip_status_cmd(
+    api_url: Option<String>,
+) -> Result<VipStatusResponse, String> {
+    lan_vip::check_vip_license_status(api_url).await
+}
+
+#[tauri::command]
+pub fn get_machine_hwid_cmd() -> String {
+    crate::hwid::get_machine_hwid()
+}
+
+#[tauri::command]
+pub fn get_storage_path_cmd() -> String {
+    crate::storage::get_storage_dir().to_string_lossy().to_string()
+}
+
+#[tauri::command]
+pub async fn ensure_server_loader_cmd(app: tauri::AppHandle) -> Result<bool, String> {
+    crate::storage::ensure_server_loader_available(Some(&app))
+        .await
+        .map(|_| true)
+}
+
 

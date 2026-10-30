@@ -1,0 +1,26 @@
+# IConfig | Deadworks API
+URL: https://docs.deadworks.net/api-reference/config/iconfig
+
+API Reference
+Configuration
+IConfig
+On this page
+IConfig
+public
+interface
+IConfig
+Namespace:
+DeadworksManaged.Api
+Source:
+Config/IConfig.cs#L3
+Methods
+​
+IConfig.Validate()
+​
+Signature
+void
+Validate
+(
+)
+Source:
+Config/IConfig.cs#L5

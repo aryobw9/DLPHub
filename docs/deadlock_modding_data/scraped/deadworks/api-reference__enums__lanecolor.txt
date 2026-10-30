@@ -1,0 +1,31 @@
+# LaneColor | Deadworks API
+URL: https://docs.deadworks.net/api-reference/enums/lanecolor
+
+API Reference
+Enums
+LaneColor
+On this page
+LaneColor
+Team lane color used in Deadlock matches.
+public
+enum
+LaneColor
+Namespace:
+DeadworksManaged.Api
+Source:
+Enums/LaneColor.cs#L4
+Values
+​
+Name
+Value
+Description
+Invalid
+0
+Yellow
+1
+Green
+3
+Blue
+4
+Purple
+6

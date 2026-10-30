@@ -1,0 +1,38 @@
+# ECitadelGameMode | Deadworks API
+URL: https://docs.deadworks.net/api-reference/enums/ecitadelgamemode
+
+API Reference
+Enums
+ECitadelGameMode
+On this page
+ECitadelGameMode
+public
+enum
+ECitadelGameMode
+:
+uint
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+uint
+Source:
+Enums/ECitadelGameMode.cs#L3
+Values
+​
+Name
+Value
+Description
+Invalid
+0x0
+Normal
+0x1
+OneVOneTest
+0x2
+Sandbox
+0x3
+StreetBrawl
+0x4
+ExploreNYC
+0x5
+Internal
+0x6

@@ -1,0 +1,172 @@
+# ModifierDamageEventData | Deadworks API
+URL: https://docs.deadworks.net/api-reference/events/modifierdamageeventdata
+
+API Reference
+Events
+ModifierDamageEventData
+On this page
+ModifierDamageEventData
+Payload of the damage events. Properties not carried by the current event return null or 0.
+public
+readonly
+struct
+ModifierDamageEventData
+Namespace:
+DeadworksManaged.Api
+Source:
+Events/ModifierEvent.cs#L47
+Properties
+​
+ModifierDamageEventData.Victim
+​
+The entity taking damage or receiving health.
+Signature
+public
+CBaseEntity
+?
+Victim
+{
+get
+;
+}
+Source:
+Events/ModifierEvent.cs#L63
+ModifierDamageEventData.Attacker
+​
+The attacker.
+DamageTaken
+only.
+Signature
+public
+CBaseEntity
+?
+Attacker
+{
+get
+;
+}
+Source:
+Events/ModifierEvent.cs#L66
+ModifierDamageEventData.Info
+​
+The damage info.
+PreDamageTaken
+and
+DamageTaken
+only; valid inside the callback.
+Signature
+public
+CTakeDamageInfo
+?
+Info
+{
+get
+;
+}
+Source:
+Events/ModifierEvent.cs#L69
+ModifierDamageEventData.DamageDealt
+​
+Damage dealt after mitigation.
+DamageTaken
+only.
+Signature
+public
+int
+DamageDealt
+{
+get
+;
+}
+Source:
+Events/ModifierEvent.cs#L85
+ModifierDamageEventData.HealthLost
+​
+Health the victim actually lost.
+DamageTaken
+only.
+Signature
+public
+int
+HealthLost
+{
+get
+;
+}
+Source:
+Events/ModifierEvent.cs#L88
+ModifierDamageEventData.HealthBefore
+​
+Victim's health before the damage was applied.
+DamageTaken
+only.
+Signature
+public
+int
+HealthBefore
+{
+get
+;
+}
+Source:
+Events/ModifierEvent.cs#L91
+ModifierDamageEventData.PreModifiedDamage
+​
+Damage before modifiers were applied.
+DamageTaken
+only.
+Signature
+public
+float
+PreModifiedDamage
+{
+get
+;
+}
+Source:
+Events/ModifierEvent.cs#L94
+ModifierDamageEventData.DamageType
+​
+Damage type bits.
+DamageTaken
+only.
+Signature
+public
+int
+DamageType
+{
+get
+;
+}
+Source:
+Events/ModifierEvent.cs#L97
+ModifierDamageEventData.HealthRequested
+​
+Health requested.
+HealthTaken
+only.
+Signature
+public
+float
+HealthRequested
+{
+get
+;
+}
+Source:
+Events/ModifierEvent.cs#L100
+ModifierDamageEventData.HealthApplied
+​
+Health actually applied after clamping to max health.
+HealthTaken
+only.
+Signature
+public
+int
+HealthApplied
+{
+get
+;
+}
+Source:
+Events/ModifierEvent.cs#L103

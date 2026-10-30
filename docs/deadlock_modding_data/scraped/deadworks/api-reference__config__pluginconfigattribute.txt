@@ -1,0 +1,19 @@
+# PluginConfigAttribute | Deadworks API
+URL: https://docs.deadworks.net/api-reference/config/pluginconfigattribute
+
+API Reference
+Configuration
+PluginConfigAttribute
+PluginConfigAttribute
+public
+sealed
+class
+PluginConfigAttribute
+:
+Attribute
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+Attribute
+Source:
+Config/PluginConfigAttribute.cs#L4

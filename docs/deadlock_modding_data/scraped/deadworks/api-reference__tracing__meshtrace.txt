@@ -1,0 +1,55 @@
+# MeshTrace | Deadworks API
+URL: https://docs.deadworks.net/api-reference/tracing/meshtrace
+
+API Reference
+Tracing
+MeshTrace
+On this page
+MeshTrace
+Shape data for a convex mesh trace with bounds and a vertex array.
+public
+struct
+MeshTrace
+Namespace:
+DeadworksManaged.Api
+Source:
+Trace/MeshTrace.cs#L8
+Fields
+​
+MeshTrace.Mins
+​
+Signature
+public
+Vector3
+Mins
+;
+Source:
+Trace/MeshTrace.cs#L9
+MeshTrace.Maxs
+​
+Signature
+public
+Vector3
+Maxs
+;
+Source:
+Trace/MeshTrace.cs#L10
+MeshTrace.Vertices
+​
+Signature
+public
+Vector3
+*
+Vertices
+;
+Source:
+Trace/MeshTrace.cs#L11
+MeshTrace.NumVertices
+​
+Signature
+public
+int
+NumVertices
+;
+Source:
+Trace/MeshTrace.cs#L12

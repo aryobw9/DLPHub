@@ -1,0 +1,40 @@
+# UIImage | Deadworks API
+URL: https://docs.deadworks.net/api-reference/ui/uiimage
+
+API Reference
+UI
+UIImage
+On this page
+UIImage
+public
+sealed
+class
+UIImage
+:
+UINode
+Namespace:
+DeadworksManaged.Api.UI
+Inherits / implements:
+UINode
+Source:
+UI/UILayout.cs#L114
+Fields
+​
+UIImage.Src
+​
+Source path. Typically
+file://{images}/<addon>/<file>.vtex
+for mod-supplied images (the runtime resolves to the compiled
+.vtex_c
+; the source
+.png
+sits alongside in the mod tree).
+Signature
+public
+string
+Src
+=
+""
+;
+Source:
+UI/UILayout.cs#L120

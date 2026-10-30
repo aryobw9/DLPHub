@@ -1,0 +1,36 @@
+# EntityCreatedEvent | Deadworks API
+URL: https://docs.deadworks.net/api-reference/events/entitycreatedevent
+
+API Reference
+Events
+EntityCreatedEvent
+On this page
+EntityCreatedEvent
+Fired when a new entity is created. Passed to
+IDeadworksPlugin.OnEntityCreated
+.
+public
+sealed
+class
+EntityCreatedEvent
+Namespace:
+DeadworksManaged.Api
+Source:
+Events/EntityCreatedEvent.cs#L4
+Properties
+​
+EntityCreatedEvent.Entity
+​
+Signature
+public
+required
+CBaseEntity
+Entity
+{
+get
+;
+init
+;
+}
+Source:
+Events/EntityCreatedEvent.cs#L5

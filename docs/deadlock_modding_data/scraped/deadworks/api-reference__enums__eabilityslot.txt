@@ -1,0 +1,75 @@
+# EAbilitySlot | Deadworks API
+URL: https://docs.deadworks.net/api-reference/enums/eabilityslot
+
+API Reference
+Enums
+EAbilitySlot
+On this page
+EAbilitySlot
+Ability slot indices matching EAbilitySlots_t from the game SDK.
+public
+enum
+EAbilitySlot
+:
+ushort
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+ushort
+Source:
+Enums/AbilitySlot.cs#L4
+Values
+​
+Name
+Value
+Description
+Invalid
+0xFFFF
+Signature1
+0x0
+Signature2
+0x1
+Signature3
+0x2
+Signature4
+0x3
+ActiveItem1
+0x4
+ActiveItem2
+0x5
+ActiveItem3
+0x6
+ActiveItem4
+0x7
+Ability_Held
+0x8
+Ability_ZipLine
+0x9
+Ability_Mantle
+0xA
+Ability_ClimbRope
+0xB
+Ability_Jump
+0xC
+Ability_Slide
+0xD
+Ability_Teleport
+0xE
+Ability_ZipLineBoost
+0xF
+Cosmetic1
+0x10
+Innate1
+0x11
+Innate2
+0x12
+Innate3
+0x13
+WeaponSecondary
+0x14
+WeaponPrimary
+0x15
+WeaponMelee
+0x16
+None
+0x17

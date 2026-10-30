@@ -1,0 +1,63 @@
+# CModifierVData | Deadworks API
+URL: https://docs.deadworks.net/api-reference/entities/cmodifiervdata
+
+API Reference
+Entities
+CModifierVData
+On this page
+CModifierVData
+Wraps a native CModifierVData instance - base VData for all modifier types.
+public
+class
+CModifierVData
+:
+NativeEntity
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+NativeEntity
+Derived types:
+CCitadelModifierVData
+Source:
+Entities/CModifierVData.cs#L4
+Properties
+​
+CModifierVData.Duration
+​
+Default duration of the modifier (from VData).
+Signature
+public
+float
+Duration
+{
+get
+;
+}
+Source:
+Entities/CModifierVData.cs#L11
+CModifierVData.IsHidden
+​
+Whether this modifier is hidden from the HUD.
+Signature
+public
+bool
+IsHidden
+{
+get
+;
+}
+Source:
+Entities/CModifierVData.cs#L14
+CModifierVData.Name
+​
+The subclass definition name (e.g. "modifier_citadel_knockdown").
+Signature
+public
+string
+Name
+{
+get
+;
+}
+Source:
+Entities/CModifierVData.cs#L17

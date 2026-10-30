@@ -1,0 +1,106 @@
+# IPenaltyStore | Deadworks API
+URL: https://docs.deadworks.net/api-reference/admin/ipenaltystore
+
+API Reference
+Admin
+IPenaltyStore
+On this page
+IPenaltyStore
+Where penalties are kept. The built-in store is
+configs/penalties/penalties.jsonc
+; register another with
+Penalties.RegisterStore
+to share bans between servers or with a web panel.
+public
+interface
+IPenaltyStore
+Namespace:
+DeadworksManaged.Api
+Source:
+Admin/Penalties.cs#L177
+Methods
+​
+IPenaltyStore.LoadActiveAsync()
+​
+Every penalty that may still be active. Called at startup and when the store is selected.
+Signature
+Task
+<
+IReadOnlyList
+<
+Penalty
+>
+>
+LoadActiveAsync
+(
+CancellationToken
+ct
+)
+Source:
+Admin/Penalties.cs#L180
+IPenaltyStore.AddAsync()
+​
+Saves a new penalty.
+Signature
+Task
+AddAsync
+(
+Penalty
+penalty
+,
+CancellationToken
+ct
+)
+Source:
+Admin/Penalties.cs#L183
+IPenaltyStore.UpdateAsync()
+​
+Saves a penalty that was lifted or replaced (its
+Penalty.RemovedUtc
+is now set).
+Signature
+Task
+UpdateAsync
+(
+Penalty
+penalty
+,
+CancellationToken
+ct
+)
+Source:
+Admin/Penalties.cs#L186
+IPenaltyStore.LoadHistoryAsync()
+​
+Every penalty the store has for one player, newest first.
+Signature
+Task
+<
+IReadOnlyList
+<
+Penalty
+>
+>
+LoadHistoryAsync
+(
+ulong
+steamId64
+,
+CancellationToken
+ct
+)
+Source:
+Admin/Penalties.cs#L189
+Events
+​
+IPenaltyStore.Changed
+​
+Raise when penalties changed outside Deadworks, e.g. a ban added on another server. Deadworks reloads them.
+Signature
+event
+Action
+?
+Changed
+;
+Source:
+Admin/Penalties.cs#L192

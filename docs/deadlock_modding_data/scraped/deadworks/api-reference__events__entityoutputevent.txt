@@ -1,0 +1,127 @@
+# EntityOutputEvent | Deadworks API
+URL: https://docs.deadworks.net/api-reference/events/entityoutputevent
+
+API Reference
+Events
+EntityOutputEvent
+On this page
+EntityOutputEvent
+Payload for an entity output fire (
+CEntityIOOutput::FireOutputInternal
+), passed to handlers registered via
+EntityIO.HookOutput
+or
+[EntityOutputHook]
+.
+public
+sealed
+class
+EntityOutputEvent
+Namespace:
+DeadworksManaged.Api
+Source:
+Events/EntityOutputEvent.cs#L4
+Properties
+​
+EntityOutputEvent.CallerClass
+​
+Designer name of the entity firing the output (e.g.
+"trigger_multiple"
+).
+Signature
+public
+required
+string
+CallerClass
+{
+get
+;
+init
+;
+}
+Source:
+Events/EntityOutputEvent.cs#L6
+EntityOutputEvent.OutputName
+​
+The name of the output being fired (e.g.
+"OnStartTouch"
+).
+Signature
+public
+required
+string
+OutputName
+{
+get
+;
+init
+;
+}
+Source:
+Events/EntityOutputEvent.cs#L9
+EntityOutputEvent.Activator
+​
+The entity that triggered this output (typically a player pawn).
+Signature
+public
+CBaseEntity
+?
+Activator
+{
+get
+;
+init
+;
+}
+Source:
+Events/EntityOutputEvent.cs#L12
+EntityOutputEvent.Caller
+​
+The entity that fired the output. Usually equivalent to looking up an entity with
+CallerClass
+.
+Signature
+public
+CBaseEntity
+?
+Caller
+{
+get
+;
+init
+;
+}
+Source:
+Events/EntityOutputEvent.cs#L15
+EntityOutputEvent.Value
+​
+The typed variant value carried by the output. Pointer is only valid for the duration of the callback. Void when the engine fires the output without a variant (typed outputs pass their value in a separate parameter object).
+Signature
+public
+required
+EntityIOValue
+Value
+{
+get
+;
+init
+;
+}
+Source:
+Events/EntityOutputEvent.cs#L19
+EntityOutputEvent.Delay
+​
+Delay (seconds) before the output's connected inputs will fire. Read-only.
+Signature
+public
+required
+float
+Delay
+{
+get
+;
+init
+;
+}
+Source:
+Events/EntityOutputEvent.cs#L22

@@ -1,0 +1,67 @@
+# ClientAuthorizedEvent | Deadworks API
+URL: https://docs.deadworks.net/api-reference/events/clientauthorizedevent
+
+API Reference
+Events
+ClientAuthorizedEvent
+On this page
+ClientAuthorizedEvent
+Fired once per connection when Steam confirms who a player is, usually a few seconds after they connect. Passed to
+IDeadworksPlugin.OnClientAuthorized
+.
+public
+sealed
+class
+ClientAuthorizedEvent
+Namespace:
+DeadworksManaged.Api
+Source:
+Events/ClientAuthorizedEvent.cs#L7
+Properties
+​
+ClientAuthorizedEvent.Slot
+​
+The player's slot.
+Signature
+public
+required
+int
+Slot
+{
+get
+;
+init
+;
+}
+Source:
+Events/ClientAuthorizedEvent.cs#L9
+ClientAuthorizedEvent.SteamId64
+​
+The SteamID the player connected with, now confirmed by Steam.
+Signature
+public
+required
+ulong
+SteamId64
+{
+get
+;
+init
+;
+}
+Source:
+Events/ClientAuthorizedEvent.cs#L11
+ClientAuthorizedEvent.Controller
+​
+The player's controller, or null if they've already left.
+Signature
+public
+CCitadelPlayerController
+?
+Controller
+{
+get
+;
+}
+Source:
+Events/ClientAuthorizedEvent.cs#L15

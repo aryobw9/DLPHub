@@ -1,0 +1,139 @@
+# Use admin commands | Deadworks API
+URL: https://docs.deadworks.net/getting-started/server-admins/use-admin-tools
+
+Getting started for server admins
+4. Use admin commands
+On this page
+Use admin commands
+Deadworks ships with a simple Admin plugin that adds commands to kick, ban, gag and mute players, and to run the server. For more admin tools, see the plugins shared on the
+Deadworks Discord
+.
+Type a command
+​
+Every admin command works three ways:
+Where
+Type
+Example
+Chat
+!
+or
+/
+, then the command
+!kick lapka
+Your game console
+dw_
+, then the command
+dw_kick lapka
+The server console
+dw_
+, then the command
+dw_kick lapka
+Admin commands never show in public chat.
+dw_help
+lists the commands you can use.
+Pick a player
+​
+Type
+Picks
+lapka
+The player with that name, or part of it
+"Big Dave"
+A name with spaces
+#3
+The player in slot 3.
+who
+lists the slots.
+76561197960287931
+A player by SteamID, even after they've left
+@me
+,
+@team
+,
+@enemy
+,
+@all
+Yourself, your team, the other team, everyone
+Moderation commands
+​
+Times are in minutes:
+60
+is an hour,
+1440
+a day,
+10080
+a week.
+0
+is permanent.
+Command
+Does
+kick <player> [reason]
+Kicks a player. They can rejoin.
+ban <player|steamid> <minutes> [reason]
+Bans a player, on the server or not. Also
+addban
+.
+unban <steamid> [reason]
+Lifts a ban
+bans
+Lists active bans
+gag <player|steamid> <minutes> [reason]
+Stops a player typing in chat
+ungag <player|steamid> [reason]
+Lifts a gag
+gags
+Lists active gags
+mute <player|steamid> <minutes> [reason]
+Stops a player talking on voice chat
+unmute <player|steamid> [reason]
+Lifts a mute
+mutes
+Lists active mutes
+slay <player>
+Kills a player's hero
+who [player]
+Lists players, with their slot, SteamID, team and roles
+penalties [player|steamid]
+Shows a player's bans, gags and mutes, past and present. Anyone can look up their own.
+!gag lapka 30 spamming chat
+!ban lapka 1440 cheating
+!ban 76561197960287931 0 ban evasion
+The time comes before the reason:
+!gag lapka spamming
+doesn't work.
+Deadworks enforces bans, gags and mutes. They're saved in
+configs\penalties\penalties.jsonc
+and last across restarts and map changes.
+Server commands
+​
+Command
+Does
+map [name|cancel]
+Changes map after a short warning. On its own, lists the maps.
+cancel
+calls off a pending change.
+cvar <name> [value]
+Shows or changes a server setting, such as
+sv_cheats
+or
+sv_password
+resetcvar <name>
+Puts a setting back to its default
+execcfg <file>
+Runs a config file from the server's
+cfg\
+folder
+rcon <command>
+Runs any server console command and shows its output
+See what admins did
+​
+Every admin action is written to
+game\bin\win64\logs\admin\
+, one file per day. Players see
+ADMIN: kicked lapka: <reason>
+in chat. Admins see who did it.
+Next
+​
+5. Custom maps & content addons
+(coming soon)
+Setting up staff roles
+: moderators and trial moderators with fewer commands

@@ -1,0 +1,120 @@
+# SchemaAccessor | Deadworks API
+URL: https://docs.deadworks.net/api-reference/entities/schemaaccessor
+
+API Reference
+Entities
+SchemaAccessor
+On this page
+SchemaAccessor<T>
+Reads and writes a single networked schema field of type
+T
+. Resolves the field offset once on first access and caches it. Use UTF-8 string literals (
+"ClassName"u8
+) for
+className
+and
+fieldName
+.
+public
+sealed
+class
+SchemaAccessor
+<
+T
+>
+where
+T
+:
+unmanaged
+Namespace:
+DeadworksManaged.Api
+Source:
+Entities/SchemaAccessor.cs#L8
+Constructors
+​
+new SchemaAccessor()
+​
+Signature
+public
+SchemaAccessor
+(
+ReadOnlySpan
+<
+byte
+>
+className
+,
+ReadOnlySpan
+<
+byte
+>
+fieldName
+,
+int
+networkStateChangedOffset
+=
+0
+)
+Parameters
+className
+: UTF-8 null-terminated class name (e.g.
+"CBaseEntity"u8
+).
+fieldName
+: UTF-8 null-terminated field name (e.g.
+"m_iHealth"u8
+).
+networkStateChangedOffset
+: Optional offset passed to NotifyStateChanged for custom chain offsets.
+Source:
+Entities/SchemaAccessor.cs#L19
+Methods
+​
+SchemaAccessor.GetAddress()
+​
+Returns the raw pointer to the field on
+entity
+.
+Signature
+public
+nint
+GetAddress
+(
+nint
+entity
+)
+Source:
+Entities/SchemaAccessor.cs#L45
+SchemaAccessor.Get()
+​
+Reads the field value from
+entity
+.
+Signature
+public
+T
+Get
+(
+nint
+entity
+)
+Source:
+Entities/SchemaAccessor.cs#L51
+SchemaAccessor.Set()
+​
+Writes the field value to
+entity
+, notifying the network state if the field is networked.
+Signature
+public
+void
+Set
+(
+nint
+entity
+,
+T
+value
+)
+Source:
+Entities/SchemaAccessor.cs#L57

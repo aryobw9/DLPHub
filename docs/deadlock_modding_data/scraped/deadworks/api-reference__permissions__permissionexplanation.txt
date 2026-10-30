@@ -1,0 +1,47 @@
+# PermissionExplanation | Deadworks API
+URL: https://docs.deadworks.net/api-reference/permissions/permissionexplanation
+
+API Reference
+Permissions
+PermissionExplanation
+On this page
+PermissionExplanation
+Why
+Permissions.Has
+answered the way it did.
+public
+sealed
+record
+PermissionExplanation
+(
+bool
+Allowed
+,
+string
+?
+Grant
+,
+string
+?
+Source
+)
+Namespace:
+DeadworksManaged.Api
+Source:
+Permissions/PermissionModels.cs#L46
+Methods
+​
+PermissionExplanation.ToString()
+​
+e.g.
+denied by "-admin.moderation.ban" from role:moderator
+.
+Signature
+public
+override
+string
+ToString
+(
+)
+Source:
+Permissions/PermissionModels.cs#L49

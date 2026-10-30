@@ -1,0 +1,77 @@
+# developer-docs
+URL: https://docs.deadlockmods.app/developer-docs
+
+Developer Documentation
+Overview
+Welcome to the Deadlock Mod Manager developer documentation
+Copy Markdown
+Open
+Developer Documentation Overview
+Welcome to the developer documentation for Deadlock Mod Manager! This section provides comprehensive information for developers who want to contribute to the project, integrate with the API, or understand the underlying architecture.
+For Developers
+Whether you're looking to contribute code, understand the architecture, or integrate with our systems, this guide has you covered:
+Development Setup
+Set up your development environment to start contributing
+Development with Nix
+Reproducible development setup for Linux using Nix flakes
+Project Structure
+Understand the codebase organization and architecture
+Architecture
+Deep dive into system design and technical decisions
+Contributing
+Learn how to contribute code, documentation, and translations
+API Integration
+Advanced patterns and examples for API integration
+Getting Started
+Choose your path based on what you want to do:
+🔨
+Contributing Code
+Set up your development environment
+(or use
+Nix
+on Linux)
+Understand the project structure
+Read the contributing guidelines
+Start with a good first issue on GitHub
+🏗️
+Understanding the System
+Review the project structure
+Study the architecture documentation
+Explore the interactive API documentation
+🔌
+API Integration
+Browse the interactive API reference
+Read the integration guide
+Join our Discord
+for developer support
+Key Technologies
+Deadlock Mod Manager is built with modern technologies:
+Desktop
+: Tauri v2 with Rust backend and React frontend
+Backend
+: Bun runtime with Hono web framework
+Database
+: PostgreSQL with Drizzle ORM
+Cache & Pub/Sub
+: Redis for caching and pub/sub messaging
+Frontend
+: React 18 with TypeScript and Tailwind CSS v4
+Build System
+: Turborepo for efficient monorepo management
+Community
+GitHub
+:
+Source code and issues
+Discord
+:
+Developer community
+API
+:
+Live API documentation
+Ready to dive in? Start with our
+development setup guide
+!
+Overview
+Learn how to create mods for Deadlock using community guides and tools
+Development Setup
+Set up your development environment for contributing to Deadlock Mod Manager

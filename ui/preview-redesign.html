@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#080a0d" />
+  <title>DLPHub — Deadlock Tactical Console (Design Concept)</title>
+
+  <!-- Google Fonts Fallback + Local Font Definitions -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ==========================================================================
+       OCCULT-INDUSTRIAL DESIGN SYSTEM: TOKENS & FOUNDATIONS
+       ========================================================================== */
+    :root {
+      color-scheme: dark;
+
+      /* 6-Color Deliberate Palette (Deadlock Occult Dieselpunk) */
+      --bg-void: #06080b;           /* Deep Cold Void */
+      --bg-canvas: #090c10;         /* Crucible Cast Iron */
+      --bg-surface: #11151d;        /* Milled Machinery Slate */
+      --bg-surface-elevated: #161c27;/* Elevated Tactile Panel */
+      --bg-surface-active: #1c2432;  /* Interactive Highlight */
+
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --border-medium: rgba(255, 255, 255, 0.12);
+      --border-amber: rgba(229, 142, 38, 0.4);
+
+      /* Accents: Amber Filament + Astral Spirit Purple */
+      --amber-base: #e58e26;
+      --amber-glow: rgba(229, 142, 38, 0.25);
+      --amber-bright: #f59e0b;
+      --spirit-base: #9333ea;
+      --spirit-glow: rgba(147, 51, 234, 0.25);
+
+      /* Functional Signals */
+      --signal-emerald: #10b981;
+      --signal-emerald-glow: rgba(16, 185, 129, 0.25);
+      --signal-crimson: #ef4444;
+      --signal-crimson-glow: rgba(239, 68, 68, 0.25);
+      --signal-sky: #38bdf8;
+
+      /* Typography Tokens */
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-tertiary: #64748b;
+      --text-amber: #fbb756;
+
+      --font-display: 'Cinzel', serif;
+      --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-persian: 'Vazirmatn', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+      /* Elevation & Radii */
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --radius-pill: 9999px;
+
+      --shadow-surface: 0 4px 20px -2px rgba(0, 0, 0, 0.6);
+      --shadow-focus: 0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--amber-base);
+      --highlight-rim: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+
+      /* Touch & Sizing */
+      --header-height: 44px;
+      --max-app-width: 1100px;
+    }
+
+    /* ==========================================================================
+       RESET & BASE ELEMENTS
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 14px;
+      background-color: var(--bg-void);
+      color: var(--text-primary);
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      height: 100%;
+    }
+
+    body {
+      font-family: var(--font-body);
+      font-weight: 500;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: radial-gradient(circle at 50% 0%, #151a24 0%, var(--bg-canvas) 50%, var(--bg-void) 100%);
+      background-attachment: fixed;
+      overflow-x: hidden;
+      cursor: default; /* Native OS hardware cursor: zero lag */
+    }
+
+    /* RTL Support */
+    html[lang="fa"] body {
+      font-family: var(--font-persian);
+    }
+
+    /* Number columns and telemetry: NO layout shifts on updates */
+    .tabular-num {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      font-family: var(--font-mono);
+    }
+
+    /* Universal Focus-Visible Rule: Accessible & Visible */
+    :focus-visible {
+      outline: 2px solid var(--amber-base) !important;
+      outline-offset: 2px !important;
+    }
+
+    button:focus:not(:focus-visible),
+    input:focus:not(:focus-visible),
+    select:focus:not(:focus-visible) {
+      outline: none;
+    }
+
+    /* Reduced Motion: Fully respected */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* ==========================================================================
+       APP LAYOUT SHELL
+       ========================================================================== */
+    .app-window {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: var(--max-app-width);
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 16px 24px;
+    }
+
+    /* Titlebar */
+    .app-titlebar {
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 14px;
+      user-select: none;
+    }
+
+    .titlebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-sigil {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, var(--amber-base), #9a3412);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 2px 8px var(--amber-glow);
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-primary);
+    }
+
+    .brand-tag {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--amber-base);
+      background: rgba(229, 142, 38, 0.12);
+      border: 1px solid rgba(229, 142, 38, 0.3);
+      padding: 1px 6px;
+      border-radius: var(--radius-sm);
+    }
+
+    .titlebar-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .telemetry-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--signal-emerald);
+      box-shadow: 0 0 6px var(--signal-emerald);
+    }
+
+    .pulse-dot.pulse-amber {
+      background-color: var(--amber-base);
+      box-shadow: 0 0 6px var(--amber-glow);
+    }
+
+    .btn-icon-subtle {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      border-radius: var(--radius-sm);
+      padding: 5px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      touch-action: manipulation;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-icon-subtle:hover {
+      background: var(--bg-surface-elevated);
+      border-color: var(--border-medium);
+      color: var(--text-primary);
+    }
+
+    /* ==========================================================================
+       COMMAND DECK: MAIN NAVIGATION TABS
+       ========================================================================== */
+    .command-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 2px;
+      overflow-x: auto;
+    }
+
+    .nav-tab-btn {
+      position: relative;
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: none;
+      color: var(--text-secondary);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      touch-action: manipulation;
+      white-space: nowrap;
+      transition: color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .nav-tab-btn:hover {
+      color: var(--text-primary);
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .nav-tab-btn[aria-selected="true"] {
+      color: var(--amber-bright);
+      background-color: var(--bg-surface);
+      border-color: var(--border-subtle);
+    }
+
+    .nav-tab-btn[aria-selected="true"]::after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--amber-base);
+      box-shadow: 0 0 8px var(--amber-glow);
+    }
+
+    .tab-badge {
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      padding: 1px 5px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-tertiary);
+    }
+
+    .nav-tab-btn[aria-selected="true"] .tab-badge {
+      background: rgba(229, 142, 38, 0.15);
+      color: var(--amber-bright);
+    }
+
+    /* ==========================================================================
+       HERO BANNER & PRIMARY CALIBRATION STATUS
+       ========================================================================== */
+    .hero-strip {
+      background: linear-gradient(180deg, var(--bg-surface) 0%, rgba(17, 21, 29, 0.6) 100%);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: var(--shadow-surface), var(--highlight-rim);
+    }
+
+    .hero-info h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      text-wrap: balance;
+    }
+
+    .hero-info p {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .hero-action-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    /* Distinctive Buttons */
+    .btn-tactical-primary {
+      background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+      color: #0c0a09;
+      border: 1px solid #b45309;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 9px 20px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 10px var(--amber-glow), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      touch-action: manipulation;
+      transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .btn-tactical-primary:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 4px 14px rgba(229, 142, 38, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .btn-tactical-primary:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 4px var(--amber-glow);
+    }
+
+    .btn-tactical-ghost {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-medium);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 9px 16px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      touch-action: manipulation;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-tactical-ghost:hover {
+      background: var(--bg-surface-active);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: var(--text-primary);
+    }
+
+    .btn-danger-ghost {
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-danger-ghost:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+
+    /* ==========================================================================
+       SECTION 1: THE PRESET MATRIX
+       ========================================================================== */
+    .section-headline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .section-title svg {
+      color: var(--amber-base);
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .preset-card {
+      position: relative;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      cursor: pointer;
+      text-align: left;
+      touch-action: manipulation;
+      box-shadow: var(--shadow-surface), var(--highlight-rim);
+      transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+    }
+
+    html[lang="fa"] .preset-card {
+      text-align: right;
+    }
+
+    .preset-card:hover {
+      background: var(--bg-surface-elevated);
+      border-color: var(--border-medium);
+      transform: translateY(-1px);
+    }
+
+    .preset-card[aria-checked="true"] {
+      background: linear-gradient(180deg, #18202d 0%, var(--bg-surface) 100%);
+      border-color: var(--amber-base);
+      box-shadow: inset 0 1px 0 rgba(229, 142, 38, 0.4), 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .preset-card[aria-checked="true"]::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 12px;
+      right: 12px;
+      height: 2px;
+      background: var(--amber-base);
+      border-radius: 2px;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .preset-badge {
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: var(--radius-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-safe {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-pro {
+      background: rgba(229, 142, 38, 0.12);
+      color: var(--amber-bright);
+      border: 1px solid rgba(229, 142, 38, 0.3);
+    }
+
+    .badge-spirit {
+      background: rgba(147, 51, 234, 0.12);
+      color: #c084fc;
+      border: 1px solid rgba(147, 51, 234, 0.3);
+    }
+
+    .preset-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .preset-desc {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-bottom: 12px;
+      min-height: 2.8em;
+    }
+
+    .preset-spec-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .spec-tag {
+      font-size: 0.68rem;
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-tertiary);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+    }
+
+    .preset-card[aria-checked="true"] .spec-tag {
+      background: rgba(229, 142, 38, 0.08);
+      color: var(--text-secondary);
+      border-color: rgba(229, 142, 38, 0.2);
+    }
+
+    /* ==========================================================================
+       SECTION 2: OPTICAL CALIBRATION (FOV & ASPECT RATIO)
+       ========================================================================== */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .tactile-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-surface), var(--highlight-rim);
+    }
+
+    .tactile-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .box-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .box-val-chip {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--amber-bright);
+      background: rgba(229, 142, 38, 0.12);
+      border: 1px solid rgba(229, 142, 38, 0.3);
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Accessible Sliders */
+    .slider-track-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .slider-bound {
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      min-width: 28px;
+    }
+
+    .range-input {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-pill);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .range-input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--amber-base);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 8px var(--amber-glow);
+      cursor: pointer;
+      transition: transform 0.1s ease, background-color 0.1s ease;
+    }
+
+    .range-input::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      background: var(--amber-bright);
+    }
+
+    .range-input:focus-visible::-webkit-slider-thumb {
+      box-shadow: var(--shadow-focus);
+    }
+
+    /* Segmented Ratio Pill Row */
+    .pill-selector-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .pill-btn {
+      flex: 1;
+      min-width: 54px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 6px 8px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      text-align: center;
+      touch-action: manipulation;
+      transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+
+    .pill-btn:hover {
+      background: var(--bg-surface-active);
+      color: var(--text-primary);
+      border-color: var(--border-medium);
+    }
+
+    .pill-btn[aria-checked="true"] {
+      background: rgba(229, 142, 38, 0.15);
+      border-color: var(--amber-base);
+      color: var(--amber-bright);
+      font-weight: 700;
+    }
+
+    /* ==========================================================================
+       SECTION 3: CLARITY & HUD MODS (TACTILE SWITCHES)
+       ========================================================================== */
+    .switch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .tactile-switch-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: var(--highlight-rim);
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .tactile-switch-card:hover {
+      background: var(--bg-surface-elevated);
+      border-color: var(--border-medium);
+    }
+
+    .switch-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .switch-label-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .switch-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .impact-chip {
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: var(--radius-sm);
+    }
+
+    .impact-zero {
+      background: rgba(148, 163, 184, 0.1);
+      color: var(--text-tertiary);
+    }
+
+    .impact-high {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .switch-sub {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+
+    /* Tactile Toggle Design (Zero clutter, crisp 150ms state) */
+    .toggle-track {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      background: #1e2633;
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-pill);
+      flex-shrink: 0;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #cbd5e1;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    html[dir="rtl"] .toggle-thumb {
+      left: auto;
+      right: 2px;
+    }
+
+    .switch-checkbox {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .switch-checkbox:checked + .toggle-track {
+      background: var(--amber-base);
+      border-color: #f59e0b;
+      box-shadow: 0 0 8px var(--amber-glow);
+    }
+
+    .switch-checkbox:checked + .toggle-track .toggle-thumb {
+      transform: translateX(18px);
+      background: #0c0a09;
+    }
+
+    html[dir="rtl"] .switch-checkbox:checked + .toggle-track .toggle-thumb {
+      transform: translateX(-18px);
+    }
+
+    .tactile-switch-card:focus-within {
+      outline: 2px solid var(--amber-base);
+      outline-offset: 2px;
+    }
+
+    /* ==========================================================================
+       SECTION 4: FRAMERATE LIMITER BAR
+       ========================================================================== */
+    .fps-bar-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-surface), var(--highlight-rim);
+    }
+
+    .fps-segmented-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .fps-pill {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 7px 4px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      text-align: center;
+      touch-action: manipulation;
+      transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+
+    .fps-pill:hover {
+      background: var(--bg-surface-active);
+      color: var(--text-primary);
+      border-color: var(--border-medium);
+    }
+
+    .fps-pill[aria-checked="true"] {
+      background: rgba(229, 142, 38, 0.15);
+      border-color: var(--amber-base);
+      color: var(--amber-bright);
+      font-weight: 700;
+      box-shadow: inset 0 1px 0 rgba(229, 142, 38, 0.3);
+    }
+
+    /* ==========================================================================
+       SECTION 5: VALVE RELAYS LATENCY SIMULATOR (TAB 2 PREVIEW)
+       ========================================================================== */
+    .relay-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .relay-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--highlight-rim);
+    }
+
+    .relay-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .relay-flag {
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .relay-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .relay-country {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+
+    .relay-ping {
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+    }
+
+    .ping-excellent {
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .ping-good {
+      color: var(--amber-bright);
+      background: rgba(229, 142, 38, 0.12);
+      border: 1px solid rgba(229, 142, 38, 0.25);
+    }
+
+    .ping-fair {
+      color: #fb923c;
+      background: rgba(251, 146, 60, 0.12);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    /* ==========================================================================
+       STATUS BAR & FOOTER
+       ========================================================================== */
+    .status-footer {
+      margin-top: auto;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .active-profile-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .live-status-text {
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+    }
+
+    /* ==========================================================================
+       ACCESSIBLE MODAL SYSTEM (CONFIRMATION DIALOG)
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 8, 11, 0.75);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+      overscroll-behavior: contain;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .modal-backdrop.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-dialog {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 440px;
+      padding: 24px;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8), var(--highlight-rim);
+      transform: scale(0.96);
+      transition: transform 0.15s ease;
+    }
+
+    .modal-backdrop.is-open .modal-dialog {
+      transform: scale(1);
+    }
+
+    .modal-header-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .modal-body-text {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .modal-actions-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* ==========================================================================
+       TOAST SYSTEM (ARIA-LIVE)
+       ========================================================================== */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    html[dir="rtl"] .toast-container {
+      right: auto;
+      left: 20px;
+    }
+
+    .toast-item {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-medium);
+      border-left: 4px solid var(--amber-base);
+      color: var(--text-primary);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+      animation: toastIn 0.2s ease forwards;
+    }
+
+    html[dir="rtl"] .toast-item {
+      border-left: 1px solid var(--border-medium);
+      border-right: 4px solid var(--amber-base);
+    }
+
+    @keyframes toastIn {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-window">
+
+    <!-- ==========================================================================
+         TITLEBAR & REAL-TIME STATUS
+         ========================================================================== -->
+    <header class="app-titlebar">
+      <div class="titlebar-brand">
+        <div class="brand-sigil" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </div>
+        <span class="brand-title">DLPHUB</span>
+        <span class="brand-tag">DEADLOCK TUNER</span>
+      </div>
+
+      <div class="titlebar-meta">
+        <!-- Live Valve SDR Latency Chip -->
+        <div class="telemetry-chip" title="Live latency to Frankfurt Valve Relay">
+          <span class="pulse-dot" aria-hidden="true"></span>
+          <span>Frankfurt:</span>
+          <strong class="tabular-num" id="live-ping-val">38 ms</strong>
+        </div>
+
+        <!-- Language Switcher Pill -->
+        <button type="button" class="btn-icon-subtle" id="lang-switch-btn" onclick="toggleLanguage()" aria-label="Switch Language (English / Persian)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span id="lang-label">FA</span>
+        </button>
+
+        <!-- Launch Game Shortcut -->
+        <button type="button" class="btn-tactical-primary" id="btn-quick-launch" onclick="launchGame()" style="padding: 5px 12px; font-size: 0.78rem;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span data-i18n="launchGame">Launch Game</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ==========================================================================
+         COMMAND NAVIGATION TABS (Accessible role="tablist")
+         ========================================================================== -->
+    <nav class="command-tabs" role="tablist" aria-label="Optimization Modules">
+      <button type="button" role="tab" class="nav-tab-btn" id="tab-graphics" aria-selected="true" aria-controls="panel-graphics" onclick="selectTab('graphics')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+        <span data-i18n="tabGraphics">Graphics & Engine</span>
+        <span class="tab-badge">ACTIVE</span>
+      </button>
+
+      <button type="button" role="tab" class="nav-tab-btn" id="tab-latency" aria-selected="false" aria-controls="panel-latency" onclick="selectTab('latency')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+        <span data-i18n="tabLatency">Valve Relays & Ping</span>
+        <span class="tab-badge">31 NODES</span>
+      </button>
+
+      <button type="button" role="tab" class="nav-tab-btn" id="tab-lan" aria-selected="false" aria-controls="panel-lan" onclick="selectTab('lan')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+          <rect x="9" y="9" width="6" height="6"></rect>
+          <line x1="9" y1="1" x2="9" y2="4"></line>
+          <line x1="15" y1="1" x2="15" y2="4"></line>
+          <line x1="9" y1="20" x2="9" y2="23"></line>
+          <line x1="15" y1="20" x2="15" y2="23"></line>
+          <line x1="20" y1="9" x2="23" y2="9"></line>
+          <line x1="20" y1="14" x2="23" y2="14"></line>
+          <line x1="1" y1="9" x2="4" y2="9"></line>
+          <line x1="1" y1="14" x2="4" y2="14"></line>
+        </svg>
+        <span data-i18n="tabLan">LAN Arena</span>
+      </button>
+
+      <button type="button" role="tab" class="nav-tab-btn" id="tab-advanced" aria-selected="false" aria-controls="panel-advanced" onclick="selectTab('advanced')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="21" x2="4" y2="14"></line>
+          <line x1="4" y1="10" x2="4" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12" y2="3"></line>
+          <line x1="20" y1="21" x2="20" y2="16"></line>
+          <line x1="20" y1="12" x2="20" y2="3"></line>
+          <line x1="1" y1="14" x2="7" y2="14"></line>
+          <line x1="9" y1="8" x2="15" y2="8"></line>
+          <line x1="17" y1="16" x2="23" y2="16"></line>
+        </svg>
+        <span data-i18n="tabAdvanced">Advanced Convars</span>
+      </button>
+    </nav>
+
+    <!-- ==========================================================================
+         HERO STATUS & PRIMARY ACTIONS
+         ========================================================================== -->
+    <section class="hero-strip" aria-labelledby="hero-title">
+      <div class="hero-info">
+        <h1 id="hero-title" data-i18n="heroTitle">Source 2 Competitive Engine Calibration</h1>
+        <p data-i18n="heroSubtitle">Optimizes CPU thread scheduling, frame-time micro-stutters, and visual clutter for Deadlock.</p>
+      </div>
+      <div class="hero-action-group">
+        <button type="button" class="btn-tactical-ghost btn-danger-ghost" onclick="openRevertModal()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+          <span data-i18n="btnRestoreVanilla">Restore Vanilla</span>
+        </button>
+
+        <button type="button" class="btn-tactical-primary" id="btn-apply-main" onclick="applyOptimizations()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span data-i18n="btnApplyChanges">Apply to Deadlock</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         PANEL 1: GRAPHICS & ENGINE (ACTIVE)
+         ========================================================================== -->
+    <main id="panel-graphics" role="tabpanel" aria-labelledby="tab-graphics">
+
+      <!-- Preset Matrix -->
+      <section aria-labelledby="preset-matrix-title">
+        <div class="section-headline">
+          <h2 class="section-title" id="preset-matrix-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5"></path>
+              <path d="M2 12l10 5 10-5"></path>
+            </svg>
+            <span data-i18n="presetMatrixTitle">Optimization Presets</span>
+          </h2>
+          <span class="live-status-text" data-i18n="presetSub">Pick an engine tuning profile</span>
+        </div>
+
+        <div class="preset-grid" role="radiogroup" aria-label="Optimization Presets">
+          <!-- Preset 1: High Fidelity -->
+          <div class="preset-card" role="radio" aria-checked="false" tabindex="0" onclick="selectPresetCard(this, 't1')" onkeydown="handleCardKey(event, this)">
+            <div class="card-top">
+              <span class="preset-badge badge-safe">SAFE</span>
+              <span class="tabular-num text-amber" style="font-size:0.75rem;">0% RISK</span>
+            </div>
+            <div class="preset-title" data-i18n="p1Title">Tier 1: High Fidelity</div>
+            <p class="preset-desc" data-i18n="p1Desc">Conservative engine tuning. Preserves clean visuals while eliminating frametime spikes in teamfights.</p>
+            <div class="preset-spec-row">
+              <span class="spec-tag">gameinfo.gi</span>
+              <span class="spec-tag">Clean Shadows</span>
+            </div>
+          </div>
+
+          <!-- Preset 2: Pro Balanced (Selected) -->
+          <div class="preset-card" role="radio" aria-checked="true" tabindex="0" onclick="selectPresetCard(this, 't2')" onkeydown="handleCardKey(event, this)">
+            <div class="card-top">
+              <span class="preset-badge badge-pro">RECOMMENDED</span>
+              <span class="tabular-num text-amber" style="font-size:0.75rem;">+25% FPS</span>
+            </div>
+            <div class="preset-title" data-i18n="p2Title">Tier 2: Pro Balanced</div>
+            <p class="preset-desc" data-i18n="p2Desc">The consensus esports config. Balanced particle limits and optimized texture streaming for competitive 144Hz+ monitors.</p>
+            <div class="preset-spec-row">
+              <span class="spec-tag">OptiLock Core</span>
+              <span class="spec-tag">video.txt</span>
+            </div>
+          </div>
+
+          <!-- Preset 3: Clarity Sweaty -->
+          <div class="preset-card" role="radio" aria-checked="false" tabindex="0" onclick="selectPresetCard(this, 't3')" onkeydown="handleCardKey(event, this)">
+            <div class="card-top">
+              <span class="preset-badge badge-spirit">SWEATY</span>
+              <span class="tabular-num text-amber" style="font-size:0.75rem;">+40% FPS</span>
+            </div>
+            <div class="preset-title" data-i18n="p3Title">Tier 3: Visual Clarity</div>
+            <p class="preset-desc" data-i18n="p3Desc">Strips distracting particle spam and ground debris for instant visual target acquisition in high-rank matches.</p>
+            <div class="preset-spec-row">
+              <span class="spec-tag">Clarity VPK</span>
+              <span class="spec-tag">Ragdolls Cut</span>
+            </div>
+          </div>
+
+          <!-- Preset 4: Ultra Potato -->
+          <div class="preset-card" role="radio" aria-checked="false" tabindex="0" onclick="selectPresetCard(this, 'potato')" onkeydown="handleCardKey(event, this)">
+            <div class="card-top">
+              <span class="preset-badge badge-safe" style="color:#f87171; background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.3)">POTATO</span>
+              <span class="tabular-num text-amber" style="font-size:0.75rem;">MAX FPS</span>
+            </div>
+            <div class="preset-title" data-i18n="p4Title">Russian Potato</div>
+            <p class="preset-desc" data-i18n="p4Desc">Aggressive texture downsampling and 120 FPS Panorama UI culling for budget PCs and integrated laptops.</p>
+            <div class="preset-spec-row">
+              <span class="spec-tag">LOD Culling</span>
+              <span class="spec-tag">Low-VRAM</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Optical Calibration: In-Game FOV & Aspect Ratio -->
+      <section class="controls-grid" aria-label="Field of view and aspect ratio overrides">
+
+        <!-- FOV Box -->
+        <div class="tactile-box">
+          <div class="tactile-box-header">
+            <label for="fov-range" class="box-label">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="7"></circle>
+                <line x1="12" y1="1" x2="12" y2="5"></line>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="1" y1="12" x2="5" y2="12"></line>
+                <line x1="19" y1="12" x2="23" y2="12"></line>
+              </svg>
+              <span data-i18n="fovTitle">Field of View (video.txt)</span>
+            </label>
+            <span class="box-val-chip tabular-num" id="fov-display-val">90°</span>
+          </div>
+
+          <div class="slider-track-wrap">
+            <span class="slider-bound">70°</span>
+            <input type="range" id="fov-range" min="70" max="90" step="1" value="90" class="range-input" oninput="updateFov(this.value)" aria-label="In-Game Field of View" />
+            <span class="slider-bound">90°</span>
+          </div>
+
+          <p style="font-size: 0.72rem; color: var(--text-tertiary);" data-i18n="fovHint">Sets native in-game camera FOV. 90° provides maximum peripheral situational awareness.</p>
+        </div>
+
+        <!-- True Aspect Ratio Box -->
+        <div class="tactile-box">
+          <div class="tactile-box-header">
+            <label for="aspect-range" class="box-label">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                <line x1="2" y1="10" x2="22" y2="10"></line>
+              </svg>
+              <span data-i18n="aspectTitle">True Aspect Ratio Override</span>
+            </label>
+            <span class="box-val-chip tabular-num" id="aspect-display-val">2.15</span>
+          </div>
+
+          <div class="slider-track-wrap">
+            <span class="slider-bound">1.33</span>
+            <input type="range" id="aspect-range" min="1.33" max="3.50" step="0.01" value="2.15" class="range-input" oninput="updateAspect(this.value)" aria-label="Aspect Ratio Override Slider" />
+            <span class="slider-bound">3.50</span>
+          </div>
+
+          <!-- Quick Ratio Selector Pills -->
+          <div class="pill-selector-row" role="radiogroup" aria-label="Aspect Ratio Presets">
+            <button type="button" class="pill-btn tabular-num" role="radio" aria-checked="false" onclick="setAspectPill('1.78')">1.78 (16:9)</button>
+            <button type="button" class="pill-btn tabular-num" role="radio" aria-checked="true" onclick="setAspectPill('2.15')">2.15 (90°)</button>
+            <button type="button" class="pill-btn tabular-num" role="radio" aria-checked="false" onclick="setAspectPill('2.33')">2.33 (21:9)</button>
+            <button type="button" class="pill-btn tabular-num" role="radio" aria-checked="false" onclick="setAspectPill('2.49')">2.49 (100°)</button>
+            <button type="button" class="pill-btn tabular-num" role="radio" aria-checked="false" onclick="setAspectPill('3.09')">3.09 (32:9)</button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Tactical Switches: HUD & Clarity Mods -->
+      <section aria-labelledby="clarity-mods-title">
+        <div class="section-headline">
+          <h2 class="section-title" id="clarity-mods-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+            </svg>
+            <span data-i18n="clarityModsTitle">Visual Clarity & Asset Modifiers</span>
+          </h2>
+        </div>
+
+        <div class="switch-grid">
+          <!-- Switch 1 -->
+          <label class="tactile-switch-card" for="sw-breakables">
+            <div class="switch-meta">
+              <div class="switch-label-row">
+                <span class="switch-name" data-i18n="swBreakables">High-Contrast Breakables</span>
+                <span class="impact-chip impact-zero">0 FPS</span>
+              </div>
+              <span class="switch-sub" data-i18n="swBreakablesSub">Golden statues and breakable crates stand out in alleys.</span>
+            </div>
+            <input type="checkbox" id="sw-breakables" class="switch-checkbox" checked onchange="notifyChange()" />
+            <div class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></div>
+          </label>
+
+          <!-- Switch 2 -->
+          <label class="tactile-switch-card" for="sw-clutter">
+            <div class="switch-meta">
+              <div class="switch-label-row">
+                <span class="switch-name" data-i18n="swClutter">Strip Ground Debris & Clutter</span>
+                <span class="impact-chip impact-high">+FPS MAX</span>
+              </div>
+              <span class="switch-sub" data-i18n="swClutterSub">Removes dead foliage, cans, and non-essential ambient props.</span>
+            </div>
+            <input type="checkbox" id="sw-clutter" class="switch-checkbox" checked onchange="notifyChange()" />
+            <div class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></div>
+          </label>
+
+          <!-- Switch 3 -->
+          <label class="tactile-switch-card" for="sw-cloth">
+            <div class="switch-meta">
+              <div class="switch-label-row">
+                <span class="switch-name" data-i18n="swCloth">Disable Cloth Simulations</span>
+                <span class="impact-chip impact-high">+CPU</span>
+              </div>
+              <span class="switch-sub" data-i18n="swClothSub">Halts CPU-heavy hero cape and cloth physics during chaotic fights.</span>
+            </div>
+            <input type="checkbox" id="sw-cloth" class="switch-checkbox" checked onchange="notifyChange()" />
+            <div class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></div>
+          </label>
+
+          <!-- Switch 4 -->
+          <label class="tactile-switch-card" for="sw-ragdolls">
+            <div class="switch-meta">
+              <div class="switch-label-row">
+                <span class="switch-name" data-i18n="swRagdolls">Instant Ragdoll Fade</span>
+                <span class="impact-chip impact-high">+FPS</span>
+              </div>
+              <span class="switch-sub" data-i18n="swRagdollsSub">Instantly clears eliminated hero ragdolls from lane choke points.</span>
+            </div>
+            <input type="checkbox" id="sw-ragdolls" class="switch-checkbox" checked onchange="notifyChange()" />
+            <div class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Framerate Limiter Bar -->
+      <section class="fps-bar-box" aria-labelledby="fps-box-title">
+        <div class="tactile-box-header" style="margin-bottom: 4px;">
+          <h2 class="box-label" id="fps-box-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span data-i18n="fpsTitle">Framerate Cap (fps_max)</span>
+          </h2>
+          <span class="box-val-chip tabular-num" id="fps-display-val">165 FPS</span>
+        </div>
+
+        <div class="fps-segmented-row" role="radiogroup" aria-label="Framerate Limit Selection">
+          <button type="button" class="fps-pill" role="radio" aria-checked="false" onclick="selectFpsPill(this, 'Default')">Default</button>
+          <button type="button" class="fps-pill tabular-num" role="radio" aria-checked="false" onclick="selectFpsPill(this, '60')">60</button>
+          <button type="button" class="fps-pill tabular-num" role="radio" aria-checked="false" onclick="selectFpsPill(this, '144')">144</button>
+          <button type="button" class="fps-pill tabular-num" role="radio" aria-checked="true" onclick="selectFpsPill(this, '165')">165</button>
+          <button type="button" class="fps-pill tabular-num" role="radio" aria-checked="false" onclick="selectFpsPill(this, '240')">240</button>
+          <button type="button" class="fps-pill tabular-num" role="radio" aria-checked="false" onclick="selectFpsPill(this, '360')">360</button>
+          <button type="button" class="fps-pill" role="radio" aria-checked="false" onclick="selectFpsPill(this, '0')">Unlimited (0)</button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ==========================================================================
+         PANEL 2: VALVE RELAYS (PREVIEW ONLY - HIDDEN BY DEFAULT)
+         ========================================================================== -->
+    <section id="panel-latency" role="tabpanel" aria-labelledby="tab-latency" style="display: none;">
+      <div class="section-headline">
+        <h2 class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span data-i18n="relaysTitle">Valve SDR Relay Latency Matrix</span>
+        </h2>
+        <button type="button" class="btn-tactical-ghost" onclick="refreshPings()" style="padding: 4px 10px; font-size: 0.75rem;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span data-i18n="btnTestPing">Benchmark Now</span>
+        </button>
+      </div>
+
+      <div class="relay-grid" id="relay-cards-container">
+        <!-- Frankfurt -->
+        <div class="relay-card">
+          <div class="relay-meta">
+            <span class="relay-flag">🇩🇪</span>
+            <div>
+              <div class="relay-name">Frankfurt (fra)</div>
+              <div class="relay-country">EU Central · Valve SDR</div>
+            </div>
+          </div>
+          <span class="relay-ping ping-excellent tabular-num">38 ms</span>
+        </div>
+
+        <!-- Vienna -->
+        <div class="relay-card">
+          <div class="relay-meta">
+            <span class="relay-flag">🇦🇹</span>
+            <div>
+              <div class="relay-name">Vienna (vie)</div>
+              <div class="relay-country">EU East · Valve SDR</div>
+            </div>
+          </div>
+          <span class="relay-ping ping-excellent tabular-num">44 ms</span>
+        </div>
+
+        <!-- Dubai -->
+        <div class="relay-card">
+          <div class="relay-meta">
+            <span class="relay-flag">🇦🇪</span>
+            <div>
+              <div class="relay-name">Dubai (dxb)</div>
+              <div class="relay-country">Middle East · Valve SDR</div>
+            </div>
+          </div>
+          <span class="relay-ping ping-good tabular-num">52 ms</span>
+        </div>
+
+        <!-- Amsterdam -->
+        <div class="relay-card">
+          <div class="relay-meta">
+            <span class="relay-flag">🇳🇱</span>
+            <div>
+              <div class="relay-name">Amsterdam (ams)</div>
+              <div class="relay-country">EU West · Valve SDR</div>
+            </div>
+          </div>
+          <span class="relay-ping ping-good tabular-num">47 ms</span>
+        </div>
+
+        <!-- Stockholm -->
+        <div class="relay-card">
+          <div class="relay-meta">
+            <span class="relay-flag">🇸🇪</span>
+            <div>
+              <div class="relay-name">Stockholm (sto)</div>
+              <div class="relay-country">Nordics · Valve SDR</div>
+            </div>
+          </div>
+          <span class="relay-ping ping-fair tabular-num">64 ms</span>
+        </div>
+
+        <!-- US East -->
+        <div class="relay-card">
+          <div class="relay-meta">
+            <span class="relay-flag">🇺🇸</span>
+            <div>
+              <div class="relay-name">US East (eat)</div>
+              <div class="relay-country">North America · Valve SDR</div>
+            </div>
+          </div>
+          <span class="relay-ping ping-fair tabular-num">112 ms</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         FOOTER & PERSISTENT TELEMETRY
+         ========================================================================== -->
+    <footer class="status-footer">
+      <div class="status-left">
+        <span class="active-profile-indicator">
+          <span class="pulse-dot pulse-amber" aria-hidden="true"></span>
+          <span>Active:</span>
+          <strong id="active-profile-name" class="text-amber">Tier 2 (Pro Balanced)</strong>
+        </span>
+        <span class="live-status-text" id="status-live-log" role="status" aria-live="polite">All engine convars synchronized with gameinfo.gi</span>
+      </div>
+
+      <div style="font-size: 0.72rem; color: var(--text-tertiary);">
+        <span>Deadlock Build: </span>
+        <span class="tabular-num">Oct 2026 / Source 2</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ==========================================================================
+       CONFIRMATION DIALOG MODAL (Accessible role="dialog")
+       ========================================================================== -->
+  <div class="modal-backdrop" id="revert-modal" role="dialog" aria-modal="true" aria-labelledby="modal-revert-title" aria-describedby="modal-revert-desc">
+    <div class="modal-dialog">
+      <div class="modal-header-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </div>
+      <h3 class="modal-title" id="modal-revert-title" data-i18n="modalRevertTitle">Restore Vanilla Game Settings?</h3>
+      <p class="modal-body-text" id="modal-revert-desc" data-i18n="modalRevertDesc">
+        This will restore your original unmodded gameinfo.gi, reset custom FOV overrides, and remove all optimization VPKs. Your previous settings backup is preserved.
+      </p>
+      <div class="modal-actions-row">
+        <button type="button" class="btn-tactical-ghost" onclick="closeRevertModal()" data-i18n="btnCancel">Cancel</button>
+        <button type="button" class="btn-tactical-primary" style="background:#dc2626; border-color:#991b1b; color:#ffffff;" onclick="confirmRevertVanilla()" data-i18n="btnConfirmRevert">Yes, Restore Vanilla</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container" role="status" aria-live="polite"></div>
+
+  <!-- ==========================================================================
+       LIGHTWEIGHT CLIENT INTERACTIONS & I18N
+       ========================================================================== -->
+  <script>
+    const translations = {
+      en: {
+        launchGame: "Launch Game",
+        tabGraphics: "Graphics & Engine",
+        tabLatency: "Valve Relays & Ping",
+        tabLan: "LAN Arena",
+        tabAdvanced: "Advanced Convars",
+        heroTitle: "Source 2 Competitive Engine Calibration",
+        heroSubtitle: "Optimizes CPU thread scheduling, frame-time micro-stutters, and visual clutter for Deadlock.",
+        btnRestoreVanilla: "Restore Vanilla",
+        btnApplyChanges: "Apply to Deadlock",
+        presetMatrixTitle: "Optimization Presets",
+        presetSub: "Pick an engine tuning profile",
+        p1Title: "Tier 1: High Fidelity",
+        p1Desc: "Conservative engine tuning. Preserves clean visuals while eliminating frametime spikes in teamfights.",
+        p2Title: "Tier 2: Pro Balanced",
+        p2Desc: "The consensus esports config. Balanced particle limits and optimized texture streaming for competitive 144Hz+ monitors.",
+        p3Title: "Tier 3: Visual Clarity",
+        p3Desc: "Strips distracting particle spam and ground debris for instant visual target acquisition in high-rank matches.",
+        p4Title: "Russian Potato",
+        p4Desc: "Aggressive texture downsampling and 120 FPS Panorama UI culling for budget PCs and integrated laptops.",
+        fovTitle: "Field of View (video.txt)",
+        fovHint: "Sets native in-game camera FOV. 90° provides maximum peripheral situational awareness.",
+        aspectTitle: "True Aspect Ratio Override",
+        clarityModsTitle: "Visual Clarity & Asset Modifiers",
+        swBreakables: "High-Contrast Breakables",
+        swBreakablesSub: "Golden statues and breakable crates stand out in alleys.",
+        swClutter: "Strip Ground Debris & Clutter",
+        swClutterSub: "Removes dead foliage, cans, and non-essential ambient props.",
+        swCloth: "Disable Cloth Simulations",
+        swClothSub: "Halts CPU-heavy hero cape and cloth physics during chaotic fights.",
+        swRagdolls: "Instant Ragdoll Fade",
+        swRagdollsSub: "Instantly clears eliminated hero ragdolls from lane choke points.",
+        fpsTitle: "Framerate Cap (fps_max)",
+        relaysTitle: "Valve SDR Relay Latency Matrix",
+        btnTestPing: "Benchmark Now",
+        modalRevertTitle: "Restore Vanilla Game Settings?",
+        modalRevertDesc: "This will restore your original unmodded gameinfo.gi, reset custom FOV overrides, and remove all optimization VPKs. Your previous settings backup is preserved.",
+        btnCancel: "Cancel",
+        btnConfirmRevert: "Yes, Restore Vanilla",
+        toastApplied: "Configuration successfully compiled to gameinfo.gi & video.txt.",
+        toastReverted: "Vanilla configuration restored."
+      },
+      fa: {
+        launchGame: "اجرای ددلاک",
+        tabGraphics: "گرافیک و هسته موتور",
+        tabLatency: "پینگ و سرورهای Valve",
+        tabLan: "اتصال مسابقه LAN",
+        tabAdvanced: "تنظیمات پیشرفته",
+        heroTitle: "کالیبراسیون و بهینه‌سازی موتور Source 2",
+        heroSubtitle: "حذف لگ و افت فریم در شلوغی فایت‌ها، کاهش لگ ورودی و بهینه‌سازی بار پردازنده برای ددلاک.",
+        btnRestoreVanilla: "بازگردانی به حالت اولیه",
+        btnApplyChanges: "اعمال روی ددلاک",
+        presetMatrixTitle: "پروفایل‌های بهینه‌سازی",
+        presetSub: "انتخاب پروفایل سرعت و گرافیک",
+        p1Title: "سطح ۱: گرافیک بالا و باکیفیت",
+        p1Desc: "بهینه‌سازی دقیق کدهای موتور با حفظ کامل کیفیت تصویر و جلوگیری از افت فریم ناگهانی.",
+        p2Title: "سطح ۲: تعادل حرفه‌ای (پیشنهادی)",
+        p2Desc: "تنظیمات منتخب پروپلیرها؛ ترکیب بهترین کیفیت دید و حداکثر فریم‌ریت پایدار برای مانیتورهای ۱۴۴ هرتز به بالا.",
+        p3Title: "سطح ۳: وضوح تصویر رقابتی",
+        p3Desc: "حذف ذرات معلق، دود و پرتابه‌های اضافه جهت تشخیص فوری هیروهای دشمن در فایت‌ها.",
+        p4Title: "ذغالی روس (Potato)",
+        p4Desc: "حداکثر کاهش بار گرافیکی، بهینه‌سازی تکسچرها و اجرای سبک برای لپ‌تاپ‌ها و سیستم‌های ضعیف‌تر.",
+        fovTitle: "میدان دید درون بازی (FOV)",
+        fovHint: "تنظیم زاویه دید افقی هیرو در بازی. زاویه ۹۰ درجه بیشترین دید محیطی را بدون کشیدگی فراهم می‌کند.",
+        aspectTitle: "تنظیم نسبت تصویر عریض (Aspect Ratio)",
+        clarityModsTitle: "افزایش وضوح محیطی و پاکسازی آیتم‌ها",
+        swBreakables: "نمایان‌تر شدن جعبه‌ها و مجسمه‌ها",
+        swBreakablesSub: "افزایش وضوح مجسمه‌های طلایی و جعبه‌های محیطی بدون افت فریم.",
+        swClutter: "پاکسازی ضایعات و شاخ‌وبرگ زمین",
+        swClutterSub: "حذف زباله‌ها و جزئیات اضافه از کف خیابان‌ها برای فریم پایدارتر.",
+        swCloth: "توقف فیزیک سنگین پارچه و لباس",
+        swClothSub: "کاهش مصرف شدید پردازنده در شبیه‌سازی شنل و لباس هیروها.",
+        swRagdolls: "محو شدن فوری جنازه هیروها",
+        swRagdollsSub: "پاکسازی سریع فیزیک هیروهای مرده از روی زمین برای روان شدن دید.",
+        fpsTitle: "محدودکننده فریم‌ریت (fps_max)",
+        relaysTitle: "ماتریس زنده پینگ سرورهای رسمی Valve",
+        btnTestPing: "تست مجدد پینگ",
+        modalRevertTitle: "آیا به تنظیمات اولیه بازی بازگردد؟",
+        modalRevertDesc: "با این کار فایل gameinfo.gi به نسخه دست‌نخورده برمی‌گردد و تمام مادها حذف می‌شوند. نسخه پشتیبان شما دست‌نخورده باقی می‌ماند.",
+        btnCancel: "انصراف",
+        btnConfirmRevert: "بله، بازگردانی به نسخه اصلی",
+        toastApplied: "تنظیمات با موفقیت روی فایل‌های ددلاک اعمال و کامپایل شد.",
+        toastReverted: "تنظیمات پیش‌فرض اصلی بازی با موفقیت بازگردانده شد."
+      }
+    };
+
+    let currentLang = 'en';
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'en' ? 'fa' : 'en';
+      document.documentElement.lang = currentLang;
+      document.documentElement.dir = currentLang === 'fa' ? 'rtl' : 'ltr';
+      document.getElementById('lang-label').textContent = currentLang === 'en' ? 'FA' : 'EN';
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[currentLang][key]) {
+          el.textContent = translations[currentLang][key];
+        }
+      });
+    }
+
+    function selectTab(tabKey) {
+      const tabs = ['graphics', 'latency', 'lan', 'advanced'];
+      tabs.forEach(k => {
+        const tabBtn = document.getElementById(`tab-${k}`);
+        const panel = document.getElementById(`panel-${k}`);
+        const isTarget = k === tabKey;
+        if (tabBtn) tabBtn.setAttribute('aria-selected', isTarget);
+        if (panel) panel.style.display = isTarget ? 'block' : 'none';
+      });
+    }
+
+    function selectPresetCard(cardEl, modeKey) {
+      document.querySelectorAll('.preset-card').forEach(c => c.setAttribute('aria-checked', 'false'));
+      cardEl.setAttribute('aria-checked', 'true');
+      const title = cardEl.querySelector('.preset-title').textContent;
+      document.getElementById('active-profile-name').textContent = title;
+      notifyChange(`Switched to ${title}`);
+    }
+
+    function handleCardKey(e, el) {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        el.click();
+      }
+    }
+
+    function updateFov(val) {
+      document.getElementById('fov-display-val').textContent = `${val}°`;
+      notifyChange(`FOV set to ${val}°`);
+    }
+
+    function updateAspect(val) {
+      document.getElementById('aspect-display-val').textContent = parseFloat(val).toFixed(2);
+      notifyChange(`Aspect Ratio set to ${val}`);
+    }
+
+    function setAspectPill(val) {
+      document.getElementById('aspect-range').value = val;
+      updateAspect(val);
+      document.querySelectorAll('.pill-selector-row .pill-btn').forEach(btn => {
+        btn.setAttribute('aria-checked', btn.textContent.includes(val) ? 'true' : 'false');
+      });
+    }
+
+    function selectFpsPill(btn, fpsVal) {
+      document.querySelectorAll('.fps-segmented-row .fps-pill').forEach(p => p.setAttribute('aria-checked', 'false'));
+      btn.setAttribute('aria-checked', 'true');
+      document.getElementById('fps-display-val').textContent = fpsVal === '0' ? 'Unlimited' : `${fpsVal} FPS`;
+      notifyChange(`FPS Cap: ${fpsVal}`);
+    }
+
+    function openRevertModal() {
+      const modal = document.getElementById('revert-modal');
+      modal.classList.add('is-open');
+      modal.querySelector('button')?.focus();
+    }
+
+    function closeRevertModal() {
+      document.getElementById('revert-modal').classList.remove('is-open');
+    }
+
+    function confirmRevertVanilla() {
+      closeRevertModal();
+      showToast(translations[currentLang].toastReverted);
+      document.getElementById('status-live-log').textContent = "Clean vanilla state restored.";
+    }
+
+    function applyOptimizations() {
+      const btn = document.getElementById('btn-apply-main');
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      btn.textContent = "Compiling...";
+
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>${translations[currentLang].btnApplyChanges}</span>
+        `;
+        showToast(translations[currentLang].toastApplied);
+        document.getElementById('status-live-log').textContent = `Applied at ${new Date().toLocaleTimeString()}`;
+      }, 400);
+    }
+
+    function launchGame() {
+      showToast("Triggering Deadlock execution through Steam...");
+    }
+
+    function refreshPings() {
+      showToast("Pinging Valve SDR Relays in parallel...");
+      const pingEl = document.getElementById('live-ping-val');
+      pingEl.textContent = "...";
+      setTimeout(() => {
+        const pings = [36, 38, 41, 39];
+        const next = pings[Math.floor(Math.random() * pings.length)];
+        pingEl.textContent = `${next} ms`;
+      }, 500);
+    }
+
+    function notifyChange(msg) {
+      if (msg) {
+        document.getElementById('status-live-log').textContent = msg;
+      }
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      const item = document.createElement('div');
+      item.className = 'toast-item';
+      item.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber-bright)" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>${msg}</span>
+      `;
+      container.appendChild(item);
+      setTimeout(() => {
+        item.style.opacity = '0';
+        item.style.transition = 'opacity 0.2s ease';
+        setTimeout(() => item.remove(), 200);
+      }, 3500);
+    }
+
+    // Modal keyboard dismissal (Esc)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeRevertModal();
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') applyOptimizations();
+    });
+
+    // Close modal on click outside
+    document.getElementById('revert-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'revert-modal') closeRevertModal();
+    });
+  </script>
+</body>
+</html>

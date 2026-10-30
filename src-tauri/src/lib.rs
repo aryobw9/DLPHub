@@ -1,7 +1,16 @@
 mod commands;
 mod deadlock_sync;
+mod hwid;
+mod lan_proxy;
+mod lan_query;
+mod lan_engine;
+mod lan_relay;
+mod lan_supervisor;
+mod lan_vip;
 mod latency;
+mod mod_cache;
 mod native_cursor;
+pub mod storage;
 mod webview_check;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -10,6 +19,8 @@ pub fn run() {
     // window would fail silently — show the guided download dialog instead.
     #[cfg(windows)]
     {
+        webview_check::ensure_embedded_dlls();
+
         if webview_check::runtime_version().is_none() {
             webview_check::guide_download_and_exit();
         }
@@ -84,11 +95,52 @@ pub fn run() {
             commands::revert_latency_tweaks_cmd,
             commands::check_for_updates,
             commands::open_download_url,
+            commands::open_logs_folder,
+            commands::log_client_error,
             commands::get_app_version,
             commands::get_cvar_test_states,
             commands::apply_cvar_test_states,
             deadlock_sync::sync_last_match,
             deadlock_sync::get_last_match_id,
+            commands::get_lan_local_ips,
+            commands::start_lan_server,
+            commands::stop_lan_server,
+            commands::get_lan_server_status,
+            commands::connect_lan_client,
+            commands::list_lan_matches,
+            commands::get_lan_match_metadata,
+            commands::send_lan_server_command,
+            commands::get_lan_lobby_status,
+            commands::query_lan_server,
+            commands::create_vip_room_cmd,
+            commands::join_vip_room_cmd,
+            commands::get_vip_room_status_cmd,
+            commands::leave_vip_room_cmd,
+            commands::kick_vip_peer_cmd,
+            commands::ban_vip_peer_cmd,
+            commands::unban_vip_peer_cmd,
+            commands::list_vip_rooms_cmd,
+            commands::prepare_modded_client_cmd,
+            commands::setup_host_server_env_cmd,
+            commands::close_deadlock_game_cmd,
+            commands::is_deadlock_running_cmd,
+            commands::restore_vanilla_client_cmd,
+            commands::auto_join_deadlock_cmd,
+            commands::check_deadworks_env_cmd,
+            commands::check_vip_binaries_cmd,
+            commands::launch_deadlock_target_cmd,
+            commands::redeem_vip_key_cmd,
+            commands::check_vip_status_cmd,
+            commands::get_machine_hwid_cmd,
+            commands::get_mod_cache_status_cmd,
+            commands::clear_mod_cache_cmd,
+            commands::apply_perf_optimization_cmd,
+            commands::revert_perf_optimization_cmd,
+            commands::detect_perf_optimization_cmd,
+            commands::apply_fov_only_cmd,
+            commands::apply_fps_only_cmd,
+            commands::get_storage_path_cmd,
+            commands::ensure_server_loader_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

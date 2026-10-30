@@ -1,0 +1,109 @@
+# CPlayer_ObserverServices | Deadworks API
+URL: https://docs.deadworks.net/api-reference/entities/cplayer_observerservices
+
+API Reference
+Entities
+CPlayer_ObserverServices
+On this page
+CPlayer_ObserverServices
+Observer/spectator state component on a
+CBasePlayerPawn
+.
+public
+class
+CPlayer_ObserverServices
+:
+NativeEntity
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+NativeEntity
+Source:
+Entities/CPlayer_ObserverServices.cs#L6
+Properties
+​
+CPlayer_ObserverServices.ObserverMode
+​
+The current networked observer mode.
+Signature
+public
+ObserverMode_t
+ObserverMode
+{
+get
+;
+}
+Source:
+Entities/CPlayer_ObserverServices.cs#L14
+CPlayer_ObserverServices.ObserverLastMode
+​
+The previous non-zero observer mode, restored when re-entering observer state.
+Signature
+public
+ObserverMode_t
+ObserverLastMode
+{
+get
+;
+set
+;
+}
+Source:
+Entities/CPlayer_ObserverServices.cs#L17
+CPlayer_ObserverServices.ObserverTarget
+​
+The currently observed entity, or null if no target.
+Signature
+public
+CBaseEntity
+?
+ObserverTarget
+{
+get
+;
+}
+Source:
+Entities/CPlayer_ObserverServices.cs#L23
+Methods
+​
+CPlayer_ObserverServices.IsValidObserverTarget()
+​
+Validates a candidate observer target. Checks that the target is alive and connected, isn't engine-frozen, and isn't a spectator.
+Signature
+public
+bool
+IsValidObserverTarget
+(
+CBaseEntity
+?
+target
+)
+Source:
+Entities/CPlayer_ObserverServices.cs#L34
+CPlayer_ObserverServices.SetObserverMode()
+​
+Sets the observer mode.
+Signature
+public
+void
+SetObserverMode
+(
+ObserverMode_t
+mode
+)
+Source:
+Entities/CPlayer_ObserverServices.cs#L44
+CPlayer_ObserverServices.SetObserverTarget()
+​
+Sets the observed entity. Pass null to clear.
+Signature
+public
+bool
+SetObserverTarget
+(
+CBaseEntity
+?
+target
+)
+Source:
+Entities/CPlayer_ObserverServices.cs#L51

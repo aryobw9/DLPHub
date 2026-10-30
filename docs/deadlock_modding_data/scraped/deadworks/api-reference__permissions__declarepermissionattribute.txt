@@ -1,0 +1,76 @@
+# DeclarePermissionAttribute | Deadworks API
+URL: https://docs.deadworks.net/api-reference/permissions/declarepermissionattribute
+
+API Reference
+Permissions
+DeclarePermissionAttribute
+On this page
+DeclarePermissionAttribute
+Lists a permission that is only checked in code (with
+PermissionExtensions.HasPermission
+) in the plugin's generated permissions file, so server owners can find it. Permissions on
+CommandAttribute
+are listed automatically.
+public
+sealed
+class
+DeclarePermissionAttribute
+:
+Attribute
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+Attribute
+Source:
+Permissions/DeclarePermissionAttribute.cs#L8
+Constructors
+​
+new DeclarePermissionAttribute()
+​
+Lists
+permission
+in the plugin's generated permissions file.
+Signature
+public
+DeclarePermissionAttribute
+(
+string
+permission
+)
+Source:
+Permissions/DeclarePermissionAttribute.cs#L16
+Properties
+​
+DeclarePermissionAttribute.Permission
+​
+The permission, e.g.
+medic.heal.others
+. Like any permission, it shouldn't also be the parent of another.
+Signature
+public
+string
+Permission
+{
+get
+;
+}
+Source:
+Permissions/DeclarePermissionAttribute.cs#L11
+DeclarePermissionAttribute.Description
+​
+What holding it allows, shown to server owners.
+Signature
+public
+string
+Description
+{
+get
+;
+set
+;
+}
+=
+""
+;
+Source:
+Permissions/DeclarePermissionAttribute.cs#L13

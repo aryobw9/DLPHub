@@ -1,0 +1,23 @@
+# NetMessageHandlerAttribute | Deadworks API
+URL: https://docs.deadworks.net/api-reference/networking/netmessagehandlerattribute
+
+API Reference
+Networking
+NetMessageHandlerAttribute
+NetMessageHandlerAttribute
+Marks a method as a handler for one or more net message types. Applied alongside
+NetMessages.HookIncoming&lt;T&gt;
+or
+NetMessages.HookOutgoing&lt;T&gt;
+registrations.
+public
+class
+NetMessageHandlerAttribute
+:
+Attribute
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+Attribute
+Source:
+NetMessages/NetMessageHandlerAttribute.cs#L5

@@ -1,0 +1,37 @@
+# CBodyComponent | Deadworks API
+URL: https://docs.deadworks.net/api-reference/entities/cbodycomponent
+
+API Reference
+Entities
+CBodyComponent
+On this page
+CBodyComponent
+Body component attached to an entity, providing access to the
+CGameSceneNode
+and world position.
+public
+class
+CBodyComponent
+:
+NativeEntity
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+NativeEntity
+Source:
+Entities/CBodyComponent.cs#L4
+Properties
+​
+CBodyComponent.SceneNode
+​
+Signature
+public
+CGameSceneNode
+?
+SceneNode
+{
+get
+;
+}
+Source:
+Entities/CBodyComponent.cs#L8

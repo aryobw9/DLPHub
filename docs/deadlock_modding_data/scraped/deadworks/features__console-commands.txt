@@ -1,0 +1,123 @@
+# Console commands | Deadworks API
+URL: https://docs.deadworks.net/features/console-commands
+
+On this page
+Console commands
+Namespace:
+DeadworksManaged.Api
+A console command is a command that starts with
+dw_
+and runs from the server console or a game console. A plugin creates console commands with the
+[Command]
+attribute.
+If you name the command
+heal
+, Deadworks registers:
+/heal
+in chat
+!heal
+in chat
+dw_heal
+in the console
+To register only the console version, without the chat commands, set
+ConsoleOnly = true
+:
+[
+Command
+(
+"heal"
+,
+ConsoleOnly
+=
+true
+)
+]
+public
+void
+CmdHeal
+(
+Caller
+caller
+)
+{
+caller
+.
+Reply
+(
+"Healing command ran."
+)
+;
+}
+ConsoleOnly
+doesn't mean "server console only"
+Players can still type
+dw_heal
+in their own game console. Without a
+Permission
+, anyone can run it. To keep a command to the server console and RCON, set
+ServerOnly = true
+.
+To limit who can run a command, give it a
+permission
+:
+[
+Command
+(
+"heal"
+,
+ConsoleOnly
+=
+true
+,
+Permission
+=
+"myplugin.heal"
+)
+]
+The server console (and RCON) can run every console command, whatever its permission.
+Built-in commands
+​
+Command
+Who can run it
+Description
+dw_help
+Anyone
+Lists the commands you're allowed to run.
+dw_plugin <list|enable|disable|commands> [name]
+Server console or
+deadworks.plugins.manage
+Lists, enables, disables or shows the commands of installed plugins. Keeps enabled and disabled plugins across restarts.
+name
+must be an installed plugin (from
+plugins/
+or
+builtin/
+), otherwise
+There's no plugin called '<name>'. Run dw_plugin list to see them.
+dw_reloadconfig [name]
+Server console or
+deadworks.config.reload
+Reloads the config of every plugin, or of the named one.
+dw_penalties_reload
+Server console or
+deadworks.penalties.reload
+Re-reads bans, gags and mutes after you edit
+penalties.jsonc
+by hand.
+dw_perm_*
+,
+dw_role_*
+See
+How permissions work
+Manages roles and permissions.
+The built-in commands are ordinary commands, so server owners can change who can run them in
+overrides.jsonc
+, like any plugin's.
+See also
+​
+Commands
+: arguments, aliases and command options
+Permissions
+: limit who can run a command
+ConVars
+: plugin settings

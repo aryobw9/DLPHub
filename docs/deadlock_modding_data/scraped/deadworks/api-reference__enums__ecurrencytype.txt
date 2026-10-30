@@ -1,0 +1,41 @@
+# ECurrencyType | Deadworks API
+URL: https://docs.deadworks.net/api-reference/enums/ecurrencytype
+
+API Reference
+Enums
+ECurrencyType
+On this page
+ECurrencyType
+Types of in-game currency (gold, ability points, etc.).
+public
+enum
+ECurrencyType
+:
+uint
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+uint
+Source:
+Enums/ECurrencyType.cs#L4
+Values
+​
+Name
+Value
+Description
+ECurrencyInvalid
+0xffffffff
+EGold
+0x0
+EAbilityPoints
+0x1
+EAbilityUnlocks
+0x2
+EDeathPenaltyGold
+0x3
+EItemDraftRerolls
+0x4
+EItemEnhancements
+0x5
+ECurrencyCount
+0x6

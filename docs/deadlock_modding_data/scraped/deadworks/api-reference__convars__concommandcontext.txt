@@ -1,0 +1,106 @@
+# ConCommandContext | Deadworks API
+URL: https://docs.deadworks.net/api-reference/convars/concommandcontext
+
+API Reference
+ConVars
+ConCommandContext
+On this page
+ConCommandContext
+Context passed to [ConCommand] and [ConVar] handlers.
+public
+sealed
+class
+ConCommandContext
+Namespace:
+DeadworksManaged.Api
+Source:
+ConCommands/ConCommandContext.cs#L6
+Properties
+​
+ConCommandContext.CallerSlot
+​
+Player slot of the caller, or -1 if invoked from server console.
+Signature
+public
+int
+CallerSlot
+{
+get
+;
+}
+Source:
+ConCommands/ConCommandContext.cs#L9
+ConCommandContext.Command
+​
+The command name that was typed (args[0]).
+Signature
+public
+string
+Command
+{
+get
+;
+}
+Source:
+ConCommands/ConCommandContext.cs#L12
+ConCommandContext.Args
+​
+All arguments including the command name at index 0, as tokenized by the engine. A double-quoted run is a single argument with the quotes stripped.
+Signature
+public
+string
+[
+]
+Args
+{
+get
+;
+}
+Source:
+ConCommands/ConCommandContext.cs#L15
+ConCommandContext.ArgString
+​
+The arguments after the command name, joined with single spaces. Quoting is not preserved, so use
+Args
+to tell
+"a b"
+from
+a b
+. Empty if no args.
+Signature
+public
+string
+ArgString
+{
+get
+;
+}
+Source:
+ConCommands/ConCommandContext.cs#L18
+ConCommandContext.IsServerCommand
+​
+True when invoked from server console (no player).
+Signature
+public
+bool
+IsServerCommand
+{
+get
+;
+}
+Source:
+ConCommands/ConCommandContext.cs#L21
+ConCommandContext.Controller
+​
+The player controller, or null if invoked from server console.
+Signature
+public
+CCitadelPlayerController
+?
+Controller
+{
+get
+;
+}
+Source:
+ConCommands/ConCommandContext.cs#L24

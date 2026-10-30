@@ -1,0 +1,108 @@
+# CParticleSystem | Deadworks API
+URL: https://docs.deadworks.net/api-reference/entities/cparticlesystem
+
+API Reference
+Entities
+CParticleSystem
+On this page
+CParticleSystem
+Represents a live
+info_particle_system
+entity. Obtain instances via
+Builder.Spawn
+.
+public
+sealed
+class
+CParticleSystem
+:
+CBaseEntity
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+CBaseEntity
+Source:
+Entities/CParticleSystem.cs#L9
+Methods
+​
+CParticleSystem.Stop()
+​
+Stops the particle effect without destroying the entity.
+Signature
+public
+void
+Stop
+(
+)
+Source:
+Entities/CParticleSystem.cs#L20
+CParticleSystem.Start()
+​
+Starts or restarts the particle effect.
+Signature
+public
+void
+Start
+(
+)
+Source:
+Entities/CParticleSystem.cs#L23
+CParticleSystem.Destroy()
+​
+Removes this particle system entity from the world.
+Signature
+public
+void
+Destroy
+(
+)
+Source:
+Entities/CParticleSystem.cs#L26
+CParticleSystem.AttachTo()
+​
+Attaches this particle system to
+parent
+, inheriting its transform.
+Signature
+public
+void
+AttachTo
+(
+CBaseEntity
+parent
+)
+Parameters
+parent
+: The entity to attach to.
+Source:
+Entities/CParticleSystem.cs#L30
+CParticleSystem.Detach()
+​
+Detaches this particle system from its current parent.
+Signature
+public
+void
+Detach
+(
+)
+Source:
+Entities/CParticleSystem.cs#L33
+CParticleSystem.Create()
+​
+Begins building a new particle system entity.
+Signature
+public
+static
+Builder
+Create
+(
+string
+effectName
+)
+Parameters
+effectName
+: The resource path of the particle effect (e.g.
+particles/foo.vpcf
+).
+Source:
+Entities/CParticleSystem.cs#L37

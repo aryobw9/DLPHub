@@ -1,0 +1,38 @@
+# CBaseModifier | Deadworks API
+URL: https://docs.deadworks.net/api-reference/entities/cbasemodifier
+
+API Reference
+Entities
+CBaseModifier
+On this page
+CBaseModifier
+Wraps a native CBaseModifier instance - a buff/debuff applied to an entity via
+CBaseEntity.AddModifier
+.
+public
+class
+CBaseModifier
+:
+NativeEntity
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+NativeEntity
+Source:
+Entities/CBaseModifier.cs#L4
+Properties
+​
+CBaseModifier.SubclassVData
+​
+The modifier's subclass VData (contains name, duration, etc.), or null if unavailable.
+Signature
+public
+CModifierVData
+?
+SubclassVData
+{
+get
+;
+}
+Source:
+Entities/CBaseModifier.cs#L8

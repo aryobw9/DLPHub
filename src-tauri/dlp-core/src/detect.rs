@@ -9,7 +9,6 @@ pub enum Tier {
     T2,
     T3,
     Potato,
-    RussianPotato,
     Missing,
     Unknown,
 }
@@ -21,7 +20,6 @@ impl Tier {
             Tier::T2 => "T2",
             Tier::T3 => "T3",
             Tier::Potato => "POTATO",
-            Tier::RussianPotato => "RUSSIAN_POTATO",
             Tier::Missing => "MISSING",
             Tier::Unknown => "UNKNOWN",
         }
@@ -93,7 +91,6 @@ pub fn detect_tier(citadel: &Path, pkg: &Path) -> Tier {
         (Tier::T2, "t2"),
         (Tier::T3, "t3"),
         (Tier::Potato, "potato"),
-        (Tier::RussianPotato, "russian_potato"),
     ] {
         let p = pkg.join(dir).join("gameinfo.gi");
         if p.is_file() && norm_hash_file(&p).as_deref() == Some(h.as_str()) {

@@ -1,0 +1,269 @@
+# Penalties | Deadworks API
+URL: https://docs.deadworks.net/api-reference/admin/penalties
+
+API Reference
+Admin
+Penalties
+On this page
+Penalties
+Bans, gags and mutes. Deadworks stores and enforces all three: banned players can't join, gagged players' chat never reaches chat or any plugin, and muted players' voice is dropped before anyone hears it or any plugin sees it. Plugins only decide when to add or remove them, and hear about changes through
+IDeadworksPlugin.OnPenaltyAdded
+and
+IDeadworksPlugin.OnPenaltyRemoved
+. Immunity is not checked here; check
+Caller.CanTarget
+or
+Permissions.CanTarget
+before penalizing someone on another player's behalf.
+public
+static
+class
+Penalties
+Namespace:
+DeadworksManaged.Api
+Source:
+Admin/Penalties.cs#L93
+Methods
+​
+Penalties.DescribeDuration()
+​
+A penalty length worded like an admin announcement, rounded up to the minute: "permanently" for null, "for 45 minutes", "for 1 hour", "for 1h 5m", "for 3 days", "for 2d 4h". The Admin plugin words every length this way, so a plugin that announces penalties matches it.
+Signature
+public
+static
+string
+DescribeDuration
+(
+TimeSpan
+?
+duration
+)
+Source:
+Admin/Penalties.cs#L104
+Penalties.Add()
+​
+Adds a penalty on behalf of
+by
+. A null
+duration
+is permanent. An active penalty of the same type on the same player is replaced, even by a shorter one: check
+WouldShorten
+first if shortening should need more than adding. Adding a ban kicks the player if they're connected.
+Signature
+public
+static
+Penalty
+Add
+(
+PenaltyType
+type
+,
+ulong
+steamId64
+,
+TimeSpan
+?
+duration
+,
+Caller
+by
+,
+string
+reason
+=
+""
+,
+string
+?
+playerName
+=
+null
+)
+Throws
+ArgumentOutOfRangeException
+:
+duration
+is zero or negative; use null for permanent.
+CommandException
+: The SteamID belongs to a player on the server whom Steam hasn't confirmed yet, so it can't be trusted to penalize (the server console may anyway); or the penalty store is unavailable or its file has an error.
+Notes
+The penalty applies at once and is saved in the background. If that save fails, it still applies until the server restarts, and the console prints an ERROR; this method has already returned by then.
+Source:
+Admin/Penalties.cs#L131
+Penalties.Remove()
+​
+Lifts the player's active penalty of this type on behalf of
+by
+, with an optional reason kept in its history. Returns false if they had none.
+Signature
+public
+static
+bool
+Remove
+(
+PenaltyType
+type
+,
+ulong
+steamId64
+,
+Caller
+by
+,
+string
+reason
+=
+""
+)
+Source:
+Admin/Penalties.cs#L138
+Penalties.GetActive()
+​
+The player's active penalty of this type, or null.
+Signature
+public
+static
+Penalty
+?
+GetActive
+(
+PenaltyType
+type
+,
+ulong
+steamId64
+)
+Source:
+Admin/Penalties.cs#L141
+Penalties.WouldShorten()
+​
+The active penalty that adding one of
+duration
+(null = permanent) would cut short, or null if there is none or the new one lasts at least as long. Replacing a penalty with a shorter one partly lifts it, so a command may want the lifting permission for that, as the Admin plugin's ban does.
+Signature
+public
+static
+Penalty
+?
+WouldShorten
+(
+PenaltyType
+type
+,
+ulong
+steamId64
+,
+TimeSpan
+?
+duration
+)
+Source:
+Admin/Penalties.cs#L148
+Penalties.GetAllActive()
+​
+Every active penalty, optionally only those of one type, oldest first.
+Signature
+public
+static
+IReadOnlyList
+<
+Penalty
+>
+GetAllActive
+(
+PenaltyType
+?
+type
+=
+null
+)
+Source:
+Admin/Penalties.cs#L151
+Penalties.GetHistoryAsync()
+​
+Every penalty the store still has for this player, newest first, including removed and expired ones. Faults while the store is unavailable, rather than answering with an empty history.
+Signature
+public
+static
+Task
+<
+IReadOnlyList
+<
+Penalty
+>
+>
+GetHistoryAsync
+(
+ulong
+steamId64
+)
+Source:
+Admin/Penalties.cs#L157
+Penalties.IsBanned()
+​
+Whether the player has an active ban.
+Signature
+public
+static
+bool
+IsBanned
+(
+ulong
+steamId64
+)
+Source:
+Admin/Penalties.cs#L160
+Penalties.IsGagged()
+​
+Whether the player has an active gag.
+Signature
+public
+static
+bool
+IsGagged
+(
+ulong
+steamId64
+)
+Source:
+Admin/Penalties.cs#L162
+Penalties.IsMuted()
+​
+Whether the player has an active mute.
+Signature
+public
+static
+bool
+IsMuted
+(
+ulong
+steamId64
+)
+Source:
+Admin/Penalties.cs#L164
+Penalties.RegisterStore()
+​
+Offers a store for penalties. It becomes active when
+penalties.store
+in
+configs/deadworks.jsonc
+names it, and is dropped automatically when
+owner
+unloads.
+Signature
+public
+static
+void
+RegisterStore
+(
+IDeadworksPlugin
+owner
+,
+string
+name
+,
+IPenaltyStore
+store
+)
+Source:
+Admin/Penalties.cs#L170

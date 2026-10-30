@@ -1,0 +1,136 @@
+# RnCollisionAttr_t | Deadworks API
+URL: https://docs.deadworks.net/api-reference/tracing/rncollisionattr_t
+
+API Reference
+Tracing
+RnCollisionAttr_t
+On this page
+RnCollisionAttr_t
+Collision attributes of a physics object. Read an entity's with
+CCollisionProperty.Attribute
+and a traced shape's with
+CGameTrace.ShapeAttributes
+.
+public
+struct
+RnCollisionAttr_t
+Namespace:
+DeadworksManaged.Api
+Source:
+Trace/RnCollisionAttr_t.cs#L10
+Fields
+​
+RnCollisionAttr_t.InteractsAs
+​
+Layers the object belongs to.
+Signature
+public
+InteractionLayer
+InteractsAs
+;
+Source:
+Trace/RnCollisionAttr_t.cs#L12
+RnCollisionAttr_t.InteractsWith
+​
+Layers the object collides with.
+Signature
+public
+InteractionLayer
+InteractsWith
+;
+Source:
+Trace/RnCollisionAttr_t.cs#L14
+RnCollisionAttr_t.InteractsExclude
+​
+Layers that never collide with the object.
+Signature
+public
+InteractionLayer
+InteractsExclude
+;
+Source:
+Trace/RnCollisionAttr_t.cs#L16
+RnCollisionAttr_t.EntityId
+​
+Handle of the entity the object belongs to.
+Signature
+public
+uint
+EntityId
+;
+Source:
+Trace/RnCollisionAttr_t.cs#L18
+RnCollisionAttr_t.OwnerId
+​
+Handle of the entity's owner, or
+0xFFFFFFFF
+. An object never collides with its owner.
+Signature
+public
+uint
+OwnerId
+;
+Source:
+Trace/RnCollisionAttr_t.cs#L20
+RnCollisionAttr_t.HierarchyId
+​
+Shared by entities attached to each other, which never collide with each other. 0 for none.
+Signature
+public
+ushort
+HierarchyId
+;
+Source:
+Trace/RnCollisionAttr_t.cs#L22
+RnCollisionAttr_t.DetailLayerMask
+​
+Detail layers the object is on.
+Signature
+public
+ushort
+DetailLayerMask
+;
+Source:
+Trace/RnCollisionAttr_t.cs#L24
+RnCollisionAttr_t.DetailLayerMaskType
+​
+How
+DetailLayerMask
+is matched.
+Signature
+public
+byte
+DetailLayerMaskType
+;
+Source:
+Trace/RnCollisionAttr_t.cs#L26
+RnCollisionAttr_t.TargetDetailLayer
+​
+Detail layer the object targets.
+Signature
+public
+byte
+TargetDetailLayer
+;
+Source:
+Trace/RnCollisionAttr_t.cs#L28
+RnCollisionAttr_t.CollisionGroup
+​
+The object's collision group.
+Signature
+public
+CollisionGroup
+CollisionGroup
+;
+Source:
+Trace/RnCollisionAttr_t.cs#L30
+RnCollisionAttr_t.CollisionFunctionMask
+​
+Which collision functions are on.
+Signature
+public
+CollisionFunctionMask_t
+CollisionFunctionMask
+;
+Source:
+Trace/RnCollisionAttr_t.cs#L32

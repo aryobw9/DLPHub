@@ -1,0 +1,74 @@
+# MoveType | Deadworks API
+URL: https://docs.deadworks.net/api-reference/enums/movetype
+
+API Reference
+Enums
+MoveType
+On this page
+MoveType
+How an entity moves. Read it with
+CBaseEntity.MoveType
+and change it with
+CBaseEntity.SetMoveType
+.
+public
+enum
+MoveType
+:
+byte
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+byte
+Source:
+Enums/MoveType.cs#L10
+Notes
+​
+Heroes can only move under
+Walk
+and
+NoClip
+. Any other value leaves a hero frozen in place.
+Values
+​
+Name
+Value
+Description
+None
+0
+Doesn't move at all. Set this on a hero to freeze them in place.
+Obsolete
+1
+Left over from older versions of the engine. Don't use it.
+Walk
+2
+Normal hero movement: walking and jumping, with gravity and collision.
+Fly
+3
+Flying movement without gravity. A hero set to this can't move.
+FlyGravity
+4
+Flying movement with gravity, like a thrown object. A hero set to this can't move.
+VPhysics
+5
+Moved by the physics engine, like a prop that can tumble and be knocked around.
+Push
+6
+Used by doors, elevators and other movers that push whatever is in their way.
+NoClip
+7
+Flies freely through walls. This is what the
+noclip
+cheat command uses on heroes.
+Observer
+8
+Used for spectators.
+Step
+9
+Walking movement used by some NPCs, such as neutral creeps.
+Sync
+10
+Used internally by the game. The game's own tools warn that switching to it behaves strangely.
+Custom
+11
+Movement handled entirely by the entity's own code. Used internally by the game.

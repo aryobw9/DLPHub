@@ -1,0 +1,47 @@
+# ConfigExtensions | Deadworks API
+URL: https://docs.deadworks.net/api-reference/config/configextensions
+
+API Reference
+Configuration
+ConfigExtensions
+On this page
+ConfigExtensions
+public
+static
+class
+ConfigExtensions
+Namespace:
+DeadworksManaged.Api
+Source:
+Config/ConfigExtensions.cs#L3
+Methods
+​
+ConfigExtensions.ReloadConfig()
+​
+Signature
+public
+static
+bool
+ReloadConfig
+(
+this
+IDeadworksPlugin
+plugin
+)
+Source:
+Config/ConfigExtensions.cs#L5
+ConfigExtensions.GetConfigPath()
+​
+Signature
+public
+static
+string
+?
+GetConfigPath
+(
+this
+IDeadworksPlugin
+plugin
+)
+Source:
+Config/ConfigExtensions.cs#L12

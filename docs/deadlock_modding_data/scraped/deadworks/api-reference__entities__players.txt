@@ -1,0 +1,154 @@
+# Players | Deadworks API
+URL: https://docs.deadworks.net/api-reference/entities/players
+
+API Reference
+Entities
+Players
+On this page
+Players
+Static helpers to enumerate all connected player controllers and pawns.
+public
+static
+class
+Players
+Namespace:
+DeadworksManaged.Api
+Source:
+Entities/Players.cs#L4
+Fields
+​
+Players.MaxSlot
+​
+Maximum number of player slots on the server.
+Signature
+public
+const
+int
+MaxSlot
+=
+31
+;
+Source:
+Entities/Players.cs#L6
+Methods
+​
+Players.IsMapChangeReconnect()
+​
+Whether the player in
+slot
+is reloading after a map change, rather than joining. See
+ClientConnectEvent.IsMapChangeReconnect
+.
+Signature
+public
+static
+bool
+IsMapChangeReconnect
+(
+int
+slot
+)
+Source:
+Entities/Players.cs#L61
+Players.IsAuthorized()
+​
+Whether Steam has confirmed the player in
+slot
+, so their roles and permissions apply. Always true when
+sv_lan
+is on or
+permissions.require_steam_auth
+is off in
+deadworks.jsonc
+.
+IDeadworksPlugin.OnClientAuthorized
+fires when it becomes true.
+Signature
+public
+static
+bool
+IsAuthorized
+(
+int
+slot
+)
+Source:
+Entities/Players.cs#L76
+Players.IsConnected()
+​
+Returns whether the given slot is marked as fully connected.
+Signature
+public
+static
+bool
+IsConnected
+(
+int
+slot
+)
+Source:
+Entities/Players.cs#L79
+Players.GetAllControllers()
+​
+Returns all player controllers that exist in the entity system.
+Signature
+public
+static
+unsafe
+IEnumerable
+<
+CCitadelPlayerController
+>
+GetAllControllers
+(
+)
+Source:
+Entities/Players.cs#L82
+Players.GetAll()
+​
+Returns all player controllers for fully connected players.
+Signature
+public
+static
+unsafe
+IEnumerable
+<
+CCitadelPlayerController
+>
+GetAll
+(
+)
+Source:
+Entities/Players.cs#L93
+Players.GetAllPawns()
+​
+Returns the hero pawn for every connected player that has one.
+Signature
+public
+static
+unsafe
+IEnumerable
+<
+CCitadelPlayerPawn
+>
+GetAllPawns
+(
+)
+Source:
+Entities/Players.cs#L105
+Players.FromSlot()
+​
+Returns the player controller in the given slot, or null if the slot is empty.
+Signature
+public
+static
+unsafe
+CCitadelPlayerController
+?
+FromSlot
+(
+int
+slot
+)
+Source:
+Entities/Players.cs#L119

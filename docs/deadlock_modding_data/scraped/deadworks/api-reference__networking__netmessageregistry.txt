@@ -1,0 +1,91 @@
+# NetMessageRegistry | Deadworks API
+URL: https://docs.deadworks.net/api-reference/networking/netmessageregistry
+
+API Reference
+Networking
+NetMessageRegistry
+On this page
+NetMessageRegistry
+Maps protobuf message types to the network message IDs the engine registered them under. Used internally by the net message send/hook system; also exposes manual registration for custom message types.
+public
+static
+class
+NetMessageRegistry
+Namespace:
+DeadworksManaged.Api
+Source:
+NetMessages/NetMessageRegistry.cs#L12
+Methods
+​
+NetMessageRegistry.GetMessageId()
+​
+Returns the network message ID for
+T
+, or
+-1
+if not registered.
+Signature
+public
+static
+int
+GetMessageId
+<
+T
+>
+(
+)
+where
+T
+:
+IMessage
+<
+T
+>
+public
+static
+int
+GetMessageId
+(
+Type
+type
+)
+Parameters
+type
+: A protobuf message type.
+Source:
+NetMessages/NetMessageRegistry.cs#L28
+,
+NetMessages/NetMessageRegistry.cs#L36
+NetMessageRegistry.RegisterManual()
+​
+Manually registers a protobuf message type with a specific network message ID, bypassing the automatic enum-based discovery.
+Signature
+public
+static
+void
+RegisterManual
+<
+T
+>
+(
+int
+messageId
+)
+where
+T
+:
+IMessage
+<
+T
+>
+,
+new
+(
+)
+Parameters
+messageId
+: The network message ID to associate with
+T
+.
+Source:
+NetMessages/NetMessageRegistry.cs#L258

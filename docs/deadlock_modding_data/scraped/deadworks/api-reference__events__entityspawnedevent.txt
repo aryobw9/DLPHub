@@ -1,0 +1,36 @@
+# EntitySpawnedEvent | Deadworks API
+URL: https://docs.deadworks.net/api-reference/events/entityspawnedevent
+
+API Reference
+Events
+EntitySpawnedEvent
+On this page
+EntitySpawnedEvent
+Fired when an entity has been fully spawned. Passed to
+IDeadworksPlugin.OnEntitySpawned
+.
+public
+sealed
+class
+EntitySpawnedEvent
+Namespace:
+DeadworksManaged.Api
+Source:
+Events/EntitySpawnedEvent.cs#L4
+Properties
+​
+EntitySpawnedEvent.Entity
+​
+Signature
+public
+required
+CBaseEntity
+Entity
+{
+get
+;
+init
+;
+}
+Source:
+Events/EntitySpawnedEvent.cs#L5

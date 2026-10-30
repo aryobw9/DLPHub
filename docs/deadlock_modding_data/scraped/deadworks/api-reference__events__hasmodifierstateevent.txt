@@ -1,0 +1,75 @@
+# HasModifierStateEvent | Deadworks API
+URL: https://docs.deadworks.net/api-reference/events/hasmodifierstateevent
+
+API Reference
+Events
+HasModifierStateEvent
+On this page
+HasModifierStateEvent
+Event data for the HasModifierState hook. Set
+Result
+to override the return value for a specific modifier state, or leave it null to fall through to the original game logic.
+public
+sealed
+class
+HasModifierStateEvent
+Namespace:
+DeadworksManaged.Api
+Source:
+Events/HasModifierStateEvent.cs#L8
+Properties
+​
+HasModifierStateEvent.Entity
+​
+The entity being queried.
+Signature
+public
+required
+CBaseEntity
+Entity
+{
+get
+;
+init
+;
+}
+Source:
+Events/HasModifierStateEvent.cs#L10
+HasModifierStateEvent.State
+​
+The modifier state being checked.
+Signature
+public
+required
+EModifierState
+State
+{
+get
+;
+init
+;
+}
+Source:
+Events/HasModifierStateEvent.cs#L13
+HasModifierStateEvent.Result
+​
+Set to
+true
+to force the state as present,
+false
+to force it as absent, or leave
+null
+to fall through to the original game logic.
+Signature
+public
+bool
+?
+Result
+{
+get
+;
+set
+;
+}
+Source:
+Events/HasModifierStateEvent.cs#L19

@@ -27,6 +27,16 @@ function call(cmd, args) {
   });
 }
 
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ---------- state ----------
 const state = {
   lang: 'fa',
@@ -41,8 +51,6 @@ const state = {
   detectedTier: null,
   running: false,
   unitStatusNew: false,
-  stopClothAnim: false,
-  ragdollFade: false,
   fpsMax: 0,
   renderer: 'default',
   customAutoexec: '',
@@ -56,13 +64,15 @@ const state = {
 const SECTION_TITLES = {
   graphic: 'presetsTitle',
   latency: 'cardLatency',
+  lan: 'cardLan',
   advanced: 'cardAdvanced',
 };
-const PANELS = ['graphic', 'latency', 'advanced'];
+const PANELS = ['graphic', 'latency', 'lan', 'advanced'];
 
 const HERO_BY_TAB = {
   graphic: { en: 'GRAPHICS CONFIG', fa: 'پیکربندی گرافیک', sub_en: 'Custom FPS boost configuration for deadlock', sub_fa: 'تنظیمات اختصاصی افزایش فریم برای ددلاک' },
   latency: { en: 'NETWORK', fa: 'شبکه', sub_en: 'Server latency & connection diagnostics', sub_fa: 'تشخیص تأخیر و کیفیت اتصال' },
+  lan: { en: 'LAN CONNECTION', fa: 'اتصال لن و چندنفره', sub_en: 'Direct LAN matchmaking & VIP Iran server mesh', sub_fa: 'بازی چندنفره تحت شبکه محلی، وی‌پی‌ان و سرور ایران' },
   advanced: { en: 'ADVANCED', fa: 'پیشرفته', sub_en: 'Advanced settings & Data restoration', sub_fa: 'تنظیمات پیشرفته و بازگردانی اطلاعات' },
 };
 
@@ -111,6 +121,7 @@ function applyLang() {
   if (u) u.placeholder = t('unlockPlaceholder');
   if (p) p.placeholder = t('pathPlaceholder');
   renderBackups();
+  renderModCacheList();
   renderActiveBadge();
   if (state.lastMatchId) {
     const textEl = document.getElementById('btn-sync-match-text');
@@ -140,6 +151,19 @@ function applyLang() {
       renderDnsGrid();
     }
   }
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  if (typeof updatePresetDropdownLang === 'function') {
+    updatePresetDropdownLang();
+  }
+  if (typeof updatePresetStatsDisplay === 'function') {
+    updatePresetStatsDisplay();
+  }
+  if (typeof renderDrawer === 'function') {
+    renderDrawer();
+  }
+
   if (!isLangSwitching) {
     setTimeout(() => {
       updateRendererGlider();
@@ -193,6 +217,7 @@ function toggleLang() {
 window.addEventListener('resize', () => {
   updateRendererGlider();
   updateFpsGlider();
+  initArInputInteractions();
 });
 
 // ---------- fatal-error surface (never silent) ----------
@@ -223,8 +248,6 @@ async function boot() {
   state.betterBreakables = !!s.better_breakables;
   state.higherBrightness = !!s.higher_brightness;
   state.reduceClutter = !!s.reduce_clutter;
-  state.stopClothAnim = !!s.stop_cloth_anim;
-  state.ragdollFade = !!s.ragdoll_fade;
   state.fpsMax = s.fps_max;
   state.customAutoexec = s.custom_autoexec || '';
   state.renderer = s.renderer || 'default';
@@ -296,12 +319,7 @@ function syncSettingsToUi() {
   const swClutter = document.getElementById('sw-reduce-clutter');
   if (swClutter) swClutter.checked = !!state.reduceClutter;
 
-  const swCloth = document.getElementById('sw-cloth-anim');
-  if (swCloth) swCloth.checked = !!state.stopClothAnim;
-
-  const swFade = document.getElementById('sw-ragdoll-fade');
-  if (swFade) swFade.checked = !!state.ragdollFade;
-
+  
   const swRedMotion = document.getElementById('sw-reduced-motion');
   if (swRedMotion) swRedMotion.checked = !!state.reducedMotion;
 
@@ -316,6 +334,7 @@ function syncSettingsToUi() {
       btn.classList.toggle('active', btn.dataset.fps === String(fps));
     }
   });
+  if (typeof updateFpsBadge === 'function') updateFpsBadge(fps);
 
   const renderer = state.renderer || 'default';
   document.querySelectorAll('#renderer-radio-group .renderer-pill').forEach((btn) => {
@@ -323,6 +342,7 @@ function syncSettingsToUi() {
   });
   updateRendererGlider();
   updateFpsGlider();
+  initArInputInteractions();
 }
 
 function updateRendererGlider() {
@@ -354,12 +374,25 @@ function updateFpsGlider() {
   glider.style.transform = `translate(${activeBtn.offsetLeft}px, ${activeBtn.offsetTop}px)`;
 }
 
+function updateFpsBadge(val) {
+  const badge = document.getElementById('fps-val-badge');
+  if (!badge) return;
+  if (!val || val === 'DEFAULT' || val === -1 || val === '-1') {
+    badge.textContent = 'DEFAULT';
+  } else if (val === 0 || val === '0') {
+    badge.textContent = 'UNLIMITED';
+  } else {
+    badge.textContent = `${val} FPS`;
+  }
+}
+
 function selectFps(val) {
   if (val === 'DEFAULT' || val === null || val === undefined || val === '') {
     state.fpsMax = null;
     document.querySelectorAll('#fps-radio-group .renderer-pill').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.fps === 'DEFAULT');
     });
+    updateFpsBadge('DEFAULT');
     updateFpsGlider();
     call('set_settings', { patch: { fps_max: -1 } }).catch(() => {});
   } else {
@@ -368,6 +401,7 @@ function selectFps(val) {
     document.querySelectorAll('#fps-radio-group .renderer-pill').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.fps === String(num));
     });
+    updateFpsBadge(num);
     updateFpsGlider();
     call('set_settings', { patch: { fps_max: num } }).catch(() => {});
   }
@@ -492,20 +526,38 @@ async function confirmPath() {
 function renderActiveBadge() {
   const apDot = document.getElementById('active-dot');
   const apLabel = document.getElementById('active-profile-label');
+  const apWrap = document.getElementById('active-profile');
   const res = state.detectedTier;
   if (!apLabel) return;
-  if (res === 'T1' || res === 'T2' || res === 'T3' || res === 'POTATO' || res === 'RUSSIAN_POTATO' || res === 'T1MODS' || res === 'T2MODS') {
-    if (apDot) { apDot.style.background = 'var(--deadlock-orange)'; apDot.style.color = 'var(--deadlock-orange)'; }
-    apLabel.textContent = t('activeProfile') + ' · ' + res;
+  const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
+
+  let tierName = res || '—';
+  if (res === 'T1') tierName = isFa ? 'سطح ۱ (پردازنده)' : 'Level 1 (CPU)';
+  else if (res === 'T2') tierName = isFa ? 'سطح ۲ (پردازنده + گرافیک)' : 'Level 2 (CPU + GPU)';
+  else if (res === 'T3' || res === 'POTATO') tierName = isFa ? 'سطح ۳ (حالت ذغالی)' : 'Level 3 (Potato)';
+  else if (res === 'T1MODS') tierName = isFa ? 'سطح ۱ + مدها' : 'Level 1 + Mods';
+  else if (res === 'T2MODS') tierName = isFa ? 'سطح ۲ + مدها' : 'Level 2 + Mods';
+
+  const prefix = isFa ? 'کانفیگ فعال' : 'ACTIVE CONFIG';
+
+  if (res === 'T1' || res === 'T2' || res === 'T3' || res === 'POTATO' || res === 'T1MODS' || res === 'T2MODS') {
+    if (apDot) { apDot.className = 'active-dot is-active'; apDot.style.background = ''; apDot.style.color = ''; }
+    if (apWrap) apWrap.className = 'active-profile is-active';
+    apLabel.innerHTML = `<span class="active-tag-prefix">${prefix}</span><span class="active-tag-sep">·</span><span class="active-tag-val">${tierName}</span>`;
   } else if (res === 'MISSING') {
-    if (apDot) { apDot.style.background = 'var(--text-muted)'; apDot.style.color = 'var(--text-muted)'; }
-    apLabel.textContent = t('currentMissing');
+    if (apDot) { apDot.className = 'active-dot is-missing'; apDot.style.background = ''; apDot.style.color = ''; }
+    if (apWrap) apWrap.className = 'active-profile is-missing';
+    const missingText = t('currentMissing') || (isFa ? 'پیش‌فرض استیم' : 'Vanilla Steam');
+    apLabel.innerHTML = `<span class="active-tag-prefix">${isFa ? 'کانفیگ بازی' : 'GAME CONFIG'}</span><span class="active-tag-sep">·</span><span class="active-tag-val">${missingText}</span>`;
   } else if (res) {
-    if (apDot) { apDot.style.background = 'var(--deadlock-cyan)'; apDot.style.color = 'var(--deadlock-cyan)'; }
-    apLabel.textContent = t('currentUnknown');
+    if (apDot) { apDot.className = 'active-dot is-custom'; apDot.style.background = ''; apDot.style.color = ''; }
+    if (apWrap) apWrap.className = 'active-profile is-custom';
+    const unknownText = t('currentUnknown') || (isFa ? 'سفارشی' : 'Custom');
+    apLabel.innerHTML = `<span class="active-tag-prefix">${prefix}</span><span class="active-tag-sep">·</span><span class="active-tag-val">${unknownText}</span>`;
   } else {
-    if (apDot) { apDot.style.background = 'var(--text-muted)'; apDot.style.color = 'var(--text-muted)'; }
-    apLabel.textContent = t('activeProfile') + ' · —';
+    if (apDot) { apDot.className = 'active-dot is-idle'; apDot.style.background = ''; apDot.style.color = ''; }
+    if (apWrap) apWrap.className = 'active-profile is-idle';
+    apLabel.innerHTML = `<span class="active-tag-prefix">${prefix}</span><span class="active-tag-sep">·</span><span class="active-tag-val">—</span>`;
   }
 }
 
@@ -530,20 +582,20 @@ function stepLine(text, cls) {
 
 // ---------- custom flame cursor follower (100% viewport & corners coverage) ----------
 const CURSOR_HOTSPOTS = {
-  default: { file: 'assets/cursors/default.png', x: 19, y: 16, w: 64, h: 64 },
-  pointer: { file: 'assets/cursors/pointer.png', x: 16, y: 19, w: 64, h: 64 },
-  click: { file: 'assets/cursors/click.png', x: 24, y: 21, w: 64, h: 64 },
-  click_right: { file: 'assets/cursors/click_right.png', x: 18, y: 21, w: 64, h: 64 },
-  grab: { file: 'assets/cursors/grab.png', x: 32, y: 35, w: 64, h: 64 },
-  text: { file: 'assets/cursors/text.png', x: 34, y: 35, w: 64, h: 64 },
-  link: { file: 'assets/cursors/link.png', x: 14, y: 24, w: 64, h: 64 },
-  help: { file: 'assets/cursors/help.png', x: 18, y: 8, w: 64, h: 64 },
-  busy: { file: 'assets/cursors/busy_full.png', x: 44, y: 44, w: 88, h: 88 },
-  'nwse-resize': { file: 'assets/cursors/nwse-resize.png', x: 20, y: 17, w: 64, h: 64 },
-  'nesw-resize': { file: 'assets/cursors/nesw-resize.png', x: 14, y: 17, w: 64, h: 64 },
-  'ns-resize': { file: 'assets/cursors/ns-resize.png', x: 24, y: 21, w: 64, h: 64 },
-  'ew-resize': { file: 'assets/cursors/ew-resize.png', x: 32, y: 24, w: 64, h: 64 },
-  move: { file: 'assets/cursors/move.png', x: 28, y: 33, w: 64, h: 64 }
+  default: { file: 'assets/cursors/default.png', x: 12, y: 9, w: 51, h: 51 },
+  pointer: { file: 'assets/cursors/pointer.png', x: 13, y: 15, w: 51, h: 51 },
+  click: { file: 'assets/cursors/click.png', x: 6, y: 11, w: 51, h: 51 },
+  click_right: { file: 'assets/cursors/click_right.png', x: 7, y: 11, w: 51, h: 51 },
+  grab: { file: 'assets/cursors/grab.png', x: 23, y: 28, w: 51, h: 51 },
+  text: { file: 'assets/cursors/text.png', x: 8, y: 12, w: 51, h: 51 },
+  link: { file: 'assets/cursors/link.png', x: 6, y: 14, w: 51, h: 51 },
+  help: { file: 'assets/cursors/help.png', x: 7, y: 9, w: 51, h: 51 },
+  busy: { file: 'assets/cursors/busy_full.png', x: 35, y: 35, w: 70, h: 70 },
+  'nwse-resize': { file: 'assets/cursors/nwse-resize.png', x: 16, y: 14, w: 51, h: 51 },
+  'nesw-resize': { file: 'assets/cursors/nesw-resize.png', x: 11, y: 14, w: 51, h: 51 },
+  'ns-resize': { file: 'assets/cursors/ns-resize.png', x: 19, y: 17, w: 51, h: 51 },
+  'ew-resize': { file: 'assets/cursors/ew-resize.png', x: 26, y: 19, w: 51, h: 51 },
+  move: { file: 'assets/cursors/move.png', x: 22, y: 26, w: 51, h: 51 }
 };
 
 let updateCursorFollower = () => {};
@@ -625,8 +677,8 @@ function getCornerOrEdge(x, y) {
     if (currentType === type) return;
     currentType = type;
     const meta = CURSOR_HOTSPOTS[type];
-    cursorEl.style.width = (meta.w || 64) + 'px';
-    cursorEl.style.height = (meta.h || 64) + 'px';
+    cursorEl.style.width = (meta.w || 51) + 'px';
+    cursorEl.style.height = (meta.h || 51) + 'px';
     if (!cursorInner) cursorInner = document.getElementById('dlp-custom-cursor-inner');
     if (cursorInner) cursorInner.style.backgroundImage = `url("${meta.file}")`;
     if (!cursorDot) cursorDot = document.getElementById('dlp-cursor-target-dot');
@@ -881,12 +933,28 @@ async function doInstall() {
   }, 1000);
 
   try {
-    const log = await call('install_mode', {
-      mode: state.selectedMode,
-      fov: state.fov,
-      aspect_ratio: state.aspectRatio || '2.15',
-      aspect_ratio_enabled: state.aspectRatioEnabled !== false,
-      path: state.gamePath,
+    const preset = getActivePreset();
+    const resolvedEntries = resolvePresetEntries(preset);
+
+    const log = await call('apply_perf_optimization_cmd', {
+      req: {
+        level: perfState.activeLevel,
+        preset_id: perfState.activePresetId,
+        preset_name: preset.name,
+        entries: resolvedEntries,
+        video_settings: preset.videoSettings || [],
+        include_engine_sections: !!perfState.includeEngineSections,
+        fov: state.fov,
+        aspect_ratio: state.aspectRatio || '2.15',
+        aspect_ratio_enabled: state.aspectRatioEnabled !== false,
+        fps_limit: state.fpsLimit || 'DEFAULT',
+        cloth_sim_stop: false,
+        ragdoll_fade: false,
+        better_breakables: !!state.betterBreakables,
+        higher_brightness: !!state.higherBrightness,
+        reduce_clutter: !!state.reduceClutter,
+        deadlock_path: state.gamePath,
+      }
     });
     clearInterval(reassuranceTimer);
     document.getElementById('step-log').innerHTML = '';
@@ -1037,6 +1105,141 @@ async function renderBackups() {
   }
 }
 
+async function renderModCacheList() {
+  const list = document.getElementById('mod-cache-list');
+  if (!list) return;
+  let items = [];
+  try { items = await call('get_mod_cache_status_cmd'); } catch (_) { return; }
+  list.innerHTML = '';
+  if (!items || items.length === 0) {
+    const d = document.createElement('div');
+    d.className = 'option-detail';
+    d.textContent = state.lang === 'fa' ? 'هیچ مادی یافت نشد.' : 'No mods found.';
+    list.appendChild(d);
+    return;
+  }
+  const isFa = state.lang === 'fa';
+  for (const m of items) {
+    const row = document.createElement('div');
+    row.className = 'mod-cache-row';
+
+    const info = document.createElement('div');
+    info.className = 'mod-cache-meta';
+
+    const statusDot = document.createElement('span');
+    statusDot.className = 'mod-cache-dot';
+    statusDot.style.background = m.is_cached ? 'var(--deadlock-green)' : 'var(--text-muted)';
+    if (m.is_cached) {
+      statusDot.style.boxShadow = '0 0 6px rgba(34, 197, 94, 0.45)';
+    }
+    info.appendChild(statusDot);
+
+    const name = document.createElement('span');
+    name.className = 'mod-cache-title';
+    name.textContent = isFa ? m.display_name_fa : m.display_name_en;
+    info.appendChild(name);
+
+    if (isFa && m.display_name_en) {
+      const enTag = document.createElement('span');
+      enTag.className = 'mod-cache-en-tag';
+      enTag.setAttribute('dir', 'ltr');
+      enTag.textContent = m.display_name_en;
+      info.appendChild(enTag);
+    }
+
+    const size = document.createElement('span');
+    size.className = 'mod-cache-size';
+    size.textContent = formatBytes(m.size_bytes);
+    info.appendChild(size);
+
+    const badge = document.createElement('span');
+    badge.className = 'mod-cache-badge';
+    if (m.is_cached) {
+      badge.style.background = 'rgba(34, 197, 94, 0.15)';
+      badge.style.color = 'var(--deadlock-green)';
+      badge.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+      badge.textContent = isFa ? 'ذخیره شده' : 'Cached';
+    } else {
+      badge.style.background = 'rgba(255, 255, 255, 0.05)';
+      badge.style.color = 'var(--text-muted)';
+      badge.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+      badge.textContent = isFa ? 'دانلود نشده' : 'Not Cached';
+    }
+
+    row.appendChild(info);
+    row.appendChild(badge);
+    list.appendChild(row);
+  }
+}
+
+async function clearModCacheAction() {
+  const btn = document.getElementById('btn-clear-cache');
+  if (btn) btn.disabled = true;
+  try {
+    const freedBytes = await call('clear_mod_cache_cmd');
+    const freedStr = formatBytes(freedBytes);
+    showModal(
+      t('modCacheTitle') || 'Mod Cache',
+      `${t('cacheCleared') || 'Mod cache cleared successfully.'}\n${t('cacheFreed') || 'Space freed: '} ${freedStr}`,
+      [{ label: t('ok') || 'OK' }]
+    );
+    await renderModCacheList();
+  } catch (err) {
+    showModal(t('modCacheTitle') || 'Mod Cache', `Error: ${err}`, [{ label: t('ok') || 'OK' }]);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function handleModProgressEvent(p) {
+  if (!p) return;
+  const log = document.getElementById('step-log');
+  if (!log) return;
+  const isFa = state.lang === 'fa';
+  const name = isFa ? p.display_name_fa : p.display_name_en;
+  const curMb = (p.current_bytes / (1024 * 1024)).toFixed(1);
+  const totalMb = (p.total_bytes / (1024 * 1024)).toFixed(1);
+
+  if (p.status === 'downloading') {
+    log.innerHTML = `<span style="color:var(--deadlock-cyan)"><i class="fa-solid fa-cloud-arrow-down fa-bounce"></i> ${isFa ? 'در حال دریافت ماد' : 'Downloading mod'}: <b>${name}</b> (${curMb}MB / ${totalMb}MB · ${p.percent}% · ${p.speed_kbps} KB/s)</span>`;
+  } else if (p.status === 'verifying') {
+    log.innerHTML = `<span style="color:var(--deadlock-orange)"><i class="fa-solid fa-shield-halved fa-spin"></i> ${isFa ? 'اعتبارسنجی امنیتی هش SHA-256...' : 'Verifying SHA-256 hash...'}</span>`;
+  } else if (p.status === 'completed') {
+    log.innerHTML = `<span style="color:var(--deadlock-green)"><i class="fa-solid fa-circle-check"></i> ${isFa ? 'ماد با موفقیت تایید و کش شد' : 'Mod verified and cached'} (${name})</span>`;
+    setTimeout(() => {
+      renderModCacheList();
+    }, 400);
+  } else if (p.status === 'error') {
+    log.innerHTML = `<span style="color:var(--deadlock-red)"><i class="fa-solid fa-triangle-exclamation"></i> ${isFa ? 'خطا در اعتبارسنجی ماد!' : 'Mod verification failed!'}</span>`;
+  }
+}
+
+async function setupModProgressListener() {
+  try {
+    if (window.__TAURI__?.event?.listen) {
+      await window.__TAURI__.event.listen('mod-download-progress', (event) => {
+        handleModProgressEvent(event.payload);
+      });
+      await window.__TAURI__.event.listen('server-loader-progress', (event) => {
+        const p = event.payload;
+        if (p) {
+          const badge = document.getElementById('lan-lobby-badge');
+          if (badge && p.status === 'downloading') {
+            badge.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> دریافت فایل‌های سرور (${p.percent}%)...`;
+          } else if (badge && p.status === 'extracting') {
+            badge.innerHTML = `<i class="fa-solid fa-box-open"></i> استخراج فایل‌های سرور...`;
+          }
+          if (p.status === 'completed') {
+            showToast('فایل‌های سرور مودشده با موفقیت دریافت و آماده‌سازی شدند', 'success');
+          }
+        }
+      });
+    }
+  } catch (e) {
+    console.warn('Failed to setup download listeners:', e);
+  }
+}
+
 async function checkForUpdates() {
   const btn = document.getElementById('btn-check-updates');
   const icon = btn ? btn.querySelector('i') : null;
@@ -1129,8 +1332,6 @@ async function doResetSettings() {
     state.betterBreakables = !!s.better_breakables;
     state.higherBrightness = !!s.higher_brightness;
     state.reduceClutter = !!s.reduce_clutter;
-    state.stopClothAnim = !!s.stop_cloth_anim;
-    state.ragdollFade = !!s.ragdoll_fade;
     state.customAutoexec = s.custom_autoexec;
     state.renderer = s.renderer || 'default';
 
@@ -1307,10 +1508,14 @@ function showTesterModes() {
   const m = document.getElementById('tester-modes');
   if (l) l.style.display = 'none';
   if (m) m.style.display = 'flex';
+  const vipCard = document.getElementById('vip-lan-card');
+  if (vipCard) vipCard.style.display = 'flex';
 }
 
 async function doUnlock() {
-  const code = document.getElementById('unlock-input').value;
+  const inp = document.getElementById('unlock-input');
+  if (!inp) return;
+  const code = inp.value;
   try {
     await call('set_settings', { patch: { unlock_code: code } });
     state.unlocked = true;
@@ -1363,6 +1568,14 @@ function showModal(title, body, actions) {
 // ---------- toast notification system ----------
 function showToast(message, type = 'info') {
   if (!message) return;
+  let rawStr = String(message || '').trim();
+  let cleanMsg = rawStr;
+  if (cleanMsg.includes('\n')) {
+    cleanMsg = cleanMsg.split('\n')[0].trim();
+  }
+  if (cleanMsg.length > 120) {
+    cleanMsg = cleanMsg.slice(0, 117) + '...';
+  }
   try {
     let container = document.getElementById('dlp-toast-container');
     if (!container) {
@@ -1387,7 +1600,7 @@ function showToast(message, type = 'info') {
 
     const text = document.createElement('span');
     text.className = 'toast-text';
-    text.textContent = String(message);
+    text.textContent = cleanMsg;
 
     toast.appendChild(icon);
     toast.appendChild(text);
@@ -1414,6 +1627,353 @@ function showToast(message, type = 'info') {
     }, 4000);
   } catch (err) {
     console.warn('[showToast error]', err);
+  }
+}
+
+// ---------- Enhanced System Error & Diagnostics Modal ----------
+let currentFixCommand = '';
+let currentErrorReport = '';
+
+function parseSystemError(err) {
+  const raw = String(err?.message || err || '').trim();
+
+  // 1. Windows WMI / CIM Repository Corruption
+  if (
+    /cimserver|broken\s*cim|cannot connect to cim|corrupted and unreadable|0x80041002|0x80041010|qos_policy_error|cimbrokencimsession/i.test(raw)
+  ) {
+    return {
+      category: 'wmi',
+      titleKey: 'errWmiTitle',
+      subtitleKey: 'errWmiSubtitle',
+      descKey: 'errWmiDesc',
+      solutionKey: 'errWmiSolution',
+      solutionCmd: 'winmgmt /salvagerepository',
+      toastKey: 'errWmiToast',
+      iconClass: 'fa-solid fa-triangle-exclamation'
+    };
+  }
+
+  // 2. PowerShell Script Execution Policy Restricted
+  if (
+    /cannot be loaded because running scripts is disabled|execution_policies|pssecurityexception|script execution is disabled/i.test(raw)
+  ) {
+    return {
+      category: 'psPolicy',
+      titleKey: 'errPsPolicyTitle',
+      subtitleKey: 'errPsPolicySubtitle',
+      descKey: 'errPsPolicyDesc',
+      solutionKey: 'errPsPolicySolution',
+      solutionCmd: 'Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force',
+      toastKey: 'errPsPolicyToast',
+      iconClass: 'fa-solid fa-code'
+    };
+  }
+
+  // 3. Administrator / Elevation Required
+  if (
+    /administrator privileges|needsadmin|access is denied|unauthorizedaccessexception|permissiondenied|0x80070005/i.test(raw)
+  ) {
+    return {
+      category: 'admin',
+      titleKey: 'errAdminTitle',
+      subtitleKey: 'errAdminSubtitle',
+      descKey: 'errAdminDesc',
+      solutionKey: 'errAdminSolution',
+      solutionCmd: null,
+      toastKey: 'errAdminToast',
+      iconClass: 'fa-solid fa-user-shield'
+    };
+  }
+
+  // 4. Windows Firewall Inactive / Disabled
+  if (/mpssvc|0x80070424|firewall activation error|firewall service/i.test(raw)) {
+    return {
+      category: 'firewall',
+      titleKey: 'errFwTitle',
+      subtitleKey: 'errFwSubtitle',
+      descKey: 'errFwDesc',
+      solutionKey: 'errFwSolution',
+      solutionCmd: 'net start mpssvc',
+      toastKey: 'errFwToast',
+      iconClass: 'fa-solid fa-shield-halved'
+    };
+  }
+
+  // 5. Windows DNS Client / DHCP Service Disabled (often by Debloater scripts)
+  if (
+    /dnscache|could not flush the dns resolver cache|set-dnsclientserveraddress.*service|dhcp.*service|the service cannot be started, either because it is disabled/i.test(raw)
+  ) {
+    return {
+      category: 'dnsService',
+      titleKey: 'errDnsServiceTitle',
+      subtitleKey: 'errDnsServiceSubtitle',
+      descKey: 'errDnsServiceDesc',
+      solutionKey: 'errDnsServiceSolution',
+      solutionCmd: 'sc config dnscache start= auto && net start dnscache',
+      toastKey: 'errDnsServiceToast',
+      iconClass: 'fa-solid fa-ethernet'
+    };
+  }
+
+  // 6. Game File Locked / Deadlock or Steam Running
+  if (
+    /being used by another process|ebusy|file.*locked|sharingviolation|cannot access the file|deadlock\.exe is running/i.test(raw)
+  ) {
+    return {
+      category: 'fileLock',
+      titleKey: 'errFileLockTitle',
+      subtitleKey: 'errFileLockSubtitle',
+      descKey: 'errFileLockDesc',
+      solutionKey: 'errFileLockSolution',
+      solutionCmd: 'taskkill /f /im deadlock.exe /im citadel.exe',
+      toastKey: 'errFileLockToast',
+      iconClass: 'fa-solid fa-lock'
+    };
+  }
+
+  // 7. Network Timeout / Steam SDR Relay Unreachable / ISP Block
+  if (
+    /failed to fetch valve cluster|no internet|connection timed out|could not resolve host|socketerror|network is unreachable|timed out|10060|10054|err_internet_disconnected/i.test(raw)
+  ) {
+    return {
+      category: 'networkTimeout',
+      titleKey: 'errNetTimeoutTitle',
+      subtitleKey: 'errNetTimeoutSubtitle',
+      descKey: 'errNetTimeoutDesc',
+      solutionKey: 'errNetTimeoutSolution',
+      solutionCmd: null,
+      toastKey: 'errNetTimeoutToast',
+      iconClass: 'fa-solid fa-wifi'
+    };
+  }
+
+  // 8. Antivirus / SmartScreen / Security Interference
+  if (
+    /operation was canceled by user|blocked by antivirus|windefender|kaspersky|bitdefender|avast|virus or potentially unwanted software|0x800704ec/i.test(raw)
+  ) {
+    return {
+      category: 'antivirus',
+      titleKey: 'errAntivirusTitle',
+      subtitleKey: 'errAntivirusSubtitle',
+      descKey: 'errAntivirusDesc',
+      solutionKey: 'errAntivirusSolution',
+      solutionCmd: null,
+      toastKey: 'errAntivirusToast',
+      iconClass: 'fa-solid fa-shield-virus'
+    };
+  }
+
+  // 9. Insufficient Disk Space
+  if (/not enough space on the disk|enospc|0x80070070|disk full/i.test(raw)) {
+    return {
+      category: 'diskSpace',
+      titleKey: 'errDiskSpaceTitle',
+      subtitleKey: 'errDiskSpaceSubtitle',
+      descKey: 'errDiskSpaceDesc',
+      solutionKey: 'errDiskSpaceSolution',
+      solutionCmd: 'cleanmgr',
+      toastKey: 'errDiskSpaceToast',
+      iconClass: 'fa-solid fa-hard-drive'
+    };
+  }
+
+  // 10. Mod Verification / Hash Mismatch
+  if (
+    /sha-256 hash mismatch|corrupted download|failed to verify mod|invalid zip|unexpected end of data|corrupted mod/i.test(raw)
+  ) {
+    return {
+      category: 'modCorrupt',
+      titleKey: 'errModCorruptTitle',
+      subtitleKey: 'errModCorruptSubtitle',
+      descKey: 'errModCorruptDesc',
+      solutionKey: 'errModCorruptSolution',
+      solutionCmd: null,
+      toastKey: 'errModCorruptToast',
+      iconClass: 'fa-solid fa-file-circle-exclamation'
+    };
+  }
+
+  // 11. Missing .NET 10 Runtime
+  if (/dotnet|missing .net|failed to locate dotnet|deadworks_loader/i.test(raw)) {
+    return {
+      category: 'dotnet',
+      titleKey: 'errDotnetTitle',
+      subtitleKey: 'errDotnetSubtitle',
+      descKey: 'errDotnetDesc',
+      solutionKey: 'errDotnetSolution',
+      solutionCmd: null,
+      toastKey: 'errDotnetToast',
+      iconClass: 'fa-brands fa-windows'
+    };
+  }
+
+  // 12. Network Adapter Property Limitation
+  if (/nic_optimization_error|get-netadapteradvancedproperty|msft_netadapteradvancedproperty/i.test(raw)) {
+    return {
+      category: 'nic',
+      titleKey: 'errNicTitle',
+      subtitleKey: 'errNicSubtitle',
+      descKey: 'errNicDesc',
+      solutionKey: 'errNicSolution',
+      solutionCmd: null,
+      toastKey: 'errNicToast',
+      iconClass: 'fa-solid fa-network-wired'
+    };
+  }
+
+  // 13. Generic Fallback
+  return {
+    category: 'generic',
+    titleKey: 'errGenericTitle',
+    subtitleKey: 'errGenericSubtitle',
+    descKey: 'errGenericDesc',
+    solutionKey: 'errGenericSolution',
+    solutionCmd: null,
+    toastKey: 'errGenericToast',
+    iconClass: 'fa-solid fa-circle-exclamation'
+  };
+}
+
+function showAppErrorModal(err, contextTitle = '') {
+  if (!err) return;
+  const rawText = String(err?.message || err || '').trim();
+  window.__lastAppError = rawText;
+
+  // Log to backend app.log
+  try {
+    call('log_client_error', {
+      level: 'ERROR',
+      message: `[${contextTitle || 'UI_Error'}] ${rawText}`
+    }).catch(() => {});
+  } catch (_) {}
+
+  const parsed = parseSystemError(rawText);
+  currentFixCommand = parsed.solutionCmd || '';
+
+  const modal = document.getElementById('modal-error-diag');
+  if (!modal) {
+    showToast(t(parsed.toastKey) || rawText, 'error');
+    return;
+  }
+
+  // Set titles and icons
+  const titleEl = document.getElementById('error-dialog-title');
+  if (titleEl) titleEl.textContent = t(parsed.titleKey);
+
+  const subEl = document.getElementById('error-dialog-subtitle');
+  if (subEl) subEl.textContent = t(parsed.subtitleKey);
+
+  const iconEl = document.getElementById('error-dialog-badge-icon');
+  if (iconEl) iconEl.innerHTML = `<i class="${parsed.iconClass}"></i>`;
+
+  const descEl = document.getElementById('error-dialog-desc');
+  if (descEl) descEl.textContent = t(parsed.descKey);
+
+  const solTitleEl = document.getElementById('error-solution-title');
+  if (solTitleEl) solTitleEl.textContent = t('errSolutionTitle');
+
+  const solTextEl = document.getElementById('error-solution-text');
+  if (solTextEl) solTextEl.textContent = t(parsed.solutionKey);
+
+  const cmdBox = document.getElementById('error-solution-cmd-box');
+  const cmdCode = document.getElementById('error-solution-cmd-code');
+  const cmdBtnLabel = document.getElementById('btn-copy-fix-label');
+
+  if (parsed.solutionCmd) {
+    if (cmdBox) cmdBox.style.display = 'flex';
+    if (cmdCode) cmdCode.textContent = parsed.solutionCmd;
+    if (cmdBtnLabel) cmdBtnLabel.textContent = t('errBtnCopyFix');
+  } else {
+    if (cmdBox) cmdBox.style.display = 'none';
+  }
+
+  // Technical details
+  const techLabel = document.getElementById('error-tech-toggle-label');
+  if (techLabel) techLabel.textContent = t('errTechToggleShow');
+  const techContent = document.getElementById('error-tech-content');
+  if (techContent) techContent.style.display = 'none';
+  const chevron = document.getElementById('error-tech-chevron');
+  if (chevron) chevron.classList.remove('is-open');
+
+  const rawEl = document.getElementById('error-dialog-raw');
+  if (rawEl) rawEl.textContent = rawText;
+
+  // Action buttons
+  const copyBtn = document.getElementById('label-copy-err-report');
+  if (copyBtn) copyBtn.textContent = t('errBtnCopyReport');
+
+  const logBtn = document.getElementById('label-open-log-folder');
+  if (logBtn) logBtn.textContent = t('errBtnOpenLogs');
+
+  const dismissBtn = document.getElementById('label-dismiss-error');
+  if (dismissBtn) dismissBtn.textContent = t('errBtnDismiss');
+
+  currentErrorReport = `=== DLPHub Error Report ===\nTime: ${new Date().toISOString()}\nLang: ${state.lang}\nCategory: ${t(parsed.titleKey)}\nContext: ${contextTitle}\n\nTechnical Details:\n${rawText}`;
+
+  modal.style.display = 'flex';
+  showToast(t(parsed.toastKey), 'error');
+}
+
+function showModalAlert(title, err) {
+  showAppErrorModal(err, title);
+}
+
+function closeErrorModal() {
+  const modal = document.getElementById('modal-error-diag');
+  if (modal) modal.style.display = 'none';
+}
+
+function toggleTechDetails() {
+  const content = document.getElementById('error-tech-content');
+  const chevron = document.getElementById('error-tech-chevron');
+  const label = document.getElementById('error-tech-toggle-label');
+  if (!content) return;
+  const isHidden = content.style.display === 'none';
+  content.style.display = isHidden ? 'block' : 'none';
+  if (chevron) chevron.classList.toggle('is-open', isHidden);
+  if (label) label.textContent = isHidden ? t('errTechToggleHide') : t('errTechToggleShow');
+}
+
+async function copyFixCommand() {
+  if (!currentFixCommand) return;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(currentFixCommand);
+    }
+    const lbl = document.getElementById('btn-copy-fix-label');
+    if (lbl) {
+      const orig = lbl.textContent;
+      lbl.textContent = t('errBtnCopiedFix');
+      setTimeout(() => { if (lbl) lbl.textContent = orig; }, 1800);
+    }
+  } catch (e) {
+    console.warn('[copyFixCommand error]', e);
+  }
+}
+
+async function copyErrorReport() {
+  if (!currentErrorReport) return;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(currentErrorReport);
+    }
+    const lbl = document.getElementById('label-copy-err-report');
+    if (lbl) {
+      const orig = lbl.textContent;
+      lbl.textContent = t('errBtnCopiedReport');
+      setTimeout(() => { if (lbl) lbl.textContent = orig; }, 1800);
+    }
+    showToast(t('diagCopied') || 'Error report copied to clipboard!', 'info');
+  } catch (e) {
+    console.warn('[copyErrorReport error]', e);
+  }
+}
+
+async function openLogsFolder() {
+  try {
+    await call('open_logs_folder');
+  } catch (e) {
+    console.warn('[openLogsFolder error]', e);
   }
 }
 window.showToast = showToast;
@@ -1673,12 +2233,14 @@ function setFov(v, persistSetting = true) {
 function setAspectRatio(val, persistSetting = true) {
   let str = String(val !== undefined && val !== null ? val : '2.15').trim();
   let num = parseFloat(str);
-  if (isNaN(num) || num < 1.0 || num > 4.0) {
+  if (isNaN(num)) {
     num = 2.15;
-    str = '2.15';
-  } else {
-    str = num.toFixed(2);
+  } else if (num < 1.33) {
+    num = 1.33;
+  } else if (num > 3.20) {
+    num = 3.20;
   }
+  str = num.toFixed(2);
   state.aspectRatio = str;
   const input = document.getElementById('ar-input');
   const slider = document.getElementById('ar-slider');
@@ -1687,7 +2249,8 @@ function setAspectRatio(val, persistSetting = true) {
 
   document.querySelectorAll('.ar-presets-row .ar-pill').forEach((pill) => {
     const pillText = pill.textContent.trim();
-    pill.classList.toggle('active', pillText.startsWith(str));
+    const pillAr = pill.dataset.ar;
+    pill.classList.toggle('active', (pillAr && pillAr === str) || pillText.startsWith(str));
   });
 
   if (persistSetting && window.__TAURI__) {
@@ -2463,8 +3026,7 @@ async function allowEuropeOnly() {
     renderServerGrid();
     showToast(t('btnAllowEu'), 'success');
   } catch (err) {
-    showToast(String(err), 'error');
-    showModal(state.lang === 'fa' ? 'خطا در فایروال' : 'Firewall Error', String(err.message || err), [{ label: t('ok') }]);
+    showAppErrorModal(err, 'allowEuropeOnly');
   }
 }
 
@@ -2490,8 +3052,7 @@ async function unblockAllRelays() {
     updateLatencyHeroPills();
     showToast(t('unblockedAllToast'), 'success');
   } catch (err) {
-    showToast(String(err), 'error');
-    showModal(state.lang === 'fa' ? 'خطا در فایروال' : 'Firewall Error', String(err.message || err), [{ label: t('ok') }]);
+    showAppErrorModal(err, 'unblockAllRelays');
   } finally {
     if (btn) btn.disabled = false;
     if (icon) icon.className = origIconClass;
@@ -2846,8 +3407,7 @@ async function doSmartOptimize() {
   } catch (err) {
     if (progBar) progBar.style.background = '#ef4444';
     if (progTitle) progTitle.textContent = state.lang === 'fa' ? 'خطا در بهینه‌سازی شبکه' : 'Smart Optimization Error';
-    showToast(String(err), 'error');
-    showModal(state.lang === 'fa' ? 'خطا در بهینه‌سازی شبکه' : 'Optimization Failed', String(err.message || err), [{ label: t('ok') }]);
+    showAppErrorModal(err, 'SmartOptimize');
   } finally {
     setTimeout(() => {
       if (progWrap) {
@@ -2989,8 +3549,7 @@ async function saveLatencyTweaks() {
     updateLatencyHeroPills();
     showToast(t('tweaksAppliedToast'), 'success');
   } catch (err) {
-    showToast(String(err), 'error');
-    showModal(state.lang === 'fa' ? 'خطا در اعمال توئیک‌ها' : 'Tweaks Error', String(err.message || err), [{ label: t('ok') }]);
+    showAppErrorModal(err, 'LatencyTweaks');
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -3019,8 +3578,7 @@ async function revertLatencyTweaks() {
     updateLatencyHeroPills();
     showToast(t('tweaksRevertedToast'), 'success');
   } catch (err) {
-    showToast(String(err), 'error');
-    showModal(state.lang === 'fa' ? 'خطا در بازگردانی توئیک‌ها' : 'Tweaks Revert Error', String(err.message || err), [{ label: t('ok') }]);
+    showAppErrorModal(err, 'RevertLatencyTweaks');
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -3082,12 +3640,15 @@ function selectCardByKey(tabKey) {
   document.querySelectorAll('.pro-card, .sci-card').forEach((card) => card.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('section-title').textContent = t(SECTION_TITLES[tabKey] || 'presetsTitle');
-  const ICONS = { graphic: 'fa-desktop', latency: 'fa-bolt', advanced: 'fa-sliders' };
+  const ICONS = { graphic: 'fa-desktop', latency: 'fa-bolt', lan: 'fa-network-wired', advanced: 'fa-sliders' };
   const iconEl = document.getElementById('section-icon');
   if (iconEl && ICONS[tabKey]) {
     iconEl.className = 'fa-solid ' + ICONS[tabKey];
     iconEl.style.fontSize = '13px';
     iconEl.style.color = 'var(--deadlock-orange)';
+  }
+  if (tabKey === 'lan' && typeof initLanPanel === 'function') {
+    initLanPanel();
   }
   for (const p of PANELS) {
     const pan = document.getElementById(`panel-${p}`);
@@ -3107,7 +3668,7 @@ function selectCardByKey(tabKey) {
     active.classList.add('panel-revealing', dirClass);
     setTimeout(() => {
       active.classList.remove('panel-revealing', 'to-fa', 'to-en');
-    }, 750);
+    }, 250);
   }
   const header = document.querySelector('.content-header');
   if (header) {
@@ -3116,7 +3677,7 @@ function selectCardByKey(tabKey) {
     header.classList.add('panel-revealing', dirClass);
     setTimeout(() => {
       header.classList.remove('panel-revealing', 'to-fa', 'to-en');
-    }, 750);
+    }, 250);
   }
   const pingBtn = document.getElementById('btn-refresh-ping');
   if (pingBtn) pingBtn.style.display = tabKey === 'latency' && state.isAdmin ? '' : 'none';
@@ -3142,7 +3703,10 @@ function selectCardByKey(tabKey) {
       }
     });
   }
-  if (tabKey === 'advanced') renderBackups();
+  if (tabKey === 'advanced') {
+    renderBackups();
+    renderModCacheList();
+  }
   if (tabKey === 'graphic') {
     setTimeout(() => {
       updateRendererGlider();
@@ -3244,16 +3808,25 @@ function setupTitlebarDrag() {
 function updateScale() {
   const wrapper = document.getElementById('ui-scale-wrapper');
   if (!wrapper) return;
+  const isDrawerOpen = !!(window.perfState && window.perfState.isDrawerOpen);
   const availW = window.innerWidth;
   const availH = window.innerHeight - 40;
-  const baseW = 920;
+  
+  // When drawer is open, base layout is 900px main + 14px gap + 410px side drawer = 1324px
+  const baseW = isDrawerOpen ? 1344 : 920;
   const baseH = 790;
-  if (availW >= baseW && availH >= baseH) {
-    wrapper.style.transform = 'none';
-    return;
-  }
+  
   const scale = Math.min(1, Math.min(availW / baseW, availH / baseH));
-  wrapper.style.transform = `scale(${scale.toFixed(4)})`;
+  const shiftX = isDrawerOpen ? -212 : 0;
+  
+  if (!isDrawerOpen && availW >= 920 && availH >= 790) {
+    wrapper.style.transform = 'none';
+  } else if (!isDrawerOpen) {
+    wrapper.style.transform = `scale(${scale.toFixed(4)})`;
+  } else {
+    // When drawer is open, shift wrapper left by 212px in local coords so combined (main + drawer) is symmetrically centered
+    wrapper.style.transform = `scale(${scale.toFixed(4)}) translateX(${shiftX}px)`;
+  }
 }
 
 function selectPreset(mode) {
@@ -3368,6 +3941,7 @@ function init() {
     });
     updateMaximizedState();
     setupCustomTooltips();
+    initPerfSystem();
     window.__animateStyle = !!document.querySelector('link[href*="animate.min.css"]');
     if (window.__animateStyle) {
       document.querySelectorAll('.cards-deck .pro-card').forEach((card, i) => {
@@ -3398,6 +3972,7 @@ function init() {
     });
     const btnInstall = document.getElementById('btn-install');
     if (btnInstall) btnInstall.onclick = doInstall;
+    setupModProgressListener();
     const btnBackup = document.getElementById('btn-backup');
     if (btnBackup) btnBackup.onclick = doBackupNow;
     const btnRevert = document.getElementById('btn-revert-vanilla');
@@ -3433,21 +4008,7 @@ function init() {
       };
     }
 
-    const swCloth = document.getElementById('sw-cloth-anim');
-    if (swCloth) {
-      swCloth.onchange = (e) => {
-        state.stopClothAnim = e.target.checked;
-        call('set_settings', { patch: { stop_cloth_anim: e.target.checked } }).catch(() => {});
-      };
-    }
 
-    const swFade = document.getElementById('sw-ragdoll-fade');
-    if (swFade) {
-      swFade.onchange = (e) => {
-        state.ragdollFade = e.target.checked;
-        call('set_settings', { patch: { ragdoll_fade: e.target.checked } }).catch(() => {});
-      };
-    }
 
     const slider = document.getElementById('fov-slider');
     const number = document.getElementById('fov-number');
@@ -3527,11 +4088,1504 @@ function init() {
     window.deleteCurrentCustomPreset = deleteCurrentCustomPreset;
     window.enableWindowsFirewall = enableWindowsFirewall;
 
+    // LAN Connection exports
+    window.switchLanRole = switchLanRole;
+    window.switchVipRole = switchVipRole;
+    window.refreshLocalIps = refreshLocalIps;
+    window.onLanIpSelected = onLanIpSelected;
+    window.toggleBotCountInput = toggleBotCountInput;
+    window.createLanLobbyAction = createLanLobbyAction;
+    window.joinLanLobbyAction = joinLanLobbyAction;
+    window.startLanServerAction = createLanLobbyAction;
+    window.joinLanServerAction = joinLanLobbyAction;
+    window.probeLanServerAction = probeLanServerAction;
+    window.copyClientConsoleCmd = copyClientConsoleCmd;
+    window.createVipRoomAction = createVipRoomAction;
+    window.joinVipRoomAction = joinVipRoomAction;
+    window.leaveActiveSessionAction = leaveActiveSessionAction;
+    window.leaveVipRoomAction = leaveActiveSessionAction;
+    window.copyVipCode = copyVipCode;
+    window.copyVipConnectCmd = copyVipConnectCmd;
+    window.copyVipJoinCmd = copyVipJoinCmd;
+window.onVipSkipDeadworksChange = onVipSkipDeadworksChange;
+window.copyClientShareCmd = copyClientShareCmd;
+    window.copyLobbyCode = copyLobbyCode;
+    window.onVipSkipDeadworksChange = onVipSkipDeadworksChange;
+    window.copyClientShareCmd = copyClientShareCmd;
+    window.initLanPanel = initLanPanel;
+    window.redeemVipKeyAction = redeemVipKeyAction;
+    window.redeemVipExtendKeyAction = redeemVipExtendKeyAction;
+    window.toggleVipExtendInput = toggleVipExtendInput;
+    window.copyHwid = copyHwid;
+    window.startSessionDedicatedServerAction = startSessionDedicatedServerAction;
+    window.stopSessionDedicatedServerAction = stopSessionDedicatedServerAction;
+    window.joinSessionSelfAction = joinSessionSelfAction;
+    window.autoJoinActiveSessionAction = autoJoinActiveSessionAction;
+    window.sendAdminCmd = sendAdminCmd;
+    window.selectSessionModMode = selectSessionModMode;
+
     boot();
   } catch (err) {
     fatal(err);
   }
 }
+
+// ============================================================
+// LAN CONNECTION & MATCHMAKING MANAGER
+// ============================================================
+const lanState = {
+  currentRole: 'host',
+  vipRole: 'host',
+  vipMode: 'relay',
+  serverRunning: false,
+  vipRoomCode: null,
+  vipHostIp: null,
+  vipPollTimer: null,
+  localIps: [],
+  isVip: false,
+  vipUntil: null,
+  vipDaysRemaining: null,
+  hwid: null,
+};
+
+function initLanPanel() {
+  refreshLocalIps();
+  checkLanServerStatus();
+  initVipLicense();
+}
+
+async function initVipLicense() {
+  try {
+    const hwid = await call('get_machine_hwid_cmd');
+    lanState.hwid = hwid;
+    const hwidEl = document.getElementById('vip-hwid-display');
+    if (hwidEl) {
+      hwidEl.textContent = hwid;
+    }
+
+    const res = await call('check_vip_status_cmd', { apiUrl: null });
+    lanState.isVip = !!res.is_vip;
+    lanState.vipUntil = res.vip_until;
+    lanState.vipDaysRemaining = res.days_remaining;
+
+    updateVipLicenseUI();
+  } catch (err) {
+    console.warn('[lan] initVipLicense error:', err);
+    updateVipLicenseUI();
+  }
+}
+
+function updateVipLicenseUI() {
+  const actBox = document.getElementById('vip-activation-box');
+  const statusBar = document.getElementById('vip-status-bar');
+  const meshControls = document.getElementById('vip-mesh-controls');
+  const remainingEl = document.getElementById('vip-status-remaining');
+  const extendBox = document.getElementById('vip-extend-box');
+
+  if (lanState.isVip) {
+    if (actBox) actBox.style.display = 'none';
+    if (statusBar) statusBar.style.display = 'flex';
+    if (meshControls) meshControls.style.display = 'flex';
+
+    if (remainingEl && lanState.vipDaysRemaining !== null && lanState.vipDaysRemaining !== undefined) {
+      const days = lanState.vipDaysRemaining;
+      if (days >= 1) {
+        remainingEl.textContent = t('vipDaysRemaining').replace('{days}', days.toFixed(1));
+      } else {
+        const hours = Math.max(1, Math.round(days * 24));
+        remainingEl.textContent = t('vipHoursRemaining').replace('{hours}', hours);
+      }
+    }
+  } else {
+    if (actBox) actBox.style.display = 'flex';
+    if (statusBar) statusBar.style.display = 'none';
+    if (meshControls) meshControls.style.display = 'none';
+    if (extendBox) extendBox.style.display = 'none';
+  }
+}
+
+async function redeemVipKeyAction() {
+  const input = document.getElementById('vip-key-input');
+  const btn = document.getElementById('btn-vip-redeem');
+  if (!input || !input.value.trim()) {
+    showModal(t('vipActTitle'), state.lang === 'fa' ? 'لطفاً کلید لایسنس VIP را وارد کنید.' : 'Please enter your VIP license key.', [{ label: t('ok') }]);
+    return;
+  }
+
+  const key = input.value.trim().toUpperCase();
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await call('redeem_vip_key_cmd', { apiUrl: null, key, nickname: null });
+    if (res.success) {
+      input.value = '';
+      await initVipLicense();
+      showModal(
+        t('vipActTitle'),
+        state.lang === 'fa'
+          ? `اشتراک VIP با موفقیت فعال شد! (${(res.days_remaining || 0).toFixed(1)} روز اعتبار)`
+          : `VIP subscription activated successfully! (${(res.days_remaining || 0).toFixed(1)} days validity)`,
+        [{ label: t('ok') }]
+      );
+    }
+  } catch (err) {
+    showModal(t('vipActTitle'), `${t('vipRedeemError')}${err}`, [{ label: t('ok') }]);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function redeemVipExtendKeyAction() {
+  const input = document.getElementById('vip-extend-key-input');
+  const btn = document.getElementById('btn-vip-extend-redeem');
+  if (!input || !input.value.trim()) return;
+
+  const key = input.value.trim().toUpperCase();
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await call('redeem_vip_key_cmd', { apiUrl: null, key, nickname: null });
+    if (res.success) {
+      input.value = '';
+      const extendBox = document.getElementById('vip-extend-box');
+      if (extendBox) extendBox.style.display = 'none';
+      await initVipLicense();
+      showModal(
+        t('vipActTitle'),
+        state.lang === 'fa'
+          ? `اشتراک شما با موفقیت تمدید شد! (${(res.days_remaining || 0).toFixed(1)} روز اعتبار کل)`
+          : `Subscription extended successfully! (${(res.days_remaining || 0).toFixed(1)} total days validity)`,
+        [{ label: t('ok') }]
+      );
+    }
+  } catch (err) {
+    showModal(t('vipActTitle'), `${t('vipRedeemError')}${err}`, [{ label: t('ok') }]);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function toggleVipExtendInput() {
+  const box = document.getElementById('vip-extend-box');
+  if (box) {
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+async function copyHwid() {
+  if (!lanState.hwid) return;
+  await copyToClipboard(lanState.hwid);
+  const el = document.getElementById('vip-hwid-display');
+  if (el) {
+    const orig = el.textContent;
+    el.textContent = state.lang === 'fa' ? 'کپی شد!' : 'Copied!';
+    setTimeout(() => { el.textContent = orig; }, 1800);
+  }
+}
+
+function switchLanRole(role) {
+  lanState.currentRole = role;
+  const hostBtn = document.getElementById('btn-lan-role-host');
+  const clientBtn = document.getElementById('btn-lan-role-client');
+  const hostPanel = document.getElementById('lan-panel-host');
+  const clientPanel = document.getElementById('lan-panel-client');
+  if (role === 'host') {
+    if (hostBtn) hostBtn.classList.add('active');
+    if (clientBtn) clientBtn.classList.remove('active');
+    if (hostPanel) hostPanel.style.display = 'flex';
+    if (clientPanel) clientPanel.style.display = 'none';
+  } else {
+    if (hostBtn) hostBtn.classList.remove('active');
+    if (clientBtn) clientBtn.classList.add('active');
+    if (hostPanel) hostPanel.style.display = 'none';
+    if (clientPanel) clientPanel.style.display = 'flex';
+  }
+}
+
+function switchVipRole(role) {
+  lanState.vipRole = role;
+  const hostBtn = document.getElementById('btn-vip-role-host');
+  const joinBtn = document.getElementById('btn-vip-role-join');
+  const hostPanel = document.getElementById('vip-panel-host');
+  const joinPanel = document.getElementById('vip-panel-join');
+  if (role === 'host') {
+    if (hostBtn) hostBtn.classList.add('active');
+    if (joinBtn) joinBtn.classList.remove('active');
+    if (hostPanel) hostPanel.style.display = 'flex';
+    if (joinPanel) joinPanel.style.display = 'none';
+  } else {
+    if (hostBtn) hostBtn.classList.remove('active');
+    if (joinBtn) joinBtn.classList.add('active');
+    if (hostPanel) hostPanel.style.display = 'none';
+    if (joinPanel) joinPanel.style.display = 'flex';
+    refreshVipLobbiesList();
+  }
+}
+
+async function refreshLocalIps() {
+  const sel = document.getElementById('lan-host-ip-select');
+  if (!sel) return;
+  try {
+    const ips = await call('get_lan_local_ips');
+    lanState.localIps = ips || [];
+    sel.innerHTML = '';
+    const defOpt = document.createElement('option');
+    defOpt.value = '0.0.0.0';
+    defOpt.textContent = state.lang === 'fa' ? '0.0.0.0 (تمام کارت‌های شبکه)' : '0.0.0.0 (All Interfaces)';
+    sel.appendChild(defOpt);
+    for (const item of lanState.localIps) {
+      const opt = document.createElement('option');
+      opt.value = item.ip;
+      opt.textContent = `${item.ip} (${item.interface_name})`;
+      sel.appendChild(opt);
+    }
+  } catch (err) {
+    console.warn('[lan] refreshLocalIps failed:', err);
+  }
+}
+
+function onLanIpSelected(val) {
+  const custom = document.getElementById('lan-host-ip-custom');
+  if (custom) {
+    custom.style.display = val === 'custom' ? 'block' : 'none';
+  }
+}
+
+function toggleBotCountInput(checked) {
+  const el = document.getElementById('lan-bot-count-wrap');
+  if (el) el.style.display = checked ? 'flex' : 'none';
+}
+
+async function checkLanServerStatus() {
+  try {
+    const status = await call('get_lan_server_status');
+    lanState.serverRunning = !!status.is_running;
+    updateServerStatusUI(status);
+  } catch (err) {
+    console.warn('[lan] checkLanServerStatus failed:', err);
+  }
+}
+
+let lobbyPollTimer = null;
+
+function updateServerStatusUI(status) {
+  const isRunning = status && status.is_running;
+  const isCrashed = status && status.crashed;
+  const startBtn = document.getElementById('btn-lan-start-server');
+  const stopBtn = document.getElementById('btn-lan-stop-server');
+  const copyBtn = document.getElementById('btn-lan-copy-connect');
+  const joinSelfBtn = document.getElementById('btn-lan-join-self');
+  const liveControls = document.getElementById('lan-live-controls');
+  const hintEl = document.getElementById('lan-server-hint');
+  const statusDot = document.getElementById('lan-status-dot');
+  const statusText = document.getElementById('lan-status-text');
+
+  if (isRunning) {
+    if (startBtn) startBtn.style.display = 'none';
+    if (stopBtn) stopBtn.style.display = 'flex';
+    if (copyBtn) copyBtn.style.display = 'flex';
+    if (joinSelfBtn) joinSelfBtn.style.display = 'flex';
+    if (liveControls) liveControls.style.display = 'flex';
+    if (hintEl) hintEl.style.display = 'flex';
+    if (statusDot) { statusDot.className = 'lan-status-dot active'; }
+    if (statusText) { statusText.textContent = state.lang === 'fa' ? `آنلاین (شناسه: ${status.pid || 'فعال'})` : `ONLINE (PID: ${status.pid || 'Active'})`; statusText.style.color = '#22c55e'; }
+    startLobbyStatusPolling();
+  } else if (isCrashed) {
+    if (startBtn) {
+      startBtn.style.display = 'flex';
+      startBtn.disabled = false;
+    }
+    if (stopBtn) stopBtn.style.display = 'none';
+    if (copyBtn) copyBtn.style.display = 'none';
+    if (joinSelfBtn) joinSelfBtn.style.display = 'none';
+    if (liveControls) liveControls.style.display = 'none';
+    if (hintEl) hintEl.style.display = 'none';
+    if (statusDot) { statusDot.className = 'lan-status-dot crashed'; }
+    if (statusText) {
+      const exitMsg = (status.exit_code !== undefined && status.exit_code !== null) ? ` (کد خروج: ${status.exit_code})` : '';
+      statusText.textContent = state.lang === 'fa' ? `متوقف شد (کرش پردازه${exitMsg})` : `CRASHED (Exit: ${status.exit_code ?? 'Err'})`;
+      statusText.style.color = '#ef4444';
+    }
+    stopLobbyStatusPolling();
+  } else {
+    if (startBtn) startBtn.style.display = 'flex';
+    if (stopBtn) stopBtn.style.display = 'none';
+    if (copyBtn) copyBtn.style.display = 'none';
+    if (joinSelfBtn) joinSelfBtn.style.display = 'none';
+    if (liveControls) liveControls.style.display = 'none';
+    if (hintEl) hintEl.style.display = 'none';
+    if (statusDot) { statusDot.className = 'lan-status-dot idle'; }
+    if (statusText) { statusText.textContent = t('lanStatusIdle'); statusText.style.color = '#ccc'; }
+    stopLobbyStatusPolling();
+  }
+}
+
+function startLobbyStatusPolling() {
+  if (lobbyPollTimer) clearInterval(lobbyPollTimer);
+  fetchLobbyStatus();
+  lobbyPollTimer = setInterval(async () => {
+    await checkLanServerStatus();
+    if (lanState.serverRunning) {
+      await fetchLobbyStatus();
+    }
+  }, 2000);
+}
+
+function stopLobbyStatusPolling() {
+  if (lobbyPollTimer) {
+    clearInterval(lobbyPollTimer);
+    lobbyPollTimer = null;
+  }
+}
+
+async function fetchLobbyStatus() {
+  if (!lanState.serverRunning) return;
+  try {
+    const statusJson = await call('get_lan_lobby_status');
+    if (!statusJson) return;
+    const s = JSON.parse(statusJson);
+    const badge = document.getElementById('lan-lobby-badge');
+    if (!badge) return;
+
+    if (s.is_paused) {
+      badge.innerHTML = `<i class="fa-solid fa-pause"></i> <span style="color:#f59e0b;">${state.lang === 'fa' ? 'سرور متوقف است' : 'Server Paused'}</span>`;
+      badge.style.background = 'rgba(245, 158, 11, 0.15)';
+      badge.style.border = '1px solid #f59e0b';
+    } else if (s.state === 'WaitingForPlayers') {
+      badge.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> ${state.lang === 'fa' ? `لابی پیش از بازی (${s.ready_count}/${s.required_count} آماده - ${s.connected_count} متصل)` : `Pre-Game Lobby (${s.ready_count}/${s.required_count} ready - ${s.connected_count} connected)`}`;
+      badge.style.background = 'rgba(56, 189, 248, 0.15)';
+      badge.style.border = '1px solid #38bdf8';
+    } else if (s.state === 'Countdown') {
+      badge.innerHTML = `<i class="fa-solid fa-stopwatch"></i> ${state.lang === 'fa' ? `شمارش معکوس شروع: ${s.countdown_seconds} ثانیه...` : `Countdown: ${s.countdown_seconds}s...`}`;
+      badge.style.background = 'rgba(234, 179, 8, 0.2)';
+      badge.style.border = '1px solid #eab308';
+    } else if (s.state === 'InGame') {
+      badge.innerHTML = `<i class="fa-solid fa-gamepad"></i> ${state.lang === 'fa' ? `بازی در جریان است (${s.connected_count} بازیکن)` : `Match in progress (${s.connected_count} players)`}`;
+      badge.style.background = 'rgba(34, 197, 94, 0.15)';
+      badge.style.border = '1px solid #22c55e';
+    }
+  } catch (err) {
+    // Ignore transient read errors during server initialization
+  }
+}
+
+async function sendLanServerCmd(cmd) {
+  try {
+    await call('send_lan_server_command', { command: cmd });
+    const badge = document.getElementById('lan-lobby-badge');
+    if (badge) {
+      badge.innerHTML = `<i class="fa-solid fa-paper-plane"></i> دستور ${cmd} ارسال شد...`;
+    }
+    const labelMap = {
+      'start': 'دستور شروع بازی (!start) به سرور ارسال شد',
+      'togglepause': 'دستور توقف / ادامه (!pause) به سرور ارسال شد',
+      'restart': 'دستور ریست لابی و هیروها (!restart) به سرور ارسال شد',
+    };
+    showToast(labelMap[cmd] || `دستور ${cmd} به سرور ارسال شد`, 'info');
+    setTimeout(fetchLobbyStatus, 600);
+  } catch (err) {
+    console.error('[lan] send server command failed:', err);
+    showToast(`خطا در ارسال دستور به سرور: ${err}`, 'error');
+  }
+}
+
+// ==========================================================================
+// Part 3: Active Match Session Engine (Deadworks Dedicated & Modded Suite)
+// ==========================================================================
+const sessionState = {
+  active: false,
+  role: 'host',
+  connectionType: 'standard_lan',
+  roomCode: null,
+  connectTarget: '127.0.0.1:27005',
+  modMode: 'vanilla',
+  isServerRunning: false,
+  rosterTimer: null,
+};
+
+function selectSessionModMode(mode) {
+  sessionState.modMode = mode;
+  document.querySelectorAll('.session-mode-option').forEach(opt => {
+    opt.classList.toggle('active', opt.id === `opt-mode-${mode.replace('_', '-')}`);
+  });
+  const radio = document.querySelector(`input[name="session_mod_mode"][value="${mode}"]`);
+  if (radio) radio.checked = true;
+
+  const badge = document.getElementById('session-mod-mode-badge');
+  if (badge) {
+    if (mode === 'cursed_arena') badge.textContent = state.lang === 'fa' ? 'کرسد آرنا (دوئل)' : 'Cursed Arena (1v1)';
+    else if (mode === 'ability_brawl') badge.textContent = state.lang === 'fa' ? 'ماد درفت اسکیل' : 'Ability Brawl';
+    else if (mode === 'automatch') badge.textContent = state.lang === 'fa' ? 'مسابقه تیمی ۶ به ۶' : 'AutoMatch 6v6';
+    else if (mode === 'none') badge.textContent = state.lang === 'fa' ? 'بدون ماد (ساده)' : 'Vanilla (No Mods)';
+    else badge.textContent = state.lang === 'fa' ? 'دد‌ورکس پایه' : 'Deadworks Base';
+  }
+
+  const cursedBar = document.getElementById('session-cursed-actions');
+  if (cursedBar) cursedBar.style.display = (mode === 'cursed_arena' && sessionState.isServerRunning) ? 'block' : 'none';
+  const cursedGuide = document.getElementById('guide-cursed-mode');
+  if (cursedGuide) cursedGuide.style.display = mode === 'cursed_arena' ? 'flex' : 'none';
+
+  if (mode === 'cursed_arena') {
+    const mapSelect = document.getElementById('session-map-select');
+    if (mapSelect) mapSelect.value = 'dl_midtown';
+  }
+}
+
+async function enterActiveSession(role, opts) {
+  sessionState.active = true;
+  sessionState.role = role;
+  sessionState.connectionType = opts.connectionType || 'standard_lan';
+  sessionState.roomCode = opts.roomCode || null;
+  sessionState.connectTarget = opts.connectTarget || '127.0.0.1:27005';
+  sessionState.clientConnectTarget = opts.clientConnectTarget || opts.connectTarget || '127.0.0.1:27005';
+  sessionState.modMode = opts.modMode || 'vanilla';
+  sessionState.skipDeadworks = !!opts.skipDeadworks;
+  sessionState.hostIp = opts.hostIp || '0.0.0.0';
+  sessionState.publicPort = opts.publicPort || 27005;
+  sessionState.nickname = opts.nickname || (role === 'host' ? 'Host' : 'Player');
+
+  // Screen transition: Hide lobby browser, show active session
+  const browserEl = document.getElementById('lan-lobby-browser');
+  const sessionEl = document.getElementById('lan-active-session');
+  if (browserEl) browserEl.style.display = 'none';
+  if (sessionEl) sessionEl.style.display = 'flex';
+
+  // Top Bar Meta
+  const connBadge = document.getElementById('session-conn-mode-badge');
+  if (connBadge) {
+    if (sessionState.connectionType === 'vip_relay') connBadge.textContent = state.lang === 'fa' ? 'رله پرسرعت' : 'VIP Fast Relay';
+    else if (sessionState.connectionType === 'vip_wintun') connBadge.textContent = state.lang === 'fa' ? 'شبکه مش اختصاصی' : 'VIP Wintun Mesh';
+    else connBadge.textContent = state.lang === 'fa' ? 'شبکه محلی' : 'Standard LAN';
+  }
+  selectSessionModMode(sessionState.modMode);
+
+  // 1. Separate Dedicated Lobby Code Pill
+  const roomPill = document.getElementById('session-room-code-pill');
+  const roomDisplay = document.getElementById('session-room-code-display');
+  if (roomPill && roomDisplay) {
+    if (sessionState.roomCode) {
+      roomDisplay.textContent = sessionState.roomCode;
+      roomPill.style.display = 'inline-flex';
+    } else {
+      roomPill.style.display = 'none';
+    }
+  }
+
+  // 2. Separate Dedicated Console Command Pill
+  const displayEl = document.getElementById('session-connect-display');
+  if (displayEl) {
+    const target = sessionState.connectTarget || '127.0.0.1:27005';
+    const clean = target.startsWith('connect ') ? target : `connect ${target}`;
+    displayEl.textContent = clean;
+  }
+
+  // Views based on role
+  const hostView = document.getElementById('session-view-host');
+  const clientView = document.getElementById('session-view-client');
+  const hostDeadworksCard = document.getElementById('session-host-deadworks-card');
+  const hostDirectCard = document.getElementById('session-host-direct-card');
+
+  if (role === 'host') {
+    if (hostView) hostView.style.display = 'block';
+    if (clientView) clientView.style.display = 'none';
+
+    if (sessionState.skipDeadworks) {
+      if (hostDeadworksCard) hostDeadworksCard.style.display = 'none';
+      if (hostDirectCard) hostDirectCard.style.display = 'block';
+    } else {
+      if (hostDeadworksCard) hostDeadworksCard.style.display = 'block';
+      if (hostDirectCard) hostDirectCard.style.display = 'none';
+      await checkLanServerStatus();
+    }
+  } else {
+    if (hostView) hostView.style.display = 'none';
+    if (clientView) clientView.style.display = 'block';
+
+    const checklistEl = document.querySelector('.session-mod-checklist');
+    const clientHeading = document.querySelector('.session-client-heading');
+    const clientSub = document.querySelector('.session-client-sub');
+
+    if (sessionState.skipDeadworks) {
+      if (checklistEl) checklistEl.style.display = 'none';
+      if (clientHeading) clientHeading.textContent = state.lang === 'fa' ? 'لابی آماده اتصال بدون تغییر فایل‌ها' : 'Lobby Ready (No File Changes)';
+      if (clientSub) clientSub.textContent = state.lang === 'fa' ? 'اتصال شبکه برقرار است و بدون تغییر فایل‌های بازی می‌توانید مستقیماً وارد شوید.' : 'Connected to network lobby. You can launch and connect without file modifications.';
+    } else {
+      if (checklistEl) checklistEl.style.display = 'grid';
+      if (clientHeading) clientHeading.textContent = t('sessionClientHeading');
+      if (clientSub) clientSub.textContent = t('sessionClientSub');
+      await checkAndPrepareClientEnvironment(sessionState.modMode);
+    }
+  }
+
+  startSessionRosterPolling();
+}
+
+async function checkAndPrepareClientEnvironment(mode) {
+  if (sessionState.skipDeadworks || mode === 'none') return;
+  try {
+    const env = await call('check_deadworks_env_cmd');
+    updateChecklistUI(env);
+
+    const needsPrep = !env.bootstrap_cached || !env.gameinfo_patched
+      || (mode === 'ability_brawl' && !env.ability_brawl_cached)
+      || (mode === 'cursed_arena' && !env.cursed_arena_cached);
+
+    if (needsPrep) {
+      showToast(state.lang === 'fa' ? 'در حال بررسی و آماده‌سازی فایل‌های ماد کلاینت...' : 'Preparing client mod files...', 'info');
+      await call('prepare_modded_client_cmd', { mode });
+      const updatedEnv = await call('check_deadworks_env_cmd');
+      updateChecklistUI(updatedEnv);
+    }
+  } catch (err) {
+    console.warn('[client-prep] error:', err);
+  }
+}
+
+function updateChecklistUI(env) {
+  const setChk = (id, ok) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('pending', !ok);
+    const icon = el.querySelector('i');
+    if (icon) icon.className = ok ? 'fa-solid fa-check' : 'fa-solid fa-clock';
+  };
+  setChk('chk-dotnet', env.dotnet10);
+  setChk('chk-bootstrap', env.bootstrap_cached);
+  let addonOk = true;
+  if (sessionState.modMode === 'ability_brawl') addonOk = env.ability_brawl_cached;
+  else if (sessionState.modMode === 'cursed_arena') addonOk = env.cursed_arena_cached;
+  setChk('chk-addon', addonOk);
+  setChk('chk-gameinfo', env.gameinfo_patched);
+}
+
+async function leaveActiveSessionAction() {
+  stopSessionRosterPolling();
+
+  if (!sessionState.skipDeadworks) {
+    try {
+      await call('restore_vanilla_client_cmd');
+    } catch (_) {}
+  }
+
+  if (sessionState.roomCode) {
+    try {
+      await call('leave_vip_room_cmd', { apiUrl: null, roomCode: sessionState.roomCode });
+    } catch (_) {}
+  }
+
+  if (lanState.serverRunning || sessionState.isServerRunning) {
+    try {
+      await call('stop_lan_server');
+    } catch (_) {}
+  }
+
+  sessionState.active = false;
+  sessionState.isServerRunning = false;
+  lanState.serverRunning = false;
+  lanState.vipRoomCode = null;
+
+  // Screen transition: Hide active session, restore lobby browser
+  const sessionEl = document.getElementById('lan-active-session');
+  const browserEl = document.getElementById('lan-lobby-browser');
+  if (sessionEl) sessionEl.style.display = 'none';
+  if (browserEl) browserEl.style.display = 'block';
+
+  showToast(
+    state.lang === 'fa'
+      ? 'از اتاق خارج شدید و بازی به حالت خالص اولیه بازگردانی شد.'
+      : 'Disconnected from session. Game files restored to clean vanilla state.',
+    'info'
+  );
+}
+
+async function autoJoinActiveSessionAction() {
+  const target = sessionState.connectTarget || '127.0.0.1:27005';
+  const cleanCmd = target.startsWith('connect ') ? target : `connect ${target}`;
+  const mode = sessionState.skipDeadworks ? null : (sessionState.modMode || 'vanilla');
+  try {
+    const isRunning = await call('is_deadlock_running_cmd').catch(() => false);
+    
+    // Always backup copy command to clipboard for zero friction
+    await copyToClipboard(cleanCmd).catch(() => {});
+
+    if (isRunning) {
+      showToast(
+        state.lang === 'fa'
+          ? 'بازی ددلاک در حال اجراست؛ اتصال مستقیم بدون خروج از بازی انجام شد.'
+          : 'Deadlock is already running; connecting directly in-game without restart.',
+        'success'
+      );
+    } else {
+      showToast(
+        state.lang === 'fa'
+          ? 'در حال آماده‌سازی و ورود مستقیم به بازی ددلاک...'
+          : 'Preparing client and launching Deadlock...',
+        'info'
+      );
+    }
+
+    if (!sessionState.skipDeadworks) {
+      await checkAndPrepareClientEnvironment(mode);
+    }
+
+    await call('auto_join_deadlock_cmd', { connectTarget: target, mode });
+  } catch (err) {
+    showModal(t('sessionActiveTitle'), `خطا در اجرای بازی: ${err}`, [{ label: t('ok') }]);
+  }
+}
+
+async function copyLobbyCode() {
+  const code = sessionState.roomCode || lanState.vipRoomCode;
+  if (!code) {
+    showToast(state.lang === 'fa' ? 'کد لابی یافت نشد.' : 'No lobby code available.', 'warn');
+    return;
+  }
+  await copyToClipboard(code);
+  showToast(state.lang === 'fa' ? `کد لابی کپی شد: ${code}` : `Lobby code copied: ${code}`, 'success');
+}
+
+async function copySessionTarget() {
+  const target = sessionState.connectTarget || '127.0.0.1:27005';
+  const clean = target.startsWith('connect ') ? target : `connect ${target}`;
+  await copyToClipboard(clean);
+  showToast(state.lang === 'fa' ? `دستور اتصال کپی شد: ${clean}` : `Copied console command: ${clean}`, 'info');
+}
+
+async function startSessionDedicatedServerAction() {
+  const mapSelect = document.getElementById('session-map-select');
+  const mapName = mapSelect ? mapSelect.value : 'dl_midtown';
+  const maxPlayers = parseInt(document.getElementById('session-max-players')?.value || '12', 10);
+  const isOffline = document.getElementById('session-check-offline')?.checked ?? true;
+  const isSdr = document.getElementById('session-check-sdr')?.checked ?? false;
+  const modMode = sessionState.modMode || 'vanilla';
+  const isCursed = modMode === 'cursed_arena';
+
+  const config = {
+    host_ip: sessionState.hostIp || '0.0.0.0',
+    public_port: sessionState.publicPort || 27005,
+    internal_port: 27006,
+    map_name: isCursed ? 'dl_midtown' : mapName,
+    max_players: isCursed ? 12 : maxPlayers,
+    enable_bots: false,
+    bot_count: 0,
+    street_brawl: false,
+    enable_cheats: isCursed,
+    duplicate_heroes: false,
+    unlock_flex_slots: true,
+    hero_draft: false,
+    active_lane: 0,
+    disable_autokick: true,
+    use_modded_server: true,
+    mod_match_start: true,
+    mod_auto_match: modMode === 'automatch',
+    mod_admin_tools: true,
+    mod_ability_brawl: modMode === 'ability_brawl',
+    mod_cursed_arena: isCursed,
+    pregame_lobby: true,
+    start_paused: false,
+    min_players: 2,
+    enable_sdr: isSdr,
+    offline_mode: isOffline,
+    server_mode: modMode,
+  };
+
+  const startBtn = document.getElementById('btn-session-start-server');
+  if (startBtn) startBtn.disabled = true;
+
+  try {
+    await checkAndPrepareClientEnvironment(modMode);
+    const res = await call('start_lan_server', { config });
+    sessionState.isServerRunning = true;
+    lanState.serverRunning = true;
+
+    // Update Host UI
+    if (startBtn) startBtn.style.display = 'none';
+    const stopBtn = document.getElementById('btn-session-stop-server');
+    const joinBtn = document.getElementById('btn-session-host-join');
+    const adminBar = document.getElementById('session-admin-bar');
+    const stateBadge = document.getElementById('session-server-state-badge');
+
+    if (stopBtn) stopBtn.style.display = 'inline-flex';
+    if (joinBtn) joinBtn.style.display = 'inline-flex';
+    if (adminBar) {
+      adminBar.style.display = 'flex';
+      const cursedBar = document.getElementById('session-cursed-actions');
+      if (cursedBar) cursedBar.style.display = isCursed ? 'block' : 'none';
+    }
+    if (stateBadge) {
+      stateBadge.textContent = state.lang === 'fa' ? 'در حال اجرا' : 'RUNNING';
+      stateBadge.className = 'session-badge-mini running';
+    }
+
+    showToast(
+      state.lang === 'fa'
+        ? 'سرور ددورکس با موفقیت اجرا شد. پنجره کنسول ویندوز باز است.'
+        : 'Deadworks server launched successfully. Console is active.',
+      'success'
+    );
+  } catch (err) {
+    showModal(t('sessionActiveTitle'), `خطا در اجرای سرور ددورکس: ${err}`, [{ label: t('ok') }]);
+  } finally {
+    if (startBtn) startBtn.disabled = false;
+  }
+}
+
+async function stopSessionDedicatedServerAction() {
+  try {
+    await call('stop_lan_server');
+    await call('restore_vanilla_client_cmd');
+  } catch (_) {}
+
+  sessionState.isServerRunning = false;
+  lanState.serverRunning = false;
+
+  const startBtn = document.getElementById('btn-session-start-server');
+  const stopBtn = document.getElementById('btn-session-stop-server');
+  const joinBtn = document.getElementById('btn-session-host-join');
+  const adminBar = document.getElementById('session-admin-bar');
+  const stateBadge = document.getElementById('session-server-state-badge');
+  const cursedBar = document.getElementById('session-cursed-actions');
+
+  if (startBtn) startBtn.style.display = 'inline-flex';
+  if (stopBtn) stopBtn.style.display = 'none';
+  if (joinBtn) joinBtn.style.display = 'none';
+  if (adminBar) adminBar.style.display = 'none';
+  if (cursedBar) cursedBar.style.display = 'none';
+  if (stateBadge) {
+    stateBadge.textContent = state.lang === 'fa' ? 'متوقف شد' : 'STOPPED';
+    stateBadge.className = 'session-badge-mini';
+    stateBadge.style.background = '';
+    stateBadge.style.color = '';
+    stateBadge.style.borderColor = '';
+  }
+
+  showToast(state.lang === 'fa' ? 'سرور متوقف شد.' : 'Server stopped.', 'info');
+}
+
+async function joinSessionSelfAction() {
+  const mode = sessionState.modMode || 'cursed_arena';
+  try {
+    showToast(state.lang === 'fa' ? 'در حال آماده‌سازی و ورود میزبان...' : 'Preparing host client and launching...', 'info');
+    await checkAndPrepareClientEnvironment(mode);
+    await call('auto_join_deadlock_cmd', { connectTarget: '127.0.0.1:27005', mode });
+  } catch (err) {
+    showModal(t('sessionActiveTitle'), `خطا در اجرای بازی: ${err}`, [{ label: t('ok') }]);
+  }
+}
+
+async function sendAdminCmd(cmd) {
+  try {
+    await call('send_lan_server_command', { command: cmd });
+    showToast(state.lang === 'fa' ? `دستور مدیریت '${cmd}' به سرور ارسال شد!` : `Admin Command '${cmd}' sent to Deadworks server!`, 'info');
+  } catch (err) {
+    showToast(`Command error: ${err}`, 'error');
+  }
+}
+
+function startSessionRosterPolling() {
+  stopSessionRosterPolling();
+  updateSessionRoster();
+  sessionState.rosterTimer = setInterval(updateSessionRoster, 3000);
+}
+
+function stopSessionRosterPolling() {
+  if (sessionState.rosterTimer) {
+    clearInterval(sessionState.rosterTimer);
+    sessionState.rosterTimer = null;
+  }
+}
+
+async function updateSessionRoster() {
+  if (!sessionState.active) return;
+  const rosterContainer = document.getElementById('session-roster-list');
+  const countBadge = document.getElementById('session-player-count');
+
+  // Watchdog check for host dedicated server
+  if (sessionState.role === 'host' && sessionState.isServerRunning) {
+    try {
+      const sStatus = await call('get_lan_server_status');
+      if (sStatus && !sStatus.is_running && sStatus.crashed) {
+        sessionState.isServerRunning = false;
+        lanState.serverRunning = false;
+        const startBtn = document.getElementById('btn-session-start-server');
+        const stopBtn = document.getElementById('btn-session-stop-server');
+        const joinBtn = document.getElementById('btn-session-host-join');
+        const adminBar = document.getElementById('session-admin-bar');
+        const stateBadge = document.getElementById('session-server-state-badge');
+        const cursedBar = document.getElementById('session-cursed-actions');
+
+        if (startBtn) { startBtn.style.display = 'inline-flex'; startBtn.disabled = false; }
+        if (stopBtn) stopBtn.style.display = 'none';
+        if (joinBtn) joinBtn.style.display = 'none';
+        if (adminBar) adminBar.style.display = 'none';
+        if (cursedBar) cursedBar.style.display = 'none';
+        if (stateBadge) {
+          stateBadge.textContent = state.lang === 'fa' ? 'متوقف شد (کرش پردازه)' : 'CRASHED';
+          stateBadge.className = 'session-badge-mini';
+          stateBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+          stateBadge.style.color = '#ef4444';
+          stateBadge.style.borderColor = '#ef4444';
+        }
+        showToast(
+          state.lang === 'fa'
+            ? 'سرور بازی به طور ناگهانی متوقف یا بسته شد! می‌توانید آن را دوباره راه‌اندازی کنید.'
+            : 'Dedicated server terminated unexpectedly (Crashed)! Click Start to restart.',
+          'error'
+        );
+      }
+    } catch (_) {}
+  }
+
+  if (sessionState.roomCode) {
+    try {
+      const status = await call('get_vip_room_status_cmd', { apiUrl: null, roomCode: sessionState.roomCode });
+      if (status && status.peers) {
+        if (countBadge) countBadge.textContent = `${status.peers.length} بازیکن`;
+        if (rosterContainer) {
+          rosterContainer.innerHTML = '';
+          for (const p of status.peers) {
+            const item = document.createElement('div');
+            item.className = 'session-roster-item';
+            const isMeHost = sessionState.role === 'host';
+            const canModerate = isMeHost && !p.is_host;
+
+            const safeName = escapeHtml(p.name || 'Player');
+            const safeIp = escapeHtml(p.ip || '');
+
+            item.innerHTML = `
+              <div class="roster-player-info">
+                <div class="roster-avatar"><i class="fa-solid fa-user"></i></div>
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                  <span class="roster-player-name">${safeName}</span>
+                  <span style="font-size:10px;color:#94a3b8;">${safeIp}</span>
+                </div>
+                ${p.is_host ? `<span class="roster-host-tag">${state.lang === 'fa' ? 'میزبان' : 'HOST'}</span>` : ''}
+              </div>
+            `;
+
+            if (canModerate) {
+              const actionsDiv = document.createElement('div');
+              actionsDiv.className = 'roster-actions';
+
+              const btnKick = document.createElement('button');
+              btnKick.type = 'button';
+              btnKick.className = 'btn-roster-kick';
+              btnKick.textContent = state.lang === 'fa' ? 'اخراج' : 'Kick';
+              btnKick.addEventListener('click', () => kickSessionPeer(p.name));
+
+              const btnBan = document.createElement('button');
+              btnBan.type = 'button';
+              btnBan.className = 'btn-roster-ban';
+              btnBan.textContent = state.lang === 'fa' ? 'مسدود' : 'Ban';
+              btnBan.addEventListener('click', () => banSessionPeer(p.name));
+
+              actionsDiv.appendChild(btnKick);
+              actionsDiv.appendChild(btnBan);
+              item.appendChild(actionsDiv);
+            }
+            rosterContainer.appendChild(item);
+          }
+        }
+      }
+    } catch (_) {}
+  } else {
+    // Standard LAN local session fallback
+    if (rosterContainer) {
+      rosterContainer.innerHTML = `
+        <div class="session-roster-item">
+          <div class="roster-player-info">
+            <div class="roster-avatar"><i class="fa-solid fa-crown" style="color:gold"></i></div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span class="roster-player-name">${sessionState.role === 'host' ? (state.lang === 'fa' ? 'میزبان (شما)' : 'Host (You)') : (state.lang === 'fa' ? 'بازیکن (شما)' : 'Client (You)')}</span>
+              <span style="font-size:10px;color:#34d399;">${state.lang === 'fa' ? 'اتصال مستقیم فعال' : 'Direct Socket Active'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+}
+
+async function kickSessionPeer(peerName) {
+  if (!sessionState.roomCode) return;
+  try {
+    await call('kick_vip_peer_cmd', { apiUrl: null, roomCode: sessionState.roomCode, peerName });
+    showToast(state.lang === 'fa' ? `بازیکن ${peerName} اخراج شد.` : `Player ${peerName} kicked.`, 'warning');
+    setTimeout(updateSessionRoster, 500);
+  } catch (err) {
+    showToast(`Kick failed: ${err}`, 'error');
+  }
+}
+
+async function banSessionPeer(peerName) {
+  if (!sessionState.roomCode) return;
+  try {
+    await call('ban_vip_peer_cmd', { apiUrl: null, roomCode: sessionState.roomCode, peerName });
+    showToast(state.lang === 'fa' ? `بازیکن ${peerName} از اتاق مسدود شد.` : `Player ${peerName} banned from room.`, 'error');
+    setTimeout(updateSessionRoster, 500);
+  } catch (err) {
+    showToast(`Ban failed: ${err}`, 'error');
+  }
+}
+
+async function checkIsGameRunning() {
+  try {
+    const list = await call('check_running');
+    return Array.isArray(list) && list.length > 0;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function handleHostPreflightAndSetup(modMode) {
+  let isRunning = await checkIsGameRunning();
+  if (isRunning) {
+    const action = await showModal(
+      state.lang === 'fa' ? 'بازی Deadlock در حال اجراست' : 'Deadlock is Currently Running',
+      state.lang === 'fa'
+        ? 'بازی Deadlock در حال حاضر باز است و فایل‌های آن توسط ویندوز قفل می‌باشند.\nبرای نصب سرور Deadworks، تنظیم مپ‌ها و ساخت لابی، بازی باید بسته شود.\n\nمی‌توانید بازی را به صورت دستی ببندید یا دکمه زیر را بزنید تا برنامه بازی را به طور خودکار ببندد.'
+        : 'Deadlock is currently running and its game files are locked by Windows.\nTo deploy the Deadworks server and patch gameinfo.gi mod paths, the game must be closed.\n\nPlease close the game to create your lobby, or click below to close it automatically.',
+      [
+        {
+          label: state.lang === 'fa' ? 'بستن خودکار بازی و ادامه' : 'Close Game & Continue',
+          value: 'auto_close',
+          kind: 'danger'
+        },
+        {
+          label: state.lang === 'fa' ? 'دستی بستم، ادامه بده' : 'I Closed Game Manually, Continue',
+          value: 'manual_closed',
+          kind: 'apply'
+        },
+        {
+          label: state.lang === 'fa' ? 'انصراف' : 'Cancel',
+          value: 'cancel'
+        }
+      ]
+    );
+
+    if (!action || action === 'cancel') {
+      return false;
+    }
+
+    if (action === 'auto_close') {
+      showToast(state.lang === 'fa' ? 'در حال بستن بازی Deadlock...' : 'Closing Deadlock...', 'info');
+      await call('close_deadlock_game_cmd');
+      await new Promise(r => setTimeout(r, 800));
+    }
+
+    isRunning = await checkIsGameRunning();
+    if (isRunning) {
+      showModal(
+        state.lang === 'fa' ? 'خطا در بستن بازی' : 'Game Still Running',
+        state.lang === 'fa'
+          ? 'بازی Deadlock همچنان در حال اجراست. لطفاً آن را به صورت دستی ببندید و مجدداً تلاش کنید.'
+          : 'Deadlock is still running. Please close it manually and try again.',
+        [{ label: t('ok') }]
+      );
+      return false;
+    }
+  }
+
+  try {
+    showToast(
+      state.lang === 'fa'
+        ? 'در حال آماده‌سازی فایل‌های سرور Deadworks و پچ مسیرهای ماد...'
+        : 'Setting up Deadworks server and patching mod paths...',
+      'info'
+    );
+    await call('setup_host_server_env_cmd', { mode: modMode });
+    return true;
+  } catch (err) {
+    showModal(
+      state.lang === 'fa' ? 'خطا در آماده‌سازی سرور' : 'Server Setup Error',
+      `${state.lang === 'fa' ? 'آماده‌سازی فایل‌های سرور با خطا مواجه شد:' : 'Failed to setup server environment:'}\n${err}`,
+      [{ label: t('ok') }]
+    );
+    return false;
+  }
+}
+
+async function createLanLobbyAction() {
+  const nickname = document.getElementById('lan-host-nickname')?.value?.trim() || 'Host';
+  const modSelect = document.getElementById('lan-host-mod-mode');
+  const chosenMod = modSelect ? modSelect.value : 'vanilla';
+  const ipSelect = document.getElementById('lan-host-ip-select');
+  const ipCustom = document.getElementById('lan-host-ip-custom');
+  let chosenIp = '0.0.0.0';
+  if (ipCustom && ipCustom.style.display !== 'none' && ipCustom.value.trim()) {
+    chosenIp = ipCustom.value.trim();
+  } else if (ipSelect && ipSelect.value) {
+    chosenIp = ipSelect.value;
+  }
+
+  const publicPort = parseInt(document.getElementById('lan-public-port')?.value || '27005', 10);
+  const btn = document.getElementById('btn-lan-create-lobby');
+  if (btn) btn.disabled = true;
+
+  try {
+    const ready = await handleHostPreflightAndSetup(chosenMod);
+    if (!ready) return;
+
+    lanState.hostNickname = nickname;
+    lanState.hostIp = chosenIp;
+    lanState.publicPort = publicPort;
+    lanState.isHost = true;
+
+    // Display target: If 0.0.0.0, use the first preferred local adapter IP if available
+    let displayIp = chosenIp;
+    if (displayIp === '0.0.0.0' && lanState.localIps && lanState.localIps.length > 0) {
+      const nonZero = lanState.localIps.find(x => x.ip && x.ip !== '0.0.0.0');
+      if (nonZero) displayIp = nonZero.ip;
+    }
+
+    const connectTarget = `${displayIp}:${publicPort}`;
+
+    enterActiveSession('host', {
+      connectionType: 'standard_lan',
+      roomCode: null,
+      connectTarget: connectTarget,
+      modMode: chosenMod,
+      hostIp: chosenIp,
+      publicPort: publicPort,
+      nickname: nickname,
+    });
+  } catch (err) {
+    showModal(t('stdLanTitle'), `خطا در ایجاد لابی: ${err}`, [{ label: t('ok') }]);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function joinLanLobbyAction() {
+  const nickname = document.getElementById('lan-client-nickname')?.value?.trim() || 'Player';
+  const targetInput = document.getElementById('lan-client-target-ip');
+  const targetIp = targetInput ? targetInput.value.trim() : '';
+
+  if (!targetIp) {
+    showModal(
+      t('stdLanTitle'),
+      state.lang === 'fa' ? 'لطفاً آدرس IP سرور میزبان را وارد کنید.' : 'Please enter host IP:Port.',
+      [{ label: t('ok') }]
+    );
+    return;
+  }
+
+  const cleanTarget = targetIp.replace(/^connect\s+/i, '').trim();
+  const btn = document.getElementById('btn-lan-join-lobby');
+  if (btn) btn.disabled = true;
+
+  try {
+    enterActiveSession('client', {
+      connectionType: 'standard_lan',
+      roomCode: null,
+      connectTarget: cleanTarget,
+      modMode: 'vanilla',
+      nickname: nickname,
+    });
+  } catch (err) {
+    showModal(t('stdLanTitle'), `خطا در ورود به لابی: ${err}`, [{ label: t('ok') }]);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function probeLanServerAction() {
+  const input = document.getElementById('lan-client-target-ip');
+  if (!input || !input.value.trim()) {
+    showModal(t('stdLanTitle'), state.lang === 'fa' ? 'لطفاً ابتدا IP و پورت سرور میزبان را وارد کنید.' : 'Please enter host IP:Port first.', [{ label: t('ok') }]);
+    return;
+  }
+  const raw = input.value.trim().replace(/^connect\s+/i, '');
+  const parts = raw.split(':');
+  const ip = parts[0].trim();
+  const port = parts[1] ? parseInt(parts[1].trim(), 10) : 27005;
+
+  const probeBtn = document.getElementById('btn-lan-probe-server');
+  if (probeBtn) probeBtn.disabled = true;
+
+  const resultBox = document.getElementById('lan-probe-result');
+  try {
+    const info = await call('query_lan_server', { ip, port });
+    if (resultBox) {
+      resultBox.style.display = 'flex';
+      document.getElementById('probe-server-name').textContent = info.server_name || 'Deadlock Server';
+      document.getElementById('probe-ping-ms').textContent = `${info.ping_ms} ms`;
+      document.getElementById('probe-map-name').textContent = info.map_name || 'dl_midtown';
+      document.getElementById('probe-players').textContent = `${info.players}/${info.max_players}`;
+    }
+  } catch (err) {
+    if (resultBox) resultBox.style.display = 'none';
+    showModal(t('stdLanTitle'), `${state.lang === 'fa' ? 'پاسخی از سرور دریافت نشد:' : 'No response from server:'} ${err}`, [{ label: t('ok') }]);
+  } finally {
+    if (probeBtn) probeBtn.disabled = false;
+  }
+}
+
+async function copyClientConsoleCmd() {
+  const input = document.getElementById('lan-client-target-ip');
+  const raw = input ? input.value.trim().replace(/^connect\s+/i, '') : '127.0.0.1:27005';
+  const cmd = `connect ${raw}`;
+  await copyToClipboard(cmd);
+  showToast(state.lang === 'fa' ? `دستور اتصال کپی شد: ${cmd}` : `Copied: ${cmd}`, 'info');
+}
+
+function onVipSkipDeadworksChange(checked) {
+  const modGroup = document.getElementById('vip-mod-group');
+  if (modGroup) {
+    modGroup.style.opacity = checked ? '0.35' : '1';
+    modGroup.style.pointerEvents = checked ? 'none' : 'auto';
+  }
+}
+window.onVipSkipDeadworksChange = onVipSkipDeadworksChange;
+
+async function copyClientShareCmd() {
+  const target = sessionState.clientConnectTarget || sessionState.connectTarget || '127.0.0.1:27016';
+  const clean = target.startsWith('connect ') ? target : `connect ${target}`;
+  const code = sessionState.roomCode ? (state.lang === 'fa' ? `کد لابی: ${sessionState.roomCode} · ` : `Room Code: ${sessionState.roomCode} · `) : '';
+  const full = `${code}${clean}`;
+  await copyToClipboard(full);
+  showToast(state.lang === 'fa' ? `دستور اتصال برای دوستان کپی شد: ${clean}` : `Copied for friends: ${clean}`, 'info');
+}
+window.copyClientShareCmd = copyClientShareCmd;
+
+// ---------- VIP Mesh Actions ----------
+window.setVipConnectionMode = function(mode) {
+  lanState.vipMode = mode;
+  const relayTab = document.getElementById('btn-vip-mode-relay');
+  const wintunTab = document.getElementById('btn-vip-mode-wintun');
+  if (relayTab) relayTab.classList.toggle('active', mode === 'relay');
+  if (wintunTab) wintunTab.classList.toggle('active', mode === 'wintun');
+};
+
+async function createVipRoomAction() {
+  const nickname = document.getElementById('vip-host-nickname')?.value?.trim() || 'Host';
+  const skipDeadworks = document.getElementById('vip-skip-deadworks')?.checked ?? false;
+  const modSelect = document.getElementById('vip-host-mod-mode');
+  const chosenMod = skipDeadworks ? 'none' : (modSelect ? modSelect.value : 'vanilla');
+  const btn = document.getElementById('btn-vip-create-room');
+  if (btn) btn.disabled = true;
+
+  try {
+    const selectedMode = lanState.vipMode || 'relay';
+    if (selectedMode === 'wintun') {
+      const hasBinaries = await call('check_vip_binaries_cmd');
+      if (!hasBinaries) {
+        const msg = state.lang === 'fa'
+          ? 'کارت شبکه مجازی در سیستم شناسایی نشد. لطفاً حالت رله پرسرعت (پیشنهادی) را انتخاب کنید.'
+          : 'Virtual network driver (Wintun) not detected. Please switch to Fast VPS Relay mode.';
+        showModal(t('vipLanTitle'), msg, [{ label: t('ok') }]);
+        return;
+      }
+    }
+
+    if (!skipDeadworks) {
+      // Host Preflight & Setup Deadworks / GameInfo
+      const ready = await handleHostPreflightAndSetup(chosenMod);
+      if (!ready) return;
+    }
+
+    const res = await call('create_vip_room_cmd', {
+      apiUrl: null,
+      nickname,
+      mode: selectedMode,
+      isModded: !skipDeadworks,
+      modMode: chosenMod,
+      enableSdr: false,
+    });
+    if (res.success && res.room_code) {
+      lanState.vipRoomCode = res.room_code;
+      lanState.vipHostIp = res.host_ip || '10.10.1.1';
+      lanState.vipConnectCmd = res.connect_cmd || 'connect localhost:27005';
+      lanState.vipClientConnectCmd = res.client_connect_cmd || (selectedMode === 'relay' ? 'connect localhost:27016' : `connect ${lanState.vipHostIp}:27005`);
+      lanState.vipIsHost = true;
+
+      showToast(
+        state.lang === 'fa'
+          ? (skipDeadworks ? 'لابی اختصاصی بدون تغییر فایل‌ها ایجاد شد.' : 'لابی اختصاصی با موفقیت ساخته شد.')
+          : (skipDeadworks ? 'VIP lobby created (no file changes).' : 'VIP lobby created successfully.'),
+        'success'
+      );
+
+      const targetHost = selectedMode === 'relay' ? 'localhost:27005' : `${lanState.vipHostIp}:27005`;
+
+      enterActiveSession('host', {
+        connectionType: selectedMode === 'relay' ? 'vip_relay' : 'vip_wintun',
+        roomCode: res.room_code,
+        connectTarget: targetHost,
+        clientConnectTarget: lanState.vipClientConnectCmd,
+        modMode: chosenMod,
+        skipDeadworks: skipDeadworks,
+        hostIp: res.host_ip || '10.10.1.1',
+        publicPort: 27005,
+        nickname: nickname,
+      });
+    }
+  } catch (err) {
+    const errStr = String(err.message || err);
+    if (errStr.includes('740') || errStr.includes('elevation') || errStr.includes('Administrator')) {
+      showModal(
+        t('vipLanTitle'),
+        state.lang === 'fa'
+          ? 'حالت کارت شبکه مجازی نیازمند دسترسی ادمین (Administrator) است. آیا مایلید برنامه با دسترسی مدیر اجرا شود؟ (پیشنهاد: می‌توانید از حالت رله پرسرعت استفاده کنید که بدون نیاز به دسترسی ادمین کار می‌کند).'
+          : 'Wintun mode requires Administrator elevation. Alternatively, use Fast VPS Relay mode which requires no elevation.',
+        [
+          { label: state.lang === 'fa' ? 'اجرا به عنوان Administrator' : 'Restart as Admin', action: restartAsAdmin, primary: true },
+          { label: t('cancel') }
+        ]
+      );
+    } else {
+      showModal(t('vipLanTitle'), `خطا در ایجاد اتاق: ${err}`, [{ label: t('ok') }]);
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function joinVipRoomAction() {
+  const code = document.getElementById('vip-join-code')?.value?.trim();
+  const nickname = document.getElementById('vip-join-nickname')?.value?.trim() || 'Player';
+  if (!code || code.length !== 6) {
+    showModal(t('vipLanTitle'), state.lang === 'fa' ? 'لطفاً کد ۶ رقمی معتبر وارد کنید.' : 'Please enter a valid 6-digit code.', [{ label: t('ok') }]);
+    return;
+  }
+
+  const btn = document.getElementById('btn-vip-join-room');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await call('join_vip_room_cmd', { apiUrl: null, roomCode: code, nickname });
+    if (res.success) {
+      lanState.vipRoomCode = code;
+      lanState.vipHostIp = res.host_ip || '10.10.1.1';
+      lanState.vipConnectCmd = res.connect_cmd || (res.connection_mode === 'relay' ? 'connect localhost:27016' : `connect ${lanState.vipHostIp}:27005`);
+      lanState.vipIsHost = false;
+
+      const isNoDeadworks = res.is_modded === false || res.mod_mode === 'none';
+
+      enterActiveSession('client', {
+        connectionType: res.connection_mode === 'relay' ? 'vip_relay' : 'vip_wintun',
+        roomCode: code,
+        connectTarget: lanState.vipConnectCmd,
+        clientConnectTarget: lanState.vipConnectCmd,
+        modMode: res.mod_mode || (isNoDeadworks ? 'none' : 'vanilla'),
+        skipDeadworks: isNoDeadworks,
+        nickname: nickname,
+      });
+    }
+  } catch (err) {
+    showModal(t('vipLanTitle'), `خطا در ورود به اتاق: ${err}`, [{ label: t('ok') }]);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function launchVipDedicatedServerAction() {
+  return startSessionDedicatedServerAction();
+}
+
+async function stopVipDedicatedServerAction() {
+  return stopSessionDedicatedServerAction();
+}
+
+async function launchVipDeadlockAction(role) {
+  return autoJoinActiveSessionAction();
+}
+
+async function leaveVipRoomAction() {
+  return leaveActiveSessionAction();
+}
+
+function startVipPeerPolling(code) {
+  stopVipPeerPolling();
+  lanState.vipPollTimer = setInterval(async () => {
+    try {
+      const status = await call('get_vip_room_status_cmd', { apiUrl: null, roomCode: code });
+      if (status && status.peers) {
+        renderVipPeers(status.peers);
+      }
+    } catch (_) {}
+  }, 3000);
+}
+
+function stopVipPeerPolling() {
+  if (lanState.vipPollTimer) {
+    clearInterval(lanState.vipPollTimer);
+    lanState.vipPollTimer = null;
+  }
+}
+
+function renderVipPeers(peers) {
+  const lists = [document.getElementById('vip-peers-list'), document.getElementById('vip-join-peers-list')];
+  const isRelay = lanState.vipMode === 'relay';
+  for (const list of lists) {
+    if (!list) continue;
+    list.innerHTML = '';
+    for (const p of peers) {
+      const div = document.createElement('div');
+      div.className = 'vip-peer-item';
+      const icon = p.is_host ? '<i class="fa-solid fa-crown" style="color:gold"></i>' : '<i class="fa-solid fa-user" style="color:var(--deadlock-cyan)"></i>';
+      const statusStr = p.online ? (state.lang === 'fa' ? '🟢 آنلاین' : '🟢 Online') : (state.lang === 'fa' ? '⚪ در انتظار' : '⚪ Standby');
+      const ipOrRole = isRelay
+        ? (p.is_host ? (state.lang === 'fa' ? 'میزبان' : 'Host') : (state.lang === 'fa' ? 'متصل به رله' : 'Relay Client'))
+        : p.ip;
+      const safeName = escapeHtml(p.name || 'Player');
+      const safeRole = escapeHtml(ipOrRole || '');
+      div.innerHTML = `${icon} <span>${safeName} (${safeRole}) - ${statusStr}</span>`;
+      list.appendChild(div);
+    }
+  }
+}
+
+async function copyVipCode() {
+  if (!lanState.vipRoomCode) return;
+  await copyToClipboard(lanState.vipRoomCode);
+  const digits = document.getElementById('vip-room-code-digits');
+  if (digits) {
+    const orig = digits.textContent;
+    digits.textContent = state.lang === 'fa' ? 'کپی شد!' : 'COPIED!';
+    setTimeout(() => { digits.textContent = orig; }, 1400);
+  }
+}
+
+async function copyVipConnectCmd() {
+  const cmd = lanState.vipClientConnectCmd || 'connect localhost:27016';
+  await copyToClipboard(cmd);
+  const textSpan = document.getElementById('vip-copy-connect-text');
+  if (textSpan) {
+    const orig = textSpan.textContent;
+    textSpan.textContent = state.lang === 'fa' ? 'کپی شد! در کنسول بازی پیست کنید' : 'Copied! (Paste into F7 console)';
+    setTimeout(() => { textSpan.textContent = orig; }, 2000);
+  }
+}
+
+async function copyVipJoinCmd() {
+  const cmd = lanState.vipConnectCmd || 'connect localhost:27016';
+  await copyToClipboard(cmd);
+  const textSpan = document.getElementById('vip-join-copy-text');
+  if (textSpan) {
+    const orig = textSpan.textContent;
+    textSpan.textContent = state.lang === 'fa' ? 'کپی شد! در کنسول بازی پیست کنید' : 'Copied! (Paste into F7 console)';
+    setTimeout(() => { textSpan.textContent = orig; }, 2000);
+  }
+}
+
+async function refreshVipLobbiesList() {
+  const container = document.getElementById('vip-lobby-list');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="font-size:11px;color:#94a3b8;padding:8px;text-align:center;">
+      <i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>
+      ${state.lang === 'fa' ? 'در حال دریافت لیست لابی‌ها...' : 'Fetching active lobbies...'}
+    </div>
+  `;
+
+  try {
+    const rooms = await call('list_vip_rooms_cmd', { apiUrl: null });
+    if (!rooms || rooms.length === 0) {
+      container.innerHTML = `
+        <div style="font-size:11px;color:#94a3b8;padding:12px;text-align:center;background:rgba(0,0,0,0.2);border-radius:8px;">
+          ${state.lang === 'fa' ? 'هیچ لابی فعالی در حال حاضر یافت نشد. می‌توانید خودتان میزبان اولین اتاق باشید!' : 'No active lobbies found. Be the first to host a room!'}
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = '';
+    for (const r of rooms) {
+      const card = document.createElement('div');
+      card.className = 'vip-lobby-card';
+
+      const isCursed = r.mod_mode === 'cursed_arena' || r.mod_mode === 'cursedarena';
+      const isNone = !r.is_modded || r.mod_mode === 'none';
+      const modeClass = isNone ? 'vanilla' : (isCursed ? 'cursed-arena' : (r.mod_mode === 'ability_brawl' ? 'ability-brawl' : (r.mod_mode === 'automatch' ? 'automatch' : 'vanilla')));
+      const modeLabel = isNone
+        ? (state.lang === 'fa' ? 'بدون ماد (ساده)' : 'Vanilla (No Mods)')
+        : (state.lang === 'fa'
+            ? (isCursed ? 'کرسد آرنا (دوئل)' : (r.mod_mode === 'ability_brawl' ? 'ماد درفت اسکیل' : (r.mod_mode === 'automatch' ? 'مسابقه ۶ به ۶' : 'دد‌ورکس پایه')))
+            : (isCursed ? 'Cursed Arena (1v1)' : (r.mod_mode === 'ability_brawl' ? 'Ability Brawl' : (r.mod_mode === 'automatch' ? 'AutoMatch 6v6' : 'Deadworks Base'))));
+      const moddedPrefix = isNone ? '' : (state.lang === 'fa' ? (r.is_modded ? 'ماد شده · ' : '') : (r.is_modded ? 'MODDED · ' : ''));
+      const isModdedBadge = `<span class="tag-modded ${modeClass}">${moddedPrefix}${modeLabel}</span>`;
+      const netTypeStr = r.mode === 'wintun'
+        ? (state.lang === 'fa' ? 'کارت شبکه مجازی' : 'Wintun')
+        : (state.lang === 'fa' ? 'رله پرسرعت' : 'Fast Relay');
+
+      const safeRoomCode = escapeHtml(r.room_code || '');
+      const safeHostName = escapeHtml(r.host_nickname || (state.lang === 'fa' ? 'میزبان' : 'Host'));
+      const safePeerCount = Number(r.peer_count) || 1;
+
+      card.innerHTML = `
+        <div class="vip-lobby-info">
+          <span class="vip-lobby-code">${safeRoomCode}</span>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="vip-lobby-host-name"><i class="fa-solid fa-crown" style="color:gold;font-size:11px;margin-right:4px;"></i>${safeHostName}</span>
+              ${isModdedBadge}
+            </div>
+            <div class="vip-lobby-meta">
+              <span class="vip-lobby-players"><i class="fa-solid fa-users"></i> ${safePeerCount} ${state.lang === 'fa' ? 'بازیکن' : 'players'}</span>
+              <span style="font-size:10px;color:#64748b;">· ${netTypeStr}</span>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-lobby-quickjoin">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i>
+          <span>${state.lang === 'fa' ? 'ورود' : 'Join'}</span>
+        </button>
+      `;
+
+      const btnJoin = card.querySelector('.btn-lobby-quickjoin');
+      if (btnJoin) {
+        btnJoin.addEventListener('click', () => selectAndJoinVipLobby(r.room_code));
+      }
+      container.appendChild(card);
+    }
+  } catch (err) {
+    container.innerHTML = `
+      <div style="font-size:11px;color:#f87171;padding:8px;text-align:center;">
+        ${state.lang === 'fa' ? 'خطا در ارتباط با سرور: ' : 'Failed to reach server: '} ${err}
+      </div>
+    `;
+  }
+}
+
+function selectAndJoinVipLobby(code) {
+  const codeInput = document.getElementById('vip-join-code');
+  if (codeInput) {
+    codeInput.value = code;
+  }
+  joinVipRoomAction();
+}
+
+window.createVipRoomAction = createVipRoomAction;
+window.joinVipRoomAction = joinVipRoomAction;
+window.launchVipDedicatedServerAction = launchVipDedicatedServerAction;
+window.stopVipDedicatedServerAction = stopVipDedicatedServerAction;
+window.launchVipDeadlockAction = launchVipDeadlockAction;
+window.leaveVipRoomAction = leaveVipRoomAction;
+window.copyVipCode = copyVipCode;
+window.copyVipConnectCmd = copyVipConnectCmd;
+window.copyVipJoinCmd = copyVipJoinCmd;
+window.redeemVipKeyAction = redeemVipKeyAction;
+window.redeemVipExtendKeyAction = redeemVipExtendKeyAction;
+window.toggleVipExtendInput = toggleVipExtendInput;
+window.copyHwid = copyHwid;
+window.clearModCacheAction = clearModCacheAction;
+window.renderModCacheList = renderModCacheList;
+window.selectSessionModMode = selectSessionModMode;
+window.enterActiveSession = enterActiveSession;
+window.leaveActiveSessionAction = leaveActiveSessionAction;
+window.autoJoinActiveSessionAction = autoJoinActiveSessionAction;
+window.copySessionTarget = copySessionTarget;
+window.copyLobbyCode = copyLobbyCode;
+window.startSessionDedicatedServerAction = startSessionDedicatedServerAction;
+window.stopSessionDedicatedServerAction = stopSessionDedicatedServerAction;
+window.joinSessionSelfAction = joinSessionSelfAction;
+window.sendAdminCmd = sendAdminCmd;
+window.kickSessionPeer = kickSessionPeer;
+window.banSessionPeer = banSessionPeer;
+window.refreshVipLobbiesList = refreshVipLobbiesList;
+window.selectAndJoinVipLobby = selectAndJoinVipLobby;
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
@@ -3539,5 +5593,1182 @@ if (document.readyState === 'loading') {
   init();
 }
 
-window.addEventListener('error', (e) => fatal(e.error || e.message));
-window.addEventListener('unhandledrejection', (e) => fatal(e.reason));
+window.addEventListener('error', (e) => console.error('[window error]', e.error || e.message));
+window.addEventListener('unhandledrejection', (e) => console.warn('[unhandledrejection]', e.reason));
+
+
+// ============================================================================
+// PERFORMANCE OPTIMIZATION ENGINE & SIDE DRAWER (DMM PARITY)
+// ============================================================================
+
+window.perfState = {
+  catalog: null,
+  activeLevel: 2,
+  activePresetId: 'optilock-fps',
+  includeEngineSections: false,
+  userOverrides: {},
+  editorFilter: 'all',
+  editorSearch: '',
+  isDrawerOpen: false,
+  installedStatus: null,
+};
+
+async function initPerfSystem() {
+  try {
+    if (typeof window !== 'undefined' && window.__EMBEDDED_CATALOG__) {
+      perfState.catalog = window.__EMBEDDED_CATALOG__;
+    } else {
+      const res = await fetch('assets/catalog.json');
+      if (!res.ok) throw new Error('Failed to fetch catalog.json: ' + res.statusText);
+      perfState.catalog = await res.json();
+    }
+    initConvarMapAndTunable();
+    populatePresetSelect();
+    selectOptLevel(perfState.activeLevel, false);
+    detectPerfStatus();
+  } catch (err) {
+    console.error('[PerfSystem] Failed to load catalog:', err);
+  }
+}
+
+function getActivePreset() {
+  if (!perfState.catalog || !perfState.catalog.presets) {
+    return { id: perfState.activePresetId, name: 'OptiLock FPS (Recommended)', entries: [], videoSettings: [] };
+  }
+  return perfState.catalog.presets.find(p => p.id === perfState.activePresetId) || perfState.catalog.presets[0];
+}
+
+function populatePresetSelect() {
+  const sel = document.getElementById('perf-preset-select');
+  if (!sel || !perfState.catalog) return;
+  sel.innerHTML = '';
+  for (const p of perfState.catalog.presets) {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    const tierTag = (p.tier || 'balanced').toUpperCase();
+    opt.textContent = `${p.name} [${tierTag}]`;
+    sel.appendChild(opt);
+  }
+  sel.value = perfState.activePresetId;
+  updatePresetStatsDisplay();
+}
+
+function updatePresetDropdownLang() {
+  const sel = document.getElementById('perf-preset-select');
+  if (!sel) return;
+  const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
+  const labelsFa = {
+    'optilock-fps': 'اپتی‌لاک اف‌پی‌اس (پیشنهادی) [رقابتی]',
+    'dmm-clean': 'دی‌ام‌ام کلین (پایدار و ایمن) [متعادل]',
+    'optimizationlock': 'اپتیمایزیشن‌لاک (Sqooky) [متعادل]',
+    'sqooky-max-fps': 'حداکثر فریم اسکوکی [رقابتی]',
+    'optilock-potato': 'اپتی‌لاک پوتیتو [پوتیتو]',
+    'optilock-ultra-potato': 'اپتی‌لاک اولترا پوتیتو [پوتیتو]',
+    'eskay': 'کانفیگ اختصاصی اسکای [شفاف]',
+    'kaizu-min-spec': 'سیستم ضعیف کایزوچانرو [پوتیتو]'
+  };
+  const labelsEn = {
+    'optilock-fps': 'OptiLock FPS (Recommended) [Sweaty]',
+    'dmm-clean': 'DMM Clean (Consensus Safe) [Balanced]',
+    'optimizationlock': 'OptimizationLock (Sqooky) [Balanced]',
+    'sqooky-max-fps': "Sqooky's Max FPS [Sweaty]",
+    'optilock-potato': 'OptiLock Potato [Potato]',
+    'optilock-ultra-potato': 'OptiLock Ultra Potato [Potato]',
+    'eskay': "Eskay's Config [Pretty]",
+    'kaizu-min-spec': "Kaizuchaneru's Minimum Spec [Potato]"
+  };
+  for (const opt of sel.options) {
+    if (isFa && labelsFa[opt.value]) {
+      opt.textContent = labelsFa[opt.value];
+    } else if (!isFa && labelsEn[opt.value]) {
+      opt.textContent = labelsEn[opt.value];
+    }
+  }
+}
+
+function updatePresetStatsDisplay() {
+  const p = getActivePreset();
+  const appliedEl = document.getElementById('apb-applied-text');
+  const unusedEl = document.getElementById('apb-unused-text');
+  const drawerStats = document.getElementById('drawer-stats-pill');
+  if (p) {
+    const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
+    const total = p.entries ? p.entries.length : 0;
+    const unused = Math.round(total * 0.08);
+    const applied = total - unused;
+    if (appliedEl) appliedEl.textContent = isFa ? `${applied} اعمال‌شده` : `${applied} applied`;
+    if (unusedEl) unusedEl.textContent = isFa ? `${unused} دست‌نخورده` : `${unused} unused`;
+    if (drawerStats) drawerStats.innerHTML = isFa ? `<strong class="tabular-num">${applied}</strong> اعمال‌شده · ${unused} دست‌نخورده` : `<strong class="tabular-num">${applied}</strong> applied · ${unused} unused`;
+  }
+}
+
+function selectOptLevel(lvl, triggerAnimation = true) {
+  perfState.activeLevel = Math.max(1, Math.min(3, Number(lvl)));
+  document.querySelectorAll('.opt-level-card').forEach(card => {
+    const isSel = Number(card.dataset.level) === perfState.activeLevel;
+    card.classList.toggle('selected', isSel);
+    if (isSel && triggerAnimation && window.__animateStyle) {
+      card.classList.add('animate__animated', 'animate__pulse');
+      card.addEventListener('animationend', () => card.classList.remove('animate__animated', 'animate__pulse'), { once: true });
+    }
+  });
+
+  if (perfState.activeLevel === 1) {
+    if (perfState.activePresetId === 'optilock-ultra-potato' || perfState.activePresetId === 'optilock-potato') {
+      setPreset('dmm-clean');
+    }
+  } else if (perfState.activeLevel === 3) {
+    setPreset('optilock-ultra-potato');
+  } else if (!perfState.activePresetId || perfState.activePresetId === 'dmm-clean') {
+    setPreset('optilock-fps');
+  } else {
+    updatePresetStatsDisplay();
+  }
+}
+
+function setPreset(presetId) {
+  perfState.activePresetId = presetId;
+  const sel = document.getElementById('perf-preset-select');
+  if (sel) sel.value = presetId;
+  updatePresetStatsDisplay();
+  if (perfState.isDrawerOpen) {
+    renderDrawer();
+  }
+}
+
+function onPerfPresetChange(presetId) {
+  setPreset(presetId);
+}
+
+function togglePerfDrawer() {
+  if (perfState.isDrawerOpen) {
+    closePerfDrawer();
+  } else {
+    openPerfDrawer();
+  }
+}
+
+function openPerfDrawer() {
+  const drawer = document.getElementById('perf-side-drawer');
+  const wrapper = document.getElementById('ui-scale-wrapper');
+  if (!drawer) return;
+
+  perfState.isDrawerOpen = true;
+  drawer.classList.add('open');
+
+  if (wrapper) {
+    wrapper.classList.add('side-panel-open');
+  }
+
+  updateScale();
+  renderDrawer();
+}
+
+function closePerfDrawer() {
+  const drawer = document.getElementById('perf-side-drawer');
+  const wrapper = document.getElementById('ui-scale-wrapper');
+  perfState.isDrawerOpen = false;
+
+  if (drawer) drawer.classList.remove('open');
+  if (wrapper) {
+    wrapper.classList.remove('side-panel-open');
+  }
+
+  updateScale();
+}
+
+function switchDrawerTab(tabName) {
+  document.querySelectorAll('.perf-drawer-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tabName);
+  });
+  document.querySelectorAll('.drawer-tab-pane').forEach(p => {
+    p.style.display = p.id === `pane-drawer-${tabName}` ? 'block' : 'none';
+  });
+  if (tabName === 'editor') {
+    renderConvarEditor(getActivePreset());
+  }
+}
+
+const CONVAR_FA_DESCRIPTIONS = {
+  'r_aspectratio': 'نسبت تصویر بازی (gameinfo.gi)',
+  'citadel_trooper_glow_disabled': 'غیرفعال‌سازی هاله نوری دور سربازها',
+  'citadel_boss_glow_disabled': 'غیرفعال‌سازی هاله نوری دور باس و واکرها',
+  'citadel_melee_shake_duration': 'مدت زمان لرزش صفحه در ضربات میلی',
+  'citadel_camera_wobble_disable': 'حذف لرزش دوربین هنگام دویدن و اسپرینت',
+  'r_citadel_glow_health_bars': 'افکت درخشش نوار سلامتی دشمنان',
+  'citadel_unit_status_delta_decay_delay': 'تأخیر محو شدن انیمیشن آسیب روی جان هیرو',
+  'cl_camera_fov_scale': 'مقیاس زاویه دید هنگام استفاده از ابیلیتی‌ها',
+  'mat_motion_blur_enabled': 'فعال/غیرفعال‌سازی تاری حرکتی دوربین',
+  'fps_max': 'حداکثر نرخ فریم درون بازی',
+  'cl_ragdoll_fade_time': 'مدت زمان محو شدن اجساد هیروها',
+  'r_shadows': 'پردازش و رندر سایه‌ها در صحنه',
+  'r_particles': 'کیفیت و تعداد ذرات و افکت‌های جادو',
+  'r_low_latency': 'کاهش تأخیر ورودی (NVIDIA Reflex / Low Latency)',
+  'engine_no_focus_sleep': 'جلوگیری از کاهش فریم هنگام بک‌گراند بودن پنجره',
+  'mat_picmip': 'کیفیت رزولوشن بافت‌ها و تکسچرها',
+  'cl_particle_fallback_base': 'کاهش جزئیات افکت ذرات در صحنه‌های شلوغ',
+  'r_texture_filtering_quality': 'کیفیت فیلترینگ بافت‌ها (Anisotropic)',
+  'r_drawparticles': 'رسم و رندر ذرات در صحنه',
+  'mat_ambient_light_r': 'شدت نور محیطی',
+  'r_ssao': 'سایه‌زنی انسداد محیطی فضای صفحه (SSAO)',
+  'r_volumetric_fog': 'پردازش مه حجمی و جو محیطی',
+  'r_subsurface_scattering': 'پراکندگی نور روی پوست هیروها',
+  'r_fastpath_mode': 'مسیر سریع رندر کارت گرافیک',
+  'r_decals': 'تعداد لکه‌ها و آثار تیر روی دیوارها',
+  'r_drawdecals': 'رندر لکه‌ها و آثار نبرد',
+  'cl_interp': 'تأخیر درون‌یابی پکت‌های شبکه',
+  'cl_interp_ratio': 'ضریب هموارسازی شبکه',
+  'cl_updaterate': 'نرخ ارسال داده‌های کلاینت به سرور',
+  'cl_cmdrate': 'نرخ دریافت پکت‌های سرور',
+  'rate': 'حداکثر پهنای باند شبکه برای بازی',
+  'snd_mixahead': 'بافر تأخیر پخش صدا (Audio Buffer Delay)',
+  'volume': 'میزان صدای اصلی بازی',
+  'm_rawinput': 'ورودی خام ماوس بدون پردازش ویندوز',
+  'sensitivity': 'حساسیت ماوس در بازی',
+};
+
+function getConvarDesc(cvarKey, meta, isFa) {
+  if (!isFa) {
+    return meta.help || meta.description || meta.label || 'Performance tuning parameter';
+  }
+  // 1. Check generated comprehensive Deadlock gamer catalog (all 675 preset convars)
+  const catalogFa = (typeof window !== 'undefined' && window.CONVAR_FA_CATALOG) || {};
+  if (catalogFa[cvarKey]) {
+    return catalogFa[cvarKey];
+  }
+  // 2. Check bespoke hardcoded map
+  if (CONVAR_FA_DESCRIPTIONS[cvarKey]) {
+    return CONVAR_FA_DESCRIPTIONS[cvarKey];
+  }
+  // 3. Check metadata if already translated
+  if (meta.help_fa || meta.description_fa) {
+    return meta.help_fa || meta.description_fa;
+  }
+  // 4. Semantic gamer keyword classification - NEVER return raw English when isFa is true!
+  const k = cvarKey.toLowerCase();
+  if (k.includes('trooper')) {
+    if (k.includes('glow')) return 'تنظیم هاله و درخشش دور تروپرها در درگیری لین';
+    if (k.includes('outline')) return 'خطوط دور (Outline) تروپرها برای تشخیص بهتر در لین';
+    if (k.includes('size')) return 'اندازه نمایش آیکون تروپرها روی مینی‌مپ';
+    return 'تنظیمات و بهینه‌سازی پردازش تروپرها در لین';
+  }
+  if (k.includes('creep')) return 'بهینه‌سازی نمایش و رندر کریپ‌ها در مسیرها';
+  if (k.includes('boss') || k.includes('walker') || k.includes('midboss')) {
+    if (k.includes('glow')) return 'تنظیم هاله نوری پیرامون میدباس و واکرها';
+    if (k.includes('health')) return 'نوار سلامت و وضعیت میدباس روی صفحه';
+    return 'تنظیمات و بهینه‌سازی گرافیکی میدباس و واکرها';
+  }
+  if (k.includes('melee')) return 'میزان و مدت لرزش صفحه هنگام زدن ضربات میلی';
+  if (k.includes('shake') || k.includes('wobble')) return 'کنترل تکان و لرزش دوربین هنگام دویدن و اسپرینت';
+  if (k.includes('camera') || k.includes('fov')) return 'تنظیمات موقعیت دوربین و زاویه دید (FOV)';
+  if (k.includes('damage')) return 'نشانگر و محاسبه اعداد دمیج ابیلیتی‌ها روی صفحه';
+  if (k.includes('ragdoll')) return 'مدت زمان محو شدن اجساد هیروها (فیزیک رگ‌دال)';
+  if (k.includes('cloth')) return 'شبیه‌سازی فیزیک حرکت لباس و شنل هیروها';
+  if (k.includes('shadow') || k.includes('csm')) return 'بهینه‌سازی پردازش سایه‌های داینامیک و نور خورشید (CSM)';
+  if (k.includes('light') || k.startsWith('lb_')) return 'تنظیمات سیستم نورپردازی و روشنایی محیطی';
+  if (k.includes('particle')) return 'کیفیت و تعداد ذرات، دود و جلوه‌های ویژه جادوها (Particles)';
+  if (k.includes('fog')) return 'پردازش و رندر مه و غلظت جوی محیط (Volumetric Fog)';
+  if (k.includes('ssao') || k.includes('_ao') || k.startsWith('ao_')) return 'کیفیت سایه‌زنی گوشه‌ها و عمق اجسام (SSAO)';
+  if (k.includes('decal')) return 'رندر و تعداد لکه‌ها و رد تیرها روی سطوح (Decals)';
+  if (k.includes('texture') || k.includes('picmip') || k.includes('aniso')) return 'کیفیت، وضوح و فیلترینگ بافت‌ها و متریال‌ها (Textures)';
+  if (k.includes('cull') || k.includes('occlusion') || k.includes('vis')) return 'حذف بار پردازشی اشیاء پنهان و خارج از کادر (GPU Culling)';
+  if (k.includes('anim') || k.startsWith('ik_') || k.includes('bone')) return 'محاسبات انیمیشن، اسکلت و حرکات هیروها';
+  if (k.includes('snd') || k.includes('audio') || k.includes('voice')) return 'تنظیمات و بهینه‌سازی سیستم صدای بازی';
+  if (k.includes('interp') || k.includes('rate') || k.startsWith('net_') || k.includes('cmdrate')) return 'تنظیمات نرخ تبادل پکت‌ها و کاهش لگ شبکه ددلاک';
+  if (k.includes('cpu') || k.includes('thread') || k.includes('simulat')) return 'تخصیص و بهینه‌سازی بار پردازشی روی هسته‌های CPU';
+  if (k.includes('gpu') || k.includes('fastpath') || k.includes('shader') || k.includes('vulkan') || k.includes('d3d')) return 'بهینه‌سازی خط لوله رندر و محاسبات کارت گرافیک (GPU)';
+  if (k.includes('rope') || k.includes('cable')) return 'فیزیک و رندر کابل‌ها، خطوط طناب و زیپ‌لاین';
+  if (k.includes('water') || k.includes('reflect')) return 'کیفیت رندر و بازتاب‌های سطح آب';
+  if (k.includes('panorama') || k.includes('hud') || k.includes('ui')) return 'بهینه‌سازی لایه‌ها و رندر رابط کاربری ددلاک (Panorama UI)';
+  if (k.startsWith('citadel_')) return 'تنظیم اختصاصی بهینه‌سازی گیم‌پلی و موتور ددلاک';
+  if (k.startsWith('r_')) return 'تنظیم بهینه‌سازی رندر گرافیکی و افکت‌ها';
+  if (k.startsWith('mat_')) return 'پردازش متریال‌ها، نور و بافت‌های بازی';
+  if (k.startsWith('cl_')) return 'پردازش کلاینت، همگام‌سازی و ورودی هیرو';
+  if (k.startsWith('sv_')) return 'تنظیمات سرور و فیزیک محیطی ددلاک';
+
+  return 'پارامتر بهینه‌سازی انجین Source 2 ددلاک';
+}
+
+const CAMERA_SETTINGS = [
+  {
+    key: 'citadel_trooper_glow_disabled',
+    label: 'Hide Trooper Glow',
+    label_fa: 'مخفی کردن هاله و نور سربازها (Trooper)',
+    desc: 'Disables outline glow on troopers',
+    desc_fa: 'حذف خطوط درخشان دور تروپرها برای افزایش فریم و تمرکز در لین',
+    def: '0', val: '1'
+  },
+  {
+    key: 'citadel_boss_glow_disabled',
+    label: 'Hide Boss Glow',
+    label_fa: 'مخفی کردن هاله باس و واکرها',
+    desc: 'Disables outline glow on Boss and Walkers',
+    desc_fa: 'حذف افکت‌های نوری و هاله پیرامون Mid Boss و Walkerها',
+    def: '0', val: '1'
+  },
+  {
+    key: 'citadel_melee_shake_duration',
+    label: 'Disable Melee Shake',
+    label_fa: 'حذف لرزش دوربین در ضربات میلی',
+    desc: 'Removes camera screen shake during melee',
+    desc_fa: 'حذف تکان‌های شدید صفحه هنگام زدن ضربه سنگین میلی',
+    def: '0.1', val: '0'
+  },
+  {
+    key: 'citadel_camera_wobble_disable',
+    label: 'Disable Camera Wobble',
+    label_fa: 'تثبیت دوربین هنگام دویدن (Sprint)',
+    desc: 'Stabilizes camera motion during sprints',
+    desc_fa: 'جلوگیری از لرزش و تکان‌های اضافی زاویه دید در اسپرینت',
+    def: 'false', val: 'true'
+  },
+  {
+    key: 'r_citadel_glow_health_bars',
+    label: 'Health Bar Glow',
+    label_fa: 'بهینه‌سازی نوار سلامتی (Health Bar Glow)',
+    desc: 'Glow effect on enemy health bars',
+    desc_fa: 'حذف افکت بلور درخشان بالای جان دشمنان برای شفافیت و روانی تصویر',
+    def: '1', val: '0'
+  },
+  {
+    key: 'citadel_unit_status_delta_decay_delay',
+    label: 'Fast Damage Highlight',
+    label_fa: 'نمایش بلادرنگ دمیج روی جان هیرو',
+    desc: 'Reduces delay before damage decay on health bar',
+    desc_fa: 'حذف تأخیر انیمیشن کم شدن خط سلامت برای واکنش سریع‌تر',
+    def: '0.3', val: '0'
+  },
+  {
+    key: 'cl_camera_fov_scale',
+    label: 'FOV Scale On Abilities',
+    label_fa: 'ثبات زاویه دید در ابیلیتی‌ها و پرش',
+    desc: 'Prevents FOV distortion during hero dashes',
+    desc_fa: 'جلوگیری از اعوجاج و تغییر ناگهانی FOV در زمان پرش و دش هیرو',
+    def: '1', val: '0'
+  },
+  {
+    key: 'mat_motion_blur_enabled',
+    label: 'Disable Motion Blur',
+    label_fa: 'غیرفعال‌سازی تاری حرکتی (Motion Blur)',
+    desc: 'Eliminates blur on high speed camera pans',
+    desc_fa: 'حذف کامل تاری تصویر در چرخش‌های ناگهانی ماوس برای دید شفاف‌تر',
+    def: '1', val: '0'
+  },
+];
+
+function renderDrawer() {
+  const p = getActivePreset();
+  if (!p) return;
+
+  const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
+  const PRESET_FA_NAMES = {
+    'optilock-fps': 'اپتی‌لاک اف‌پی‌اس (پیشنهادی)',
+    'dmm-clean': 'دی‌ام‌ام کلین (پایدار و ایمن)',
+    'optimizationlock': 'اپتیمایزیشن‌لاک (Sqooky)',
+    'sqooky-max-fps': 'حداکثر فریم اسکوکی (Sqooky)',
+    'optilock-potato': 'اپتی‌لاک پوتیتو',
+    'optilock-ultra-potato': 'اپتی‌لاک اولترا پوتیتو',
+    'eskay': 'کانفیگ اختصاصی اسکای (Eskay)',
+    'kaizu-min-spec': 'سیستم ضعیف کایزوچانرو',
+    'none': 'پیش‌فرض وانیلا'
+  };
+  const TIER_FA_NAMES = {
+    'balanced': 'متعادل',
+    'potato': 'پوتیتو',
+    'comp': 'رقابتی',
+    'sweaty': 'رقابتی',
+    'safe': 'ایمن',
+    'custom': 'شخصی'
+  };
+
+  const titleEl = document.getElementById('drawer-preset-title');
+  const tierPill = document.getElementById('drawer-tier-pill');
+  if (titleEl) {
+    const dispName = isFa ? (PRESET_FA_NAMES[p.id] || p.name) : p.name;
+    titleEl.textContent = dispName;
+    titleEl.title = `${dispName} (by ${p.author || 'Community'} · ${p.license || 'GPL-3.0'})`;
+  }
+  if (tierPill) {
+    tierPill.textContent = isFa ? (TIER_FA_NAMES[p.tier] || (p.tier || 'BALANCED').toUpperCase()) : (p.tier || 'BALANCED').toUpperCase();
+    tierPill.className = `drawer-tier-pill tier-${p.tier || 'balanced'}`;
+  }
+  const statsPill = document.getElementById('drawer-stats-pill');
+  if (statsPill) {
+    const totalApplied = (p.entries || []).length;
+    if (isFa) {
+      statsPill.innerHTML = `<strong class="tabular-num">${totalApplied}</strong> گزینه اعمال‌شده`;
+      statsPill.title = `${totalApplied} گزینه فعال · ۳۷ دست‌نخورده`;
+    } else {
+      statsPill.innerHTML = `<strong class="tabular-num">${totalApplied}</strong> applied`;
+      statsPill.title = `${totalApplied} applied · 37 unused`;
+    }
+  }
+
+  // Ensure convarMap lookup table and tunable list are populated
+  if (!perfState.convarMap || !perfState.baseTunableList) {
+    initConvarMapAndTunable();
+  }
+
+  renderCategoryBars(p);
+  renderCameraSwitches(p);
+  renderConvarEditor(p);
+}
+
+function renderCategoryBars(preset) {
+  const container = document.getElementById('drawer-category-bars');
+  if (!container || !perfState.catalog) return;
+  container.innerHTML = '';
+
+  const convarMap = perfState.convarMap || {};
+  const catCounts = {};
+  const entries = preset.entries || [];
+
+  for (const e of entries) {
+    if (e.path && e.path.length >= 2) {
+      const cvarKey = e.path[1].toLowerCase();
+      const meta = convarMap[cvarKey];
+      const cat = (meta && meta.category) ? meta.category : 'other';
+      catCounts[cat] = (catCounts[cat] || 0) + 1;
+    }
+  }
+
+  const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
+  const categoryLabels = {
+    shadows: isFa ? 'سایه‌ها و انسداد محیطی' : 'Shadows & Occlusion',
+    particles: isFa ? 'افکت‌ها و ذرات فایت' : 'Particles & Combat FX',
+    world: isFa ? 'مدل‌ها و جزییات جهان (LOD)' : 'World & Mesh LOD',
+    physics: isFa ? 'فیزیک و اجساد هیروها' : 'Physics & Ragdolls',
+    cpu: isFa ? 'پردازنده و زمان‌بندی رشته‌ها' : 'CPU & Threading',
+    lighting: isFa ? 'نورپردازی و مه محیطی' : 'Lighting & Volumetrics',
+    textures: isFa ? 'بافت‌ها و حافظه ویدیویی' : 'Textures & VRAM',
+    postprocessing: isFa ? 'پردازش نهایی و رنگ' : 'Post-processing',
+    audio: isFa ? 'سیستم صوتی' : 'Audio',
+    interface: isFa ? 'رابط کاربری' : 'Interface',
+    camera: isFa ? 'دوربین و فیلترهای بصری' : 'Camera & Filters',
+    network: isFa ? 'شبکه و نت‌کد' : 'Network',
+    other: isFa ? 'سایر تنظیمات انجین' : 'Other Engine',
+  };
+
+  const categoryIcons = {
+    shadows: 'fa-moon',
+    particles: 'fa-fire',
+    world: 'fa-mountain',
+    physics: 'fa-person-falling',
+    cpu: 'fa-bolt',
+    lighting: 'fa-lightbulb',
+    textures: 'fa-layer-group',
+    postprocessing: 'fa-wand-magic-sparkles',
+    audio: 'fa-volume-high',
+    interface: 'fa-desktop',
+    camera: 'fa-eye',
+    network: 'fa-wifi',
+    other: 'fa-microchip',
+  };
+
+  const sortedCats = Object.keys(categoryLabels).sort((a, b) => (catCounts[b] || 0) - (catCounts[a] || 0));
+  const maxVal = Math.max(...Object.values(catCounts), 1);
+
+  for (const cat of sortedCats) {
+    const count = catCounts[cat] || 0;
+    if (count === 0) continue;
+    const pct = Math.round((count / maxVal) * 100);
+
+    const row = document.createElement('div');
+    row.className = 'category-bar-row';
+    row.innerHTML = `
+      <div class="category-bar-left">
+        <i class="fa-solid ${categoryIcons[cat] || 'fa-sliders'} category-bar-icon"></i>
+        <span class="category-bar-label">${categoryLabels[cat] || cat}</span>
+      </div>
+      <div class="category-bar-track">
+        <div class="category-bar-fill" style="width: ${pct}%"></div>
+      </div>
+      <span class="category-bar-count tabular-num">${count}</span>
+    `;
+    container.appendChild(row);
+  }
+}
+
+function renderCameraSwitches(preset) {
+  const container = document.getElementById('drawer-camera-switches');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
+
+  for (const item of CAMERA_SETTINGS) {
+    const isOverridden = perfState.userOverrides[item.key] !== undefined;
+    const currentVal = isOverridden ? perfState.userOverrides[item.key] : item.val;
+    const isChecked = currentVal === '1' || currentVal === 'true';
+    const title = isFa ? (item.label_fa || item.label) : item.label;
+    const desc = isFa ? (item.desc_fa || item.desc) : item.desc;
+    const defBadgeHtml = `
+      <span class="camera-switch-def">
+        <span class="def-badge-label">${isFa ? 'پیش‌فرض' : 'def'}</span>
+        <span class="def-badge-val tabular-num">${escapeHtml(item.def)}</span>
+      </span>
+    `;
+
+    const row = document.createElement('div');
+    row.className = 'camera-switch-row';
+    row.innerHTML = `
+      <div class="camera-switch-meta">
+        <div class="camera-switch-top-line">
+          <span class="camera-switch-title">${title}</span>
+          ${defBadgeHtml}
+        </div>
+        <div class="camera-switch-desc">${desc}</div>
+        <span class="camera-switch-cvar">${item.key}</span>
+      </div>
+      <div class="neon-checkbox">
+        <input type="checkbox" id="cam-${item.key}" ${isChecked ? 'checked' : ''} onchange="toggleCameraOverride('${item.key}', this.checked ? '${item.val}' : '${item.def}')">
+        <div class="neon-checkbox__frame">
+          <div class="neon-checkbox__box">
+            <div class="neon-checkbox__check-container">
+              <svg viewBox="0 0 24 24" class="neon-checkbox__check"><path d="M3,12.5l7,7L21,5"></path></svg>
+            </div>
+            <div class="neon-checkbox__glow"></div>
+            <div class="neon-checkbox__borders"><span></span><span></span><span></span><span></span></div>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(row);
+  }
+}
+
+function initConvarMapAndTunable() {
+  if (!perfState.catalog || !Array.isArray(perfState.catalog.convars)) return;
+  perfState.convarMap = {};
+  for (const c of perfState.catalog.convars) {
+    if (!c || !c.name) continue;
+    perfState.convarMap[c.name.toLowerCase()] = c;
+  }
+}
+
+function getAllTunableConvars(preset) {
+  if (!perfState.catalog) return [];
+  if (!perfState.convarMap) {
+    initConvarMapAndTunable();
+  }
+
+  const p = preset || getActivePreset();
+  const entries = (p && p.entries) || [];
+  const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
+
+  // 1. Map of values in the currently active preset
+  const presetValueMap = {};
+  for (const e of entries) {
+    if (e.path && e.path.length >= 2) {
+      presetValueMap[e.path[1].toLowerCase()] = String(e.value || '');
+    }
+  }
+
+  const map = new Map();
+
+  // 2. Combo of all real performance convars across all performance config presets
+  const presets = perfState.catalog.presets || [];
+  for (const pr of presets) {
+    for (const e of (pr.entries || [])) {
+      if (e.path && e.path.length >= 2) {
+        const k = e.path[1].toLowerCase();
+        if (k.startsWith('/') || k.startsWith('//')) continue;
+        const meta = (perfState.convarMap && perfState.convarMap[k]) || { name: e.path[1], default: 'default' };
+        if (meta.status === 'blocked' || meta.status === 'notConvar' || (meta.flags && meta.flags.includes('gameinfo_cannot_override'))) {
+          continue;
+        }
+        if (!map.has(k)) {
+          map.set(k, { key: k, name: meta.name || e.path[1], meta: meta });
+        }
+      }
+    }
+  }
+
+  // 3. Also include camera / vision performance switches
+  if (typeof CAMERA_SETTINGS !== 'undefined' && Array.isArray(CAMERA_SETTINGS)) {
+    for (const cam of CAMERA_SETTINGS) {
+      if (cam && cam.key) {
+        const k = cam.key.toLowerCase();
+        if (!map.has(k)) {
+          const meta = (perfState.convarMap && perfState.convarMap[k]) || { name: cam.key, default: cam.def || 'default', kind: 'bool' };
+          map.set(k, { key: k, name: cam.key, meta: meta });
+        }
+      }
+    }
+  }
+
+  // 4. Also include any convar the user manually customized
+  for (const k of Object.keys(perfState.userOverrides)) {
+    const key = k.toLowerCase();
+    if (key.startsWith('/') || key.startsWith('//')) continue;
+    const meta = (perfState.convarMap && perfState.convarMap[key]) || { name: k, default: 'default' };
+    if (meta.status === 'blocked' || meta.status === 'notConvar' || (meta.flags && meta.flags.includes('gameinfo_cannot_override'))) {
+      continue;
+    }
+    if (!map.has(key)) {
+      map.set(key, { key: key, name: meta.name || key, meta: meta });
+    }
+  }
+
+  // 5. Transform into full objects with calculated diffs, types, and values
+  const list = [];
+  for (const item of map.values()) {
+    const meta = item.meta || {};
+    const defaultVal = meta.default !== undefined ? String(meta.default) : 'default';
+    const isOverridden = perfState.userOverrides[item.key] !== undefined;
+    const currentVal = isOverridden
+      ? String(perfState.userOverrides[item.key])
+      : (presetValueMap[item.key] !== undefined ? presetValueMap[item.key] : (defaultVal !== 'default' ? defaultVal : ''));
+
+    const isDiff = currentVal !== '' && defaultVal !== 'default' && currentVal.toLowerCase() !== defaultVal.toLowerCase();
+    const desc = getConvarDesc(item.key, meta, isFa);
+
+    const isBool = meta.kind === 'bool' ||
+                   currentVal.toLowerCase() === 'true' || currentVal.toLowerCase() === 'false' ||
+                   defaultVal.toLowerCase() === 'true' || defaultVal.toLowerCase() === 'false';
+
+    const isFloat = meta.kind === 'float' ||
+                    currentVal.includes('.') || defaultVal.includes('.') ||
+                    item.key === 'r_aspectratio' || item.key.includes('scale') || item.key.includes('duration');
+
+    let minVal = meta.min !== undefined ? meta.min : '';
+    let maxVal = meta.max !== undefined ? meta.max : '';
+    if (item.key === 'r_aspectratio') {
+      if (minVal === '') minVal = 0;
+      maxVal = 3.20;
+    }
+
+    list.push({
+      key: item.key,
+      name: item.name,
+      meta: meta,
+      defaultVal: defaultVal,
+      currentVal: currentVal,
+      isOverridden: isOverridden,
+      isDiff: isDiff,
+      desc: desc,
+      isBool: isBool,
+      isFloat: isFloat,
+      minVal: minVal,
+      maxVal: maxVal
+    });
+  }
+
+  // Sort alphabetically by convar key
+  list.sort((a, b) => a.key.localeCompare(b.key));
+  return list;
+}
+
+function createConvarRowElement(item, isFa) {
+  const row = document.createElement('div');
+  row.className = 'convar-row-item';
+  row.dataset.cvarRow = item.key;
+
+  let controlHtml = '';
+  if (item.isBool) {
+    const isTrue = item.currentVal.toLowerCase() === 'true';
+    const btnTitle = isFa
+      ? `برای تغییر کلیک یا اسکرول کنید (فعلی: ${isTrue ? 'فعال' : 'غیرفعال'})`
+      : `Click or scroll to toggle (currently ${isTrue ? 'true' : 'false'})`;
+    controlHtml = `
+      <button type="button" 
+        class="convar-item-val-input cvar-bool-btn ${isTrue ? 'is-true' : 'is-false'}" 
+        onclick="toggleConvarBool('${item.key}')" 
+        onwheel="handleBoolWheel(event, '${item.key}')"
+        title="${btnTitle}">
+        ${isTrue ? 'true' : 'false'}
+      </button>
+    `;
+  } else {
+    const isNumeric = item.meta.kind === 'int' || item.meta.kind === 'float' || !isNaN(Number(item.currentVal));
+    const numTitle = isFa
+      ? `اسکرول کنید یا مقدار بنویسید (${item.minVal !== '' ? 'حداقل ' + item.minVal : ''} ${item.maxVal !== '' ? 'حداکثر ' + item.maxVal : ''})`
+      : `Scroll up/down or type value (${item.minVal !== '' ? 'min ' + item.minVal : ''} ${item.maxVal !== '' ? 'max ' + item.maxVal : ''})`;
+    controlHtml = `
+      <input type="text" 
+        class="convar-item-val-input tabular-num" 
+        value="${escapeHtml(item.currentVal)}" 
+        data-cvar="${item.key}"
+        data-kind="${item.isFloat ? 'float' : (item.meta.kind || 'int')}"
+        data-min="${item.minVal}"
+        data-max="${item.maxVal}"
+        onchange="onConvarNumericChange('${item.key}', this.value, ${item.isFloat}, '${item.minVal}', '${item.maxVal}')"
+        ${isNumeric ? `onwheel="handleConvarInputWheel(event, this, '${item.key}', ${item.isFloat}, '${item.minVal}', '${item.maxVal}')"` : ''}
+        ${isNumeric ? `onkeydown="handleConvarInputKeydown(event, ${item.isFloat}, '${item.minVal}')"` : ''}
+        ${isNumeric ? `oninput="sanitizeConvarNumericInput(this, ${item.isFloat}, '${item.minVal}')"` : ''}
+        title="${numTitle}"
+      >
+    `;
+  }
+
+  const defValClean = item.defaultVal !== 'default' ? item.defaultVal : (isFa ? 'نامشخص' : 'default');
+  const defBadgeHtml = `
+    <span class="convar-item-def-badge">
+      <span class="def-badge-label">${isFa ? 'پیش‌فرض' : 'def'}</span>
+      <span class="def-badge-val tabular-num">${escapeHtml(defValClean)}</span>
+    </span>
+  `;
+  const diffTooltip = isFa ? 'متفاوت با مقدار پیش‌فرض ددلاک' : 'Differs from default';
+
+  row.innerHTML = `
+    <div class="convar-item-left">
+      <div class="convar-top-line">
+        <span class="convar-item-name" title="${item.key}">${item.key}</span>
+        ${defBadgeHtml}
+        <span class="convar-diff-dot" style="visibility: ${item.isDiff ? 'visible' : 'hidden'};" title="${diffTooltip}"></span>
+      </div>
+      <div class="convar-item-desc" title="${escapeHtml(item.desc)}">${escapeHtml(item.desc)}</div>
+    </div>
+    <div class="convar-item-right">
+      ${controlHtml}
+    </div>
+  `;
+  return row;
+}
+
+function attachEditorScrollListener() {
+  if (perfState.editorScrollListenerAttached) return;
+  const scrollContainer = document.querySelector('.perf-drawer-body');
+  if (!scrollContainer) return;
+
+  perfState.editorScrollListenerAttached = true;
+  scrollContainer.addEventListener('scroll', () => {
+    const editorPane = document.getElementById('pane-drawer-editor');
+    if (!editorPane || editorPane.style.display === 'none') return;
+
+    if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 300) {
+      appendNextEditorBatch();
+    }
+  }, { passive: true });
+}
+
+function appendNextEditorBatch() {
+  const filtered = perfState.editorFilteredItems;
+  if (!filtered || !filtered.length) return;
+  const current = perfState.editorRenderedCount || 0;
+  if (current >= filtered.length) return;
+
+  const container = document.getElementById('drawer-convar-list');
+  if (!container) return;
+
+  const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
+  const nextCount = Math.min(current + 60, filtered.length);
+  const fragment = document.createDocumentFragment();
+  for (let i = current; i < nextCount; i++) {
+    fragment.appendChild(createConvarRowElement(filtered[i], isFa));
+  }
+  container.appendChild(fragment);
+  perfState.editorRenderedCount = nextCount;
+}
+
+function renderConvarEditor(preset) {
+  const container = document.getElementById('drawer-convar-list');
+  if (!container || !perfState.catalog) return;
+
+  const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
+  const searchInput = document.getElementById('drawer-convar-search') || document.getElementById('drawer-editor-search');
+  if (searchInput) {
+    searchInput.placeholder = isFa ? 'جستجوی کانوارهای ددلاک...' : 'Search Deadlock convars...';
+  }
+
+  const allItems = getAllTunableConvars(preset);
+  perfState.cachedTotalAllCount = allItems.length;
+
+  const filter = perfState.editorFilter || 'all';
+  let filtered = allItems;
+  if (filter === 'differs') {
+    filtered = filtered.filter(item => item.isDiff);
+  } else if (filter === 'overridden') {
+    filtered = filtered.filter(item => item.isOverridden);
+  }
+
+  if (perfState.editorSearch) {
+    const q = perfState.editorSearch.toLowerCase();
+    filtered = filtered.filter(item => item.key.includes(q) || item.desc.toLowerCase().includes(q));
+  }
+
+  perfState.editorFilteredItems = filtered;
+  perfState.editorRenderedCount = 0;
+  container.innerHTML = '';
+
+  const countDiffersEl = document.getElementById('count-differs');
+  const countOverriddenEl = document.getElementById('count-overridden');
+  const countAllEl = document.getElementById('count-all');
+  if (countAllEl) countAllEl.textContent = allItems.length;
+  if (countOverriddenEl) countOverriddenEl.textContent = Object.keys(perfState.userOverrides).length;
+  const differsTotal = allItems.filter(i => i.isDiff).length;
+  if (countDiffersEl) countDiffersEl.textContent = differsTotal;
+
+  if (filtered.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'convar-list-empty';
+    empty.style.cssText = 'padding: 36px 16px; text-align: center; color: var(--text-dim); font-size: 13px; line-height: 1.6;';
+    if (filter === 'overridden') {
+      empty.textContent = isFa
+        ? 'هنوز هیچ کانواری توسط شما تغییر نیافته است. می‌توانید مقادیر را تغییر دهید.'
+        : 'No convars have been overridden yet. Edit values in the list above.';
+    } else if (filter === 'differs') {
+      empty.textContent = isFa
+        ? 'هیچ کانواری مغایر با تنظیمات پیش‌فرض بازی یافت نشد.'
+        : 'No convars differ from default game settings.';
+    } else {
+      empty.textContent = isFa
+        ? 'هیچ کانواری مطابق با جستجوی شما یافت نشد.'
+        : 'No matching convars found.';
+    }
+    container.appendChild(empty);
+    return;
+  }
+
+  const initialBatchCount = Math.min(60, filtered.length);
+  const fragment = document.createDocumentFragment();
+  for (let i = 0; i < initialBatchCount; i++) {
+    fragment.appendChild(createConvarRowElement(filtered[i], isFa));
+  }
+  container.appendChild(fragment);
+  perfState.editorRenderedCount = initialBatchCount;
+
+  attachEditorScrollListener();
+}
+
+function updateConvarCounters() {
+  const p = getActivePreset();
+  if (!p) return;
+  const allItems = getAllTunableConvars(p);
+  perfState.cachedTotalAllCount = allItems.length;
+
+  let differsCount = 0;
+  for (const item of allItems) {
+    if (item.isDiff) differsCount++;
+  }
+
+  const countDiffersEl = document.getElementById('count-differs');
+  const countOverriddenEl = document.getElementById('count-overridden');
+  const countAllEl = document.getElementById('count-all');
+  if (countAllEl) countAllEl.textContent = allItems.length;
+  if (countDiffersEl) countDiffersEl.textContent = differsCount;
+  if (countOverriddenEl) countOverriddenEl.textContent = Object.keys(perfState.userOverrides).length;
+}
+window.updateConvarCounters = updateConvarCounters;
+
+function setDrawerEditorFilter(filter) {
+  perfState.editorFilter = filter;
+  document.querySelectorAll('.editor-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.filter === filter);
+  });
+  renderConvarEditor(getActivePreset());
+}
+window.setDrawerEditorFilter = setDrawerEditorFilter;
+
+function onDrawerConvarSearch(query) {
+  perfState.editorSearch = (query || '').trim().toLowerCase();
+  renderConvarEditor(getActivePreset());
+}
+window.onDrawerConvarSearch = onDrawerConvarSearch;
+
+function toggleCameraOverride(key, val) {
+  perfState.userOverrides[key] = val;
+  updateConvarCounters();
+}
+window.toggleCameraOverride = toggleCameraOverride;
+
+function toggleEngineSections(checked) {
+  perfState.includeEngineSections = !!checked;
+}
+window.toggleEngineSections = toggleEngineSections;
+
+function handleBoolWheel(e, cvarKey) {
+  e.preventDefault();
+  toggleConvarBool(cvarKey);
+}
+window.handleBoolWheel = handleBoolWheel;
+
+function toggleConvarBool(cvarKey) {
+  const p = getActivePreset();
+  if (!p) return;
+  const convarMap = perfState.convarMap || {};
+  const meta = convarMap[cvarKey] || {};
+  const defaultVal = meta.default !== undefined ? String(meta.default) : 'default';
+  
+  let currentVal = perfState.userOverrides[cvarKey];
+  if (currentVal === undefined) {
+    const entry = (p.entries || []).find(e => e.path && e.path.length >= 2 && e.path[1].toLowerCase() === cvarKey.toLowerCase());
+    currentVal = entry ? String(entry.value) : defaultVal;
+  }
+  const isCurrentlyTrue = String(currentVal).toLowerCase() === 'true';
+  const nextVal = isCurrentlyTrue ? 'false' : 'true';
+  perfState.userOverrides[cvarKey] = nextVal;
+
+  // In-place DOM update per AGENTS.md rule 2 (Zero layout shifts)
+  const row = document.querySelector(`[data-cvar-row="${cvarKey}"]`);
+  if (row) {
+    const btn = row.querySelector('.cvar-bool-btn');
+    if (btn) {
+      btn.classList.toggle('is-true', !isCurrentlyTrue);
+      btn.classList.toggle('is-false', isCurrentlyTrue);
+      btn.textContent = nextVal;
+      const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
+      btn.title = isFa
+        ? `برای تغییر کلیک یا اسکرول کنید (فعلی: ${!isCurrentlyTrue ? 'فعال' : 'غیرفعال'})`
+        : `Click or scroll to toggle (currently ${nextVal})`;
+    }
+    const diffDot = row.querySelector('.convar-diff-dot');
+    if (diffDot) {
+      const isDiff = defaultVal !== 'default' && nextVal.toLowerCase() !== defaultVal.toLowerCase();
+      diffDot.style.visibility = isDiff ? 'visible' : 'hidden';
+    }
+  }
+  updateConvarCounters();
+}
+window.toggleConvarBool = toggleConvarBool;
+
+function onConvarNumericChange(cvarKey, val, isFloat, minVal, maxVal) {
+  let cleaned = String(val).trim();
+  if (isFloat) {
+    let num = parseFloat(cleaned);
+    if (isNaN(num)) num = 0;
+    if (minVal !== '' && num < parseFloat(minVal)) num = parseFloat(minVal);
+    if (maxVal !== '' && num > parseFloat(maxVal)) num = parseFloat(maxVal);
+    cleaned = String(num);
+  } else {
+    let num = parseInt(cleaned, 10);
+    if (isNaN(num)) num = 0;
+    if (minVal !== '' && num < parseInt(minVal, 10)) num = parseInt(minVal, 10);
+    if (maxVal !== '' && num > parseInt(maxVal, 10)) num = parseInt(maxVal, 10);
+    cleaned = String(num);
+  }
+  perfState.userOverrides[cvarKey] = cleaned;
+
+  // In-place DOM update per AGENTS.md
+  const row = document.querySelector(`[data-cvar-row="${cvarKey}"]`);
+  if (row) {
+    const input = row.querySelector('.convar-item-val-input');
+    if (input && input.value !== cleaned) input.value = cleaned;
+    const convarMap = perfState.convarMap || {};
+    const meta = convarMap[cvarKey] || {};
+    const defaultVal = meta.default !== undefined ? String(meta.default) : 'default';
+    const diffDot = row.querySelector('.convar-diff-dot');
+    if (diffDot) {
+      const isDiff = defaultVal !== 'default' && cleaned.toLowerCase() !== defaultVal.toLowerCase();
+      diffDot.style.visibility = isDiff ? 'visible' : 'hidden';
+    }
+  }
+  updateConvarCounters();
+}
+window.onConvarNumericChange = onConvarNumericChange;
+
+function handleConvarInputKeydown(e, isFloat, minVal) {
+  if (['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key) ||
+      (e.ctrlKey || e.metaKey)) {
+    return;
+  }
+  if (isFloat && e.key === '.' && !e.target.value.includes('.')) {
+    return;
+  }
+  if (minVal !== '' && parseFloat(minVal) < 0 && e.key === '-' && !e.target.value.includes('-')) {
+    return;
+  }
+  if (!/^[0-9]$/.test(e.key)) {
+    e.preventDefault();
+  }
+}
+window.handleConvarInputKeydown = handleConvarInputKeydown;
+
+function sanitizeConvarNumericInput(input, isFloat, minVal) {
+  let val = input.value;
+  const allowNegative = minVal !== '' && parseFloat(minVal) < 0;
+  if (isFloat) {
+    val = val.replace(allowNegative ? /[^0-9.-]/g : /[^0-9.]/g, '');
+    const parts = val.split('.');
+    if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+  } else {
+    val = val.replace(allowNegative ? /[^0-9-]/g : /[^0-9]/g, '');
+  }
+  input.value = val;
+}
+window.sanitizeConvarNumericInput = sanitizeConvarNumericInput;
+
+function handleConvarInputWheel(e, input, cvarKey, isFloat, minVal, maxVal) {
+  e.preventDefault();
+  let current = isFloat ? parseFloat(input.value) : parseInt(input.value, 10);
+  if (isNaN(current)) current = 0;
+  const direction = e.deltaY < 0 ? 1 : -1;
+  const step = isFloat ? (e.shiftKey ? 0.05 : 0.01) : (e.shiftKey ? 5 : 1);
+  let next = current + (direction * step);
+  if (minVal !== '' && next < parseFloat(minVal)) next = parseFloat(minVal);
+  if (maxVal !== '' && next > parseFloat(maxVal)) next = parseFloat(maxVal);
+  const formatted = isFloat ? next.toFixed(2) : String(Math.round(next));
+  input.value = formatted;
+  onConvarNumericChange(cvarKey, formatted, isFloat, minVal, maxVal);
+}
+window.handleConvarInputWheel = handleConvarInputWheel;
+
+function resetDrawerOverrides() {
+  perfState.userOverrides = {};
+  renderDrawer();
+}
+
+function applyFromDrawer() {
+  closePerfDrawer();
+  doInstall();
+}
+
+function resolvePresetEntries(preset) {
+  const baseEntries = (preset.entries || []).map(e => ({
+    path: e.path,
+    value: e.value
+  }));
+
+  for (const [k, v] of Object.entries(perfState.userOverrides)) {
+    const existing = baseEntries.find(e => e.path.length >= 2 && e.path[1].toLowerCase() === k.toLowerCase());
+    if (existing) {
+      existing.value = v;
+    } else {
+      baseEntries.push({
+        path: ['ConVars', k],
+        value: v
+      });
+    }
+  }
+
+  return baseEntries;
+}
+
+async function detectPerfStatus() {
+  if (!state.gamePath) return;
+  try {
+    const status = await call('detect_perf_optimization_cmd', { path: state.gamePath });
+    perfState.installedStatus = status;
+    if (status && status.is_installed) {
+      selectOptLevel(Math.min(status.level || 2, 3), false);
+      if (status.config_id && status.config_id !== 'none') {
+        setPreset(status.config_id);
+      }
+    }
+  } catch (_) {}
+}
+
+async function doRevertOptimization() {
+  if (!state.gamePath) {
+    showModal(t('locate'), t('noGame'), [{ label: t('ok') }]);
+    return;
+  }
+  setBusyCursor(true, 'graphic');
+  try {
+    const log = await call('revert_perf_optimization_cmd', { path: state.gamePath });
+    let details = 'Reverted to Vanilla successfully! GameInfo and video settings restored.';
+    for (const l of log) {
+      stepLine(`[${l.step}] ${l.detail}`, 'ok');
+    }
+    showModal(t('doneTitle'), details, [{ label: 'OK' }]);
+    detectPerfStatus();
+  } catch (e) {
+    showModal('Revert Error', String(e), [{ label: 'OK' }]);
+  } finally {
+    setBusyCursor(false, 'graphic');
+  }
+}
+
+window.selectOptLevel = selectOptLevel;
+window.onPerfPresetChange = onPerfPresetChange;
+window.openPerfDrawer = openPerfDrawer;
+window.togglePerfDrawer = togglePerfDrawer;
+window.closePerfDrawer = closePerfDrawer;
+window.switchDrawerTab = switchDrawerTab;
+window.toggleCameraOverride = toggleCameraOverride;
+window.toggleEngineSections = toggleEngineSections;
+window.onDrawerConvarSearch = onDrawerConvarSearch;
+window.setDrawerEditorFilter = setDrawerEditorFilter;
+window.resetDrawerOverrides = resetDrawerOverrides;
+window.applyFromDrawer = applyFromDrawer;
+window.doRevertOptimization = doRevertOptimization;
+
+async function doApplyFovOnly() {
+  if (!state.gamePath) {
+    showModal(t('locate'), t('noGame'), [{ label: t('ok') }]);
+    return;
+  }
+  const btn = document.getElementById('btn-apply-fov');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await call('apply_fov_only_cmd', {
+      path: state.gamePath,
+      fov: state.fov || 90,
+      aspect_ratio: state.aspectRatio || '2.15',
+      aspect_ratio_enabled: state.aspectRatioEnabled !== false,
+    });
+    stepLine('[FOV/Aspect] ' + res, 'ok');
+    showModal(t('doneTitle'), res, [{ label: 'OK' }]);
+  } catch (e) {
+    showModal('FOV Apply Error', String(e), [{ label: 'OK' }]);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function doApplyFpsOnly() {
+  if (!state.gamePath) {
+    showModal(t('locate'), t('noGame'), [{ label: t('ok') }]);
+    return;
+  }
+  const btn = document.getElementById('btn-apply-fps');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await call('apply_fps_only_cmd', {
+      path: state.gamePath,
+      fps_limit: state.fpsLimit || 'DEFAULT',
+    });
+    stepLine('[FPS Max] ' + res, 'ok');
+    showModal(t('doneTitle'), res, [{ label: 'OK' }]);
+  } catch (e) {
+    showModal('FPS Apply Error', String(e), [{ label: 'OK' }]);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+window.doApplyFovOnly = doApplyFovOnly;
+window.doApplyFpsOnly = doApplyFpsOnly;
+
+
+function initArInputInteractions() {
+  const input = document.getElementById('ar-input');
+  if (!input || input._arWheelInit) return;
+  input._arWheelInit = true;
+
+  input.addEventListener('keydown', (e) => {
+    if (['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key) ||
+        (e.ctrlKey || e.metaKey)) {
+      return;
+    }
+    if (e.key === '.' && !input.value.includes('.')) {
+      return;
+    }
+    if (!/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+    }
+  });
+
+  input.addEventListener('input', () => {
+    let val = input.value.replace(/[^0-9.]/g, '');
+    const parts = val.split('.');
+    if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+    input.value = val;
+  });
+
+  input.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    let current = parseFloat(input.value);
+    if (isNaN(current)) current = 2.15;
+    const direction = e.deltaY < 0 ? 1 : -1;
+    const step = e.shiftKey ? 0.05 : 0.01;
+    let next = current + (direction * step);
+    if (next < 1.33) next = 1.33;
+    if (next > 3.20) next = 3.20;
+    input.value = next.toFixed(2);
+    setAspectRatio(input.value);
+  }, { passive: false });
+}
+
+
+window.initArInputInteractions = initArInputInteractions;

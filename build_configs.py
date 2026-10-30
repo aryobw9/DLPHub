@@ -2,20 +2,21 @@ import os
 import shutil
 import re
 
-DEADLOCK_CONFIGS = r"D:\Claude\DeadlockConfigs"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEADLOCK_CONFIGS = os.environ.get("DEADLOCK_CONFIGS_DIR", r"D:\Claude\DeadlockConfigs")
 NEW_MODS = r"D:\Claude\new mods"
-GAMEINFO_4 = r"C:\Users\Aryo\Downloads\gameinfo (4).gi"
-NEW_VIDEO = os.path.join(NEW_MODS, "video.txt")
+LATEST_GAMEINFO = os.path.join(BASE_DIR, "scripts", "sqooky_gameinfo_v3_7_1.gi")
+LATEST_VIDEO = os.path.join(BASE_DIR, "scripts", "piggy_video_latest.txt")
+
+LATEST_PGI_VERSION = "48C04ECAFC6448F8D3F41F0AA3A15D065501751CF45FBE32DF6CB951BC4F7F6E"
 
 def generate_video_txt(tier):
-    # Read base new video.txt
-    with open(NEW_VIDEO, "r", encoding="utf-8") as f:
+    with open(LATEST_VIDEO, "r", encoding="utf-8") as f:
         lines = f.readlines()
     
     out = []
     for line in lines:
         stripped = line.strip()
-        # Parse key
         m = re.match(r'\"([^\"]+)\"\s+\"([^\"]*)\"', stripped)
         if m:
             k, v = m.group(1), m.group(2)
@@ -63,7 +64,7 @@ def generate_video_txt(tier):
     return "".join(out)
 
 def modify_gameinfo(tier):
-    with open(GAMEINFO_4, "r", encoding="utf-8") as f:
+    with open(LATEST_GAMEINFO, "r", encoding="utf-8") as f:
         content = f.read()
 
     # Tier-specific variable dicts
@@ -145,6 +146,7 @@ def modify_gameinfo(tier):
         "cloth_sim_on_tick": "0",
         "cl_ragdoll_limit": "0",
         "cl_disable_ragdolls": "0",
+        "citadel_unit_status_hide_names": "true",
     }
 
     # Split into lines
@@ -157,6 +159,16 @@ def modify_gameinfo(tier):
     for line in lines:
         stripped = line.strip()
         code_part = stripped.split('//')[0].strip()
+
+        # Update PGIVersion if present
+        if stripped.startswith('PGIVersion') or stripped.startswith('"PGIVersion"'):
+            out_lines.append(f'\tPGIVersion "{LATEST_PGI_VERSION}"\n')
+            continue
+
+        # Comment out GameSupportsLegacyShaders if uncommented (prevents breaking Paige/Drifter/Infernus particles)
+        if 'GameSupportsLegacyShaders' in stripped and not stripped.startswith('//'):
+            out_lines.append(f'\t\t//GameSupportsLegacyShaders\t"1" // commented to prevent particle breakdown\n')
+            continue
 
         if not in_convars and (code_part == 'ConVars' or code_part == '"ConVars"'):
             in_convars = True
@@ -198,7 +210,7 @@ def modify_gameinfo(tier):
 
     return "".join(out_lines)
 
-print("Building configs...")
+print("Building configs with latest v3.7.1 gameinfo and latest video.txt...")
 for tier in ["t1", "t2", "t3", "potato"]:
     tdir = os.path.join(DEADLOCK_CONFIGS, tier)
     os.makedirs(tdir, exist_ok=True)
@@ -213,39 +225,3 @@ for tier in ["t1", "t2", "t3", "potato"]:
     with open(os.path.join(tdir, "gameinfo.gi"), "w", encoding="utf-8") as f:
         f.write(gitxt)
     print(f"Generated {tier}/video.txt and {tier}/gameinfo.gi")
-
-# Russian Potato setup
-rp_dir = os.path.join(DEADLOCK_CONFIGS, "russian_potato")
-os.makedirs(rp_dir, exist_ok=True)
-
-# Copy authentic russian potato autoexec and gameinfo
-rp_src = os.path.join(NEW_MODS, "russian potato")
-shutil.copy(os.path.join(rp_src, "autoexec.cfg"), os.path.join(rp_dir, "autoexec.cfg"))
-
-# For russian potato gameinfo: ensure it has stamina convar, no r_drawdecals, and proper animation hooks
-with open(os.path.join(rp_src, "gameinfo.gi"), "r", encoding="utf-8") as f:
-    rp_gi = f.read()
-
-# Remove r_drawdecals
-rp_gi = re.sub(r'^\s*\"?r_drawdecals\"?\s+.*$\n', '', rp_gi, flags=re.MULTILINE)
-
-# Add citadel_unit_status_stamina_low_pips if missing
-if "citadel_unit_status_stamina_low_pips" not in rp_gi:
-    rp_gi = re.sub(r'(ConVars\s*\{)', r'\1\n\t\t"citadel_unit_status_stamina_low_pips" "7"', rp_gi)
-
-# Apply panorama and particle fixes
-rp_gi = re.sub(r'("?panorama_max_fps"?\s+)"?\d+"?', r'\g<1>"120"', rp_gi)
-rp_gi = re.sub(r'("?r_particle_skip_postsim"?\s+)"?\d+"?', r'\g<1>"0"', rp_gi)
-rp_gi = re.sub(r'("?particle_cluster_nodraw"?\s+)"?\d+"?', r'\g<1>"0"', rp_gi)
-rp_gi = re.sub(r'("?r_particle_max_size_cull"?\s+)"?\d+"?', r'\g<1>"0"', rp_gi)
-rp_gi = re.sub(r'("?r_directlighting"?\s+)"?\d+"?', r'\g<1>"1"', rp_gi)
-
-with open(os.path.join(rp_dir, "gameinfo.gi"), "w", encoding="utf-8") as f:
-    f.write(rp_gi)
-
-# Russian potato video.txt based on new mods rules
-rp_vtxt = generate_video_txt("potato")
-with open(os.path.join(rp_dir, "video.txt"), "w", encoding="utf-8") as f:
-    f.write(rp_vtxt)
-
-print("Generated russian_potato configs.")

@@ -1,0 +1,220 @@
+# using-mod-manager__faq
+URL: https://docs.deadlockmods.app/using-mod-manager/faq
+
+Using Mod Manager
+Frequently Asked Questions
+Answers to common questions about Deadlock Mod Manager
+Copy Markdown
+Open
+Frequently Asked Questions
+Find quick answers to the most common questions about Deadlock Mod Manager.
+General Questions
+What is Deadlock Mod Manager?
+Deadlock Mod Manager lets you discover, install, and manage mods for Valve's Deadlock without touching game files manually. It's built with Tauri and React, and runs on Windows and Linux.
+Is Deadlock Mod Manager safe to use?
+Yes, Deadlock Mod Manager is completely safe:
+Open Source
+: All code is publicly available on
+GitHub
+Community Verified
+: Used by thousands of players in the Deadlock community
+No Malware
+: Regular security scans and community oversight
+Transparent
+: Full transparency in what the application does and how it works
+Security Verification
+If you have concerns, you can scan any downloaded files through
+VirusTotal
+for additional peace of mind.
+Will using mods get me banned from Deadlock?
+Deadlock currently allows client-side modifications that don't affect gameplay balance or provide unfair advantages. However:
+Cosmetic mods
+(skins, UI changes) are generally safe
+Gameplay mods
+that change mechanics may be restricted
+Always check
+Valve's current mod policy before installing gameplay-affecting mods
+Use at your own discretion
+- mod policies can change
+Is Deadlock Mod Manager affiliated with Valve?
+No, Deadlock Mod Manager is an independent, community-developed project. It is not affiliated with or endorsed by Valve Corporation. "Deadlock" is a trademark of Valve Corporation.
+Using the Application
+How do I install mods?
+Installing mods through the mod manager is straightforward - simply browse available mods and click install.
+For a complete step-by-step walkthrough, see
+Installing Your First Mod
+in our getting started guide.
+Can I install multiple mods at once?
+Yes! You can:
+Queue multiple downloads
+by clicking Install on several mods
+Use batch operations
+in the Mods Library section for updates
+Monitor all active downloads
+in the Downloads tab
+Can I disable mods without uninstalling them?
+Yes! You can temporarily disable mods without removing them completely. Disabled mods remain installed but inactive.
+For detailed instructions on managing mod states, see
+Enable/Disable Mods
+in our getting started guide.
+How do I uninstall mods?
+You can safely remove mods through the Mods Library section by clicking the uninstall button and confirming removal.
+For complete instructions, see
+Uninstalling Mods
+in our getting started guide.
+Technical Questions
+What happens to my mods when Deadlock updates?
+The manager warns while Steam is updating Deadlock and provides access to patch notes. Wait for the update to finish before launching. Some mods may need new versions after a game patch; check for updates in Mods Library and disable mods that no longer work. Compatibility is not automatically guaranteed.
+Can I back up my mods?
+Yes. Open
+Settings → Backups
+to create or restore addons backups and configure automatic backups. A shared Profile ID is a setup description, not a backup of your local files. See
+Backups and Recovery
+.
+Where are mods installed?
+Mods are installed directly into your Deadlock game directory:
+Mod files
+are managed in addons and profile folders within the game directory
+Mod Archives
+are downloaded to local app data
+How much disk space do mods use?
+Disk usage varies by mod:
+Cosmetic mods
+: 20-200 MB each
+Check the Downloads tab
+to monitor space usage
+Clean up downloads
+regularly to free space
+Does the mod manager affect game performance?
+The mod manager itself has minimal impact:
+No performance impact
+while Deadlock is running (mod manager can be closed)
+Mods themselves
+may affect game performance depending on complexity and the size of the models
+Monitor performance
+in-game after installing multiple mods
+Disable heavy mods
+if you experience performance issues
+Troubleshooting
+The application crashes on startup. What should I do?
+If the application crashes on startup, this is usually related to permissions, antivirus software, or missing system dependencies.
+For detailed solutions including platform-specific fixes, see the
+Application Won't Start
+section in our troubleshooting guide.
+Downloads keep failing. How can I fix this?
+Download failures can be caused by network issues, firewall blocking, or server problems.
+For comprehensive solutions including network diagnostics and troubleshooting steps, see
+Download Failures
+in our troubleshooting guide.
+Mods aren't working in-game. What's wrong?
+Mods may not work due to game version compatibility issues, mod conflicts, or installation problems.
+For detailed troubleshooting steps including compatibility checks and conflict resolution, see
+Mods Not Working In-Game
+in our troubleshooting guide.
+How do I report bugs or request features?
+We welcome feedback and bug reports:
+Search existing issues
+on
+GitHub
+first
+Create a new issue
+with detailed information
+Join our Discord
+for community support:
+Discord Server
+Include system info, logs, and steps to reproduce
+when reporting bugs
+Community & Support
+How can I contribute to the project?
+There are many ways to contribute:
+Translation
+: Help translate the app into your language
+Bug Testing
+: Report issues and test new features
+Code Contributions
+: Submit pull requests for improvements
+Documentation
+: Help improve guides and documentation
+Community Support
+: Help other users in Discord
+Is there a Discord community?
+Yes! Join our active Discord community:
+Support Channels
+: Get help from community members
+Feature Discussions
+: Discuss new features and improvements
+Mod Recommendations
+: Share and discover great mods
+Translation Coordination
+: Help with internationalization
+Join Discord Server
+How can I support the project?
+Support the project by:
+⭐ Starring the repository
+on GitHub
+🐛 Reporting bugs
+you encounter
+💡 Suggesting features
+you'd like to see
+🌐 Contributing translations
+for your language
+📢 Sharing with friends
+who play Deadlock
+💖 Spreading the word
+in the community
+Advanced Questions
+Can I use this mod manager with other games?
+Currently, Deadlock Mod Manager is specifically designed for Valve's Deadlock game. While the underlying technology could support other games, this version is optimized for Deadlock's file structure and mod formats.
+Is the source code available?
+Yes! Deadlock Mod Manager is fully open source:
+GitHub Repository
+:
+deadlock-mod-manager/deadlock-mod-manager
+MIT License
+: Free to use, modify, and distribute
+Community Contributions
+: Pull requests welcome
+Full Transparency
+: All code and development is public
+Can I create my own mods using this tool?
+Yes.
+Mod Foundry
+can import a hero skin, recolor it, swap cards and sounds, and export a VPK. It is controlled by
+Settings → Experimental → Mod Foundry
+. See
+Customization
+for the workflow and export options.
+For other kinds of mods, use the appropriate Deadlock modding tools and community tutorials. Foundry is a hero-skin editor, not a complete editor for every game asset.
+How is my data handled?
+Mod setup and preferences are stored locally. Browsing updates, downloading mods, sharing Profile IDs, and fetching player stats contact external services and require an internet connection. Cached data and downloaded mods can remain available offline.
+Control analytics under
+Settings → Privacy → Usage Analytics
+.
+Settings → Logging
+provides log files and troubleshooting tools.
+Match Data Sharing
+is on by default and can be turned off under
+Settings → Privacy
+. It uses your locally stored Steam login to fetch your own matches and sends only match IDs and salts to deadlock-api. A separate
+Matchdata Ingest Tool
+setting controls cached-matchdata ingestion; review that preference as well. See
+Servers and Stats
+for details.
+Getting More Help
+Still have questions? Here are additional resources:
+Troubleshooting Guide
+Detailed solutions for common problems
+Discord Community
+Get help from other users and developers
+GitHub Issues
+Report bugs and request features
+Features Guide
+Learn about all available features
+Can't Find Your Answer?
+If your question isn't answered here, please ask in our Discord community or
+create an issue on GitHub. We're always happy to help and your question might
+be added to this FAQ to help future users!
+Troubleshooting Guide
+Solutions to common issues and problems with Deadlock Mod Manager
+Overview
+Learn how to create mods for Deadlock using community guides and tools

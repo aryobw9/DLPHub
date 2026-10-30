@@ -1,0 +1,207 @@
+# EntityIO | Deadworks API
+URL: https://docs.deadworks.net/api-reference/events/entityio
+
+API Reference
+Events
+EntityIO
+On this page
+EntityIO
+Hooks into the Valve entity I/O system to observe or intercept inputs and outputs. Two symmetric APIs:
+HookInput
+for
+CEntityInstance::AcceptInput
+,
+HookOutput
+for
+CEntityIOOutput::FireOutputInternal
+.
+public
+static
+class
+EntityIO
+Namespace:
+DeadworksManaged.Api
+Source:
+Events/EntityIO.cs#L13
+Notes
+​
+Class and input/output names support
+"*"
+as a wildcard. Hooks are matched against four keys in priority order:
+(class, name)
+,
+(class, "*")
+,
+("*", name)
+,
+("*", "*")
+.
+Pre-mode handlers return
+HookResult
+(
+HookResult.Stop
+blocks the original). Post-mode handlers return
+void
+and run after the original — they cannot block.
+Methods
+​
+EntityIO.HookInput()
+​
+Subscribes to entity inputs matching
+className
++
+inputName
+. Handler may return
+HookResult.Stop
+to block the input.
+Signature
+public
+static
+IHandle
+HookInput
+(
+string
+className
+,
+string
+inputName
+,
+Func
+<
+EntityInputEvent
+,
+HookResult
+>
+handler
+,
+HookMode
+mode
+=
+HookMode
+.
+Pre
+)
+public
+static
+IHandle
+HookInput
+(
+string
+className
+,
+string
+inputName
+,
+Action
+<
+EntityInputEvent
+>
+handler
+)
+Parameters
+className
+: Receiving entity's designer name, or
+"*"
+.
+inputName
+: Input name (e.g.
+"Kill"
+), or
+"*"
+.
+handler
+: Pre-mode handler. Return
+HookResult.Continue
+to let the original run.
+mode
+: When the handler runs. Defaults to
+HookMode.Pre
+.
+Returns
+A handle that cancels the hook when
+IHandle.Cancel
+is called. Plugin unload also auto-cancels.
+Source:
+Events/EntityIO.cs#L25
+,
+Events/EntityIO.cs#L29
+EntityIO.HookOutput()
+​
+Subscribes to entity outputs matching
+className
++
+outputName
+. Handler may return
+HookResult.Stop
+to block the output.
+Signature
+public
+static
+IHandle
+HookOutput
+(
+string
+className
+,
+string
+outputName
+,
+Func
+<
+EntityOutputEvent
+,
+HookResult
+>
+handler
+,
+HookMode
+mode
+=
+HookMode
+.
+Pre
+)
+public
+static
+IHandle
+HookOutput
+(
+string
+className
+,
+string
+outputName
+,
+Action
+<
+EntityOutputEvent
+>
+handler
+)
+Parameters
+className
+: Firing entity's designer name, or
+"*"
+.
+outputName
+: Output name (e.g.
+"OnStartTouch"
+), or
+"*"
+.
+handler
+: Pre-mode handler. Return
+HookResult.Continue
+to let the original run.
+mode
+: When the handler runs. Defaults to
+HookMode.Pre
+.
+Returns
+A handle that cancels the hook when
+IHandle.Cancel
+is called. Plugin unload also auto-cancels.
+Source:
+Events/EntityIO.cs#L40
+,
+Events/EntityIO.cs#L44

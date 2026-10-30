@@ -1,0 +1,549 @@
+# Abilities & items | Deadworks API
+URL: https://docs.deadworks.net/features/abilities
+
+Features
+Abilities & items
+On this page
+Abilities & items
+Namespace:
+DeadworksManaged.Api
+A hero's abilities and the items a player buys are the same kind of thing in code. Both live on the player's pawn. Both have an internal name. Item names start with
+upgrade_
+.
+Find the name of an ability or item
+​
+The
+abilities database
+lists every ability and item, with the name to use in code.
+Give a player an item
+​
+pawn
+.
+AddItem
+(
+"upgrade_sprint_booster"
+)
+;
+To give the enhanced version:
+pawn
+.
+AddItem
+(
+"upgrade_sprint_booster"
+,
+enhanced
+:
+true
+)
+;
+AddItem
+returns
+null
+if it can't give the item.
+Take an item away
+​
+pawn
+.
+RemoveItem
+(
+"upgrade_sprint_booster"
+)
+;
+RemoveItem
+gives the player no souls back. To sell the item so they get souls back, use
+SellItem
+:
+pawn
+.
+SellItem
+(
+"upgrade_sprint_booster"
+)
+;
+Check whether a player has an item
+​
+bool
+hasIt
+=
+pawn
+.
+AbilityComponent
+.
+FindAbilityByName
+(
+"upgrade_sprint_booster"
+)
+!=
+null
+;
+List a player's items
+​
+foreach
+(
+var
+ability
+in
+pawn
+.
+AbilityComponent
+.
+Abilities
+)
+{
+if
+(
+ability
+.
+IsItem
+)
+Console
+.
+WriteLine
+(
+ability
+.
+AbilityName
+)
+;
+}
+Abilities
+holds everything on the hero: abilities, items, weapons and innates.
+IsItem
+picks out the items.
+Give an item that attaches to an ability
+​
+Some items, like Echo Shard, only work once they are attached to one of the hero's abilities. Say which ability when you give the item.
+pawn
+.
+AddItem
+(
+"upgrade_echo_shard"
+,
+EAbilitySlot
+.
+Signature1
+)
+;
+The game doesn't allow every pairing. To find out why one failed, use
+TryAddItem
+:
+var
+result
+=
+pawn
+.
+TryAddItem
+(
+"upgrade_echo_shard"
+,
+EAbilitySlot
+.
+Signature4
+,
+out
+var
+item
+)
+;
+if
+(
+result
+!=
+ImbueResult
+.
+Success
+)
+Console
+.
+WriteLine
+(
+$"Couldn't give the item:
+{
+result
+}
+"
+)
+;
+If it fails, the player doesn't get the item.
+Get one of a player's abilities
+​
+A hero's four abilities are in the slots
+Signature1
+to
+Signature4
+.
+Signature4
+is the ultimate.
+var
+ultimate
+=
+pawn
+.
+AbilityComponent
+.
+GetAbilityBySlot
+(
+EAbilitySlot
+.
+Signature4
+)
+;
+if
+(
+ultimate
+==
+null
+)
+return
+;
+Console
+.
+WriteLine
+(
+ultimate
+.
+AbilityName
+)
+;
+Swap one of a player's abilities
+​
+Remove the old one, then add the new one to a slot. Slots 0 to 3 are the four abilities.
+pawn
+.
+RemoveAbility
+(
+"ability_priest_weaponswap"
+)
+;
+pawn
+.
+AddAbility
+(
+"ability_familiar_ability01"
+,
+slot
+:
+3
+)
+;
+Unlock and upgrade a player's abilities
+​
+Set
+UpgradeBits
+to
+0b11111
+to unlock an ability and fully upgrade it.
+foreach
+(
+var
+ability
+in
+pawn
+.
+AbilityComponent
+.
+Abilities
+)
+{
+if
+(
+ability
+.
+IsSignature
+)
+ability
+.
+UpgradeBits
+=
+0b11111
+;
+}
+Reset a player's cooldowns
+​
+pawn
+.
+ResetAllAbilityCooldowns
+(
+)
+;
+ResetAllAbilityCooldowns()
+makes every ability and item ready to use again. It also refills their charges.
+To reset one ability:
+pawn
+.
+ResetAbilityCooldown
+(
+EAbilitySlot
+.
+Signature4
+)
+;
+Check whether an ability is on cooldown
+​
+var
+ultimate
+=
+pawn
+.
+AbilityComponent
+.
+GetAbilityBySlot
+(
+EAbilitySlot
+.
+Signature4
+)
+;
+if
+(
+ultimate
+==
+null
+)
+return
+;
+if
+(
+ultimate
+.
+IsOnCooldown
+)
+{
+float
+secondsLeft
+=
+ultimate
+.
+CooldownEnd
+-
+GlobalVars
+.
+CurTime
+;
+}
+An ability that uses charges can also be out of charges.
+RemainingCharges
+is how many it has left.
+MaxCharges
+is how many it can hold.
+Put an ability on cooldown
+​
+Set when the cooldown started and when it ends. Both are times on the game's clock.
+ultimate
+.
+CooldownStart
+=
+GlobalVars
+.
+CurTime
+;
+ultimate
+.
+CooldownEnd
+=
+GlobalVars
+.
+CurTime
++
+30f
+;
+Make a player use an ability
+​
+int
+result
+=
+pawn
+.
+ExecuteAbilityBySlot
+(
+EAbilitySlot
+.
+Signature1
+)
+;
+if
+(
+result
+!=
+0
+)
+Console
+.
+WriteLine
+(
+"The ability couldn't be used."
+)
+;
+Stop players using abilities
+​
+Override
+OnAbilityAttempt
+and block the buttons you don't want to work.
+public
+override
+void
+OnAbilityAttempt
+(
+AbilityAttemptEvent
+args
+)
+{
+// Nobody can use their ultimate
+args
+.
+Block
+(
+InputButton
+.
+Ability4
+)
+;
+}
+To block everything for one player:
+private
+readonly
+HashSet
+<
+int
+>
+_silenced
+=
+new
+(
+)
+;
+public
+override
+void
+OnAbilityAttempt
+(
+AbilityAttemptEvent
+args
+)
+{
+if
+(
+_silenced
+.
+Contains
+(
+args
+.
+PlayerSlot
+)
+)
+args
+.
+BlockAll
+(
+)
+;
+// every ability and every item
+}
+To block only abilities or only items, use
+BlockAllAbilities()
+or
+BlockAllItems()
+.
+Run code when a player uses an ability
+​
+Listen for the
+player_used_ability
+game event
+.
+[
+GameEventHandler
+(
+"player_used_ability"
+)
+]
+public
+HookResult
+OnPlayerUsedAbility
+(
+PlayerUsedAbilityEvent
+args
+)
+{
+var
+pawn
+=
+args
+.
+Player
+?.
+As
+<
+CCitadelPlayerPawn
+>
+(
+)
+;
+if
+(
+pawn
+==
+null
+)
+return
+HookResult
+.
+Continue
+;
+Console
+.
+WriteLine
+(
+$"
+{
+pawn
+.
+Controller
+?.
+PlayerName
+}
+used
+{
+args
+.
+Abilityname
+}
+"
+)
+;
+return
+HookResult
+.
+Continue
+;
+}
+Refill a player's stamina
+​
+var
+max
+=
+pawn
+.
+AbilityComponent
+.
+ResourceStamina
+.
+MaxValue
+;
+pawn
+.
+SetStamina
+(
+max
+)
+;
+pawn.GetStamina()
+returns how much they have now.
+See also
+​
+Players
+: get a player's pawn
+Heroes
+: pick and reset heroes
+Game events
+: react to what players do

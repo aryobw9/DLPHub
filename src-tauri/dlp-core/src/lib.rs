@@ -14,4 +14,5 @@ pub mod kvedit;
 pub mod logger;
 pub mod match_id;
 pub mod payload;
+pub mod perf_overlay;
 pub mod settings;

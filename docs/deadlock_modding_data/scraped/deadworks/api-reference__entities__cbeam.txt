@@ -1,0 +1,304 @@
+# CBeam | Deadworks API
+URL: https://docs.deadworks.net/api-reference/entities/cbeam
+
+API Reference
+Entities
+CBeam
+On this page
+CBeam
+A glowing line between two points in the world that every player can see. Create one with
+Create
+, or a whole box or path at once with
+CreateBox
+and
+CreatePolyline
+.
+public
+sealed
+class
+CBeam
+:
+CBaseEntity
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+CBaseEntity
+Source:
+Entities/CBeam.cs#L22
+Notes
+​
+Beams glow like a laser: they brighten whatever is behind them, so they always look a little see-through, and the world's lighting shades them. They can't be made solid or fullbright. Black beams are invisible, and lowering the alpha makes a beam fainter. Change the color at any time with
+CBaseEntity.RenderColor
+.
+A beam stays until you remove it (
+CBaseEntity.Remove
+, or
+RemoveAll
+for a list) or the map changes.
+Properties
+​
+CBeam.StartPosition
+​
+Where the beam starts, which is also its
+CBaseEntity.Position
+. Move it with
+SetStartPosition
+or
+SetEndpoints
+.
+Signature
+public
+Vector3
+StartPosition
+{
+get
+;
+}
+Source:
+Entities/CBeam.cs#L35
+CBeam.EndPosition
+​
+Where the beam ends.
+Signature
+public
+Vector3
+EndPosition
+{
+get
+;
+set
+;
+}
+Source:
+Entities/CBeam.cs#L38
+CBeam.Width
+​
+How thick the beam is, from 0 up to
+MaxWidth
+.
+Signature
+public
+float
+Width
+{
+get
+;
+set
+;
+}
+Source:
+Entities/CBeam.cs#L44
+Fields
+​
+CBeam.MaxWidth
+​
+The widest a beam can be.
+Width
+caps anything wider to this.
+Signature
+public
+const
+float
+MaxWidth
+=
+102.3f
+;
+Source:
+Entities/CBeam.cs#L26
+Methods
+​
+CBeam.SetStartPosition()
+​
+Moves the start of the beam, leaving the end where it is.
+Signature
+public
+void
+SetStartPosition
+(
+Vector3
+position
+)
+Source:
+Entities/CBeam.cs#L50
+CBeam.SetEndpoints()
+​
+Moves both ends of the beam at once.
+Signature
+public
+void
+SetEndpoints
+(
+Vector3
+start
+,
+Vector3
+end
+)
+Source:
+Entities/CBeam.cs#L53
+CBeam.Create()
+​
+Spawns a beam from
+start
+to
+end
+.
+Signature
+public
+static
+CBeam
+?
+Create
+(
+Vector3
+start
+,
+Vector3
+end
+,
+float
+width
+=
+1f
+,
+Color
+?
+color
+=
+null
+)
+Parameters
+start
+: Where the beam starts.
+end
+: Where the beam ends.
+width
+: How thick it is, up to
+MaxWidth
+.
+color
+: Its color, white if not given. Black is invisible, and a lower alpha makes it fainter.
+Returns
+The new beam, or
+null
+if the game couldn't create it.
+Source:
+Entities/CBeam.cs#L64
+CBeam.CreateBox()
+​
+Outlines a box with a beam along each of its 12 edges, for example to show a zone or trigger area.
+Signature
+public
+static
+List
+<
+CBeam
+>
+CreateBox
+(
+Vector3
+mins
+,
+Vector3
+maxs
+,
+float
+width
+=
+1f
+,
+Color
+?
+color
+=
+null
+)
+Parameters
+mins
+: One corner of the box.
+maxs
+: The opposite corner. The two corners can be given in either order.
+width
+: How thick each beam is, up to
+MaxWidth
+.
+color
+: Their color, white if not given.
+Returns
+The beams, to remove later with
+RemoveAll
+. Any that failed to spawn are left out.
+Source:
+Entities/CBeam.cs#L90
+CBeam.CreatePolyline()
+​
+Draws a path through
+points
+, one beam per segment.
+Signature
+public
+static
+List
+<
+CBeam
+>
+CreatePolyline
+(
+IReadOnlyList
+<
+Vector3
+>
+points
+,
+float
+width
+=
+1f
+,
+Color
+?
+color
+=
+null
+,
+bool
+closed
+=
+false
+)
+Parameters
+points
+: The points to join, in order. Needs at least two.
+width
+: How thick each beam is, up to
+MaxWidth
+.
+color
+: Their color, white if not given.
+closed
+: Also joins the last point back to the first, for example to draw a ring.
+Returns
+The beams, to remove later with
+RemoveAll
+. Any that failed to spawn are left out.
+Source:
+Entities/CBeam.cs#L120
+CBeam.RemoveAll()
+​
+Removes every beam in
+beams
+that still exists, then empties the list.
+Signature
+public
+static
+void
+RemoveAll
+(
+List
+<
+CBeam
+>
+beams
+)
+Source:
+Entities/CBeam.cs#L134

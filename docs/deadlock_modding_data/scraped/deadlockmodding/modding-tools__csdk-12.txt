@@ -1,0 +1,236 @@
+# CSDK 12
+URL: https://deadlockmodding.pages.dev/modding-tools/csdk-12
+
+Community Source Development Kit 12
+(CSDK12) is the community set of tools made by merging together files from the CS2 Workshop Tools and fixes made by the community members for the Deadlock’s 6 Heroes (Aug 19) update.
+Reduced CSDK 12
+is a stripped down version of the full CSDK 12 (without full game files). It can be used for editing models, sounds, textures, UI, vdata and more.
+Installation
+Download
+and open the archive.
+Inside the archive is the
+Reduced_
+CSDK_
+12
+folder. Unpack it where you want it to be and open it.
+Important
+Avoid installing the CSDK inside a folder that can be related to OneDrive (Desktop, Documents, etc). Even if you think it’s disabled, it can still sometimes mess up file permissions and cause crashes or stop the CSDK from launching altogether.
+Launch
+csdkcfg.exe
+to load into the Configuration Tool. See the
+Usage
+section down below for instructions on how to use it.
+Full Game Files
+This step is required to be able to launch the game in
+bin_
+server
+mode, use S2FM and create maps in Hammer. You can safely skip this step if you don’t plan on using any of these features.
+To have full game files with your CSDK 12, you need to:
+Warning
+Do not touch the main Deadlock files from Steam during this.
+Download
+Depot Downloader
+. Make sure you own Deadlock on Steam.
+With
+Depot Downloader
+, download these manifests through the command prompt using the following commands:
+DepotDownloader -app 1422450 -depot 1422451 -manifest 2639812037154209539 -qr -dir "C:\path\to\Reduced_
+CSDK_
+12"
+DepotDownloader -app 1422450 -depot 1422456 -manifest 6378769520310560496 -qr -dir "C:\path\to\Reduced_
+CSDK_
+12"
+Replace the path after
+-dir
+with the path to the root directory of Reduced CSDK 12.
+If you're getting an error...
+No manifest request code was returned for depot 1422451 from app 1422450, manifest 2639812037154209539
+Encountered 401 for depot manifest 1422451 2639812037154209539. Aborting.
+
+Unable to download manifest 2639812037154209539 for depot 1422451
+App 1422450 was not completely downloaded.
+The operation was canceled.
+Disconnected from Steam
+Valve restricts downloading manifests for game versions released before you got access to Deadlock. To resolve this issue, you need to supply DepotDownloader with the required manifest files.
+Download the archive from
+this link
+and extract it in
+Reduced_
+CSDK_
+12
+. Afterwards, re-run the above commands and you should see game files being downloaded.
+Open
+Reduced_
+CSDK_
+12/game/citadel/pak01_
+dir.vpk
+with
+Source 2 Viewer
+.
+In
+Source 2 Viewer
+, right click on
+pak01_
+dir.vpk
+, select “Export as is” and export it to
+Reduced_
+CSDK_
+12/game/citadel
+.
+After all files have been exported, delete
+pak01_
+dir.vpk
+and all
+pak01_
+###.vpk
+files from
+Reduced_
+CSDK_
+12/game/citadel
+and
+Reduced_
+CSDK_
+12/game/core
+.
+Open the
+Reduced_
+CSDK_
+12.zip
+archive that you downloaded, and re-extract it into
+Reduced_
+CSDK_
+12
+. When prompted, select “Replace the files in the destination”. This is a necessary step.
+Usage
+Launch the CSDK Configuration Tool (launcher) by opening
+Reduced_
+CSDK_
+12/csdkcfg.exe
+.
+Press the “Launch Tools” button in the bottom right corner to launch the
+Asset Browser
+for the currently selected addon.
+Important
+Steam must be running when launching the tools.
+Addons
+On the left side of the launcher is the “Addons” section. You can think of addons as projects, it’s recommended to create a separate addon for every mod that you make. To create an addon press the “Create New Addon” button and give it a name.
+Addon names must be all lowercase with no spaces.
+Warning
+If you have addons with uppercase letters, spaces, or special characters in their name they won’t show up in this launcher. You need to rename your addon folders in
+content/citadel_
+addons
+and
+game/citadel_
+addons
+and press the “Refresh addons list” button to use them in the new launcher.
+Creating an addon automatically makes two folders for your project:
+content/citadel_
+addons/<your_
+addon_
+name>
+: This is where you’ll place all raw source files, so they can be used by the tools. It is the main folder you’ll be working in.
+game/citadel_
+addons/<your_
+addon_
+name>
+: This is where the compiled versions of your assets will be stored and read by the game. Tools should automatically compile new files if they are present in
+content/
+and be placed by the game in the
+game/
+directory. Some files like localization files might be the exception. Compiled files usually end in
+_
+c
+(e.g.,
+.vtex_
+c
+,
+.vmdl_
+c
+,
+.vdata_
+c
+).
+Right clicking on an addon in the list or pressing the gear icon next to the currently selected addon at the bottom will bring up the context menu:
+From here you can:
+Explore Content Folder
+: open the
+content/citadel_
+addons/
+folder for this addon.
+Explore Game Folder
+: open the
+game/citadel_
+addons/
+folder for this addon.
+Delete
+: delete both Content and Game folders of this addon.
+Duplicate
+: make a copy of this addon. This is how you make template addons into regular (editable and launchable) addons.
+Compile All Assets
+: use the
+Resource Compiler
+to compile all assets in the Content folder of this addon without launching the tools.
+Create VPK
+: create a
+.vpk
+file from the compiled Game folder of this addon.
+Binaries
+CSDK12 ships with four sets of binaries:
+bin
+,
+bin_
+cs2
+(only for the
+Lighting Compiler
+),
+bin_
+server
+and
+bin_
+tools
+.
+You can select which set of binaries to use for launching the tools in the top-left corner of the launcher:
+bin
+Regular tool binaries. This mode is able to compile Animgraph1 files, but crashes on previewing some projected particles.
+bin_
+server
+Requires
+Full Game Files
+. Allows you to launch Deadlock in server mode with limited tools like
+Asset Browser
+, Material Editor and the ability to compile some files like VData and Panorama assets. Everything else will crash. Useful for previewing your mods.
+bin_
+tools
+Other set of tools binaries. This mode doesn’t crash on previewing projected particles, but crashes on compiling Animgraph1 files.
+bin_
+cs2
+Used by GUIMapCompiler shipping with CSDK 12 to compile maps without tools open.
+Launch Options
+On the right side of the configuration tool are “Launch Options”.
+VConsole
+: Whether to use the
+VConsole
+or the in-game console window.
+No Addon
+: This launches the tools with no addon mounted. Should be only used to edit some specific tool assets like
+toolscenelightrigs.vdata
+and
+game_
+asset_
+tags.vdata
+.
+Warning
+For regular mod-making behavior, it’s advised to create a new addon or duplicate an existing addon. Continuing in “No Addon” might lead to original
+game/citadel
+assets being overridden, potential corruption of important data and the addon approach works together with the
+CS2 Workshop Manager
+to pack the addons in a VPK, plus it’s much easier and cleaner to organize packs of assets in addons.
+Lighting Compiler
+Launch
+Reduced_
+CSDK_
+12/GUIMapCompiler/CS2MapCompiler.exe
+to use the GUI Map Compiler. Requires
+bin_
+cs2
+binaries to be present. This tool is needed in order to compile maps with lighting.

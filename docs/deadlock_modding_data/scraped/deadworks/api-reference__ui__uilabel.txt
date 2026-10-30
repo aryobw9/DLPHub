@@ -1,0 +1,33 @@
+# UILabel | Deadworks API
+URL: https://docs.deadworks.net/api-reference/ui/uilabel
+
+API Reference
+UI
+UILabel
+On this page
+UILabel
+public
+sealed
+class
+UILabel
+:
+UINode
+Namespace:
+DeadworksManaged.Api.UI
+Inherits / implements:
+UINode
+Source:
+UI/UILayout.cs#L67
+Fields
+​
+UILabel.Text
+​
+Signature
+public
+string
+Text
+=
+""
+;
+Source:
+UI/UILayout.cs#L68

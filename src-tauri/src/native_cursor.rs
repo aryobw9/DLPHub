@@ -89,6 +89,7 @@ unsafe extern "system" {
         lp_enum_func: unsafe extern "system" fn(HWND, LPARAM) -> i32,
         lparam: LPARAM,
     ) -> i32;
+    fn PostMessageW(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> i32;
 }
 
 #[link(name = "comctl32")]
@@ -117,6 +118,7 @@ const SW_RESTORE: i32 = 9;
 const SW_MAXIMIZE: i32 = 3;
 const MONITOR_DEFAULTTONEAREST: u32 = 2;
 const SUBCLASS_ID: usize = 0x444c50; // 'DLP'
+const WM_SUBCLASS_CHILDREN: u32 = 0x8000 + 0x444c; // WM_APP + 0x444c for UI-thread child subclassing
 
 // Hit-test codes from WM_NCHITTEST, delivered in WM_SETCURSOR's WPARAM LOWORD.
 const HTCAPTION: i32 = 2;
@@ -153,11 +155,13 @@ fn fnv1a(bytes: &[u8]) -> u64 {
 }
 
 fn load_cursor(bytes: &[u8]) -> Option<HCURSOR> {
+    use std::os::windows::ffi::OsStrExt;
+
     let path = std::env::temp_dir().join(format!("dlp-cursor-{:016x}.cur", fnv1a(bytes)));
     if !path.exists() {
         std::fs::write(&path, bytes).ok()?;
     }
-    let wide: Vec<u16> = path.as_os_str().to_string_lossy().encode_utf16().chain([0]).collect();
+    let wide: Vec<u16> = path.as_os_str().encode_wide().chain([0]).collect();
     let h = unsafe {
         LoadImageW(
             std::ptr::null_mut(),
@@ -216,6 +220,9 @@ unsafe extern "system" fn flame_subclass_proc(
         let zoomed = IsZoomed(hwnd);
         ShowWindow(hwnd, if zoomed != 0 { SW_RESTORE } else { SW_MAXIMIZE });
         return 0;
+    } else if msg == WM_SUBCLASS_CHILDREN {
+        EnumChildWindows(hwnd, enum_subclass_child, 0);
+        return 0;
     }
 
     let res = DefSubclassProc(hwnd, msg, wparam, lparam);
@@ -230,11 +237,12 @@ unsafe extern "system" fn flame_subclass_proc(
                 dw_flags: 0,
             };
             if GetMonitorInfoW(hmon, &mut mi) != 0 {
-                let mmi = &mut *(lparam as *mut MINMAXINFO);
-                mmi.pt_max_position.x = mi.rc_work.left - mi.rc_monitor.left;
-                mmi.pt_max_position.y = mi.rc_work.top - mi.rc_monitor.top;
-                mmi.pt_max_size.x = mi.rc_work.right - mi.rc_work.left;
-                mmi.pt_max_size.y = mi.rc_work.bottom - mi.rc_work.top;
+                if let Some(mmi) = (lparam as *mut MINMAXINFO).as_mut() {
+                    mmi.pt_max_position.x = mi.rc_work.left - mi.rc_monitor.left;
+                    mmi.pt_max_position.y = mi.rc_work.top - mi.rc_monitor.top;
+                    mmi.pt_max_size.x = mi.rc_work.right - mi.rc_work.left;
+                    mmi.pt_max_size.y = mi.rc_work.bottom - mi.rc_work.top;
+                }
             }
         }
     }
@@ -265,7 +273,7 @@ fn install_impl(window: &tauri::WebviewWindow) -> Result<(), String> {
         for _ in 0..20 {
             std::thread::sleep(std::time::Duration::from_millis(150));
             unsafe {
-                EnumChildWindows(hwnd, enum_subclass_child, 0);
+                PostMessageW(hwnd, WM_SUBCLASS_CHILDREN, 0, 0);
             }
         }
     });

@@ -1,0 +1,441 @@
+# UI | Deadworks API
+URL: https://docs.deadworks.net/api-reference/ui/ui
+
+API Reference
+UI
+UI
+On this page
+UI
+Entry point for the UI message manager. Use
+Panel
+to obtain a handle for a logical UI panel; the panel id binds to the panorama-side panel script registered with the same id via
+DW.registerPanel({ id: "..." })
+.
+A panel stays up until you destroy it, the player leaves, or the map changes. Every panel is gone on a new map, so treat any you were tracking as closed in
+IDeadworksPlugin.OnStartupServer
+and show them again as players arrive.
+public
+static
+class
+UI
+Namespace:
+DeadworksManaged.Api.UI
+Source:
+UI/UI.cs#L31
+Properties
+​
+UI.RatePerSecond
+​
+Per-recipient subtitle send rate, in frames/s. Defaults to 24.
+Signature
+public
+static
+int
+RatePerSecond
+{
+get
+;
+set
+;
+}
+Source:
+UI/UI.cs#L43
+UI.BurstSize
+​
+Per-recipient burst capacity (token-bucket size). Defaults to 24.
+Signature
+public
+static
+int
+BurstSize
+{
+get
+;
+set
+;
+}
+Source:
+UI/UI.cs#L49
+UI.BytesPerSecond
+​
+Per-recipient wire budget in bytes/s. Defaults to 16 KB/s.
+This is the budget that matters: frames go out on the reliable net channel, which disconnects the client on overflow rather than throttling. Raise it only with real players on a real server, watching for choke and drops.
+Signature
+public
+static
+int
+BytesPerSecond
+{
+get
+;
+set
+;
+}
+Source:
+UI/UI.cs#L62
+UI.MaxFramesPerSecond
+​
+Frames per second this channel can actually deliver, derived from
+CaptionLengthSeconds
+and the client's six-caption display pool. Read-only.
+Pace recurring updates against this. Offering frames faster than the channel drains does not increase throughput — it just grows the queue and adds latency, because a frame is only as useful as the moment it arrives. Your achievable byte rate is roughly
+MaxFramesPerSecond × bytes-per-update
+; to go faster, send more per frame rather than more frames.
+Signature
+public
+static
+double
+MaxFramesPerSecond
+{
+get
+;
+}
+Source:
+UI/UI.cs#L82
+UI.CaptionLengthSeconds
+​
+How long each caption frame lives on the client, in seconds. Defaults to 0.2.
+This governs throughput, not bandwidth. The client renders at most six captions at a time and silently discards any beyond that, so the channel tops out at
+6 / CaptionLengthSeconds
+frames per second — about 5/s at the game's default linger, which is why the transport felt slow regardless of rate or frame size. The send rate is clamped to stay inside this automatically.
+Lower means more throughput but less time for the client to build its panel and for the mod to read it. Do not go near a frame time.
+Signature
+public
+static
+float
+CaptionLengthSeconds
+{
+get
+;
+set
+;
+}
+Source:
+UI/UI.cs#L98
+UI.CaptionLingerSeconds
+​
+The client's
+cc_linger_time
+, which is added to every caption's own length to get its expiry. Defaults to 0.3, matching what the addon asserts on the client.
+This is not a knob you set to change client behaviour — the addon owns that. It exists so
+MaxFramesPerSecond
+tells the truth. If you ship an addon with a different
+CC_LINGER
+, set the same value here or the channel will pace itself against a pool that recycles slower than it thinks.
+Signature
+public
+static
+float
+CaptionLingerSeconds
+{
+get
+;
+set
+;
+}
+Source:
+UI/UI.cs#L114
+UI.MaxFrameLength
+​
+Bytes of wire payload per caption frame. Defaults to 3800.
+Hard-capped just under 4000: the client copies caption text into a fixed
+char[4096]
+stack buffer with no bounds check, so larger frames corrupt its stack. Larger frames are otherwise strictly better — each frame costs one usermessage, so fewer/fatter frames means less reliable-channel pressure for the same payload.
+Signature
+public
+static
+int
+MaxFrameLength
+{
+get
+;
+set
+;
+}
+Source:
+UI/UI.cs#L128
+Methods
+​
+UI.Panel()
+​
+Signature
+public
+static
+UIPanel
+Panel
+(
+string
+id
+)
+Source:
+UI/UI.cs#L34
+UI.HasClientBootstrap()
+​
+Whether the player at
+slot
+has the Deadworks client bootstrap, the addon the Deadworks launcher installs. Without it they see none of the server's UI. It reports in once their game has loaded the map, usually within a few seconds of
+IDeadworksPlugin.OnClientFullConnect
+, so false straight after joining doesn't mean they lack it. It also reads false for a moment while their UI rebuilds after a hitch.
+Signature
+public
+static
+bool
+HasClientBootstrap
+(
+int
+slot
+)
+Source:
+UI/UI.cs#L152
+UI.ClientPanels()
+​
+Panel ids the client at
+slot
+supplies its own layout for, reported on the handshake. Empty until that client acks.
+Sending a layout for one of these replaces the client's own tree, which is almost never what you want — check here before shipping a panel whose id an addon might also claim.
+Empty means unknown, not none: a stock client and one whose addon predates the field both report nothing. Use it to avoid stepping on a panel you know about, not to prove one isn't there.
+Signature
+public
+static
+IReadOnlyCollection
+<
+string
+>
+ClientPanels
+(
+int
+slot
+)
+Source:
+UI/UI.cs#L166
+UI.ClientOwnsPanel()
+​
+Whether that client registered
+panelId
+itself. See
+ClientPanels
+— false can also mean "hasn't said".
+Signature
+public
+static
+bool
+ClientOwnsPanel
+(
+int
+slot
+,
+string
+panelId
+)
+Source:
+UI/UI.cs#L173
+UI.Addon()
+​
+What became of the runtime addon you sent this client with
+UIPanel.LoadXml
+.
+A client whose VPK isn't mounted reports
+AddonState.Failed
+, which is your cue to fall back to a code-driven panel rather than stream updates at something that isn't there.
+Signature
+public
+static
+AddonState
+Addon
+(
+int
+slot
+,
+string
+panelId
+)
+Source:
+UI/UI.cs#L187
+UI.AddonReady()
+​
+Shorthand for
+Addon(...) == AddonState.Ready
+.
+Signature
+public
+static
+bool
+AddonReady
+(
+int
+slot
+,
+string
+panelId
+)
+Source:
+UI/UI.cs#L191
+UI.Container()
+​
+Plain Panel container (no flow direction).
+Signature
+public
+static
+UIContainer
+Container
+(
+string
+?
+id
+=
+null
+)
+Source:
+UI/UI.cs#L219
+UI.Vertical()
+​
+Panel container that flows children top-to-bottom.
+Signature
+public
+static
+UIContainer
+Vertical
+(
+string
+?
+id
+=
+null
+)
+Source:
+UI/UI.cs#L222
+UI.Horizontal()
+​
+Panel container that flows children left-to-right.
+Signature
+public
+static
+UIContainer
+Horizontal
+(
+string
+?
+id
+=
+null
+)
+Source:
+UI/UI.cs#L225
+UI.Label()
+​
+Label element. The id is auto-bound to
+UIPanel.Set
+updates with the same key.
+Signature
+public
+static
+UILabel
+Label
+(
+string
+id
+,
+string
+text
+=
+""
+)
+Source:
+UI/UI.cs#L228
+UI.Button()
+​
+Button element. When clicked, the bootstrap dispatches
+dw_ui <panelId>|<clickEvent>|<args...>
+, which is routed to handlers registered via
+UIPanel.On
+.
+Signature
+public
+static
+UIButton
+Button
+(
+string
+id
+,
+string
+text
+,
+string
+?
+clickEvent
+=
+null
+,
+params
+string
+[
+]
+args
+)
+Source:
+UI/UI.cs#L235
+UI.Image()
+​
+Image element.
+src
+is a Panorama path — typically
+file://{images}/<addon>/<file>.vtex
+referring to the compiled texture (the source
+.png
+sits next to it in the mod tree). The bootstrap calls
+SetImage
+on the resulting panel.
+Signature
+public
+static
+UIImage
+Image
+(
+string
+id
+,
+string
+src
+)
+Source:
+UI/UI.cs#L244
+Events
+​
+UI.ClientResync
+​
+A client discarded its UI and needs its layouts re-sent. The argument is the player slot.
+The client tears everything down if server frames stop arriving for a few seconds — a hitch is enough — and it cannot rebuild on its own, because layouts live on the server. Any plugin that ships a panel should re-send it here, otherwise that player's UI stays blank until they reconnect. Re-sending is idempotent: precache/show simply replaces whatever the client had.
+Signature
+public
+static
+event
+Action
+<
+int
+>
+?
+ClientResync
+;
+Source:
+UI/UI.cs#L144
+UI.AddonStatusChanged
+​
+A client reported a change in one of its runtime addons: (slot, panelId, state). Fires once per transition, so it is safe to drive fallback logic from.
+Signature
+public
+static
+event
+Action
+<
+int
+,
+string
+,
+AddonState
+>
+?
+AddonStatusChanged
+;
+Source:
+UI/UI.cs#L198

@@ -1,0 +1,176 @@
+# CEntityKeyValues | Deadworks API
+URL: https://docs.deadworks.net/api-reference/entities/centitykeyvalues
+
+API Reference
+Entities
+CEntityKeyValues
+On this page
+CEntityKeyValues
+Wraps a native CEntityKeyValues handle. Create with
+new CEntityKeyValues()
+, set typed members, pass to
+CBaseEntity.Spawn
+. The engine takes ownership of the underlying allocation - do not dispose manually.
+public
+sealed
+class
+CEntityKeyValues
+Namespace:
+DeadworksManaged.Api
+Source:
+Entities/CEntityKeyValues.cs#L10
+Constructors
+​
+new CEntityKeyValues()
+​
+Allocates a new native CEntityKeyValues object.
+Signature
+public
+CEntityKeyValues
+(
+)
+Source:
+Entities/CEntityKeyValues.cs#L18
+Properties
+​
+CEntityKeyValues.IsValid
+​
+true
+if the underlying native handle is still alive.
+Signature
+public
+bool
+IsValid
+{
+get
+;
+}
+Source:
+Entities/CEntityKeyValues.cs#L15
+Methods
+​
+CEntityKeyValues.SetString()
+​
+Sets a string value.
+Signature
+public
+void
+SetString
+(
+string
+key
+,
+string
+value
+)
+Source:
+Entities/CEntityKeyValues.cs#L24
+CEntityKeyValues.SetBool()
+​
+Sets a boolean value.
+Signature
+public
+void
+SetBool
+(
+string
+key
+,
+bool
+value
+)
+Source:
+Entities/CEntityKeyValues.cs#L36
+CEntityKeyValues.SetVector()
+​
+Sets a 3D vector value.
+Signature
+public
+void
+SetVector
+(
+string
+key
+,
+Vector3
+value
+)
+Source:
+Entities/CEntityKeyValues.cs#L47
+CEntityKeyValues.SetFloat()
+​
+Sets a single-precision floating-point value.
+Signature
+public
+void
+SetFloat
+(
+string
+key
+,
+float
+value
+)
+Source:
+Entities/CEntityKeyValues.cs#L58
+CEntityKeyValues.SetInt()
+​
+Sets a signed 32-bit integer value.
+Signature
+public
+void
+SetInt
+(
+string
+key
+,
+int
+value
+)
+Source:
+Entities/CEntityKeyValues.cs#L69
+CEntityKeyValues.SetColor()
+​
+Sets a color value (RGBA).
+Signature
+public
+void
+SetColor
+(
+string
+key
+,
+byte
+r
+,
+byte
+g
+,
+byte
+b
+,
+byte
+a
+=
+255
+)
+Source:
+Entities/CEntityKeyValues.cs#L80
+CEntityKeyValues.SetStringToken()
+​
+Sets a string token value (CUtlStringToken). The token hash is computed from
+tokenString
+.
+Signature
+public
+void
+SetStringToken
+(
+string
+key
+,
+string
+tokenString
+)
+Source:
+Entities/CEntityKeyValues.cs#L91

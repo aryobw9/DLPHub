@@ -153,7 +153,6 @@ pub fn is_our_config(citadel: &Path, pkg: &Path) -> bool {
             | crate::detect::Tier::T2
             | crate::detect::Tier::T3
             | crate::detect::Tier::Potato
-            | crate::detect::Tier::RussianPotato
     )
 }
 

@@ -1,0 +1,76 @@
+# CheckTransmitEvent | Deadworks API
+URL: https://docs.deadworks.net/api-reference/events/checktransmitevent
+
+API Reference
+Events
+CheckTransmitEvent
+On this page
+CheckTransmitEvent
+Fired per-player during CheckTransmit. Use
+Hide
+to prevent entities from being networked to this player for the current tick.
+public
+sealed
+class
+CheckTransmitEvent
+Namespace:
+DeadworksManaged.Api
+Source:
+Events/CheckTransmitEvent.cs#L7
+Properties
+​
+CheckTransmitEvent.PlayerSlot
+​
+The player slot this transmit list belongs to.
+Signature
+public
+int
+PlayerSlot
+{
+get
+;
+}
+Source:
+Events/CheckTransmitEvent.cs#L16
+CheckTransmitEvent.Player
+​
+The player controller for this slot, or null if unavailable.
+Signature
+public
+CCitadelPlayerController
+?
+Player
+{
+get
+;
+}
+Source:
+Events/CheckTransmitEvent.cs#L19
+Methods
+​
+CheckTransmitEvent.Hide()
+​
+Prevents an entity from being networked to this player for the current tick. Must be called every tick the entity should remain hidden.
+Signature
+public
+void
+Hide
+(
+CBaseEntity
+entity
+)
+Source:
+Events/CheckTransmitEvent.cs#L30
+CheckTransmitEvent.IsTransmitting()
+​
+Checks whether an entity is currently set to be transmitted to this player.
+Signature
+public
+bool
+IsTransmitting
+(
+CBaseEntity
+entity
+)
+Source:
+Events/CheckTransmitEvent.cs#L38

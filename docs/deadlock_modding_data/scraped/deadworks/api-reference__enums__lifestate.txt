@@ -1,0 +1,35 @@
+# LifeState | Deadworks API
+URL: https://docs.deadworks.net/api-reference/enums/lifestate
+
+API Reference
+Enums
+LifeState
+On this page
+LifeState
+Entity life-cycle state (alive, dying, dead, respawning).
+public
+enum
+LifeState
+:
+uint
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+uint
+Source:
+Enums/LifeState.cs#L4
+Values
+​
+Name
+Value
+Description
+Alive
+0x0
+Dying
+0x1
+Dead
+0x2
+Respawnable
+0x3
+Respawning
+0x4

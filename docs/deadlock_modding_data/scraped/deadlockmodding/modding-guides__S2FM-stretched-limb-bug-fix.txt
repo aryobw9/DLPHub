@@ -1,0 +1,23 @@
+# S2FM stretched limb bug Fix
+URL: https://deadlockmodding.pages.dev/modding-guides/S2FM-stretched-limb-bug-fix
+
+Fixing stretched limbs
+Due to the size of Deadlocks maps, The further away a character model is from
+World origins
+The more noticeable deforms can occur over time.
+The main culprit is
+Procedural bones
+and
+Constraints
+causing this issue.
+Whether this is due to how CS2 handles constraints or S2FM is a mystery for now.
+Solution
+Right click Model>Utilities>
+Bake Procedurals Bones
+, Then Rig/Animate model as normal.
+When everything is done,
+Enable Procedurals Bones
+>
+Bake Procedurals Bones
+to record the animated clothes.
+Downside is you’ll lose the capacity for twist bones to function on their own while in baked procedural mode.

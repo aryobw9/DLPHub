@@ -1,0 +1,86 @@
+# Sounds | Deadworks API
+URL: https://docs.deadworks.net/api-reference/sound/sounds
+
+API Reference
+Sound
+Sounds
+On this page
+Sounds
+Convenience wrappers for the most common
+SoundEvent
+usages.
+public
+static
+class
+Sounds
+Namespace:
+DeadworksManaged.Api.Sounds
+Source:
+Sounds/Sounds.cs#L4
+Methods
+​
+Sounds.Play()
+​
+Plays a soundevent at the listener's own position (non-positional from the client's view).
+Signature
+public
+static
+uint
+Play
+(
+string
+name
+,
+RecipientFilter
+recipients
+,
+float
+volume
+=
+1f
+,
+float
+pitch
+=
+1f
+)
+Returns
+The soundevent GUID returned by
+SoundEvent.Emit
+.
+Source:
+Sounds/Sounds.cs#L8
+Sounds.PlayAt()
+​
+Plays a soundevent anchored to an entity (uses that entity's world position for spatialization).
+Signature
+public
+static
+uint
+PlayAt
+(
+string
+name
+,
+int
+sourceEntityIndex
+,
+RecipientFilter
+recipients
+,
+float
+volume
+=
+1f
+,
+float
+pitch
+=
+1f
+)
+Returns
+The soundevent GUID returned by
+SoundEvent.Emit
+.
+Source:
+Sounds/Sounds.cs#L19

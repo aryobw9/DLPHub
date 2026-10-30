@@ -1,0 +1,58 @@
+# TraceResult | Deadworks API
+URL: https://docs.deadworks.net/api-reference/tracing/traceresult
+
+API Reference
+Tracing
+TraceResult
+On this page
+TraceResult
+Simplified trace result returned by
+Trace.Ray
+. Contains the hit position, fraction, and full
+CGameTrace
+data.
+public
+struct
+TraceResult
+Namespace:
+DeadworksManaged.Api
+Source:
+Trace/TraceResult.cs#L6
+Fields
+​
+TraceResult.HitPosition
+​
+Signature
+public
+Vector3
+HitPosition
+;
+Source:
+Trace/TraceResult.cs#L7
+TraceResult.Fraction
+​
+Signature
+public
+float
+Fraction
+;
+Source:
+Trace/TraceResult.cs#L8
+TraceResult.DidHit
+​
+Signature
+public
+bool
+DidHit
+;
+Source:
+Trace/TraceResult.cs#L9
+TraceResult.Trace
+​
+Signature
+public
+CGameTrace
+Trace
+;
+Source:
+Trace/TraceResult.cs#L10

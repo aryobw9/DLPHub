@@ -1,0 +1,42 @@
+# ECitadelMatchMode | Deadworks API
+URL: https://docs.deadworks.net/api-reference/enums/ecitadelmatchmode
+
+API Reference
+Enums
+ECitadelMatchMode
+On this page
+ECitadelMatchMode
+public
+enum
+ECitadelMatchMode
+:
+uint
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+uint
+Source:
+Enums/ECitadelMatchMode.cs#L3
+Values
+​
+Name
+Value
+Description
+Invalid
+0x0
+Unranked
+0x1
+PrivateLobby
+0x2
+CoopBot
+0x3
+Ranked
+0x4
+ServerTest
+0x5
+Tutorial
+0x6
+HeroLabs
+0x7
+Calibration
+0x8

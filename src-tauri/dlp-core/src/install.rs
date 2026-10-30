@@ -14,7 +14,6 @@ pub enum Mode {
     T2,
     T3,
     Potato,
-    RussianPotato,
     T1Mods,
     T2Mods,
 }
@@ -26,7 +25,6 @@ impl Mode {
             Mode::T2 | Mode::T2Mods => "t2",
             Mode::T3 => "t3",
             Mode::Potato => "potato",
-            Mode::RussianPotato => "russian_potato",
         }
     }
     pub fn video_dir(self) -> &'static str {
@@ -45,9 +43,6 @@ impl Mode {
         }
         if self == Mode::Potato {
             allowed.push("pak31_dir.vpk");
-        }
-        if self == Mode::RussianPotato {
-            allowed.push("pak30_dir.vpk");
         }
         let all_known = ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak30_dir.vpk", "pak31_dir.vpk"];
         let mut excluded: Vec<&str> = Vec::new();
@@ -116,6 +111,17 @@ fn snapshot_original(citadel: &Path) -> Result<Vec<StepLog>, String> {
 }
 
 pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path) -> Result<Vec<StepLog>, String> {
+    install_with_addons(mode, fov, deadlock, pkg, &pkg.join("addons"), data_dir)
+}
+
+pub fn install_with_addons(
+    mode: Mode,
+    fov: u32,
+    deadlock: &str,
+    pkg: &Path,
+    addons_src: &Path,
+    data_dir: &Path,
+) -> Result<Vec<StepLog>, String> {
     let start_instant = std::time::Instant::now();
     let mut log = vec![];
     let citadel = Path::new(deadlock).join("game").join("citadel");
@@ -226,7 +232,7 @@ pub fn install(mode: Mode, fov: u32, deadlock: &str, pkg: &Path, data_dir: &Path
 
     // 5) addons per mode
     let (only, exclude) = mode.addon_lists(&s);
-    let rep = addons::install_addons(&pkg.join("addons"), &citadel.join("addons"), &only, &exclude)
+    let rep = addons::install_addons(addons_src, &citadel.join("addons"), &only, &exclude)
         .map_err(|e| e.to_string())?;
     log.push(StepLog {
         step: "addons".into(),
@@ -320,6 +326,13 @@ mod tests {
         let data = base.join("data");
         std::fs::create_dir_all(&data).unwrap();
         let pkg = crate::payload::extract_to(&base.join("pkg")).unwrap();
+        let addons_dir = pkg.join("addons");
+        std::fs::create_dir_all(&addons_dir).unwrap();
+        std::fs::write(addons_dir.join("pak01_dir.vpk"), b"MOCK-01").unwrap();
+        std::fs::write(addons_dir.join("pak02_dir.vpk"), b"MOCK-02").unwrap();
+        std::fs::write(addons_dir.join("pak03_dir.vpk"), b"MOCK-03").unwrap();
+        std::fs::write(addons_dir.join("pak30_dir.vpk"), b"MOCK-30").unwrap();
+        std::fs::write(addons_dir.join("pak31_dir.vpk"), b"MOCK-31").unwrap();
         (cit, data, pkg)
     }
 

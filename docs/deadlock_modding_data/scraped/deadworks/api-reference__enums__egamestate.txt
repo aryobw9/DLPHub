@@ -1,0 +1,48 @@
+# EGameState | Deadworks API
+URL: https://docs.deadworks.net/api-reference/enums/egamestate
+
+API Reference
+Enums
+EGameState
+On this page
+EGameState
+public
+enum
+EGameState
+:
+uint
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+uint
+Source:
+Enums/EGameState.cs#L3
+Values
+​
+Name
+Value
+Description
+Invalid
+0x0
+Init
+0x1
+WaitingForPlayersToJoin
+0x2
+HeroSelection
+0x3
+MatchIntro
+0x4
+WaitForMapToLoad
+0x5
+PreGameWait
+0x6
+GameInProgress
+0x7
+PostGame
+0x8
+PostGamePlayOfTheGame
+0x9
+Abandoned
+0xa
+End
+0xb

@@ -1,0 +1,9 @@
+# Getting started for developers | Deadworks API
+URL: https://docs.deadworks.net/getting-started/developers
+
+📄️
+1. Project setup
+Install Deadworks and set up a Visual Studio project for plugin development.
+📄️
+2. Your first plugin
+Build a small plugin with two chat commands. Before you start, follow Project setup.

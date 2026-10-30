@@ -1,0 +1,71 @@
+# IncomingMessageContext | Deadworks API
+URL: https://docs.deadworks.net/api-reference/networking/incomingmessagecontext
+
+API Reference
+Networking
+IncomingMessageContext
+On this page
+IncomingMessageContext<T>
+Carries a client→server net message along with its sender. Passed to handlers registered via
+NetMessages.HookIncoming&lt;T&gt;
+.
+public
+class
+IncomingMessageContext
+<
+T
+>
+where
+T
+:
+IMessage
+<
+T
+>
+Namespace:
+DeadworksManaged.Api
+Source:
+NetMessages/IncomingMessageContext.cs#L10
+Properties
+​
+IncomingMessageContext.Message
+​
+The protobuf message received from the client.
+Signature
+public
+T
+Message
+{
+get
+;
+}
+Source:
+NetMessages/IncomingMessageContext.cs#L13
+IncomingMessageContext.SenderSlot
+​
+The player slot index of the client that sent this message.
+Signature
+public
+int
+SenderSlot
+{
+get
+;
+}
+Source:
+NetMessages/IncomingMessageContext.cs#L16
+IncomingMessageContext.MessageId
+​
+The numeric network message ID for
+T
+.
+Signature
+public
+int
+MessageId
+{
+get
+;
+}
+Source:
+NetMessages/IncomingMessageContext.cs#L19

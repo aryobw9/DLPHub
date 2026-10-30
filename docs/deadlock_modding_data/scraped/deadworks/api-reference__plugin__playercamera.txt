@@ -1,0 +1,425 @@
+# PlayerCamera | Deadworks API
+URL: https://docs.deadworks.net/api-reference/plugin/playercamera
+
+API Reference
+Plugin
+PlayerCamera
+On this page
+PlayerCamera
+Moves a player's camera without moving their hero: pull it back, zoom, point it somewhere else and hold it there. Get one from
+CCitadelPlayerController.Camera
+.
+public
+readonly
+struct
+PlayerCamera
+Namespace:
+DeadworksManaged.Api
+Source:
+PlayerCamera.cs#L35
+Notes
+​
+Every call is a timed change to one
+CameraSetting
+: a lerp moves it from one value to another, and
+Maintain
+holds it where it is. When a change ends, the setting snaps back to what the game wants, so follow a lerp with
+Maintain
+to keep its end value. Pass a
+delay
+to line up several changes back to back in one go, like the legs of a fly-through.
+Your changes go in a group,
+DefaultContext
+unless you pass your own id, and
+Clear
+removes one group without touching the game's own camera effects. When two changes to the same setting overlap, the higher priority wins, and
+DefaultPriority
+beats the game's.
+The camera still bumps into walls, so pointing it at something behind geometry pulls it in close. And the world is still loaded around the hero, not the camera, so a camera sent far away can show missing scenery. Move the hero along with it if that matters.
+Example
+​
+Pull the camera back over 2 seconds, keep it there for 5, then give it back to the game:
+var
+camera
+=
+player
+.
+Camera
+;
+camera
+.
+LerpDistance
+(
+150f
+,
+400f
+,
+2f
+)
+;
+camera
+.
+Maintain
+(
+CameraSetting
+.
+Distance
+,
+5f
+,
+delay
+:
+2f
+)
+;
+Fields
+​
+PlayerCamera.DefaultContext
+​
+The group your changes go in when you don't pass a context.
+Clear
+with no arguments removes exactly these.
+Signature
+public
+const
+uint
+DefaultContext
+=
+0x44570001
+;
+Source:
+PlayerCamera.cs#L40
+PlayerCamera.DefaultPriority
+​
+The priority your changes get when you don't pass one. It's above the game's own, so yours win.
+Signature
+public
+const
+uint
+DefaultPriority
+=
+30
+;
+Source:
+PlayerCamera.cs#L43
+Methods
+​
+PlayerCamera.Lerp()
+​
+Moves the camera's look-at point from
+from
+to
+to
+over
+duration
+seconds, with full control over the motion, then snaps it back. Use
+Maintain
+to keep the end value.
+LerpTarget
+is the short form.
+Signature
+public
+void
+Lerp
+(
+CameraSetting
+setting
+,
+Vector3
+from
+,
+Vector3
+to
+,
+float
+duration
+,
+float
+bias
+=
+0.5f
+,
+float
+gain
+=
+0.5f
+,
+float
+delay
+=
+0f
+,
+uint
+context
+=
+DefaultContext
+,
+uint
+priority
+=
+DefaultPriority
+)
+public
+void
+Lerp
+(
+CameraSetting
+setting
+,
+float
+from
+,
+float
+to
+,
+float
+duration
+,
+float
+bias
+=
+0.5f
+,
+float
+gain
+=
+0.5f
+,
+float
+delay
+=
+0f
+,
+uint
+context
+=
+DefaultContext
+,
+uint
+priority
+=
+DefaultPriority
+)
+Parameters
+setting
+: Must be
+CameraSetting.Target
+, the only setting that takes a position.
+from
+: Where the move starts. Pass where the camera looks now for a smooth move.
+to
+: Where the move ends.
+duration
+: How long the move takes, in seconds.
+bias
+: From 0 to 1. Below 0.5 starts slow and speeds up, above 0.5 starts fast and slows down.
+gain
+: From 0 to 1. Above 0.5 eases in and out, below 0.5 does the opposite. 0.5 for both keeps a steady speed.
+delay
+: Seconds to wait before starting.
+context
+: The group this change goes in, for
+Clear
+.
+priority
+: Beats overlapping changes to the same setting that have a lower priority.
+Throws
+ArgumentException
+:
+setting
+isn't
+CameraSetting.Target
+.
+ArgumentException
+:
+setting
+is
+CameraSetting.Target
+.
+Source:
+PlayerCamera.cs#L64
+,
+PlayerCamera.cs#L97
+PlayerCamera.LerpTarget()
+​
+Moves the camera's look-at point from
+from
+to
+to
+over
+duration
+seconds, then snaps it back.
+Signature
+public
+void
+LerpTarget
+(
+Vector3
+from
+,
+Vector3
+to
+,
+float
+duration
+,
+float
+delay
+=
+0f
+,
+uint
+context
+=
+DefaultContext
+)
+Source:
+PlayerCamera.cs#L114
+PlayerCamera.LerpDistance()
+​
+Pulls the camera back or pushes it in, from
+from
+to
+to
+units behind what it looks at, over
+duration
+seconds, then snaps it back. The normal distance is 150.
+Signature
+public
+void
+LerpDistance
+(
+float
+from
+,
+float
+to
+,
+float
+duration
+,
+float
+delay
+=
+0f
+,
+uint
+context
+=
+DefaultContext
+)
+Source:
+PlayerCamera.cs#L121
+PlayerCamera.LerpFov()
+​
+Zooms by changing the field of view from
+from
+to
+to
+degrees over
+duration
+seconds, then snaps it back.
+Signature
+public
+void
+LerpFov
+(
+float
+from
+,
+float
+to
+,
+float
+duration
+,
+float
+delay
+=
+0f
+,
+uint
+context
+=
+DefaultContext
+)
+Source:
+PlayerCamera.cs#L125
+PlayerCamera.Maintain()
+​
+Holds a camera setting where it is for
+duration
+seconds, then gives it back to the game. To keep a lerp's end value instead of snapping back, queue this with
+delay
+set to the lerp's duration.
+Signature
+public
+void
+Maintain
+(
+CameraSetting
+setting
+,
+float
+duration
+,
+float
+delay
+=
+0f
+,
+uint
+context
+=
+DefaultContext
+,
+uint
+priority
+=
+DefaultPriority
+)
+Parameters
+setting
+: The setting to hold.
+duration
+: How long to hold it, in seconds.
+delay
+: Seconds to wait before starting.
+context
+: The group this change goes in, for
+Clear
+.
+priority
+: Beats overlapping changes to the same setting that have a lower priority.
+Source:
+PlayerCamera.cs#L138
+PlayerCamera.Clear()
+​
+Cancels every change in
+context
+and gives those settings back to the game. The game's own camera effects are left alone.
+Signature
+public
+void
+Clear
+(
+uint
+context
+=
+DefaultContext
+)
+Source:
+PlayerCamera.cs#L149
+PlayerCamera.ClearAll()
+​
+Cancels every camera change on this player, the game's own included. Prefer
+Clear
+, which only removes yours.
+Signature
+public
+void
+ClearAll
+(
+)
+Source:
+PlayerCamera.cs#L161

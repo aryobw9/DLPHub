@@ -42,15 +42,26 @@ pub fn run_powershell_admin(script: &str) -> Result<String, String> {
             let mut cmd = Command::new("powershell");
             cmd.args(["-NoProfile", "-NonInteractive", "-Command", script]);
             cmd.creation_flags(CREATE_NO_WINDOW);
-            let out = cmd.output().map_err(|e| format!("failed to exec powershell: {e}"))?;
+            let out = cmd.output().map_err(|e| {
+                let err = format!("failed to exec powershell: {e}");
+                dlp_core::logger::log(&dlp_core::settings::data_dir(), "ERROR", &format!("[run_powershell_admin] {err}"));
+                err
+            })?;
             let stdout = String::from_utf8_lossy(&out.stdout).to_string();
             let stderr = String::from_utf8_lossy(&out.stderr).to_string();
             if !out.status.success() && !stderr.trim().is_empty() {
+                dlp_core::logger::log(
+                    &dlp_core::settings::data_dir(),
+                    "ERROR",
+                    &format!("[run_powershell_admin] PowerShell failed with code {:?}\nCommand:\n{}\nStderr:\n{}", out.status.code(), script.trim(), stderr.trim()),
+                );
                 return Err(stderr);
             }
             return Ok(stdout);
         } else {
-            return Err("Administrator privileges are required for this action. Please restart DLPHub as Administrator.".to_string());
+            let err = "Administrator privileges are required for this action. Please restart DLPHub as Administrator.".to_string();
+            dlp_core::logger::log(&dlp_core::settings::data_dir(), "WARN", &format!("[run_powershell_admin] {err}"));
+            return Err(err);
         }
     }
     #[cfg(not(windows))]
@@ -956,9 +967,21 @@ fn format_firewall_add_cmd(id: &str, ips_csv: &str, exe_path: Option<&str>) -> S
     }
 }
 
+fn is_valid_cluster_id(id: &str) -> bool {
+    !id.is_empty() && id.len() <= 32 && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+}
+
 pub fn block_cluster_relay(cluster_id: &str, ips: &[String]) -> Result<(), String> {
+    if !is_valid_cluster_id(cluster_id) {
+        return Err(format!("Invalid cluster ID format: '{cluster_id}'"));
+    }
     if ips.is_empty() {
         return Ok(());
+    }
+    for ip in ips {
+        if !ip.chars().all(|c| c.is_ascii_digit() || c == '.' || c == ':' || c == '/') {
+            return Err(format!("Invalid IP address format: '{ip}'"));
+        }
     }
     let ips_csv = ips.join(",");
     let exe = resolve_deadlock_exe();
@@ -989,6 +1012,9 @@ fn format_firewall_delete_all_script() -> String {
 }
 
 pub fn unblock_cluster_relay(cluster_id: &str) -> Result<(), String> {
+    if !is_valid_cluster_id(cluster_id) {
+        return Err(format!("Invalid cluster ID format: '{cluster_id}'"));
+    }
     let script = format!(
         "try {{ Remove-NetFirewallRule -DisplayName \"DLPHub_Block_{id}\" -ErrorAction SilentlyContinue }} catch {{}}; \
          try {{ Remove-NetFirewallRule -Name \"DLPHub_Block_{id}\" -ErrorAction SilentlyContinue }} catch {{}}; \
@@ -1633,16 +1659,22 @@ pub fn apply_latency_tweaks(tweaks: &LatencyTweaksState, deadlock_path: Option<&
     // 2. Windows Policy-based QoS: Assign DSCP 46 (Expedited Forwarding) to Deadlock
     if tweaks.qos_enabled {
         script.push_str(
-            "New-NetQosPolicy -Name 'DLPHub_Deadlock_QoS' -AppPathNameMatchCondition 'deadlock.exe' -DSCPAction 46 -NetworkProfile All -ErrorAction SilentlyContinue ;\n\
-             New-NetQosPolicy -Name 'DLPHub_Project8_QoS' -AppPathNameMatchCondition 'project8.exe' -DSCPAction 46 -NetworkProfile All -ErrorAction SilentlyContinue ;\n\
-             New-NetQosPolicy -Name 'DLPHub_Citadel_QoS' -AppPathNameMatchCondition 'citadel.exe' -DSCPAction 46 -NetworkProfile All -ErrorAction SilentlyContinue ;\n\
-             Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\QoS' -Name 'Do not use NLA' -Value '1' -ErrorAction SilentlyContinue ;\n"
+            "try {\n\
+                 New-NetQosPolicy -Name 'DLPHub_Deadlock_QoS' -AppPathNameMatchCondition 'deadlock.exe' -DSCPAction 46 -NetworkProfile All -ErrorAction Stop ;\n\
+                 New-NetQosPolicy -Name 'DLPHub_Project8_QoS' -AppPathNameMatchCondition 'project8.exe' -DSCPAction 46 -NetworkProfile All -ErrorAction Stop ;\n\
+                 New-NetQosPolicy -Name 'DLPHub_Citadel_QoS' -AppPathNameMatchCondition 'citadel.exe' -DSCPAction 46 -NetworkProfile All -ErrorAction Stop ;\n\
+                 Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\QoS' -Name 'Do not use NLA' -Value '1' -ErrorAction SilentlyContinue ;\n\
+             } catch {\n\
+                 [Console]::Error.WriteLine(\"[QoS_Policy_Error] \" + $_.Exception.Message) ;\n\
+             }\n"
         );
     } else {
         script.push_str(
-            "Remove-NetQosPolicy -Name 'DLPHub_Deadlock_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
-             Remove-NetQosPolicy -Name 'DLPHub_Project8_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
-             Remove-NetQosPolicy -Name 'DLPHub_Citadel_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n"
+            "try {\n\
+                 Remove-NetQosPolicy -Name 'DLPHub_Deadlock_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
+                 Remove-NetQosPolicy -Name 'DLPHub_Project8_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
+                 Remove-NetQosPolicy -Name 'DLPHub_Citadel_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
+             } catch {}\n"
         );
     }
 
@@ -1657,12 +1689,16 @@ pub fn apply_latency_tweaks(tweaks: &LatencyTweaksState, deadlock_path: Option<&
     // 5. Network Adapter Hardware Offload & Interrupt Moderation
     if tweaks.nic_opt_enabled {
         script.push_str(
-            "Get-NetAdapterAdvancedProperty -DisplayName '*Interrupt Moderation*' -ErrorAction SilentlyContinue | Set-NetAdapterAdvancedProperty -DisplayValue 'Disabled' -ErrorAction SilentlyContinue ;\n\
-             Get-NetAdapterAdvancedProperty -DisplayName '*Large Send Offload*' -ErrorAction SilentlyContinue | Set-NetAdapterAdvancedProperty -DisplayValue 'Disabled' -ErrorAction SilentlyContinue ;\n"
+            "try {\n\
+                 Get-NetAdapterAdvancedProperty -DisplayName '*Interrupt Moderation*' -ErrorAction Stop | Set-NetAdapterAdvancedProperty -DisplayValue 'Disabled' -ErrorAction Stop ;\n\
+                 Get-NetAdapterAdvancedProperty -DisplayName '*Large Send Offload*' -ErrorAction Stop | Set-NetAdapterAdvancedProperty -DisplayValue 'Disabled' -ErrorAction Stop ;\n\
+             } catch {\n\
+                 [Console]::Error.WriteLine(\"[NIC_Optimization_Error] \" + $_.Exception.Message) ;\n\
+             }\n"
         );
     }
 
-    run_powershell_admin(&script)?;
+    let ps_result = run_powershell_admin(&script);
 
     // 6. Deadlock Engine Netcode ConVars in autoexec.cfg
     if tweaks.netcode_opt_enabled {
@@ -1705,6 +1741,10 @@ pub fn apply_latency_tweaks(tweaks: &LatencyTweaksState, deadlock_path: Option<&
         }
     }
 
+    if let Err(e) = ps_result {
+        return Err(e);
+    }
+
     Ok("System latency tweaks and netcode applied successfully.".to_string())
 }
 
@@ -1712,9 +1752,11 @@ pub fn revert_latency_tweaks(deadlock_path: Option<&str>) -> Result<String, Stri
     let script =
         "Start-Service -Name dosvc -ErrorAction SilentlyContinue ;\n\
          Start-Service -Name bits -ErrorAction SilentlyContinue ;\n\
-         Remove-NetQosPolicy -Name 'DLPHub_Deadlock_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
-         Remove-NetQosPolicy -Name 'DLPHub_Project8_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
-         Remove-NetQosPolicy -Name 'DLPHub_Citadel_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
+         try {\n\
+             Remove-NetQosPolicy -Name 'DLPHub_Deadlock_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
+             Remove-NetQosPolicy -Name 'DLPHub_Project8_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
+             Remove-NetQosPolicy -Name 'DLPHub_Citadel_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
+         } catch {} ;\n\
          Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile' -Name 'NetworkThrottlingIndex' -Value 10 -Type DWord -ErrorAction SilentlyContinue ;\n\
          Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile' -Name 'SystemResponsiveness' -Value 20 -Type DWord -ErrorAction SilentlyContinue ;\n\
          $tcpPath = 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces' ;\n\

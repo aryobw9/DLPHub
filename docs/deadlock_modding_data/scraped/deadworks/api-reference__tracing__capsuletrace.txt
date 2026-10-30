@@ -1,0 +1,45 @@
+# CapsuleTrace | Deadworks API
+URL: https://docs.deadworks.net/api-reference/tracing/capsuletrace
+
+API Reference
+Tracing
+CapsuleTrace
+On this page
+CapsuleTrace
+Shape data for a capsule trace between two center points with a radius.
+public
+struct
+CapsuleTrace
+Namespace:
+DeadworksManaged.Api
+Source:
+Trace/CapsuleTrace.cs#L8
+Fields
+​
+CapsuleTrace.Center0
+​
+Signature
+public
+Vector3
+Center0
+;
+Source:
+Trace/CapsuleTrace.cs#L9
+CapsuleTrace.Center1
+​
+Signature
+public
+Vector3
+Center1
+;
+Source:
+Trace/CapsuleTrace.cs#L10
+CapsuleTrace.Radius
+​
+Signature
+public
+float
+Radius
+;
+Source:
+Trace/CapsuleTrace.cs#L11

@@ -1,0 +1,412 @@
+# Configuration | Deadworks API
+URL: https://docs.deadworks.net/features/configuration
+
+Features
+Configuration
+On this page
+Configuration
+Namespace:
+DeadworksManaged.Api
+A config is a file of settings for your plugin. A server owner can change the settings by editing the file, without touching your code.
+Give your plugin a config
+​
+Write a class with a property for each setting. Then add a property of that class to your plugin, marked
+[PluginConfig]
+.
+public
+class
+MyPluginConfig
+{
+public
+int
+IntervalSeconds
+{
+get
+;
+set
+;
+}
+=
+10
+;
+public
+bool
+ShowAnnouncement
+{
+get
+;
+set
+;
+}
+=
+true
+;
+public
+string
+Title
+{
+get
+;
+set
+;
+}
+=
+"ITEM ROTATION"
+;
+}
+public
+class
+MyPlugin
+:
+DeadworksPluginBase
+{
+public
+override
+string
+Name
+=>
+"My Plugin"
+;
+[
+PluginConfig
+]
+public
+MyPluginConfig
+Config
+{
+get
+;
+set
+;
+}
+=
+new
+(
+)
+;
+}
+The value you give each property is its default.
+Find the config file
+​
+Deadworks creates the file, filled in with your defaults, the first time your plugin loads. It is named after your plugin's class:
+game/bin/win64/configs/MyPlugin/MyPlugin.jsonc
+// Configuration for My Plugin
+{
+"IntervalSeconds": 10,
+"ShowAnnouncement": true,
+"Title": "ITEM ROTATION"
+}
+It is JSON that also allows comments.
+Use a setting in your code
+​
+Read it from your
+Config
+property.
+[
+Command
+(
+"interval"
+)
+]
+public
+void
+CmdInterval
+(
+Caller
+caller
+)
+{
+caller
+.
+Reply
+(
+$"Items rotate every
+{
+Config
+.
+IntervalSeconds
+}
+seconds."
+)
+;
+}
+Change a setting while the server is running
+​
+Edit the file, then type this in the server console:
+dw_reloadconfig
+That reloads every plugin's config. To reload one plugin's config, add its name:
+dw_reloadconfig MyPlugin
+If the file has a mistake, the plugin keeps the settings it already had. The server console says where the mistake is:
+[ConfigManager] Failed to reload MyPlugin.jsonc line 4, column 3: ... My Plugin keeps its previous settings.
+warning
+If the file is broken when the server starts, the plugin uses its default settings. The server console prints an
+ERROR
+. Fix the file and run
+dw_reloadconfig MyPlugin
+.
+Deadworks ignores a setting your config class doesn't have, such as a misspelled name. The server console warns about it when the config loads:
+[ConfigManager] WARNING: MyPlugin.jsonc: 'IntervalSecond' (did you mean 'IntervalSeconds'?) isn't a setting My Plugin knows, so it's ignored.
+Run code when the config is reloaded
+​
+Override
+OnConfigReloaded
+. Use it to restart anything that depends on a setting.
+private
+IHandle
+?
+_timer
+;
+public
+override
+void
+OnConfigReloaded
+(
+)
+{
+_timer
+?.
+Cancel
+(
+)
+;
+_timer
+=
+Timer
+.
+Every
+(
+Config
+.
+IntervalSeconds
+.
+Seconds
+(
+)
+,
+RotateItems
+)
+;
+}
+Fix settings that don't make sense
+​
+Make your config class an
+IConfig
+and add a
+Validate
+method. Deadworks calls it every time it loads the config.
+public
+class
+MyPluginConfig
+:
+IConfig
+{
+public
+int
+IntervalSeconds
+{
+get
+;
+set
+;
+}
+=
+10
+;
+public
+float
+DamageMultiplier
+{
+get
+;
+set
+;
+}
+=
+1.0f
+;
+public
+void
+Validate
+(
+)
+{
+if
+(
+IntervalSeconds
+<
+1
+)
+IntervalSeconds
+=
+10
+;
+DamageMultiplier
+=
+Math
+.
+Clamp
+(
+DamageMultiplier
+,
+0f
+,
+10f
+)
+;
+}
+}
+Use a list in your config
+​
+A setting can be a list, or another class with settings of its own.
+public
+class
+ItemSet
+{
+public
+string
+Name
+{
+get
+;
+set
+;
+}
+=
+""
+;
+public
+List
+<
+string
+>
+Items
+{
+get
+;
+set
+;
+}
+=
+new
+(
+)
+;
+}
+public
+class
+MyPluginConfig
+{
+public
+List
+<
+ItemSet
+>
+ItemSets
+{
+get
+;
+set
+;
+}
+=
+new
+(
+)
+{
+new
+(
+)
+{
+Name
+=
+"Speed Demons"
+,
+Items
+=
+new
+(
+)
+{
+"upgrade_sprint_booster"
+,
+"upgrade_kinetic_sash"
+}
+}
+,
+}
+;
+}
+{
+"ItemSets": [
+{
+"Name": "Speed Demons",
+"Items": ["upgrade_sprint_booster", "upgrade_kinetic_sash"]
+}
+]
+}
+Change a setting's name in the file
+​
+By default a setting has the same name in the file as in your code. Use
+[JsonPropertyName]
+to give it a different one.
+using
+System
+.
+Text
+.
+Json
+.
+Serialization
+;
+public
+class
+MyPluginConfig
+{
+[
+JsonPropertyName
+(
+"interval_seconds"
+)
+]
+public
+int
+IntervalSeconds
+{
+get
+;
+set
+;
+}
+=
+10
+;
+}
+{
+"interval_seconds": 10
+}
+Reload the config from your code
+​
+bool
+ok
+=
+this
+.
+ReloadConfig
+(
+)
+;
+ReloadConfig()
+returns
+false
+if the file has a mistake. The plugin then keeps its old settings.
+See also
+​
+Console commands
+:
+dw_reloadconfig
+and other built-in commands
+ConVars
+: settings you change from the console
+Timers
+: restart a timer in
+OnConfigReloaded

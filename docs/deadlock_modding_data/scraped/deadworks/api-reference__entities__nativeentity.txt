@@ -1,0 +1,95 @@
+# NativeEntity | Deadworks API
+URL: https://docs.deadworks.net/api-reference/entities/nativeentity
+
+API Reference
+Entities
+NativeEntity
+On this page
+NativeEntity
+Base class for all managed wrappers around native C++ entity/object pointers.
+public
+abstract
+class
+NativeEntity
+Namespace:
+DeadworksManaged.Api
+Derived types:
+AbilityResource
+,
+CBaseEntity
+,
+CBaseModifier
+,
+CBodyComponent
+,
+CCitadelAbilityComponent
+,
+CCitadelHeroComponent
+,
+CCollisionProperty
+,
+CEntitySubclassVDataBase
+,
+CGameSceneNode
+,
+CitadelHeroSpawnData
+,
+CModifierProperty
+,
+CModifierVData
+,
+CPlayer_ObserverServices
+,
+PlayerDataGlobal
+Source:
+Entities/NativeEntity.cs#L4
+Constructors
+​
+new NativeEntity()
+​
+For subclasses that resolve Handle dynamically and do not store a raw pointer.
+Signature
+protected
+NativeEntity
+(
+nint
+handle
+)
+protected
+NativeEntity
+(
+)
+Source:
+Entities/NativeEntity.cs#L13
+,
+Entities/NativeEntity.cs#L16
+Properties
+​
+NativeEntity.Handle
+​
+Raw pointer to the native object. Subclasses that use handle-based identity override this to re-resolve each access.
+Signature
+public
+virtual
+nint
+Handle
+{
+get
+;
+}
+Source:
+Entities/NativeEntity.cs#L8
+NativeEntity.IsValid
+​
+True if the pointer is non-null.
+Signature
+public
+virtual
+bool
+IsValid
+{
+get
+;
+}
+Source:
+Entities/NativeEntity.cs#L11

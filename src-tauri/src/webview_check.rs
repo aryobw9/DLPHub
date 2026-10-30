@@ -105,10 +105,41 @@ or press Cancel to attempt launching anyway.";
             // If Cancel clicked, do NOT force exit; allow Tauri to proceed.
         }
     }
+
+    const WEBVIEW2_LOADER_BYTES: &[u8] = include_bytes!("../bin/x86_64-pc-windows-msvc/WebView2Loader.dll");
+
+    pub fn ensure_embedded_dlls() {
+        use std::os::windows::ffi::OsStrExt;
+
+        let local_dir = dlp_core::settings::data_dir();
+        let _ = std::fs::create_dir_all(&local_dir);
+
+        // 1. Ensure WebView2Loader.dll in cache
+        let webview_dll = local_dir.join("WebView2Loader.dll");
+        if !webview_dll.exists() || webview_dll.metadata().map(|m| m.len()).unwrap_or(0) != WEBVIEW2_LOADER_BYTES.len() as u64 {
+            let _ = std::fs::write(&webview_dll, WEBVIEW2_LOADER_BYTES);
+        }
+
+        // 2. Ensure wintun.dll in cache
+        let _ = crate::lan_engine::ensure_wintun_dll();
+
+        // 3. Add cache directory to Windows DLL search directory so LoadLibrary finds both DLLs anywhere
+        unsafe {
+            #[link(name = "kernel32")]
+            extern "system" {
+                fn SetDllDirectoryW(lpPathName: *const u16) -> i32;
+            }
+            let wide_path: Vec<u16> = local_dir.as_os_str()
+                .encode_wide()
+                .chain(std::iter::once(0))
+                .collect();
+            SetDllDirectoryW(wide_path.as_ptr());
+        }
+    }
 }
 
 #[cfg(windows)]
-pub use imp::{guide_download_and_exit, runtime_version};
+pub use imp::{ensure_embedded_dlls, guide_download_and_exit, runtime_version};
 
 #[cfg(not(windows))]
 pub fn runtime_version() -> Option<String> {
@@ -117,3 +148,6 @@ pub fn runtime_version() -> Option<String> {
 
 #[cfg(not(windows))]
 pub fn guide_download_and_exit() {}
+
+#[cfg(not(windows))]
+pub fn ensure_embedded_dlls() {}

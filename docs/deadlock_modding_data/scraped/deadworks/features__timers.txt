@@ -1,0 +1,325 @@
+# Timers | Deadworks API
+URL: https://docs.deadworks.net/features/timers
+
+Features
+Timers
+On this page
+Timers
+Namespace:
+DeadworksManaged.Api
+A timer runs code later, or over and over. Every plugin has a
+Timer
+property, so you can use it anywhere in your plugin.
+Run something after a delay
+​
+Timer
+.
+Once
+(
+5
+.
+Seconds
+(
+)
+,
+(
+)
+=>
+{
+Console
+.
+WriteLine
+(
+"Five seconds passed."
+)
+;
+}
+)
+;
+Run something over and over
+​
+Timer
+.
+Every
+(
+1
+.
+Seconds
+(
+)
+,
+(
+)
+=>
+{
+Console
+.
+WriteLine
+(
+"Still running..."
+)
+;
+}
+)
+;
+It keeps running until you stop it or your plugin unloads.
+Stop a timer
+​
+Timer.Every
+returns a handle. Keep it, and call
+Cancel()
+to stop the timer.
+var
+timer
+=
+Timer
+.
+Every
+(
+1
+.
+Seconds
+(
+)
+,
+(
+)
+=>
+{
+Console
+.
+WriteLine
+(
+"Still running..."
+)
+;
+}
+)
+;
+// Stop it after 10 seconds
+Timer
+.
+Once
+(
+10
+.
+Seconds
+(
+)
+,
+(
+)
+=>
+timer
+.
+Cancel
+(
+)
+)
+;
+To stop it automatically when the map changes:
+timer
+.
+CancelOnMapChange
+(
+)
+;
+You don't have to stop timers when your plugin unloads. Deadworks does that for you.
+Choose how long to wait
+​
+5
+.
+Seconds
+(
+)
+500
+.
+Milliseconds
+(
+)
+1
+.
+Ticks
+(
+)
+A tick is one step of the game. On a 64 tick server, that is about 15.6 milliseconds.
+Timers only run on ticks, so
+5.Seconds()
+means the first tick after 5 seconds have passed.
+Run something every tick
+​
+Timer
+.
+Every
+(
+1
+.
+Ticks
+(
+)
+,
+(
+)
+=>
+{
+// Runs 64 times a second on a 64 tick server
+}
+)
+;
+Wait one tick
+​
+Timer
+.
+NextTick
+(
+(
+)
+=>
+{
+// ...
+}
+)
+;
+Use
+Timer.NextTick
+when something you created isn't ready yet. Also use it after an
+await
+when you need to touch the game again.
+Run something a set number of times
+​
+Use
+Timer.Sequence
+. Each time it runs, you decide whether to wait and run again, or stop.
+Timer
+.
+Sequence
+(
+step
+=>
+{
+if
+(
+step
+.
+Run
+>
+10
+)
+return
+step
+.
+Done
+(
+)
+;
+target
+.
+Hurt
+(
+damagePerTick
+,
+attacker
+:
+attacker
+)
+;
+return
+step
+.
+Wait
+(
+200
+.
+Milliseconds
+(
+)
+)
+;
+}
+)
+;
+step.Run
+is how many times it has run so far. The example deals damage every 200 milliseconds and stops once
+step.Run
+passes 10.
+Give each player their own timer
+​
+Keep each player's handle in an
+EntityData
+, so you can stop the right one later.
+private
+readonly
+EntityData
+<
+IHandle
+?
+>
+_timers
+=
+new
+(
+)
+;
+// Start one for this player
+_timers
+[
+pawn
+]
+=
+Timer
+.
+Every
+(
+1
+.
+Seconds
+(
+)
+,
+(
+)
+=>
+{
+// ...
+}
+)
+;
+// Stop it later
+if
+(
+_timers
+.
+TryGet
+(
+pawn
+,
+out
+var
+timer
+)
+&&
+timer
+!=
+null
+)
+{
+timer
+.
+Cancel
+(
+)
+;
+_timers
+.
+Remove
+(
+pawn
+)
+;
+}
+See also
+​
+Entities
+: store a value for each entity
+Configuration
+: restart a timer when settings change

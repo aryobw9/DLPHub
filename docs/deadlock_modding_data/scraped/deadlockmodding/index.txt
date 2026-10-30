@@ -1,0 +1,15 @@
+# Deadlock Modding Notes
+URL: https://deadlockmodding.pages.dev/index
+
+Deadlock Modding Notes
+is a collection of guides and a general source of knowledge for Deadlock modding.
+Warning
+Everything on this website is
+very very
+alpha and work in progress.
+If you want to install mods check out
+Installing Mods
+If you want to learn how to do mods, install
+CSDK 12
+and check out
+Modding Guides

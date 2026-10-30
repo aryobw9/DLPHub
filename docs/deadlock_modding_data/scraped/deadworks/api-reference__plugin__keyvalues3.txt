@@ -1,0 +1,255 @@
+# KeyValues3 | Deadworks API
+URL: https://docs.deadworks.net/api-reference/plugin/keyvalues3
+
+API Reference
+Plugin
+KeyValues3
+On this page
+KeyValues3
+Wraps a native KeyValues3 handle. Create with
+new KeyValues3()
+, set typed members, pass to
+CBaseEntity.AddModifier
+, then dispose. Must be disposed explicitly - no finalizer (unsafe to call native from GC thread).
+public
+sealed
+class
+KeyValues3
+:
+IDisposable
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+IDisposable
+Source:
+KeyValues3.cs#L10
+Constructors
+​
+new KeyValues3()
+​
+Allocates a new native KeyValues3 object.
+Signature
+public
+KeyValues3
+(
+)
+Source:
+KeyValues3.cs#L18
+Properties
+​
+KeyValues3.IsValid
+​
+true
+if the underlying native handle is still alive (i.e. not yet disposed).
+Signature
+public
+bool
+IsValid
+{
+get
+;
+}
+Source:
+KeyValues3.cs#L15
+Methods
+​
+KeyValues3.Dispose()
+​
+Frees the native KeyValues3 object. Must be called after the KV3 has been consumed by the engine.
+Signature
+public
+void
+Dispose
+(
+)
+Source:
+KeyValues3.cs#L34
+KeyValues3.SetString()
+​
+Sets a string value on the KV3 object.
+Signature
+public
+void
+SetString
+(
+string
+key
+,
+string
+value
+)
+Parameters
+key
+: The key name.
+value
+: The string value.
+Source:
+KeyValues3.cs#L46
+KeyValues3.SetBool()
+​
+Sets a boolean value on the KV3 object.
+Signature
+public
+void
+SetBool
+(
+string
+key
+,
+bool
+value
+)
+Parameters
+key
+: The key name.
+value
+: The value.
+Source:
+KeyValues3.cs#L60
+KeyValues3.SetInt()
+​
+Sets a signed 32-bit integer value on the KV3 object.
+Signature
+public
+void
+SetInt
+(
+string
+key
+,
+int
+value
+)
+Parameters
+key
+: The key name.
+value
+: The value.
+Source:
+KeyValues3.cs#L73
+KeyValues3.SetUInt()
+​
+Sets an unsigned 32-bit integer value on the KV3 object.
+Signature
+public
+void
+SetUInt
+(
+string
+key
+,
+uint
+value
+)
+Parameters
+key
+: The key name.
+value
+: The value.
+Source:
+KeyValues3.cs#L86
+KeyValues3.SetInt64()
+​
+Sets a signed 64-bit integer value on the KV3 object.
+Signature
+public
+void
+SetInt64
+(
+string
+key
+,
+long
+value
+)
+Parameters
+key
+: The key name.
+value
+: The value.
+Source:
+KeyValues3.cs#L99
+KeyValues3.SetUInt64()
+​
+Sets an unsigned 64-bit integer value on the KV3 object.
+Signature
+public
+void
+SetUInt64
+(
+string
+key
+,
+ulong
+value
+)
+Parameters
+key
+: The key name.
+value
+: The value.
+Source:
+KeyValues3.cs#L112
+KeyValues3.SetFloat()
+​
+Sets a single-precision floating-point value on the KV3 object.
+Signature
+public
+void
+SetFloat
+(
+string
+key
+,
+float
+value
+)
+Parameters
+key
+: The key name.
+value
+: The value.
+Source:
+KeyValues3.cs#L125
+KeyValues3.SetDouble()
+​
+Sets a double-precision floating-point value on the KV3 object.
+Signature
+public
+void
+SetDouble
+(
+string
+key
+,
+double
+value
+)
+Parameters
+key
+: The key name.
+value
+: The value.
+Source:
+KeyValues3.cs#L138
+KeyValues3.SetVector()
+​
+Sets a 3D vector value on the KV3 object.
+Signature
+public
+void
+SetVector
+(
+string
+key
+,
+Vector3
+value
+)
+Parameters
+key
+: The key name.
+value
+: The vector value.
+Source:
+KeyValues3.cs#L151

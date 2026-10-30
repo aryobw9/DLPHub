@@ -1,0 +1,185 @@
+# Permissions | Deadworks API
+URL: https://docs.deadworks.net/features/permissions
+
+Features
+Permissions
+On this page
+Permissions
+Namespace:
+DeadworksManaged.Api
+A permission limits who can run a command. Players get permissions from roles, which the server owner sets up.
+Give a command a permission
+​
+Set
+Permission
+on the command.
+[
+Command
+(
+"heal"
+,
+Permission
+=
+"myplugin.heal"
+)
+]
+public
+void
+CmdHeal
+(
+Caller
+caller
+)
+{
+var
+pawn
+=
+caller
+.
+Player
+?.
+GetHeroPawn
+(
+)
+;
+if
+(
+pawn
+==
+null
+)
+throw
+new
+CommandException
+(
+"Only players can heal."
+)
+;
+pawn
+.
+Heal
+(
+pawn
+.
+GetMaxHealth
+(
+)
+)
+;
+}
+Now only players with
+myplugin.heal
+can run
+/heal
+. Everyone else sees
+You don't have permission to use this command.
+Start the permission with your plugin's name, so server owners can tell where it comes from.
+The server console can always run every command. The built-in
+admin
+role has every permission.
+Give a role the permission
+​
+To let players use the command, give the permission to a role, then give players that role.
+Open
+configs/permissions/roles.jsonc
+and add a role:
+{
+"default": {
+"permissions": []
+},
+"admin": {
+"permissions": ["*"],
+"immunity": 100
+},
+"medic": {
+"permissions": ["myplugin.heal"]
+}
+}
+Reload the file. In the server console, run:
+dw_perm_reload
+Join the server, then give yourself the role. In the server console, run:
+dw_role_grant <your name> medic
+Type
+/heal
+in chat.
+Your role applies a few seconds after you join, once Steam confirms your account.
+To let every player use a command, give the permission to the
+default
+role, which everyone has.
+Check a permission in code
+​
+caller.HasPermission
+checks a permission inside your method. Use it when a command does more for some players:
+[
+Command
+(
+"heal"
+,
+Permission
+=
+"myplugin.heal"
+)
+]
+public
+void
+CmdHeal
+(
+Caller
+caller
+,
+Target
+?
+target
+=
+null
+)
+{
+if
+(
+target
+!=
+null
+&&
+!
+caller
+.
+HasPermission
+(
+"myplugin.heal.others"
+)
+)
+throw
+new
+CommandException
+(
+"You can only heal yourself."
+)
+;
+// ...
+}
+Add
+[DeclarePermission]
+to your plugin class for each permission you only check in code. Server owners then see it in the list of your plugin's permissions:
+[
+DeclarePermission
+(
+"myplugin.heal.others"
+,
+Description
+=
+"Heal other players"
+)
+]
+public
+class
+MyPlugin
+:
+DeadworksPluginBase
+See also
+​
+How permissions work
+: roles, immunity and the permission files
+Caller
+,
+Permissions
+Commands

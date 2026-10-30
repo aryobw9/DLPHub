@@ -1,0 +1,103 @@
+# IPermissionStore | Deadworks API
+URL: https://docs.deadworks.net/api-reference/permissions/ipermissionstore
+
+API Reference
+Permissions
+IPermissionStore
+On this page
+IPermissionStore
+Where roles and player entries come from. The built-in store reads
+configs/permissions/*.jsonc
+; register another with
+Permissions.RegisterStore
+to keep them in a database or web panel. Wildcards, immunity and every other rule are evaluated by Deadworks, so they behave the same on every store.
+public
+interface
+IPermissionStore
+Namespace:
+DeadworksManaged.Api
+Source:
+Permissions/IPermissionStore.cs#L8
+Methods
+​
+IPermissionStore.LoadRolesAsync()
+​
+Every role by name. Called at startup and on
+dw_perm_reload
+.
+Signature
+Task
+<
+IReadOnlyDictionary
+<
+string
+,
+RoleDefinition
+>
+>
+LoadRolesAsync
+(
+CancellationToken
+ct
+)
+Source:
+Permissions/IPermissionStore.cs#L11
+IPermissionStore.LoadPlayerAsync()
+​
+Called when a player connects, and on demand for offline checks. Null means no entry.
+Signature
+Task
+<
+PlayerEntry
+?
+>
+LoadPlayerAsync
+(
+ulong
+steamId64
+,
+CancellationToken
+ct
+)
+Source:
+Permissions/IPermissionStore.cs#L14
+IPermissionStore.SavePlayerAsync()
+​
+Persists a change made with the
+dw_role_*
+/
+dw_perm_*
+commands. A null entry deletes the player.
+Signature
+Task
+SavePlayerAsync
+(
+ulong
+steamId64
+,
+PlayerEntry
+?
+entry
+,
+CancellationToken
+ct
+)
+Source:
+Permissions/IPermissionStore.cs#L17
+Events
+​
+IPermissionStore.Changed
+​
+Raise when data changed outside Deadworks. Pass the affected SteamID64, or null to reload everything.
+Signature
+event
+Action
+<
+ulong
+?
+>
+?
+Changed
+;
+Source:
+Permissions/IPermissionStore.cs#L20

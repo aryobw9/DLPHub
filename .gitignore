@@ -33,3 +33,19 @@ src-tauri/gen/schemas/
 src-tauri/nsis_hooks.nsh
 __pycache__/
 *.pyc
+
+# Release artifacts & large files (>100MB)
+release_dist/
+*.full
+payload.zip.full
+*.zip
+!src-tauri/payload.zip
+
+# Runtime storage & local matches
+DLPHubStorage/
+lan_matches/
+server_loader/
+
+# Admin console & credentials
+admin_console/
+

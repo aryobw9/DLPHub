@@ -1,0 +1,54 @@
+# SolidType | Deadworks API
+URL: https://docs.deadworks.net/api-reference/enums/solidtype
+
+API Reference
+Enums
+SolidType
+On this page
+SolidType
+The shape an entity's physics body is built from. See
+CCollisionProperty.SolidType
+.
+public
+enum
+SolidType
+:
+byte
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+byte
+Source:
+Enums/SolidType.cs#L4
+Values
+​
+Name
+Value
+Description
+None
+0
+No physics body.
+Bsp
+1
+The entity's brush geometry.
+BBox
+2
+An axis-aligned box from the entity's bounds.
+Obb
+3
+A box from the entity's bounds that rotates with it.
+Sphere
+4
+A sphere around the entity's bounds.
+Point
+5
+A single point, with no physics body.
+VPhysics
+6
+The collision mesh from the entity's model.
+Capsule
+7
+A capsule.
+Cylinder
+8
+A cylinder.

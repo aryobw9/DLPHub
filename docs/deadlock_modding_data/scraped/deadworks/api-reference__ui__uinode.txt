@@ -1,0 +1,173 @@
+# UINode | Deadworks API
+URL: https://docs.deadworks.net/api-reference/ui/uinode
+
+API Reference
+UI
+UINode
+On this page
+UINode
+Base type for nodes in a code-driven UI tree. Built via the factories on
+UI
+(
+UI.Vertical
+,
+UI.Label
+, etc.) and shipped to the client by
+UIPanel.BuildLayout
+.
+public
+abstract
+class
+UINode
+Namespace:
+DeadworksManaged.Api.UI
+Derived types:
+UIButton
+,
+UIContainer
+,
+UIImage
+,
+UILabel
+Source:
+UI/UILayout.cs#L14
+Properties
+​
+UINode.Id
+​
+Signature
+public
+string
+?
+Id
+{
+get
+;
+set
+;
+}
+Source:
+UI/UILayout.cs#L15
+UINode.Styles
+​
+Styles applied to this node, in declaration order. Each entry is a
+(property, value)
+pair (e.g.
+("horizontal-align", "left")
+). Use
+UINodeExtensions.WithStyle
+or
+UINodeExtensions.WithStyles
+to add entries fluently. Property names should be CSS kebab-case so the wire-format token compressor can replace common ones with single-byte codes.
+Signature
+public
+List
+<
+(
+string
+Name
+,
+string
+Value
+)
+>
+Styles
+{
+get
+;
+}
+Source:
+UI/UILayout.cs#L24
+UINode.HoverStyles
+​
+Styles applied while the pointer is over this node, and reverted when it leaves. Panorama's
+:hover
+needs a stylesheet, which a server-built tree has no way to ship — the client applies these directly instead, so each plugin picks its own colours with nothing shared or pre-registered.
+Declaring any of these makes the node hit-testable, since a node that ignores the pointer can never see it arrive.
+Signature
+public
+List
+<
+(
+string
+Name
+,
+string
+Value
+)
+>
+HoverStyles
+{
+get
+;
+}
+Source:
+UI/UILayout.cs#L35
+UINode.PressStyles
+​
+Styles applied while the pointer is held down on this node, on top of any hover styles, and reverted on release.
+Hover and press are the only states the client has to own: the server rebuilds the tree whenever game state changes, so anything it knows — selected, disabled, whose turn it is — is already expressible by sending different styles. It just cannot see the pointer.
+Signature
+public
+List
+<
+(
+string
+Name
+,
+string
+Value
+)
+>
+PressStyles
+{
+get
+;
+}
+Source:
+UI/UILayout.cs#L46
+UINode.Transitions
+​
+Client-side transitions declared on this node, added with
+UINodeExtensions.WithTransition
+.
+Kept apart from
+Styles
+because Panorama expresses several transitions as parallel comma-separated lists across three properties. Appending them as ordinary styles would make a second call silently override the first rather than adding to it; collected here they compose, and the encoder emits the matched lists.
+Signature
+public
+List
+<
+(
+string
+Property
+,
+string
+Duration
+,
+string
+Timing
+)
+>
+Transitions
+{
+get
+;
+}
+Source:
+UI/UILayout.cs#L58
+UINode.Children
+​
+Signature
+public
+List
+<
+UINode
+>
+Children
+{
+get
+;
+}
+Source:
+UI/UILayout.cs#L60

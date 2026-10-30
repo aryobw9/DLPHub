@@ -1,0 +1,23 @@
+# GameEventHandler | Deadworks API
+URL: https://docs.deadworks.net/api-reference/events/gameeventhandler
+
+API Reference
+Events
+GameEventHandler
+GameEventHandler
+Delegate type for dynamic game event listener callbacks registered via
+GameEvents
+.
+public
+delegate
+HookResult
+GameEventHandler
+(
+GameEvent
+e
+)
+;
+Namespace:
+DeadworksManaged.Api
+Source:
+Events/GameEventHandlerAttribute.cs#L4

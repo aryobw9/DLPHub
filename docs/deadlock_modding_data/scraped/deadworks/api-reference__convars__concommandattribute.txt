@@ -1,0 +1,83 @@
+# ConCommandAttribute | Deadworks API
+URL: https://docs.deadworks.net/api-reference/convars/concommandattribute
+
+API Reference
+ConVars
+ConCommandAttribute
+On this page
+ConCommandAttribute
+Obsolete
+Use [Command] instead. Commands with this attribute are no longer registered: they skipped permission checks.
+Marks a method as a console command handler with signature
+void Handler(ConCommandContext ctx)
+.
+public
+sealed
+class
+ConCommandAttribute
+:
+Attribute
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+Attribute
+Source:
+ConCommands/ConCommandAttribute.cs#L6
+Constructors
+​
+new ConCommandAttribute()
+​
+Signature
+public
+ConCommandAttribute
+(
+string
+name
+)
+Source:
+ConCommands/ConCommandAttribute.cs#L12
+Properties
+​
+ConCommandAttribute.Name
+​
+Signature
+public
+string
+Name
+{
+get
+;
+}
+Source:
+ConCommands/ConCommandAttribute.cs#L8
+ConCommandAttribute.Description
+​
+Signature
+public
+string
+Description
+{
+get
+;
+set
+;
+}
+=
+""
+;
+Source:
+ConCommands/ConCommandAttribute.cs#L9
+ConCommandAttribute.ServerOnly
+​
+Signature
+public
+bool
+ServerOnly
+{
+get
+;
+set
+;
+}
+Source:
+ConCommands/ConCommandAttribute.cs#L10

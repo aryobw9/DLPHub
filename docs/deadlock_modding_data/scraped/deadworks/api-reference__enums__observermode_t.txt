@@ -1,0 +1,39 @@
+# ObserverMode_t | Deadworks API
+URL: https://docs.deadworks.net/api-reference/enums/observermode_t
+
+API Reference
+Enums
+ObserverMode_t
+On this page
+ObserverMode_t
+Observer camera mode. Stored on
+CPlayer_ObserverServices
+as
+m_iObserverMode
+.
+public
+enum
+ObserverMode_t
+:
+uint
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+uint
+Source:
+Enums/ObserverMode_t.cs#L4
+Values
+​
+Name
+Value
+Description
+None
+0
+Fixed
+1
+InEye
+2
+Chase
+3
+Roaming
+4

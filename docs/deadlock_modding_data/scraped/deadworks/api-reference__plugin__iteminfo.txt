@@ -1,0 +1,65 @@
+# ItemInfo | Deadworks API
+URL: https://docs.deadworks.net/api-reference/plugin/iteminfo
+
+API Reference
+Plugin
+ItemInfo
+On this page
+ItemInfo
+Lookups against item definitions by internal name (e.g.
+"upgrade_echo_shard"
+). These read the item's VData, so they work before the item has ever been granted.
+public
+static
+class
+ItemInfo
+Namespace:
+DeadworksManaged.Api
+Source:
+ItemInfo.cs#L7
+Methods
+​
+ItemInfo.Exists()
+​
+True when an item definition with this internal name exists.
+Signature
+public
+static
+bool
+Exists
+(
+string
+itemName
+)
+Source:
+ItemInfo.cs#L17
+ItemInfo.GetImbueEffects()
+​
+The imbue behaviour this item declares, or
+ImbueEffects.None
+when the item cannot be imbued or does not exist.
+Signature
+public
+static
+ImbueEffects
+GetImbueEffects
+(
+string
+itemName
+)
+Source:
+ItemInfo.cs#L23
+ItemInfo.CanBeImbued()
+​
+True when this item has to be imbued into one of the hero's abilities to do anything - Echo Shard, Mystic Reverb, Compress Cooldown and friends.
+Signature
+public
+static
+bool
+CanBeImbued
+(
+string
+itemName
+)
+Source:
+ItemInfo.cs#L32

@@ -1,0 +1,68 @@
+# IStep | Deadworks API
+URL: https://docs.deadworks.net/api-reference/timers/istep
+
+API Reference
+Timers
+IStep
+On this page
+IStep
+Sequence step context passed to
+ITimer.Sequence
+callbacks. Provides execution count and methods to control pacing.
+public
+interface
+IStep
+Namespace:
+DeadworksManaged.Api
+Source:
+Timer/IStep.cs#L7
+Properties
+​
+IStep.Run
+​
+How many times the sequence callback has been invoked (starts at 1).
+Signature
+int
+Run
+{
+get
+;
+}
+Source:
+Timer/IStep.cs#L10
+IStep.ElapsedTicks
+​
+Game ticks elapsed since the sequence started.
+Signature
+long
+ElapsedTicks
+{
+get
+;
+}
+Source:
+Timer/IStep.cs#L13
+Methods
+​
+IStep.Wait()
+​
+Execute again after the specified duration.
+Signature
+Pace
+Wait
+(
+Duration
+delay
+)
+Source:
+Timer/IStep.cs#L16
+IStep.Done()
+​
+End the sequence.
+Signature
+Pace
+Done
+(
+)
+Source:
+Timer/IStep.cs#L19

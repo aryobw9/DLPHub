@@ -1,0 +1,45 @@
+# BoundingBox | Deadworks API
+URL: https://docs.deadworks.net/api-reference/tracing/boundingbox
+
+API Reference
+Tracing
+BoundingBox
+On this page
+BoundingBox
+Axis-aligned bounding box helpers.
+public
+static
+class
+BoundingBox
+Namespace:
+DeadworksManaged.Api
+Source:
+Math/BoundingBox.cs#L6
+Methods
+​
+BoundingBox.Contains()
+​
+Returns true if
+point
+lies within the AABB defined by
+mins
+and
+maxs
+(inclusive).
+Signature
+public
+static
+bool
+Contains
+(
+Vector3
+mins
+,
+Vector3
+maxs
+,
+Vector3
+point
+)
+Source:
+Math/BoundingBox.cs#L8

@@ -1,0 +1,349 @@
+# Damage | Deadworks API
+URL: https://docs.deadworks.net/features/damage
+
+Features
+Damage
+On this page
+Damage
+Namespace:
+DeadworksManaged.Api
+Plugins can deal damage to any
+entity
+. They can also watch, change or block damage as it happens.
+Damage an entity
+​
+pawn
+.
+Hurt
+(
+50f
+)
+;
+Hurt
+takes 50 health from the player. It can kill them.
+Give an attacker the credit
+​
+target
+.
+Hurt
+(
+100f
+,
+attacker
+:
+shooter
+)
+;
+If this kills the target, the kill goes to
+shooter
+and shows in the kill feed.
+Deal damage over time
+​
+Use a
+timer
+to deal small amounts of damage repeatedly.
+Timer
+.
+Sequence
+(
+step
+=>
+{
+if
+(
+step
+.
+Run
+>
+10
+||
+!
+target
+.
+IsValid
+)
+return
+step
+.
+Done
+(
+)
+;
+target
+.
+Hurt
+(
+10f
+,
+attacker
+:
+attacker
+)
+;
+return
+step
+.
+Wait
+(
+200
+.
+Milliseconds
+(
+)
+)
+;
+}
+)
+;
+This deals 10 damage every 200 milliseconds. It stops once
+step.Run
+passes 10 or the target is gone.
+Run code when something takes damage
+​
+Override
+OnTakeDamage
+. It runs for every hit on the server.
+public
+override
+HookResult
+OnTakeDamage
+(
+TakeDamageEvent
+ev
+)
+{
+Console
+.
+WriteLine
+(
+$"
+{
+ev
+.
+Entity
+.
+DesignerName
+}
+took
+{
+ev
+.
+Info
+.
+Damage
+}
+damage"
+)
+;
+return
+HookResult
+.
+Continue
+;
+}
+ev.Entity
+is whoever is being hurt.
+ev.Info
+describes the hit:
+ev.Info.Damage
+: the amount of damage.
+ev.Info.Attacker
+: the entity that dealt it.
+ev.Info.Ability
+: the ability or item that dealt it.
+Both
+Attacker
+and
+Ability
+can be
+null
+.
+Block damage
+​
+Return
+HookResult.Stop
+to cancel the hit.
+public
+override
+HookResult
+OnTakeDamage
+(
+TakeDamageEvent
+ev
+)
+{
+// Patrons can't be hurt
+if
+(
+ev
+.
+Entity
+.
+DesignerName
+==
+"npc_boss_tier3"
+)
+return
+HookResult
+.
+Stop
+;
+return
+HookResult
+.
+Continue
+;
+}
+Change how much damage a hit does
+​
+Set
+ev.Info.Damage
+.
+public
+override
+HookResult
+OnTakeDamage
+(
+TakeDamageEvent
+ev
+)
+{
+// Everything does double damage
+ev
+.
+Info
+.
+Damage
+*=
+2
+;
+return
+HookResult
+.
+Continue
+;
+}
+Only react to one ability or item
+​
+Check the name of
+ev.Info.Ability
+. The
+abilities database
+lists every name.
+public
+override
+HookResult
+OnTakeDamage
+(
+TakeDamageEvent
+ev
+)
+{
+if
+(
+ev
+.
+Info
+.
+Ability
+?.
+SubclassVData
+?.
+Name
+!=
+"upgrade_discord"
+)
+return
+HookResult
+.
+Continue
+;
+// This hit came from that item
+return
+HookResult
+.
+Continue
+;
+}
+Kill an entity
+​
+Hurt
+can't guarantee a kill. Build the hit yourself and add the
+ForceDeath
+flag.
+using
+var
+info
+=
+new
+CTakeDamageInfo
+(
+damage
+:
+1f
+,
+attacker
+:
+null
+,
+inflictor
+:
+null
+,
+ability
+:
+null
+,
+damageType
+:
+0
+)
+;
+info
+.
+DamageFlags
+=
+TakeDamageFlags
+.
+ForceDeath
+|
+TakeDamageFlags
+.
+AllowSuicide
+;
+target
+.
+TakeDamage
+(
+info
+)
+;
+Always create a
+CTakeDamageInfo
+with
+using
+, as above, so it's disposed after use.
+Change how a hit behaves
+​
+Build the hit the same way, with different flags.
+info
+.
+DamageFlags
+=
+TakeDamageFlags
+.
+PreventDeath
+;
+Common flags:
+PreventDeath
+: leaves the target on 1 health at worst.
+ForceDeath
+: always kills.
+SuppressDamageModification
+: ignores armor and resistances.
+SuppressPhysicsForce
+: deals no knockback.
+SuppressEffects
+: shows no visual effects.
+SuppressKillCredit
+: gives nobody the kill.

@@ -1,0 +1,32 @@
+# PenaltyType | Deadworks API
+URL: https://docs.deadworks.net/api-reference/admin/penaltytype
+
+API Reference
+Admin
+PenaltyType
+On this page
+PenaltyType
+What a
+Penalty
+stops a player doing.
+public
+enum
+PenaltyType
+Namespace:
+DeadworksManaged.Api
+Source:
+Admin/Penalties.cs#L6
+Values
+​
+Name
+Value
+Description
+Ban
+0
+Joining the server.
+Gag
+1
+Typing in chat.
+Mute
+2
+Talking on voice chat.

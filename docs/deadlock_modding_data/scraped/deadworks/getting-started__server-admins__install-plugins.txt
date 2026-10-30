@@ -1,0 +1,45 @@
+# Install plugins | Deadworks API
+URL: https://docs.deadworks.net/getting-started/server-admins/install-plugins
+
+Getting started for server admins
+2. Install plugins
+On this page
+Install plugins
+Find plugins on the
+Deadworks Discord
+.
+Add a plugin
+​
+Copy the plugin's
+.dll
+file, and any other
+.dll
+files it comes with, into
+game\bin\win64\managed\plugins\
+.
+Start the server, or, if it's running, wait a moment: Deadworks loads new and changed plugins without a restart.
+See what's installed
+​
+Run this in the server console:
+dw_plugin list
+dw_plugin commands <plugin>
+lists a plugin's commands.
+dw_help
+lists every command on the server.
+Change a plugin's settings
+​
+A plugin with settings creates a file the first time it loads, at
+game\bin\win64\configs\<Plugin>\<Plugin>.jsonc
+. Edit it, then run:
+dw_reloadconfig <Plugin>
+The server console prints the file, line and column of any mistake. The plugin keeps its previous settings until the file is fixed.
+Turn a plugin off
+​
+dw_plugin disable <Plugin>
+dw_plugin enable <Plugin>
+The setting is remembered across restarts. To remove a plugin for good, delete its
+.dll
+.
+Next
+​
+3. Set up admins

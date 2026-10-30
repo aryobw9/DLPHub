@@ -1,0 +1,231 @@
+# CommandAttribute | Deadworks API
+URL: https://docs.deadworks.net/api-reference/commands/commandattribute
+
+API Reference
+Commands
+CommandAttribute
+On this page
+CommandAttribute
+Registers a method as
+/name
+,
+!name
+, and
+dw_name
+with typed parameter binding.
+public
+sealed
+class
+CommandAttribute
+:
+Attribute
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+Attribute
+Source:
+Commands/CommandAttribute.cs#L5
+Constructors
+​
+new CommandAttribute()
+​
+Signature
+public
+CommandAttribute
+(
+string
+name
+,
+params
+string
+[
+]
+aliases
+)
+Parameters
+name
+: The command's name, without a prefix:
+"kick"
+creates
+/kick
+,
+!kick
+and
+dw_kick
+.
+aliases
+: Other names for the same command, created the same way.
+Source:
+Commands/CommandAttribute.cs#L42
+Properties
+​
+CommandAttribute.Names
+​
+The command's name followed by its aliases, without a prefix.
+Signature
+public
+string
+[
+]
+Names
+{
+get
+;
+}
+Source:
+Commands/CommandAttribute.cs#L8
+CommandAttribute.Description
+​
+One line for
+dw_help
+and the generated permission files, e.g. "Kick a player: kick <player> [reason]".
+Signature
+public
+string
+Description
+{
+get
+;
+set
+;
+}
+=
+""
+;
+Source:
+Commands/CommandAttribute.cs#L11
+CommandAttribute.Permission
+​
+Permission a player needs to run this command, e.g.
+admin.moderation.ban
+. Empty means anyone. The server console always may. Server owners can change it in
+configs/permissions/overrides.jsonc
+.
+Signature
+public
+string
+Permission
+{
+get
+;
+set
+;
+}
+=
+""
+;
+Source:
+Commands/CommandAttribute.cs#L17
+CommandAttribute.TargetImmunity
+​
+Whether
+Target
+parameters leave out players the caller can't target.
+Signature
+public
+TargetImmunity
+TargetImmunity
+{
+get
+;
+set
+;
+}
+=
+TargetImmunity
+.
+Auto
+;
+Source:
+Commands/CommandAttribute.cs#L20
+CommandAttribute.ServerOnly
+​
+Lets only the server console (and RCON) run the command, whatever permissions a player has.
+Signature
+public
+bool
+ServerOnly
+{
+get
+;
+set
+;
+}
+Source:
+Commands/CommandAttribute.cs#L23
+CommandAttribute.ChatOnly
+​
+Creates only
+/name
+and
+!name
+. Not even the server console can run it then.
+Signature
+public
+bool
+ChatOnly
+{
+get
+;
+set
+;
+}
+Source:
+Commands/CommandAttribute.cs#L26
+CommandAttribute.ConsoleOnly
+​
+Creates only
+dw_name
+. Players can still run it from their own game console, so use
+Permission
+or
+ServerOnly
+to keep it from them.
+Signature
+public
+bool
+ConsoleOnly
+{
+get
+;
+set
+;
+}
+Source:
+Commands/CommandAttribute.cs#L32
+CommandAttribute.SuppressChat
+​
+Hides
+!name
+from chat, like
+/name
+.
+Signature
+public
+bool
+SuppressChat
+{
+get
+;
+set
+;
+}
+Source:
+Commands/CommandAttribute.cs#L35
+CommandAttribute.Hidden
+​
+Leaves the command out of
+dw_help
+.
+Signature
+public
+bool
+Hidden
+{
+get
+;
+set
+;
+}
+Source:
+Commands/CommandAttribute.cs#L38

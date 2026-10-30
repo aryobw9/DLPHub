@@ -1,0 +1,61 @@
+# CGameSceneNode | Deadworks API
+URL: https://docs.deadworks.net/api-reference/entities/cgamescenenode
+
+API Reference
+Entities
+CGameSceneNode
+On this page
+CGameSceneNode
+Scene graph node that holds the entity's world transform and absolute origin.
+public
+class
+CGameSceneNode
+:
+NativeEntity
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+NativeEntity
+Source:
+Entities/CGameSceneNode.cs#L6
+Properties
+​
+CGameSceneNode.AbsOrigin
+​
+Signature
+public
+Vector3
+AbsOrigin
+{
+get
+;
+}
+Source:
+Entities/CGameSceneNode.cs#L10
+CGameSceneNode.AbsRotation
+​
+World rotation of this node as (pitch, yaw, roll) in degrees.
+Signature
+public
+Vector3
+AbsRotation
+{
+get
+;
+}
+Source:
+Entities/CGameSceneNode.cs#L14
+CGameSceneNode.Scale
+​
+Signature
+public
+float
+Scale
+{
+get
+;
+set
+;
+}
+Source:
+Entities/CGameSceneNode.cs#L17

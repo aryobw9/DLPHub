@@ -1,0 +1,170 @@
+# PawnExtensions | Deadworks API
+URL: https://docs.deadworks.net/api-reference/utils/pawnextensions
+
+API Reference
+Zones and Helpers
+PawnExtensions
+On this page
+PawnExtensions
+Common things to do to a player's hero: hold them in place and kill them. With
+using DeadworksManaged.Api.Utils;
+they're available on every
+CCitadelPlayerPawn
+.
+public
+static
+class
+PawnExtensions
+Namespace:
+DeadworksManaged.Api.Utils
+Source:
+Utils/PawnExtensions.cs#L14
+Example
+​
+// A 3 second countdown where nobody can move or be hurt.
+foreach
+(
+var
+player
+in
+Players
+.
+GetAll
+(
+)
+)
+player
+.
+GetHeroPawn
+(
+)
+?.
+Freeze
+(
+duration
+:
+3f
+)
+;
+Properties
+​
+PawnExtensions.IsFrozen
+​
+True while the hero is frozen by
+Freeze
+.
+Signature
+public
+bool
+IsFrozen
+{
+get
+;
+}
+Source:
+Utils/PawnExtensions.cs#L49
+Fields
+​
+PawnExtensions.FreezeModifier
+​
+The modifier
+Freeze
+uses to stop a hero moving. It's the root from Paige's and Grey Talon's abilities.
+Signature
+public
+const
+string
+FreezeModifier
+=
+"modifier_bookworm_immobilize"
+;
+Source:
+Utils/PawnExtensions.cs#L16
+PawnExtensions.InvulnerableModifier
+​
+The modifier
+Freeze
+uses for invulnerability. It's the protection heroes get inside the hideout.
+Signature
+public
+const
+string
+InvulnerableModifier
+=
+"modifier_citadel_in_hideout_zone"
+;
+Source:
+Utils/PawnExtensions.cs#L19
+Methods
+​
+PawnExtensions.Freeze()
+​
+Holds the hero in place. Until the freeze ends the player can only look around: they can't move, jump, dash, shoot or use abilities. With
+invulnerable
+, which is the default, weapons and abilities can't hurt them either.
+Kill
+still works on a frozen hero.
+Signature
+public
+bool
+Freeze
+(
+float
+?
+duration
+=
+null
+,
+bool
+invulnerable
+=
+true
+)
+Parameters
+duration
+: Seconds until the freeze wears off by itself. Leave it out to freeze until
+Unfreeze
+.
+invulnerable
+: Also protect the hero from damage for the same time.
+Returns
+False if the game couldn't apply the freeze.
+Source:
+Utils/PawnExtensions.cs#L33
+PawnExtensions.Unfreeze()
+​
+Ends a freeze from
+Freeze
+, including its invulnerability. Safe to call when the hero isn't frozen.
+Signature
+public
+void
+Unfreeze
+(
+)
+Source:
+Utils/PawnExtensions.cs#L54
+PawnExtensions.Kill()
+​
+Kills the hero. The damage skips resistances and protection, so it works even on an invulnerable hero, and the game treats it as an ordinary death: they wait out the usual death timer unless you pass
+respawnImmediately
+. A freeze from
+Freeze
+is lifted first, so they don't come back frozen.
+Signature
+public
+bool
+Kill
+(
+bool
+respawnImmediately
+=
+false
+)
+Parameters
+respawnImmediately
+: Bring the hero straight back instead of making them wait.
+Returns
+True if the hero was killed.
+Source:
+Utils/PawnExtensions.cs#L68

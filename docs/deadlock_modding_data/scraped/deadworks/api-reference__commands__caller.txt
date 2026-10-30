@@ -1,0 +1,208 @@
+# Caller | Deadworks API
+URL: https://docs.deadworks.net/api-reference/commands/caller
+
+API Reference
+Commands
+Caller
+On this page
+Caller
+Who ran a command: a player, or the server console (which includes rcon). Take it as the first parameter of a
+CommandAttribute
+method. Unlike a nullable controller, the console is explicit here, so a failed player lookup can never be mistaken for it.
+public
+sealed
+class
+Caller
+Namespace:
+DeadworksManaged.Api
+Source:
+Commands/Caller.cs#L13
+Notes
+​
+A player caller remembers who ran the command. Controllers outlive disconnects, so after an
+await
+the same controller may belong to someone who joined since; once the player has left,
+IsConnected
+is false,
+HasPermission
+and
+CanTarget
+refuse, and replies go nowhere.
+Properties
+​
+Caller.Console
+​
+The server console. It holds every permission and can target anyone.
+Signature
+public
+static
+Caller
+Console
+{
+get
+;
+}
+Source:
+Commands/Caller.cs#L16
+Caller.IsConsole
+​
+True for the server console (and rcon).
+Signature
+public
+bool
+IsConsole
+{
+get
+;
+}
+Source:
+Commands/Caller.cs#L34
+Caller.IsConnected
+​
+Whether the player who ran the command is still on the server. Always true for the console. Check it after an
+await
+before acting for them.
+Signature
+public
+bool
+IsConnected
+{
+get
+;
+}
+Source:
+Commands/Caller.cs#L40
+Caller.Player
+​
+The player who ran the command, or null for the console, or once they've left the server.
+Signature
+public
+CCitadelPlayerController
+?
+Player
+{
+get
+;
+}
+Source:
+Commands/Caller.cs#L44
+Caller.Name
+​
+The player's name when they ran the command, or "Console".
+Signature
+public
+string
+Name
+{
+get
+;
+}
+Source:
+Commands/Caller.cs#L47
+Caller.SteamId64
+​
+The SteamID the player connected with (see
+Permissions.GetSteamId64
+), or 0 for the console.
+Signature
+public
+ulong
+SteamId64
+{
+get
+;
+}
+Source:
+Commands/Caller.cs#L50
+Methods
+​
+Caller.Of()
+​
+A player caller.
+Signature
+public
+static
+Caller
+Of
+(
+CCitadelPlayerController
+player
+)
+Source:
+Commands/Caller.cs#L19
+Caller.HasPermission()
+​
+Whether the caller holds
+permission
+. The console holds everything; a player who has left, nothing.
+Signature
+public
+bool
+HasPermission
+(
+string
+permission
+)
+Source:
+Commands/Caller.cs#L53
+Caller.CanTarget()
+​
+Whether the caller may act on
+target
+given both players' immunity. The console may target anyone.
+Signature
+public
+bool
+CanTarget
+(
+CCitadelPlayerController
+target
+)
+public
+bool
+CanTarget
+(
+ulong
+steamId64
+)
+Source:
+Commands/Caller.cs#L56
+,
+Commands/Caller.cs#L62
+Caller.Reply()
+​
+A short reply: the player's chat, or the server console. Nothing if the player has left.
+Signature
+public
+void
+Reply
+(
+string
+message
+)
+Source:
+Commands/Caller.cs#L65
+Caller.PrintToConsole()
+​
+Output that doesn't fit in chat: the player's console, or the server console. Nothing if the player has left.
+Signature
+public
+void
+PrintToConsole
+(
+string
+message
+)
+Source:
+Commands/Caller.cs#L74
+Caller.ToString()
+​
+Signature
+public
+override
+string
+ToString
+(
+)
+Source:
+Commands/Caller.cs#L83

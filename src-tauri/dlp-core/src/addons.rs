@@ -111,7 +111,11 @@ pub fn install_addons(src: &Path, dst: &Path, only: &str, exclude: &str) -> std:
     }
 
     let mut installed: Vec<String> = remaining_owned;
-    let mut srcs: Vec<std::fs::DirEntry> = std::fs::read_dir(src)?.flatten().collect();
+    let mut srcs: Vec<std::fs::DirEntry> = if src.is_dir() {
+        std::fs::read_dir(src)?.flatten().collect()
+    } else {
+        vec![]
+    };
     srcs.sort_by_key(|e| e.file_name());
 
     for entry in srcs {

@@ -1,0 +1,31 @@
+# HookResult | Deadworks API
+URL: https://docs.deadworks.net/api-reference/enums/hookresult
+
+API Reference
+Enums
+HookResult
+On this page
+HookResult
+Return value for hooks and event handlers.
+Stop
+blocks further processing;
+Handled
+signals the event was consumed.
+public
+enum
+HookResult
+Namespace:
+DeadworksManaged.Api
+Source:
+Enums/HookResult.cs#L4
+Values
+​
+Name
+Value
+Description
+Continue
+0
+Stop
+1
+Handled
+2

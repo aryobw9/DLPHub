@@ -1,0 +1,40 @@
+# Duration | Deadworks API
+URL: https://docs.deadworks.net/api-reference/timers/duration
+
+API Reference
+Timers
+Duration
+On this page
+Duration
+Strongly-typed time value that can represent either game ticks or real (wall-clock) time. Created via extension methods:
+3.Seconds()
+,
+64.Ticks()
+,
+500.Milliseconds()
+.
+public
+readonly
+record
+struct
+Duration
+Namespace:
+DeadworksManaged.Api
+Source:
+Timer/Duration.cs#L7
+Operators
+​
+Duration implicit operator Duration
+​
+Signature
+public
+static
+implicit
+operator
+Duration
+(
+TimeSpan
+timeSpan
+)
+Source:
+Timer/Duration.cs#L22

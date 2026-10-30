@@ -1,0 +1,85 @@
+# Uploading content | Deadworks API
+URL: https://docs.deadworks.net/guides/uploading-content
+
+Guides
+Uploading content
+On this page
+Uploading content
+Being replaced
+This method will be deprecated soon. A new method is coming that doesn't depend on the central Deadworks backend.
+Custom content (Panorama addons, models, maps) reaches players through the Deadworks launcher. The launcher downloads whatever your server advertises before the game starts. Distributing a file takes two steps: upload it so clients can fetch it, then list it in the config so the server advertises it.
+Get your server token
+​
+Your server gets its credentials the first time it registers with the server browser. It saves them to:
+game/bin/win64/configs/ServerBrowser/credentials.json
+{
+"server_id"
+:
+"…"
+,
+"server_token"
+:
+"…"
+}
+note
+The file doesn't exist until the server registers. Start the server once and let it register before you look for the file.
+Upload
+​
+Go to
+https://deadworks.net/server/<server_id>/content
+, paste your
+server_token
+, and upload your assets.
+Names are globally unique
+Addon and map names are claimed across all of Deadworks, not per server. Once someone uploads content under a name, nobody else can reuse it. Pick a name specific to your server or project.
+List it in the config
+​
+Add each name under
+serverbrowser
+in
+game/bin/win64/configs/deadworks.jsonc
+, without the
+.vpk
+extension:
+{
+"serverbrowser": {
+"content_addons": ["myaddon"],
+"extra_maps": ["dl_express"]
+}
+}
+note
+The server reads the config once at startup. Restart the server after editing it.
+content_addons
+​
+VPKs the server mounts and clients download. On startup, the server advertises the list to connecting clients. It mounts each entry from
+deadworks_mods/vpks/<name>.vpk
+, so the VPK must be on the server as well as uploaded. The launcher puts the client's copy in
+citadel/deadworks_addons/vpks/
+.
+extra_maps
+​
+Maps clients download ahead of time. A map can't be mounted at runtime the way an addon can, so maps have their own list. The launcher downloads them into
+citadel/maps/
+before the game launches. List the name only, without an extension.
+Gotchas
+​
+An unlisted server distributes nothing.
+With
+"unlisted": true
+in the config, or
+-nomaster
+on the command line, the server never registers or sends heartbeats. It never mounts content addons, and it never gets credentials.
+Upload and config are separate steps.
+Uploading a file doesn't advertise it. Listing a name that was never uploaded gives clients nothing to download.
+Names must match everywhere.
+The string in
+content_addons
+is the VPK's filename without
+.vpk
+, on the server and in the upload alike.
+See also
+​
+UI panels
+: load a layout from an addon.
+Run a server
+: install and start a server.

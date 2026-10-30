@@ -1,0 +1,83 @@
+# RoleDefinition | Deadworks API
+URL: https://docs.deadworks.net/api-reference/permissions/roledefinition
+
+API Reference
+Permissions
+RoleDefinition
+On this page
+RoleDefinition
+A role from
+roles.jsonc
+(or a custom
+IPermissionStore
+).
+public
+sealed
+class
+RoleDefinition
+Namespace:
+DeadworksManaged.Api
+Source:
+Permissions/PermissionModels.cs#L4
+Properties
+​
+RoleDefinition.Permissions
+​
+Grants such as
+admin.moderation.kick
+,
+admin.moderation.*
+,
+*
+, or
+-admin.moderation.ban
+to deny.
+Signature
+public
+List
+<
+string
+>
+Permissions
+{
+get
+;
+set
+;
+}
+Source:
+Permissions/PermissionModels.cs#L7
+RoleDefinition.Inherits
+​
+Roles whose permissions this role also gets. The role's own permissions beat inherited ones.
+Signature
+public
+List
+<
+string
+>
+Inherits
+{
+get
+;
+set
+;
+}
+Source:
+Permissions/PermissionModels.cs#L10
+RoleDefinition.Immunity
+​
+Immunity for holders of this role. Null means the highest immunity of the roles it inherits, or 0.
+Signature
+public
+int
+?
+Immunity
+{
+get
+;
+set
+;
+}
+Source:
+Permissions/PermissionModels.cs#L13

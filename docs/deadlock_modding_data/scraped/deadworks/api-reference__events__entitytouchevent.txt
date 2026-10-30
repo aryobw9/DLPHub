@@ -1,0 +1,53 @@
+# EntityTouchEvent | Deadworks API
+URL: https://docs.deadworks.net/api-reference/events/entitytouchevent
+
+API Reference
+Events
+EntityTouchEvent
+On this page
+EntityTouchEvent
+Fired when two entities start or stop touching. Passed to
+IDeadworksPlugin.OnEntityStartTouch
+and
+IDeadworksPlugin.OnEntityEndTouch
+.
+public
+sealed
+class
+EntityTouchEvent
+Namespace:
+DeadworksManaged.Api
+Source:
+Events/EntityTouchEvent.cs#L4
+Properties
+​
+EntityTouchEvent.Entity
+​
+Signature
+public
+required
+CBaseEntity
+Entity
+{
+get
+;
+init
+;
+}
+Source:
+Events/EntityTouchEvent.cs#L5
+EntityTouchEvent.Other
+​
+Signature
+public
+required
+CBaseEntity
+Other
+{
+get
+;
+init
+;
+}
+Source:
+Events/EntityTouchEvent.cs#L6

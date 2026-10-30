@@ -1,0 +1,34 @@
+# CCitadelHeroComponent | Deadworks API
+URL: https://docs.deadworks.net/api-reference/entities/ccitadelherocomponent
+
+API Reference
+Entities
+CCitadelHeroComponent
+On this page
+CCitadelHeroComponent
+Hero component on a player pawn. Exposes the inline spawn data for the current hero.
+public
+class
+CCitadelHeroComponent
+:
+NativeEntity
+Namespace:
+DeadworksManaged.Api
+Inherits / implements:
+NativeEntity
+Source:
+Entities/CCitadelHeroComponent.cs#L4
+Properties
+​
+CCitadelHeroComponent.SpawnedHero
+​
+Signature
+public
+CitadelHeroSpawnData
+SpawnedHero
+{
+get
+;
+}
+Source:
+Entities/CCitadelHeroComponent.cs#L10

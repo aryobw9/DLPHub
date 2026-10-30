@@ -1,0 +1,108 @@
+# PlayerEntry | Deadworks API
+URL: https://docs.deadworks.net/api-reference/permissions/playerentry
+
+API Reference
+Permissions
+PlayerEntry
+On this page
+PlayerEntry
+A player's entry in
+players.jsonc
+(or a custom
+IPermissionStore
+).
+public
+sealed
+class
+PlayerEntry
+Namespace:
+DeadworksManaged.Api
+Source:
+Permissions/PermissionModels.cs#L17
+Properties
+​
+PlayerEntry.Name
+​
+A note for humans. Never used for matching.
+Signature
+public
+string
+?
+Name
+{
+get
+;
+set
+;
+}
+Source:
+Permissions/PermissionModels.cs#L20
+PlayerEntry.Roles
+​
+Names of roles in
+roles.jsonc
+. Everyone also has
+default
+.
+Signature
+public
+List
+<
+string
+>
+Roles
+{
+get
+;
+set
+;
+}
+Source:
+Permissions/PermissionModels.cs#L23
+PlayerEntry.Permissions
+​
+Grants on this player alone. They are checked before any role, so a deny here beats every role.
+Signature
+public
+List
+<
+string
+>
+Permissions
+{
+get
+;
+set
+;
+}
+Source:
+Permissions/PermissionModels.cs#L26
+PlayerEntry.Immunity
+​
+Replaces the immunity the player's roles would give them.
+Signature
+public
+int
+?
+Immunity
+{
+get
+;
+set
+;
+}
+Source:
+Permissions/PermissionModels.cs#L29
+Methods
+​
+PlayerEntry.Clone()
+​
+A copy whose lists can be changed without touching this entry.
+Signature
+public
+PlayerEntry
+Clone
+(
+)
+Source:
+Permissions/PermissionModels.cs#L32
