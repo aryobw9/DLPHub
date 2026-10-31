@@ -44,6 +44,9 @@ src-tauri/*.py
 
 # Documentation & Markdown files
 *.md
+!README.md
+!CHANGELOG.md
+!RELEASE_NOTES.md
 docs/
 
 # Tools, helper scripts & previews
