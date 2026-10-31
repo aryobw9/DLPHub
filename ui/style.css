@@ -9417,6 +9417,33 @@ body:not(.lang-fa) .vip-mode-tab {
   text-transform: uppercase;
 }
 
+.session-lobby-badge, .lan-lobby-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.roster-online-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-inline-start: 4px;
+}
+.roster-online-dot.online {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.7);
+}
+.roster-online-dot.offline {
+  background: #94a3b8;
+}
+
 .session-meta-center {
   display: flex;
   align-items: center;

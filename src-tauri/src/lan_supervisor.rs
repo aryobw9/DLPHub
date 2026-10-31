@@ -846,27 +846,19 @@ pub fn is_deadlock_running() -> bool {
 pub fn activate_deadlock_window() {
     #[cfg(windows)]
     {
-        let script = r#"
-        $p = Get-Process -Name deadlock -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($p -and $p.MainWindowHandle -ne 0) {
-            Add-Type -TypeDefinition @"
-            using System;
-            using System.Runtime.InteropServices;
-            public class User32 {
-                [DllImport("user32.dll")]
-                public static extern bool SetForegroundWindow(IntPtr hWnd);
-                [DllImport("user32.dll")]
-                public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-            }
-"@ -ErrorAction SilentlyContinue
-            [User32]::ShowWindow($p.MainWindowHandle, 9)
-            [User32]::SetForegroundWindow($p.MainWindowHandle)
+        extern "system" {
+            fn FindWindowW(class: *const u16, window: *const u16) -> isize;
+            fn SetForegroundWindow(hwnd: isize) -> i32;
+            fn ShowWindow(hwnd: isize, cmd: i32) -> i32;
         }
-        "#;
-        let _ = Command::new("powershell")
-            .args(["-NoProfile", "-NonInteractive", "-Command", script])
-            .creation_flags(CREATE_NO_WINDOW)
-            .spawn();
+        unsafe {
+            let title: Vec<u16> = "Deadlock\0".encode_utf16().collect();
+            let hwnd = FindWindowW(std::ptr::null(), title.as_ptr());
+            if hwnd != 0 {
+                ShowWindow(hwnd, 9); // SW_RESTORE
+                SetForegroundWindow(hwnd);
+            }
+        }
     }
 }
 
@@ -913,7 +905,11 @@ pub fn is_mod_environment_ready(deadlock_dir: &Path, mode: &str) -> bool {
 }
 
 pub fn launch_deadlock_target(target: &str) -> Result<(), String> {
-    let clean = target.trim().trim_start_matches("connect ").trim();
+    let mut raw = target.trim();
+    if raw.to_lowercase().starts_with("connect ") {
+        raw = raw[8..].trim();
+    }
+    let clean = raw.trim_matches(|c| c == '"' || c == '\'' || c == ';' || c == ' ');
     if clean.is_empty() || !clean.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == ':' || c == '-') {
         return Err("Invalid connect target format".into());
     }
@@ -921,11 +917,14 @@ pub fn launch_deadlock_target(target: &str) -> Result<(), String> {
     if parts.len() > 2 {
         return Err("Invalid connect target format".into());
     }
-    let ip = parts.first().copied().unwrap_or("127.0.0.1");
+    let mut ip = parts.first().copied().unwrap_or("127.0.0.1");
+    if ip.eq_ignore_ascii_case("localhost") {
+        ip = "127.0.0.1";
+    }
     let port: u16 = if parts.len() == 2 {
         parts[1].parse().map_err(|_| "Invalid port number in target".to_string())?
     } else {
-        27015
+        27005
     };
 
     // In-Game Console Pipe: If Deadlock is already running, connect directly via Steam URI pipe without restarting

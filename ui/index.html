@@ -1194,11 +1194,11 @@
                     <div class="probe-header">
                       <span class="probe-dot online"></span>
                       <span id="probe-server-name">Deadlock Dedicated Server</span>
-                      <span class="probe-ping" id="probe-ping-ms">-- ms</span>
+                      <span class="probe-ping" id="probe-ping-ms" dir="ltr">-- ms</span>
                     </div>
                     <div class="probe-details">
-                      <span>نقشه: <b id="probe-map-name">--</b></span>
-                      <span>بازیکنان: <b id="probe-players">0/12</b></span>
+                      <span><span data-i18n="probeMapLabel">نقشه:</span> <b id="probe-map-name" dir="ltr">--</b></span>
+                      <span><span data-i18n="probePlayersLabel">بازیکنان:</span> <b id="probe-players" dir="ltr">0/12</b></span>
                     </div>
                   </div>
                 </div>
@@ -1230,7 +1230,7 @@
                     </div>
                     <div class="vip-act-form">
                       <div class="vip-act-input-row">
-                        <input type="text" id="vip-key-input" class="vip-key-input" placeholder="DLP-VIP-XXXX-XXXX-XXXX" maxlength="24" dir="ltr" autocomplete="off" spellcheck="false" />
+                        <input type="text" id="vip-key-input" class="vip-key-input" placeholder="DLP-VIP-XXXX-XXXX-XXXX" maxlength="36" dir="ltr" autocomplete="off" spellcheck="false" />
                         <button type="button" class="btn-vip-redeem" id="btn-vip-redeem" onclick="redeemVipKeyAction()">
                           <i class="fa-solid fa-bolt"></i>
                           <span data-i18n="vipRedeemBtn">فعال‌سازی کلید</span>
@@ -1238,7 +1238,7 @@
                       </div>
                       <div class="vip-hwid-row">
                         <span class="vip-hwid-label" data-i18n="vipHwidLabel">شناسه سخت‌افزاری دستگاه:</span>
-                        <span class="vip-hwid-val" id="vip-hwid-display" onclick="copyHwid()" title="Click to copy">در حال دریافت...</span>
+                        <span class="vip-hwid-val" id="vip-hwid-display" onclick="copyHwid()" data-i18n="vipHwidLoading" dir="ltr" title="Click to copy">در حال دریافت...</span>
                       </div>
                     </div>
                   </div>
@@ -1261,7 +1261,7 @@
                   </div>
                   <div class="vip-extend-box" id="vip-extend-box" style="display:none;">
                     <div class="vip-act-input-row">
-                      <input type="text" id="vip-extend-key-input" class="vip-key-input" placeholder="DLP-VIP-XXXX-XXXX-XXXX" maxlength="24" dir="ltr" autocomplete="off" spellcheck="false" />
+                      <input type="text" id="vip-extend-key-input" class="vip-key-input" placeholder="DLP-VIP-XXXX-XXXX-XXXX" maxlength="36" dir="ltr" autocomplete="off" spellcheck="false" />
                       <button type="button" class="btn-vip-redeem btn-sm" id="btn-vip-extend-redeem" onclick="redeemVipExtendKeyAction()">
                         <i class="fa-solid fa-check"></i>
                         <span data-i18n="vipRedeemBtn">فعال‌سازی کلید</span>
@@ -1408,6 +1408,7 @@
                   </div>
                   <span class="session-mode-badge" id="session-conn-mode-badge">رله پرسرعت</span>
                   <span class="session-mod-badge" id="session-mod-mode-badge">دد‌ورکس پایه</span>
+                  <div class="session-lobby-badge" id="lan-lobby-badge" style="display:none;"></div>
                 </div>
 
                 <div class="session-meta-center">
@@ -1415,7 +1416,7 @@
                   <div class="session-code-pill session-pill-room-code" id="session-room-code-pill" onclick="copyLobbyCode()" data-tooltip="کپی کد ۶ رقمی لابی" style="display:none;">
                     <i class="fa-solid fa-key pill-icon"></i>
                     <span class="session-code-label" data-i18n="sessionRoomCodeLabel">کد لابی:</span>
-                    <span class="session-code-val session-code-highlight" id="session-room-code-display">------</span>
+                    <span class="session-code-val session-code-highlight" id="session-room-code-display" dir="ltr">------</span>
                     <i class="fa-solid fa-copy pill-copy-icon"></i>
                   </div>
 
@@ -1427,7 +1428,7 @@
                     <i class="fa-solid fa-copy pill-copy-icon"></i>
                   </div>
 
-                  <div class="session-ping-pill" id="session-ping-pill">
+                  <div class="session-ping-pill" id="session-ping-pill" dir="ltr" style="unicode-bidi:isolate;">
                     <i class="fa-solid fa-signal"></i>
                     <span id="session-ping-val">12 ms</span>
                   </div>
@@ -1581,6 +1582,22 @@
                       <button type="button" class="btn-apply btn-glow-hero" id="btn-session-host-join" onclick="joinSessionSelfAction()" style="display:none;">
                         <i class="fa-solid fa-gamepad"></i>
                         <span data-i18n="sessionJoinSelf">ورود به سرور و اجرای بازی</span>
+                      </button>
+                    </div>
+
+                    <!-- Host Quick Share Actions (Invite Friends) -->
+                    <div class="session-share-bar" id="session-host-share-bar" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+                      <button type="button" class="btn-reset btn-sm" id="btn-session-deadworks-copy-code" onclick="copyLobbyCode()" style="flex:1; min-width:120px;" data-tooltip="کپی کد ۶ رقمی لابی برای دوستان">
+                        <i class="fa-solid fa-key" style="color:#38bdf8;"></i>
+                        <span data-i18n="sessionCopyLobbyCode">کپی کد لابی</span>
+                      </button>
+                      <button type="button" class="btn-reset btn-sm" onclick="copyClientShareCmd()" style="flex:1; min-width:140px;" data-tooltip="کپی دستور اتصال اختصاصی برای دوستان">
+                        <i class="fa-solid fa-share-nodes" style="color:#34d399;"></i>
+                        <span data-i18n="sessionCopyShareCmd">کپی دستور اتصال برای دوستان</span>
+                      </button>
+                      <button type="button" class="btn-reset btn-sm" onclick="copySessionTarget()" style="flex:1; min-width:120px;" data-tooltip="کپی دستور کنسول میزبان">
+                        <i class="fa-solid fa-terminal"></i>
+                        <span data-i18n="sessionCopyConsoleCmd">کپی دستور کنسول</span>
                       </button>
                     </div>
 
