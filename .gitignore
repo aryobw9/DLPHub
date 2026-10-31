@@ -27,14 +27,31 @@ dist-ssr
 *.sw?
 .freebuff/
 
+# Cargo target & Tauri build artifacts
+src-tauri/target/
 src-tauri/gen/schemas/
-
-# build scripts / generated
 src-tauri/nsis_hooks.nsh
+
+# Python bytecode & scripts
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# Release artifacts & large files (>100MB)
+# Standalone Python scripts & builders (not needed to build app)
+*.py
+src-tauri/*.py
+
+# Documentation & Markdown files
+*.md
+docs/
+
+# Tools, helper scripts & previews
+tools/
+scripts/
+ui/preview-*.html
+
+# Release artifacts, executables & bundles (>100MB)
 release_dist/
 *.full
 payload.zip.full
@@ -43,12 +60,16 @@ payload.zip.full
 DLPHub.exe
 *.exe
 
-
-# Runtime storage & local matches
+# Runtime storage, matches & server loaders
 DLPHubStorage/
 lan_matches/
 server_loader/
+server_loader.zip
+client_*.zip
 
-# Admin console & credentials
+# Admin console, keys & credentials
 admin_console/
-
+*.key
+*.pem
+*key*.txt
+admin_config.json

@@ -2028,8 +2028,14 @@
       }
     };
 
-    // Browser Preview Simulator Shim for Tauri IPC
-    if (!window.__TAURI__) {
+    // Browser Preview Simulator Shim for standalone browser testing only (never in Tauri runtime)
+    const isTauriContext = !!(
+      window.__TAURI_INTERNALS__ ||
+      window.__TAURI__ ||
+      window.location.hostname === 'tauri.localhost' ||
+      window.location.protocol.startsWith('tauri')
+    );
+    if (!isTauriContext) {
       window.__TAURI__ = {
         core: {
           invoke: async (cmd, args) => {

@@ -278,7 +278,7 @@ pub fn restore(citadel: &Path, data_dir: &Path, name: &str) -> Result<RestoreRep
         let content = std::fs::read_to_string(&man).map_err(|e| e.to_string())?;
         for ln in content.lines() {
             let n = ln.trim();
-            if n.is_empty() {
+            if n.is_empty() || n.contains('/') || n.contains('\\') || n.contains("..") || n == "." {
                 continue;
             }
             let p = citadel.join("addons").join(n);
@@ -363,7 +363,9 @@ pub fn revert_original(citadel: &Path) -> Result<RestoreReport, String> {
         let mut failed: Vec<String> = vec![];
         for ln in content.lines() {
             let n = ln.trim();
-            if n.is_empty() { continue; }
+            if n.is_empty() || n.contains('/') || n.contains('\\') || n.contains("..") || n == "." {
+                continue;
+            }
             let p = citadel.join("addons").join(n);
             if p.is_file() {
                 if std::fs::remove_file(&p).is_ok() {

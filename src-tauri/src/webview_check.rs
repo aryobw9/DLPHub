@@ -123,17 +123,28 @@ or press Cancel to attempt launching anyway.";
         // 2. Ensure wintun.dll in cache
         let _ = crate::lan_engine::ensure_wintun_dll();
 
-        // 3. Add cache directory to Windows DLL search directory so LoadLibrary finds both DLLs anywhere
+        // 3. Explicitly load WebView2Loader.dll from its absolute cache path
+        // using LOAD_WITH_ALTERED_SEARCH_PATH to avoid adding unprivileged AppData to the DLL search path
         unsafe {
             #[link(name = "kernel32")]
             extern "system" {
-                fn SetDllDirectoryW(lpPathName: *const u16) -> i32;
+                fn LoadLibraryExW(
+                    lpLibFileName: *const u16,
+                    hFile: *mut std::ffi::c_void,
+                    dwFlags: u32,
+                ) -> *mut std::ffi::c_void;
             }
-            let wide_path: Vec<u16> = local_dir.as_os_str()
+            let wide_path: Vec<u16> = webview_dll
+                .as_os_str()
                 .encode_wide()
                 .chain(std::iter::once(0))
                 .collect();
-            SetDllDirectoryW(wide_path.as_ptr());
+            const LOAD_WITH_ALTERED_SEARCH_PATH: u32 = 0x0000_0008;
+            let _ = LoadLibraryExW(
+                wide_path.as_ptr(),
+                std::ptr::null_mut(),
+                LOAD_WITH_ALTERED_SEARCH_PATH,
+            );
         }
     }
 }

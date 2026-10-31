@@ -114,7 +114,7 @@ fn save_to(dir: &PathBuf, s: &Settings) -> std::io::Result<()> {
     std::fs::create_dir_all(dir)?;
     use std::io::Write;
     let tmp = dir.join("settings.json.tmp");
-    let mut file = std::fs::OpenOptions::new().write(true).create_new(true).open(&tmp)?;
+    let mut file = std::fs::OpenOptions::new().write(true).create(true).truncate(true).open(&tmp)?;
     let result = (|| {
         file.write_all(serde_json::to_string_pretty(s)?.as_bytes())?;
         file.sync_all()?;

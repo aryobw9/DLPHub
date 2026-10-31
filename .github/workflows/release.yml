@@ -37,6 +37,9 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
+      - name: Run Cargo Tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml --workspace
+
       - name: Build Portable EXE
         env:
           RUSTFLAGS: "-C link-arg=/OPT:REF -C link-arg=/OPT:ICF"
@@ -55,6 +58,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: DLPHub.exe
-          body_path: RELEASE_NOTES.md
+          body: "DLPHub Portable Release"
           draft: false
           prerelease: false

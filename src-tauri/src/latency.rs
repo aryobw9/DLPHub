@@ -1576,13 +1576,31 @@ pub fn deep_benchmark_dns_profiles(duration_secs: u32) -> Vec<DnsProfile> {
 }
 
 pub fn apply_dns_to_adapters(primary: &str, secondary: &str) -> Result<(), String> {
+    primary.parse::<std::net::IpAddr>().map_err(|e| format!("Invalid primary DNS IP: {e}"))?;
+    secondary.parse::<std::net::IpAddr>().map_err(|e| format!("Invalid secondary DNS IP: {e}"))?;
+
     let adapters = get_active_network_adapters();
-    if adapters.is_empty() {
-        return Err("No active network adapter found.".to_string());
+    let safe_adapters: Vec<&String> = adapters
+        .iter()
+        .filter(|a| {
+            !a.is_empty()
+                && a.chars().all(|c| c.is_alphanumeric() || c == ' ' || c == '-' || c == '_' || c == '.')
+                && !a.contains('"')
+                && !a.contains('\'')
+                && !a.contains('`')
+                && !a.contains('$')
+                && !a.contains(';')
+                && !a.contains('|')
+                && !a.contains('&')
+        })
+        .collect();
+
+    if safe_adapters.is_empty() {
+        return Err("No active, valid network adapter found.".to_string());
     }
 
     let mut script = String::new();
-    for a in &adapters {
+    for a in safe_adapters {
         script.push_str(&format!(
             "netsh interface ipv4 set dnsservers name=\"{name}\" source=static address=\"{p}\" register=primary ; \
              netsh interface ipv4 add dnsservers name=\"{name}\" address=\"{s}\" index=2 ;\n",
@@ -1597,12 +1615,27 @@ pub fn apply_dns_to_adapters(primary: &str, secondary: &str) -> Result<(), Strin
 
 pub fn reset_dns_to_dhcp_adapters() -> Result<(), String> {
     let adapters = get_active_network_adapters();
-    if adapters.is_empty() {
-        return Err("No active network adapter found.".to_string());
+    let safe_adapters: Vec<&String> = adapters
+        .iter()
+        .filter(|a| {
+            !a.is_empty()
+                && a.chars().all(|c| c.is_alphanumeric() || c == ' ' || c == '-' || c == '_' || c == '.')
+                && !a.contains('"')
+                && !a.contains('\'')
+                && !a.contains('`')
+                && !a.contains('$')
+                && !a.contains(';')
+                && !a.contains('|')
+                && !a.contains('&')
+        })
+        .collect();
+
+    if safe_adapters.is_empty() {
+        return Err("No active, valid network adapter found.".to_string());
     }
 
     let mut script = String::new();
-    for a in &adapters {
+    for a in safe_adapters {
         script.push_str(&format!(
             "netsh interface ipv4 set dnsservers name=\"{name}\" source=dhcp ;\n",
             name = a

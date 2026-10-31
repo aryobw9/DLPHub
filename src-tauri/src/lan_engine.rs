@@ -24,12 +24,15 @@ pub struct LanEngineHandle {
     stop_flag: Arc<AtomicBool>,
     socket: Arc<UdpSocket>,
     session: Arc<wintun::Session>,
+    _adapter: Arc<wintun::Adapter>,
+    _wintun: Arc<wintun::Wintun>,
+    threads: Vec<thread::JoinHandle<()>>,
     room_token: u32,
     virtual_ip: String,
 }
 
 impl LanEngineHandle {
-    pub fn stop(&self) {
+    pub fn stop(&mut self) {
         self.stop_flag.store(true, Ordering::SeqCst);
         let _ = self.session.shutdown();
 
@@ -49,6 +52,17 @@ impl LanEngineHandle {
         if let Ok(server_addr) = VPS_UDP_ADDR.parse::<SocketAddr>() {
             let _ = self.socket.send_to(&leave, server_addr);
         }
+
+        // Gracefully join worker threads before session or adapter drop
+        for h in self.threads.drain(..) {
+            let _ = h.join();
+        }
+    }
+}
+
+impl Drop for LanEngineHandle {
+    fn drop(&mut self) {
+        self.stop();
     }
 }
 
@@ -80,8 +94,8 @@ pub fn start_lan_engine(room_token: u32, virtual_ip: &str, subnet_mask: &str) ->
     stop_lan_engine();
 
     let dll_path = ensure_wintun_dll()?;
-    let wintun = unsafe { wintun::load_from_path(&dll_path) }
-        .map_err(|e| format!("Failed to load wintun.dll: {e}"))?;
+    let wintun = Arc::new(unsafe { wintun::load_from_path(&dll_path) }
+        .map_err(|e| format!("Failed to load wintun.dll: {e}"))?);
 
     // Create or open Wintun adapter
     let adapter = match wintun::Adapter::create(&wintun, "DLPHub LAN", "DLPHub Virtual Network", None) {
@@ -247,7 +261,7 @@ pub fn start_lan_engine(room_token: u32, virtual_ip: &str, subnet_mask: &str) ->
         .collect();
 
     // 1. Thread: Wintun (TUN) -> UDP Socket (VPS) - TYPE_PACKET (0x03)
-    {
+    let tx_handle = {
         let session_recv = session.clone();
         let socket_send = socket.clone();
         let stop_clone = stop_flag.clone();
@@ -277,11 +291,11 @@ pub fn start_lan_engine(room_token: u32, virtual_ip: &str, subnet_mask: &str) ->
                     }
                 }
             })
-            .map_err(|e| format!("Failed to spawn TX thread: {e}"))?;
-    }
+            .map_err(|e| format!("Failed to spawn TX thread: {e}"))?
+    };
 
     // 2. Thread: UDP Socket (VPS) -> Wintun (TUN) - TYPE_PACKET (0x03)
-    {
+    let rx_handle = {
         let session_send = session.clone();
         let socket_recv = socket.clone();
         let stop_clone = stop_flag.clone();
@@ -306,11 +320,11 @@ pub fn start_lan_engine(room_token: u32, virtual_ip: &str, subnet_mask: &str) ->
                     }
                 }
             })
-            .map_err(|e| format!("Failed to spawn RX thread: {e}"))?;
-    }
+            .map_err(|e| format!("Failed to spawn RX thread: {e}"))?
+    };
 
     // 3. Thread: Handshake & Keepalive Pinger (TYPE_HANDSHAKE 0x01)
-    {
+    let ping_handle = {
         let socket_ping = socket.clone();
         let stop_clone = stop_flag.clone();
         let octets_clone = vip_octets.clone();
@@ -345,13 +359,16 @@ pub fn start_lan_engine(room_token: u32, virtual_ip: &str, subnet_mask: &str) ->
                     }
                 }
             })
-            .map_err(|e| format!("Failed to spawn Keepalive thread: {e}"))?;
-    }
+            .map_err(|e| format!("Failed to spawn Keepalive thread: {e}"))?
+    };
 
     *CURRENT_HANDLE.lock().unwrap() = Some(LanEngineHandle {
         stop_flag,
         socket,
         session,
+        _adapter: adapter,
+        _wintun: wintun,
+        threads: vec![tx_handle, rx_handle, ping_handle],
         room_token,
         virtual_ip: virtual_ip.to_string(),
     });
@@ -360,7 +377,7 @@ pub fn start_lan_engine(room_token: u32, virtual_ip: &str, subnet_mask: &str) ->
 }
 
 pub fn stop_lan_engine() {
-    if let Some(handle) = CURRENT_HANDLE.lock().unwrap().take() {
+    if let Some(mut handle) = CURRENT_HANDLE.lock().unwrap().take() {
         handle.stop();
     }
 }

@@ -21,7 +21,13 @@ function call(cmd, args) {
     console.warn('[IPC WARNING] invoke not available, command:', cmd);
     return Promise.reject(new Error('tauri ipc not ready'));
   }
-  return inv(cmd, args).catch((err) => {
+  const timeoutMs = 25000;
+  return Promise.race([
+    inv(cmd, args),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`[IPC TIMEOUT] ${cmd} timed out after ${timeoutMs}ms`)), timeoutMs)
+    )
+  ]).catch((err) => {
     console.error(`[IPC ERROR] ${cmd}:`, err);
     return Promise.reject(err);
   });
@@ -2407,7 +2413,7 @@ function relayCardHtml(s, featured) {
             </div>
             <div class="fc-btn-wrap">
               ${statusBadge}
-              <button class="fc-btn-toggle ${isBlocked ? 'is-blocked-action' : 'is-allow-action'}" onclick="toggleCluster('${s.id}', ${!isBlocked})">
+              <button class="fc-btn-toggle ${isBlocked ? 'is-blocked-action' : 'is-allow-action'}" data-cluster-id="${escapeHtml(s.id)}" data-blocked="${!isBlocked}" onclick="toggleCluster(this.dataset.clusterId, this.dataset.blocked === 'true')">
                 <i class="fa-solid ${toggleBtnIcon}"></i> <span>${toggleBtnText}</span>
               </button>
             </div>
@@ -2442,7 +2448,7 @@ function relayCardHtml(s, featured) {
 
       <div class="pc-action-row">
         ${statusBadge}
-        <button class="pc-btn-toggle ${isBlocked ? 'is-blocked-action' : 'is-allow-action'}" onclick="toggleCluster('${s.id}', ${!isBlocked})">
+        <button class="pc-btn-toggle ${isBlocked ? 'is-blocked-action' : 'is-allow-action'}" data-cluster-id="${escapeHtml(s.id)}" data-blocked="${!isBlocked}" onclick="toggleCluster(this.dataset.clusterId, this.dataset.blocked === 'true')">
           <i class="fa-solid ${toggleBtnIcon}"></i> <span>${toggleBtnText}</span>
         </button>
       </div>
@@ -2469,7 +2475,7 @@ function dnsCardHtml(p) {
       </div>
       <div class="dns-footer-row">
         <div class="dns-latency-val mono"><i class="fa-solid fa-bolt"></i> ${pingVal}</div>
-        <button class="btn-apply-dns-card ${isActive ? 'is-active' : ''}" onclick="applyDnsProfile('${p.id}')">
+        <button class="btn-apply-dns-card ${isActive ? 'is-active' : ''}" data-dns-id="${escapeHtml(p.id)}" onclick="applyDnsProfile(this.dataset.dnsId)">
           ${isActive ? `<i class="fa-solid fa-circle-check"></i> ${t('activeDnsBadge')}` : `<i class="fa-solid fa-check"></i> ${t('applyDnsBtn')}`}
         </button>
       </div>
@@ -6128,7 +6134,7 @@ function renderCameraSwitches(preset) {
         <span class="camera-switch-cvar">${item.key}</span>
       </div>
       <div class="neon-checkbox">
-        <input type="checkbox" id="cam-${item.key}" ${isChecked ? 'checked' : ''} onchange="toggleCameraOverride('${item.key}', this.checked ? '${item.val}' : '${item.def}')">
+        <input type="checkbox" id="cam-${escapeHtml(item.key)}" ${isChecked ? 'checked' : ''} data-key="${escapeHtml(item.key)}" data-val="${escapeHtml(item.val)}" data-def="${escapeHtml(item.def)}" onchange="toggleCameraOverride(this.dataset.key, this.checked ? this.dataset.val : this.dataset.def)">
         <div class="neon-checkbox__frame">
           <div class="neon-checkbox__box">
             <div class="neon-checkbox__check-container">
@@ -6280,8 +6286,9 @@ function createConvarRowElement(item, isFa) {
     controlHtml = `
       <button type="button" 
         class="convar-item-val-input cvar-bool-btn ${isTrue ? 'is-true' : 'is-false'}" 
-        onclick="toggleConvarBool('${item.key}')" 
-        onwheel="handleBoolWheel(event, '${item.key}')"
+        data-cvar="${escapeHtml(item.key)}"
+        onclick="toggleConvarBool(this.dataset.cvar)"
+        onwheel="handleBoolWheel(event, this.dataset.cvar)"
         title="${btnTitle}">
         ${isTrue ? 'true' : 'false'}
       </button>
@@ -6299,8 +6306,8 @@ function createConvarRowElement(item, isFa) {
         data-kind="${item.isFloat ? 'float' : (item.meta.kind || 'int')}"
         data-min="${item.minVal}"
         data-max="${item.maxVal}"
-        onchange="onConvarNumericChange('${item.key}', this.value, ${item.isFloat}, '${item.minVal}', '${item.maxVal}')"
-        ${isNumeric ? `onwheel="handleConvarInputWheel(event, this, '${item.key}', ${item.isFloat}, '${item.minVal}', '${item.maxVal}')"` : ''}
+        onchange="onConvarNumericChange(this.dataset.cvar, this.value, ${item.isFloat}, this.dataset.min, this.dataset.max)"
+        ${isNumeric ? `onwheel="handleConvarInputWheel(event, this, this.dataset.cvar, ${item.isFloat}, '${item.minVal}', '${item.maxVal}')"` : ''}
         ${isNumeric ? `onkeydown="handleConvarInputKeydown(event, ${item.isFloat}, '${item.minVal}')"` : ''}
         ${isNumeric ? `oninput="sanitizeConvarNumericInput(this, ${item.isFloat}, '${item.minVal}')"` : ''}
         title="${numTitle}"

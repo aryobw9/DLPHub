@@ -486,6 +486,7 @@ pub fn apply_optimization_flow(
                     req.fps_limit.as_deref(),
                 );
                 let _ = std::fs::write(&vd_path, merged_v);
+                let _ = crate::backup::set_readonly(&vd_path, true);
                 log.push(crate::install::StepLog {
                     step: "video.txt".into(),
                     detail: if req.level >= 2 {
@@ -508,6 +509,12 @@ pub fn apply_optimization_flow(
         allowed.push("pak01_dir.vpk");
         allowed.push("pak02_dir.vpk");
         allowed.push("pak03_dir.vpk");
+        let all = ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak30_dir.vpk", "pak31_dir.vpk"];
+        let excluded: Vec<&str> = all.iter().copied().filter(|k| !allowed.contains(k)).collect();
+        (allowed.join(","), excluded.join(","))
+    } else if req.level == 4 {
+        // Level 4: Russian Potato Mode (pak30 texture downscaler + mods)
+        let allowed = vec!["pak30_dir.vpk", "pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk"];
         let all = ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak30_dir.vpk", "pak31_dir.vpk"];
         let excluded: Vec<&str> = all.iter().copied().filter(|k| !allowed.contains(k)).collect();
         (allowed.join(","), excluded.join(","))
@@ -558,6 +565,7 @@ pub fn apply_fov_only_flow(
         if let Ok(curr_video) = std::fs::read_to_string(&vd_path) {
             let merged = merge_video_settings(&curr_video, &[], Some(fov), None);
             let _ = std::fs::write(&vd_path, merged);
+            let _ = crate::backup::set_readonly(&vd_path, true);
         }
     }
 
@@ -592,6 +600,7 @@ pub fn apply_fps_only_flow(
         if let Ok(curr_video) = std::fs::read_to_string(&vd_path) {
             let merged = merge_video_settings(&curr_video, &[], None, Some(fps_limit));
             let _ = std::fs::write(&vd_path, merged);
+            let _ = crate::backup::set_readonly(&vd_path, true);
         }
     }
 
@@ -635,15 +644,28 @@ pub fn revert_optimization_flow(
     }
 
     let addons_dir = citadel.join("addons");
-    if addons_dir.is_dir() {
-        let rep = crate::addons::install_addons(&addons_dir, &addons_dir, "", "pak01_dir.vpk,pak02_dir.vpk,pak03_dir.vpk,pak30_dir.vpk,pak31_dir.vpk")
-            .map_err(|e| e.to_string())?;
-        log.push(crate::install::StepLog {
-            step: "addons".into(),
-            detail: format!("cleaned up DLPHub addons ({} removed)", rep.removed.len()),
-            skipped: rep.removed.is_empty(),
-        });
+    let man = citadel.join("addons_manifest.txt");
+    let mut removed_count = 0;
+    if man.is_file() {
+        if let Ok(content) = std::fs::read_to_string(&man) {
+            for ln in content.lines() {
+                let n = ln.trim();
+                if n.is_empty() || n.contains('/') || n.contains('\\') || n.contains("..") || n == "." {
+                    continue;
+                }
+                let p = addons_dir.join(n);
+                if p.is_file() && std::fs::remove_file(&p).is_ok() {
+                    removed_count += 1;
+                }
+            }
+        }
+        let _ = std::fs::remove_file(&man);
     }
+    log.push(crate::install::StepLog {
+        step: "addons".into(),
+        detail: format!("cleaned up DLPHub addons ({} removed)", removed_count),
+        skipped: removed_count == 0,
+    });
 
     Ok(log)
 }

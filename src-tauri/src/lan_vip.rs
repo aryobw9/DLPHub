@@ -428,8 +428,13 @@ pub async fn leave_vip_room(
         .build()
         .map_err(|e| e.to_string())?;
 
+    let hwid = get_machine_hwid();
     let url = format!("{}/api/room/{}", api_base.trim_end_matches('/'), room_code.trim());
-    let _ = client.delete(&url).send().await;
+    let mut req = client.delete(&url);
+    if !hwid.is_empty() {
+        req = req.header("X-HWID", hwid);
+    }
+    let _ = req.send().await;
 
     stop_relay();
     stop_lan_engine();

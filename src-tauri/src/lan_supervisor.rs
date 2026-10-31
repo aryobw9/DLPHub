@@ -5,10 +5,17 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use crate::lan_proxy::{start_udp_proxy, ProxyConfig, ProxyHandle};
+
+pub static IS_SERVER_RUNNING: AtomicBool = AtomicBool::new(false);
+
+pub fn is_server_running() -> bool {
+    IS_SERVER_RUNNING.load(Ordering::Relaxed)
+}
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -544,6 +551,7 @@ pub async fn start_dedicated_server(config: LanHostConfig) -> Result<LanServerSt
         }
     });
 
+    IS_SERVER_RUNNING.store(true, Ordering::Relaxed);
     Ok(LanServerStatus {
         is_running: true,
         pid: pid_opt,
@@ -624,104 +632,110 @@ pub fn stop_dedicated_server() -> Result<(), String> {
         let _ = restore_gameinfo_vanilla(Path::new(&found.deadlock));
     }
 
+    IS_SERVER_RUNNING.store(false, Ordering::Relaxed);
     Ok(())
 }
 
 /// Check current server status
 pub fn get_server_status() -> LanServerStatus {
-    let state_arc = get_server_state();
-    if let Ok(mut state) = state_arc.lock() {
-        if let Some(child) = state.child.as_mut() {
-            match child.try_wait() {
-                Ok(None) => {
+    let status = (|| {
+        let state_arc = get_server_state();
+        if let Ok(mut state) = state_arc.lock() {
+            if let Some(child) = state.child.as_mut() {
+                match child.try_wait() {
+                    Ok(None) => {
+                        return LanServerStatus {
+                            is_running: true,
+                            pid: Some(child.id()),
+                            host_ip: state.config.host_ip.clone(),
+                            public_port: state.config.public_port,
+                            map_name: state.config.map_name.clone(),
+                            crashed: false,
+                            exit_code: None,
+                        };
+                    }
+                    Ok(Some(status)) => {
+                        let exit_code = status.code();
+                        if !state.user_stopped {
+                            state.crashed = true;
+                            state.last_exit_code = exit_code;
+                        }
+                        state.child = None;
+                        if let Some(p) = state.proxy.take() {
+                            p.stop();
+                        }
+                    }
+                    Err(_) => {
+                        if !state.user_stopped {
+                            state.crashed = true;
+                        }
+                        state.child = None;
+                        if let Some(p) = state.proxy.take() {
+                            p.stop();
+                        }
+                    }
+                }
+            } else if state.proxy.is_some() {
+                // Elevated server running with active proxy
+                let is_alive = if let Some(pid) = state.elevated_pid {
+                    Command::new("tasklist")
+                        .args(["/FI", &format!("PID eq {pid}"), "/NH"])
+                        .creation_flags(CREATE_NO_WINDOW)
+                        .output()
+                        .map(|o| {
+                            let s = String::from_utf8_lossy(&o.stdout);
+                            s.contains(&pid.to_string())
+                        })
+                        .unwrap_or(false)
+                } else {
+                    false
+                };
+
+                if is_alive {
                     return LanServerStatus {
                         is_running: true,
-                        pid: Some(child.id()),
+                        pid: state.elevated_pid,
                         host_ip: state.config.host_ip.clone(),
                         public_port: state.config.public_port,
                         map_name: state.config.map_name.clone(),
                         crashed: false,
                         exit_code: None,
                     };
-                }
-                Ok(Some(status)) => {
-                    let exit_code = status.code();
-                    if !state.user_stopped {
-                        state.crashed = true;
-                        state.last_exit_code = exit_code;
-                    }
-                    state.child = None;
-                    if let Some(p) = state.proxy.take() {
-                        p.stop();
-                    }
-                }
-                Err(_) => {
+                } else {
                     if !state.user_stopped {
                         state.crashed = true;
                     }
-                    state.child = None;
+                    state.elevated_pid = None;
                     if let Some(p) = state.proxy.take() {
                         p.stop();
                     }
                 }
             }
-        } else if state.proxy.is_some() {
-            // Elevated server running with active proxy
-            let is_alive = if let Some(pid) = state.elevated_pid {
-                Command::new("tasklist")
-                    .args(["/FI", &format!("PID eq {pid}"), "/NH"])
-                    .creation_flags(CREATE_NO_WINDOW)
-                    .output()
-                    .map(|o| {
-                        let s = String::from_utf8_lossy(&o.stdout);
-                        s.contains(&pid.to_string())
-                    })
-                    .unwrap_or(false)
-            } else {
-                false
-            };
 
-            if is_alive {
-                return LanServerStatus {
-                    is_running: true,
-                    pid: state.elevated_pid,
-                    host_ip: state.config.host_ip.clone(),
-                    public_port: state.config.public_port,
-                    map_name: state.config.map_name.clone(),
-                    crashed: false,
-                    exit_code: None,
-                };
-            } else {
-                if !state.user_stopped {
-                    state.crashed = true;
-                }
-                state.elevated_pid = None;
-                if let Some(p) = state.proxy.take() {
-                    p.stop();
-                }
-            }
+            return LanServerStatus {
+                is_running: false,
+                pid: None,
+                host_ip: String::new(),
+                public_port: state.config.public_port,
+                map_name: state.config.map_name.clone(),
+                crashed: state.crashed,
+                exit_code: state.last_exit_code,
+            };
         }
 
-        return LanServerStatus {
+        LanServerStatus {
             is_running: false,
             pid: None,
             host_ip: String::new(),
-            public_port: state.config.public_port,
-            map_name: state.config.map_name.clone(),
-            crashed: state.crashed,
-            exit_code: state.last_exit_code,
-        };
-    }
+            public_port: 27015,
+            map_name: String::new(),
+            crashed: false,
+            exit_code: None,
+        }
+    })();
 
-    LanServerStatus {
-        is_running: false,
-        pid: None,
-        host_ip: String::new(),
-        public_port: 27015,
-        map_name: String::new(),
-        crashed: false,
-        exit_code: None,
-    }
+    IS_SERVER_RUNNING.store(status.is_running, Ordering::Relaxed);
+    status
 }
 
 /// Connect client player directly to target server
@@ -900,20 +914,27 @@ pub fn is_mod_environment_ready(deadlock_dir: &Path, mode: &str) -> bool {
 
 pub fn launch_deadlock_target(target: &str) -> Result<(), String> {
     let clean = target.trim().trim_start_matches("connect ").trim();
+    if clean.is_empty() || !clean.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == ':' || c == '-') {
+        return Err("Invalid connect target format".into());
+    }
     let parts: Vec<&str> = clean.split(':').collect();
+    if parts.len() > 2 {
+        return Err("Invalid connect target format".into());
+    }
     let ip = parts.first().copied().unwrap_or("127.0.0.1");
-    let port: u16 = parts.get(1).and_then(|p| p.parse().ok()).unwrap_or(27015);
+    let port: u16 = if parts.len() == 2 {
+        parts[1].parse().map_err(|_| "Invalid port number in target".to_string())?
+    } else {
+        27015
+    };
 
     // In-Game Console Pipe: If Deadlock is already running, connect directly via Steam URI pipe without restarting
     if is_deadlock_running() {
-        println!("[lan_supervisor] Deadlock is already running! Triggering in-game connect pipe via steam://connect/{clean}");
+        println!("[lan_supervisor] Deadlock is already running! Triggering in-game connect pipe via steam://connect/{ip}:{port}");
         #[cfg(windows)]
         {
-            let steam_url = format!("steam://connect/{clean}");
-            let _ = Command::new("cmd")
-                .args(["/C", "start", "", &steam_url])
-                .creation_flags(CREATE_NO_WINDOW)
-                .spawn();
+            let steam_url = format!("steam://connect/{ip}:{port}");
+            let _ = open::that(&steam_url);
             activate_deadlock_window();
         }
         return Ok(());

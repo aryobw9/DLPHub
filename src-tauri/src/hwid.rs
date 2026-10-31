@@ -15,7 +15,18 @@ pub fn get_machine_hwid() -> String {
         }
     }
 
-    // Secondary Windows fallback: Motherboard / Computer identification
+    // Secondary Windows fallback: Immutable Motherboard / BIOS hardware identification
+    if let Ok(bios) = hklm.open_subkey("HARDWARE\\DESCRIPTION\\System\\BIOS") {
+        let board: String = bios.get_value("BaseBoardProduct").unwrap_or_default();
+        let vendor: String = bios.get_value("BaseBoardManufacturer").unwrap_or_default();
+        let bver: String = bios.get_value("BIOSVersion").unwrap_or_default();
+        if !board.is_empty() || !vendor.is_empty() {
+            let salted = format!("DLPHUB-VIP-HW-{}-{}-{}", vendor.trim(), board.trim(), bver.trim());
+            return format!("HWID-{}", dlp_core::detect::md5_hex(salted.as_bytes()));
+        }
+    }
+
+    // Tertiary Windows fallback: Computer identification
     let comp = std::env::var("COMPUTERNAME").unwrap_or_else(|_| "DEFAULT-PC".to_string());
     let user = std::env::var("USERNAME").unwrap_or_else(|_| "DEFAULT-USER".to_string());
     let salted = format!("DLPHUB-VIP-FALLBACK-{}-{}", comp, user);

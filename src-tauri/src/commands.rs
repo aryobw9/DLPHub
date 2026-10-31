@@ -240,16 +240,23 @@ pub fn list_backups() -> Vec<BackupInfo> {
 
 #[tauri::command]
 pub fn delete_backup_cmd(name: String) -> Result<(), String> {
-    if name.contains('/') || name.contains('\\') || name.contains("..") {
+    let trimmed = name.trim();
+    if trimmed.is_empty()
+        || trimmed == "."
+        || trimmed == ".."
+        || trimmed.contains('/')
+        || trimmed.contains('\\')
+        || trimmed.contains("..")
+    {
         return Err("invalid backup name".into());
     }
     let data_dir = settings::data_dir();
-    if backup::is_main_backup(&data_dir, &name) {
+    if backup::is_main_backup(&data_dir, trimmed) {
         return Err("Cannot delete the initial original game backup".into());
     }
-    let bdir = backup::backups_root(&data_dir).join(&name);
+    let bdir = backup::backups_root(&data_dir).join(trimmed);
     if !bdir.is_dir() {
-        return Err(format!("backup not found: {name}"));
+        return Err(format!("backup not found: {trimmed}"));
     }
     backup::rm_ro(&bdir);
     Ok(())
@@ -571,7 +578,11 @@ pub async fn check_for_updates(app: tauri::AppHandle) -> Result<UpdateCheckDto, 
 
 #[tauri::command]
 pub fn open_download_url(url: String) -> Result<(), String> {
-    open::that(&url).map_err(|e| e.to_string())
+    let trimmed = url.trim();
+    if !trimmed.starts_with("https://") {
+        return Err("Only https:// URLs are allowed".into());
+    }
+    open::that(trimmed).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

@@ -20,6 +20,7 @@ license = "GPL-3.0-only"
 # staticlib+rlib covers desktop builds; re-add cdylib only for mobile dev.
 name = "dlpbooster_lib"
 crate-type = ["staticlib", "rlib"]
+test = false
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

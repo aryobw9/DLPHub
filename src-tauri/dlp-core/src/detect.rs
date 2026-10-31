@@ -31,8 +31,22 @@ impl Tier {
 pub fn normalize(text: &str) -> String {
     let t = strip_bom_line(text);
     let mut out = String::with_capacity(t.len());
+    let mut in_deadworks_block = false;
     for line in t.split_inclusive('\n') {
         let trimmed = line.trim_start();
+        if trimmed.starts_with("// Deadworks Launcher - Start") {
+            in_deadworks_block = true;
+            continue;
+        }
+        if in_deadworks_block {
+            if trimmed.starts_with("// Deadworks Launcher - End") {
+                in_deadworks_block = false;
+            }
+            continue;
+        }
+        if trimmed.contains("#DLP_OFF#") || trimmed.contains("// Deadworks Launcher") {
+            continue;
+        }
         let is_dynamic = trimmed.starts_with("\"r_aspectratio\"")
             || trimmed.starts_with("r_aspectratio ")
             || trimmed.starts_with("r_aspectratio\t")
@@ -170,5 +184,14 @@ mod tests {
         assert_eq!(detect_tier(&empty, &tmp), Tier::Missing);
 
         crate::backup::rm_ro(&tmp);
+    }
+
+    #[test]
+    fn normalize_strips_deadworks_block_and_dlp_off() {
+        let clean = "\"Version\" \"13\"\n\"game\" \"citadel\"\n";
+        let patched = "\"Version\" \"13\"\n\t\t\t// Deadworks Launcher - Start\r\n\t\t\tGame_LowViolence\tcitadel/custom\r\n\t\t\t// Deadworks Launcher - End\n\"game\" \"citadel\"\n";
+        let commented = "\"Version\" \"13\"\n// #DLP_OFF# \tGame_LowViolence\tcitadel/custom\n\"game\" \"citadel\"\n";
+        assert_eq!(normalize(patched), clean);
+        assert_eq!(normalize(commented), clean);
     }
 }

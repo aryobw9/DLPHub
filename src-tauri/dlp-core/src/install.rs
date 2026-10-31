@@ -16,6 +16,7 @@ pub enum Mode {
     Potato,
     T1Mods,
     T2Mods,
+    RussianPotato,
 }
 
 impl Mode {
@@ -24,7 +25,7 @@ impl Mode {
             Mode::T1 | Mode::T1Mods => "t1",
             Mode::T2 | Mode::T2Mods => "t2",
             Mode::T3 => "t3",
-            Mode::Potato => "potato",
+            Mode::Potato | Mode::RussianPotato => "potato",
         }
     }
     pub fn video_dir(self) -> &'static str {
@@ -43,6 +44,9 @@ impl Mode {
         }
         if self == Mode::Potato {
             allowed.push("pak31_dir.vpk");
+        }
+        if self == Mode::RussianPotato {
+            allowed.push("pak30_dir.vpk");
         }
         let all_known = ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak30_dir.vpk", "pak31_dir.vpk"];
         let mut excluded: Vec<&str> = Vec::new();

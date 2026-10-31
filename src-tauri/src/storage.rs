@@ -458,7 +458,7 @@ pub struct DeadworksManifest {
 pub fn resolve_open_pak_slot(
     dst_dir: &Path,
     preferred_name: &str,
-    src_len: u64,
+    _src_len: u64,
     deployed_files: &[String],
     deadlock_dir: &Path,
 ) -> String {
@@ -473,14 +473,7 @@ pub fn resolve_open_pak_slot(
         return preferred_name.to_string();
     }
 
-    // If it exists with identical length: reuse it without collision
-    if let Ok(m) = target.metadata() {
-        if m.len() == src_len {
-            return preferred_name.to_string();
-        }
-    }
-
-    // Destination exists and has different size (user's mod!).
+    // Destination exists and is not owned by DLPHub (user's mod or stock game file).
     // Never touch, move, or overwrite user's mod. Find an open slot in pak(11..=90).rev()
     for n in (11..=90).rev() {
         let candidate = format!("pak{:02}_dir.vpk", n);
@@ -512,36 +505,27 @@ pub fn resolve_open_pak_slot(
     preferred_name.to_string()
 }
 
-/// Safely deletes a file with retry and Windows reboot-deletion fallback if locked
+/// Safely deletes a file with retry and backoff if temporarily locked
 pub fn safe_remove_file_with_retry(path: &Path) -> Result<(), std::io::Error> {
     if !path.exists() {
         return Ok(());
     }
-    // Attempt 1: direct removal
-    if let Ok(()) = std::fs::remove_file(path) {
-        return Ok(());
-    }
-    // Attempt 2: brief delay for handles to close
-    std::thread::sleep(std::time::Duration::from_millis(150));
-    if let Ok(()) = std::fs::remove_file(path) {
-        return Ok(());
-    }
-    // Attempt 3: Windows delay until reboot fallback
-    #[cfg(windows)]
-    {
-        use std::os::windows::ffi::OsStrExt;
-        let mut wide: Vec<u16> = path.as_os_str().encode_wide().collect();
-        wide.push(0);
-        #[link(name = "kernel32")]
-        extern "system" {
-            fn MoveFileExW(lpExistingFileName: *const u16, lpNewFileName: *const u16, dwFlags: u32) -> i32;
+    let mut last_err = None;
+    for delay_ms in [0, 100, 250, 500] {
+        if delay_ms > 0 {
+            std::thread::sleep(std::time::Duration::from_millis(delay_ms));
         }
-        const MOVEFILE_DELAY_UNTIL_REBOOT: u32 = 0x4;
-        unsafe {
-            MoveFileExW(wide.as_ptr(), std::ptr::null(), MOVEFILE_DELAY_UNTIL_REBOOT);
+        match std::fs::remove_file(path) {
+            Ok(()) => return Ok(()),
+            Err(e) => {
+                if !path.exists() {
+                    return Ok(());
+                }
+                last_err = Some(e);
+            }
         }
     }
-    Ok(())
+    Err(last_err.unwrap_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "Failed to remove file")))
 }
 
 /// Copies a file with smart version/size checking. If destination already exists with
@@ -657,24 +641,28 @@ impl DeadworksManifest {
             .map(|p| p.to_string_lossy().replace('\\', "/"))
             .unwrap_or_else(|_| dst.to_string_lossy().replace('\\', "/"));
 
-        // Smart Version Check: If destination exists and has exact same byte size, skip copying!
-        if dst.is_file() {
+        // If destination was already deployed by DLPHub and has exact same byte size, skip copying
+        if self.deployed_files.contains(&rel_dst) && dst.is_file() {
             if let (Ok(sm), Ok(dm)) = (src.metadata(), dst.metadata()) {
                 if sm.len() > 0 && sm.len() == dm.len() {
-                    if !self.deployed_files.contains(&rel_dst) {
-                        self.deployed_files.push(rel_dst);
-                    }
                     return Ok(());
                 }
             }
         }
 
-        // If destination exists and was NOT deployed by us, check if it's a VPK
+        // If destination exists and was NOT deployed by us:
         if dst.is_file() && !self.deployed_files.contains(&rel_dst) {
             let fname = dst.file_name().unwrap_or_default().to_string_lossy();
             if fname.starts_with("pak") && fname.ends_with("_dir.vpk") {
                 if let Some(dst_dir) = dst.parent() {
                     let _ = self.deploy_vpk_slot(deadlock_dir, src, dst_dir, &fname)?;
+                    return Ok(());
+                }
+            }
+            // Non-VPK pre-existing file with matching byte size: skip copying but DO NOT register
+            // in self.deployed_files to prevent clean_all_mods from deleting user/stock files!
+            if let (Ok(sm), Ok(dm)) = (src.metadata(), dst.metadata()) {
+                if sm.len() > 0 && sm.len() == dm.len() {
                     return Ok(());
                 }
             }

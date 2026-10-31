@@ -24,11 +24,7 @@ const MAGIC_RELAY_HOST: &[u8] = b"DLPH";
 const MAGIC_RELAY_CLIENT: &[u8] = b"DLPC";
 
 static RELAY_RUNNING: AtomicBool = AtomicBool::new(false);
-static RELAY_STOP_SIGNAL: std::sync::OnceLock<Arc<AtomicBool>> = std::sync::OnceLock::new();
-
-fn get_stop_signal() -> Arc<AtomicBool> {
-    RELAY_STOP_SIGNAL.get_or_init(|| Arc::new(AtomicBool::new(false))).clone()
-}
+static RELAY_SESSION_STOP: std::sync::Mutex<Option<Arc<AtomicBool>>> = std::sync::Mutex::new(None);
 
 #[allow(dead_code)]
 pub fn is_relay_active() -> bool {
@@ -36,9 +32,17 @@ pub fn is_relay_active() -> bool {
 }
 
 pub fn stop_relay() {
-    let stop_sig = get_stop_signal();
-    stop_sig.store(true, Ordering::SeqCst);
+    if let Some(stop_sig) = RELAY_SESSION_STOP.lock().unwrap().take() {
+        stop_sig.store(true, Ordering::SeqCst);
+    }
     RELAY_RUNNING.store(false, Ordering::SeqCst);
+}
+
+fn create_new_stop_signal() -> Arc<AtomicBool> {
+    stop_relay();
+    let flag = Arc::new(AtomicBool::new(false));
+    *RELAY_SESSION_STOP.lock().unwrap() = Some(flag.clone());
+    flag
 }
 
 /// Host Relay: receives multiplexed client packets from VPS relay and forwards to local dedicated server
@@ -47,11 +51,8 @@ pub async fn start_host_relay(
     vps_addr_str: String,
     _internal_server_port: u16,
 ) -> Result<(), String> {
-    stop_relay();
-    tokio::time::sleep(Duration::from_millis(100)).await;
-
-    let stop_sig = get_stop_signal();
-    stop_sig.store(false, Ordering::SeqCst);
+    let stop_sig = create_new_stop_signal();
+    tokio::time::sleep(Duration::from_millis(50)).await;
 
     let vps_addr: SocketAddr = vps_addr_str
         .parse()
@@ -168,7 +169,7 @@ pub async fn start_host_relay(
                             }
                         };
 
-                        let target = if crate::lan_supervisor::get_server_status().is_running {
+                        let target = if crate::lan_supervisor::is_server_running() {
                             target_dedicated
                         } else {
                             target_listen
@@ -192,11 +193,8 @@ pub async fn start_client_relay(
     vps_addr_str: String,
     local_port: u16,
 ) -> Result<(), String> {
-    stop_relay();
-    tokio::time::sleep(Duration::from_millis(100)).await;
-
-    let stop_sig = get_stop_signal();
-    stop_sig.store(false, Ordering::SeqCst);
+    let stop_sig = create_new_stop_signal();
+    tokio::time::sleep(Duration::from_millis(50)).await;
 
     let vps_addr: SocketAddr = vps_addr_str
         .parse()

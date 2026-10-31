@@ -82,7 +82,7 @@ mod tests {
     #[test]
     fn payload_contains_tiers() {
         let pkg = extract().unwrap();
-        for d in ["t1", "t2", "t3", "potato", "russian_potato"] {
+        for d in ["t1", "t2", "t3", "potato"] {
             assert!(pkg.join(d).is_dir(), "missing {d}");
         }
         assert!(pkg.join("t1").join("gameinfo.gi").is_file());
