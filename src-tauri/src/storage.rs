@@ -458,19 +458,18 @@ pub struct DeadworksManifest {
 pub fn resolve_open_pak_slot(
     dst_dir: &Path,
     preferred_name: &str,
-    _src_len: u64,
     deployed_files: &[String],
     deadlock_dir: &Path,
-) -> String {
+) -> Result<String, String> {
     let target = dst_dir.join(preferred_name);
     let rel_target = target
         .strip_prefix(deadlock_dir)
         .map(|p| p.to_string_lossy().replace('\\', "/"))
         .unwrap_or_else(|_| target.to_string_lossy().replace('\\', "/"));
 
-    // If destination does not exist, or we already deployed it in this session:
+    // If destination does not exist, or was already deployed by DLPHub:
     if !target.exists() || deployed_files.contains(&rel_target) {
-        return preferred_name.to_string();
+        return Ok(preferred_name.to_string());
     }
 
     // Destination exists and is not owned by DLPHub (user's mod or stock game file).
@@ -484,7 +483,7 @@ pub fn resolve_open_pak_slot(
             .unwrap_or_else(|_| candidate_path.to_string_lossy().replace('\\', "/"));
 
         if !candidate_path.exists() && !deployed_files.contains(&rel_candidate) {
-            return candidate;
+            return Ok(candidate);
         }
     }
 
@@ -498,11 +497,14 @@ pub fn resolve_open_pak_slot(
             .unwrap_or_else(|_| candidate_path.to_string_lossy().replace('\\', "/"));
 
         if !candidate_path.exists() && !deployed_files.contains(&rel_candidate) {
-            return candidate;
+            return Ok(candidate);
         }
     }
 
-    preferred_name.to_string()
+    Err(format!(
+        "No available open pak slot in {:?} for {}",
+        dst_dir, preferred_name
+    ))
 }
 
 /// Safely deletes a file with retry and backoff if temporarily locked
@@ -609,23 +611,28 @@ impl DeadworksManifest {
         preferred_name: &str,
     ) -> Result<PathBuf, String> {
         let src_len = src.metadata().map_err(|e| e.to_string())?.len();
-        let slot_name = resolve_open_pak_slot(dst_dir, preferred_name, src_len, &self.deployed_files, deadlock_dir);
+        let slot_name = resolve_open_pak_slot(dst_dir, preferred_name, &self.deployed_files, deadlock_dir)?;
         let dst = dst_dir.join(&slot_name);
 
         let rel_dst = dst.strip_prefix(deadlock_dir)
             .map(|p| p.to_string_lossy().replace('\\', "/"))
             .unwrap_or_else(|_| dst.to_string_lossy().replace('\\', "/"));
 
-        // If target exists and has exact same length, skip copying
-        if dst.exists() {
+        // If target was already deployed by DLPHub and has exact same byte size, skip copying
+        if self.deployed_files.contains(&rel_dst) && dst.exists() {
             if let Ok(m) = dst.metadata() {
                 if m.len() == src_len {
-                    if !self.deployed_files.contains(&rel_dst) {
-                        self.deployed_files.push(rel_dst);
-                    }
                     return Ok(dst);
                 }
             }
+        }
+
+        // If destination exists but was NOT deployed by us, never overwrite or take ownership
+        if dst.exists() && !self.deployed_files.contains(&rel_dst) {
+            return Err(format!(
+                "Destination file {:?} exists and is not managed by DLPHub. Aborting to protect user files.",
+                dst
+            ));
         }
 
         link_or_copy_file(src, &dst)?;

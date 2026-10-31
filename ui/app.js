@@ -6131,7 +6131,7 @@ function renderCameraSwitches(preset) {
           ${defBadgeHtml}
         </div>
         <div class="camera-switch-desc">${desc}</div>
-        <span class="camera-switch-cvar">${item.key}</span>
+        <span class="camera-switch-cvar">${escapeHtml(item.key)}</span>
       </div>
       <div class="neon-checkbox">
         <input type="checkbox" id="cam-${escapeHtml(item.key)}" ${isChecked ? 'checked' : ''} data-key="${escapeHtml(item.key)}" data-val="${escapeHtml(item.val)}" data-def="${escapeHtml(item.def)}" onchange="toggleCameraOverride(this.dataset.key, this.checked ? this.dataset.val : this.dataset.def)">
@@ -6302,7 +6302,7 @@ function createConvarRowElement(item, isFa) {
       <input type="text" 
         class="convar-item-val-input tabular-num" 
         value="${escapeHtml(item.currentVal)}" 
-        data-cvar="${item.key}"
+        data-cvar="${escapeHtml(item.key)}"
         data-kind="${item.isFloat ? 'float' : (item.meta.kind || 'int')}"
         data-min="${item.minVal}"
         data-max="${item.maxVal}"
