@@ -42,6 +42,10 @@ pub struct VipStatusResponse {
 pub struct VipCreateResponse {
     pub success: bool,
     pub room_code: Option<String>,
+    pub room_name: Option<String>,
+    pub has_password: Option<bool>,
+    pub is_hidden: Option<bool>,
+    pub max_players: Option<usize>,
     pub connection_mode: Option<String>,
     pub host_ip: Option<String>,
     pub relay_port: Option<u16>,
@@ -57,6 +61,10 @@ pub struct VipCreateResponse {
 pub struct VipJoinResponse {
     pub success: bool,
     pub room_code: Option<String>,
+    pub room_name: Option<String>,
+    pub has_password: Option<bool>,
+    pub is_hidden: Option<bool>,
+    pub max_players: Option<usize>,
     pub connection_mode: Option<String>,
     pub host_ip: Option<String>,
     pub connect_cmd: Option<String>,
@@ -78,6 +86,10 @@ pub struct VipPeer {
 pub struct VipRoomStatus {
     pub success: Option<bool>,
     pub room_code: Option<String>,
+    pub room_name: Option<String>,
+    pub has_password: Option<bool>,
+    pub is_hidden: Option<bool>,
+    pub max_players: Option<usize>,
     pub connection_mode: Option<String>,
     pub relay_port: Option<u16>,
     pub host_ip: Option<String>,
@@ -253,6 +265,10 @@ pub async fn create_vip_room(
     is_modded: Option<bool>,
     mod_mode: Option<String>,
     enable_sdr: Option<bool>,
+    room_name: Option<String>,
+    is_hidden: Option<bool>,
+    password: Option<String>,
+    max_players: Option<usize>,
 ) -> Result<VipCreateResponse, String> {
     let hwid = get_machine_hwid();
     let sess = load_vip_session();
@@ -274,16 +290,28 @@ pub async fn create_vip_room(
     let clean_is_modded = is_modded.unwrap_or(true);
     let clean_mod_mode = mod_mode.unwrap_or_else(|| "vanilla".to_string());
     let clean_enable_sdr = enable_sdr.unwrap_or(false);
+    let clean_room_name = room_name.filter(|s| !s.trim().is_empty());
+    let clean_is_hidden = is_hidden.unwrap_or(false);
+    let clean_password = password.filter(|p| !p.trim().is_empty());
+    let clean_max_players = max_players.unwrap_or(12);
 
-    let body = serde_json::json!({
+    let mut body = serde_json::json!({
         "host_nickname": clean_nick,
         "mode": clean_mode,
         "is_modded": clean_is_modded,
         "mod_mode": clean_mod_mode,
         "enable_sdr": clean_enable_sdr,
+        "is_hidden": clean_is_hidden,
+        "max_players": clean_max_players,
         "hwid": hwid,
         "vip_token": token
     });
+    if let Some(rn) = clean_room_name {
+        body["room_name"] = serde_json::Value::String(rn);
+    }
+    if let Some(pwd) = clean_password {
+        body["password"] = serde_json::Value::String(pwd);
+    }
 
     let resp = client.post(&url).json(&body).send().await
         .map_err(|e| format!("Failed to reach Coordinator at {url}: {e}"))?;
@@ -312,9 +340,18 @@ pub async fn create_vip_room(
         (format!("connect {vip}:27005"), format!("connect {vip}:27005"))
     };
 
+    let res_room_name = data["room_name"].as_str().map(|s| s.to_string());
+    let res_has_password = data["has_password"].as_bool();
+    let res_is_hidden = data["is_hidden"].as_bool();
+    let res_max_players = data["max_players"].as_u64().map(|n| n as usize);
+
     Ok(VipCreateResponse {
         success: true,
         room_code: Some(room_code),
+        room_name: res_room_name,
+        has_password: res_has_password,
+        is_hidden: res_is_hidden,
+        max_players: res_max_players,
         connection_mode: Some(actual_mode),
         host_ip: Some(vip.to_string()),
         relay_port: Some(relay_port),
@@ -331,6 +368,7 @@ pub async fn join_vip_room(
     custom_api_url: Option<String>,
     room_code: String,
     nickname: String,
+    password: Option<String>,
 ) -> Result<VipJoinResponse, String> {
     let hwid = get_machine_hwid();
     let sess = load_vip_session();
@@ -348,12 +386,16 @@ pub async fn join_vip_room(
 
     let url = format!("{}/api/room/join", api_base.trim_end_matches('/'));
     let clean_nick = if nickname.trim().is_empty() { "Player" } else { nickname.trim() };
-    let body = serde_json::json!({
+    let clean_password = password.filter(|p| !p.trim().is_empty());
+    let mut body = serde_json::json!({
         "room_code": room_code.trim(),
         "nickname": clean_nick,
         "hwid": hwid,
         "vip_token": token
     });
+    if let Some(pwd) = clean_password {
+        body["password"] = serde_json::Value::String(pwd);
+    }
 
     let resp = client.post(&url).json(&body).send().await
         .map_err(|e| format!("Failed to join room at {url}: {e}"))?;
@@ -387,9 +429,18 @@ pub async fn join_vip_room(
     // Prepare client assets in background
     let _ = crate::lan_supervisor::prepare_modded_client(&mod_mode).await;
 
+    let res_room_name = data["room_name"].as_str().map(|s| s.to_string());
+    let res_has_password = data["has_password"].as_bool();
+    let res_is_hidden = data["is_hidden"].as_bool();
+    let res_max_players = data["max_players"].as_u64().map(|n| n as usize);
+
     Ok(VipJoinResponse {
         success: true,
         room_code: Some(room_code.trim().to_string()),
+        room_name: res_room_name,
+        has_password: res_has_password,
+        is_hidden: res_is_hidden,
+        max_players: res_max_players,
         connection_mode: Some(actual_mode),
         host_ip: Some(host_vip),
         connect_cmd: Some(client_connect_cmd),
@@ -537,12 +588,16 @@ pub async fn unban_vip_peer(
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VipRoomSummary {
     pub room_code: String,
+    pub room_name: Option<String>,
     pub host_nickname: Option<String>,
     pub mode: Option<String>,
     pub is_modded: Option<bool>,
     pub mod_mode: Option<String>,
     pub enable_sdr: Option<bool>,
+    pub has_password: Option<bool>,
+    pub is_hidden: Option<bool>,
     pub peer_count: Option<usize>,
+    pub max_players: Option<usize>,
 }
 
 pub async fn list_vip_rooms(

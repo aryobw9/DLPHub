@@ -1327,6 +1327,51 @@
                         </div>
                       </div>
 
+                      <div class="lan-form-row">
+                        <div class="lan-form-group" style="flex:2">
+                          <label class="lan-label" data-i18n="vipRoomNameLabel">عنوان / نام لابی:</label>
+                          <input type="text" id="vip-host-room-name" class="lan-input" placeholder="Deadlock Custom Match" maxlength="32" />
+                        </div>
+                        <div class="lan-form-group" style="flex:1">
+                          <label class="lan-label" data-i18n="vipMaxPlayersLabel">ظرفیت بازیکنان:</label>
+                          <select id="vip-host-max-players" class="lan-select">
+                            <option value="12" selected data-i18n="opt12Players">۱۲ نفر (۶ به ۶)</option>
+                            <option value="2" data-i18n="opt2Players">۲ نفر (دوئل ۱ به ۱)</option>
+                            <option value="4" data-i18n="opt4Players">۴ نفر (۲ به ۲)</option>
+                            <option value="6" data-i18n="opt6Players">۶ نفر (۳ به ۳)</option>
+                            <option value="10" data-i18n="opt10Players">۱۰ نفر (۵ به ۵)</option>
+                            <option value="16" data-i18n="opt16Players">۱۶ نفر (کاستوم)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <!-- Privacy & Security Options: Password & Hidden Lobby -->
+                      <div class="vip-lobby-privacy-grid">
+                        <!-- Password Option -->
+                        <div class="vip-privacy-card">
+                          <label class="session-checkbox-label" style="cursor:pointer; display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" id="vip-host-has-password" onchange="document.getElementById('vip-host-password-wrap').style.display = this.checked ? 'block' : 'none';" />
+                            <span class="checkmark"></span>
+                            <span data-i18n="vipProtectWithPassword" style="font-weight:600; color:#fbbf24;"><i class="fa-solid fa-lock" style="font-size:11px; margin-inline-end:4px;"></i>رمز عبور برای لابی</span>
+                          </label>
+                          <div id="vip-host-password-wrap" style="display:none; margin-top:6px;">
+                            <input type="password" id="vip-host-password" class="lan-input" placeholder="Password" maxlength="24" dir="ltr" />
+                          </div>
+                        </div>
+
+                        <!-- Hidden / Unlisted Option -->
+                        <div class="vip-privacy-card">
+                          <label class="session-checkbox-label" style="cursor:pointer; display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" id="vip-host-hidden" />
+                            <span class="checkmark"></span>
+                            <span data-i18n="vipHiddenLobby" style="font-weight:600; color:#a78bfa;"><i class="fa-solid fa-eye-slash" style="font-size:11px; margin-inline-end:4px;"></i>لابی مخفی (عدم نمایش)</span>
+                          </label>
+                          <div style="font-size:10px; color:#94a3b8; margin-top:4px;" data-i18n="vipHiddenLobbyDesc">
+                            لابی در لیست عمومی نشان داده نمی‌شود؛ ورود فقط با کد ۶ رقمی.
+                          </div>
+                        </div>
+                      </div>
+
                       <!-- Temporary option: No Deadworks / Network Lobby Only -->
                       <div class="vip-temp-option-row" style="margin-top:10px; margin-bottom:8px; padding:10px 14px; background:rgba(30,41,59,0.5); border:1px solid rgba(56,189,248,0.2); border-radius:8px;">
                         <label class="session-checkbox-label" style="cursor:pointer; display:flex; align-items:center; gap:8px;">
@@ -1364,6 +1409,10 @@
                         <div class="lan-form-group" style="flex:1">
                           <label class="lan-label" data-i18n="vipEnterCodeLabel">کد ۶ رقمی لابی:</label>
                           <input type="text" id="vip-join-code" class="lan-input vip-code-input" placeholder="482910" maxlength="6" dir="ltr" />
+                        </div>
+                        <div class="lan-form-group" style="flex:1" id="vip-join-password-group">
+                          <label class="lan-label" data-i18n="vipPasswordLabel">رمز عبور (در صورت لزوم):</label>
+                          <input type="password" id="vip-join-password" class="lan-input" placeholder="Optional" maxlength="24" dir="ltr" />
                         </div>
                       </div>
 

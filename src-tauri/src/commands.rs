@@ -1302,8 +1302,12 @@ pub async fn create_vip_room_cmd(
     is_modded: Option<bool>,
     mod_mode: Option<String>,
     enable_sdr: Option<bool>,
+    room_name: Option<String>,
+    is_hidden: Option<bool>,
+    password: Option<String>,
+    max_players: Option<usize>,
 ) -> Result<VipCreateResponse, String> {
-    lan_vip::create_vip_room(api_url, nickname, mode, is_modded, mod_mode, enable_sdr).await
+    lan_vip::create_vip_room(api_url, nickname, mode, is_modded, mod_mode, enable_sdr, room_name, is_hidden, password, max_players).await
 }
 
 #[tauri::command]
@@ -1311,8 +1315,9 @@ pub async fn join_vip_room_cmd(
     api_url: Option<String>,
     room_code: String,
     nickname: String,
+    password: Option<String>,
 ) -> Result<VipJoinResponse, String> {
-    lan_vip::join_vip_room(api_url, room_code, nickname).await
+    lan_vip::join_vip_room(api_url, room_code, nickname, password).await
 }
 
 #[tauri::command]

@@ -5467,6 +5467,12 @@ async function createVipRoomAction() {
       if (!ready) return;
     }
 
+    const roomName = document.getElementById('vip-host-room-name')?.value?.trim() || null;
+    const maxPlayers = parseInt(document.getElementById('vip-host-max-players')?.value || '12', 10);
+    const isHidden = !!document.getElementById('vip-host-hidden')?.checked;
+    const hasPassword = !!document.getElementById('vip-host-has-password')?.checked;
+    const password = hasPassword ? (document.getElementById('vip-host-password')?.value?.trim() || null) : null;
+
     const res = await call('create_vip_room_cmd', {
       apiUrl: null,
       nickname,
@@ -5474,6 +5480,10 @@ async function createVipRoomAction() {
       isModded: !skipDeadworks,
       modMode: chosenMod,
       enableSdr: false,
+      roomName: roomName,
+      isHidden: isHidden,
+      password: password,
+      maxPlayers: maxPlayers,
     });
     if (res.success && res.room_code) {
       lanState.vipRoomCode = res.room_code;
@@ -5536,8 +5546,10 @@ async function joinVipRoomAction() {
   const btn = document.getElementById('btn-vip-join-room');
   if (btn) btn.disabled = true;
 
+  const password = document.getElementById('vip-join-password')?.value?.trim() || null;
+
   try {
-    const res = await call('join_vip_room_cmd', { apiUrl: null, roomCode: code, nickname });
+    const res = await call('join_vip_room_cmd', { apiUrl: null, roomCode: code, nickname, password });
     if (res.success) {
       lanState.vipRoomCode = code;
       lanState.vipHostIp = res.host_ip || '10.10.1.1';
@@ -5696,18 +5708,27 @@ async function refreshVipLobbiesList() {
 
       const safeRoomCode = escapeHtml(r.room_code || '');
       const safeHostName = escapeHtml(r.host_nickname || (state.lang === 'fa' ? 'میزبان' : 'Host'));
+      const safeRoomTitle = escapeHtml(r.room_name || `${safeHostName}'s Match`);
       const safePeerCount = Number(r.peer_count) || 1;
+      const safeMaxPlayers = Number(r.max_players) || 12;
+      const hasPassword = Boolean(r.has_password);
+
+      const passwordBadge = hasPassword
+        ? `<span class="tag-locked" title="${t('lobbyProtected')}"><i class="fa-solid fa-lock"></i> ${t('lobbyProtected')}</span>`
+        : '';
 
       card.innerHTML = `
         <div class="vip-lobby-info">
           <span class="vip-lobby-code">${safeRoomCode}</span>
-          <div style="display:flex;flex-direction:column;gap:3px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span class="vip-lobby-host-name"><i class="fa-solid fa-crown" style="color:gold;font-size:11px;margin-right:4px;"></i>${safeHostName}</span>
+          <div style="display:flex;flex-direction:column;gap:3px;flex:1;">
+            <div class="vip-lobby-badge-row">
+              <span class="vip-lobby-title-text">${safeRoomTitle}</span>
+              <span class="vip-lobby-host-name" style="font-size:11px;color:#94a3b8;"><i class="fa-solid fa-crown" style="color:gold;font-size:10px;margin-inline-end:3px;"></i>${safeHostName}</span>
               ${isModdedBadge}
+              ${passwordBadge}
             </div>
             <div class="vip-lobby-meta">
-              <span class="vip-lobby-players"><i class="fa-solid fa-users"></i> ${safePeerCount} ${state.lang === 'fa' ? 'بازیکن' : 'players'}</span>
+              <span class="vip-lobby-players"><i class="fa-solid fa-users"></i> ${safePeerCount}/${safeMaxPlayers} ${state.lang === 'fa' ? 'بازیکن' : 'players'}</span>
               <span style="font-size:10px;color:#64748b;">· ${netTypeStr}</span>
             </div>
           </div>
@@ -5720,7 +5741,7 @@ async function refreshVipLobbiesList() {
 
       const btnJoin = card.querySelector('.btn-lobby-quickjoin');
       if (btnJoin) {
-        btnJoin.addEventListener('click', () => selectAndJoinVipLobby(r.room_code));
+        btnJoin.addEventListener('click', () => selectAndJoinVipLobby(r.room_code, hasPassword));
       }
       container.appendChild(card);
     }
@@ -5733,10 +5754,16 @@ async function refreshVipLobbiesList() {
   }
 }
 
-function selectAndJoinVipLobby(code) {
+function selectAndJoinVipLobby(code, hasPassword) {
   const codeInput = document.getElementById('vip-join-code');
   if (codeInput) {
     codeInput.value = code;
+  }
+  const pwdInput = document.getElementById('vip-join-password');
+  if (hasPassword && pwdInput && !pwdInput.value.trim()) {
+    pwdInput.focus();
+    showToast(t('lobbyPasswordPrompt'), 'warning');
+    return;
   }
   joinVipRoomAction();
 }
