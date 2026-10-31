@@ -813,6 +813,147 @@ pub fn deploy_client_modded_assets(deadlock_dir: &Path, mode: &str) -> Result<()
     Ok(())
 }
 
+/// Returns the list of active custom game mode files that need removal for normal gameplay.
+pub fn get_active_custom_files_needing_cleanup(deadlock_dir: &Path) -> Vec<String> {
+    let mut files = Vec::new();
+
+    // 1. Check if DeadworksManifest has tracked deployed files
+    let manifest_path = DeadworksManifest::manifest_path(deadlock_dir);
+    if manifest_path.is_file() {
+        let manifest = DeadworksManifest::load(deadlock_dir);
+        for rel in &manifest.deployed_files {
+            let full = deadlock_dir.join(rel.replace('/', std::path::MAIN_SEPARATOR_STR));
+            if full.is_file() {
+                files.push(format!("Deployed mod asset: {}", rel));
+            }
+        }
+    }
+
+    // 2. Check if citadel/deadworks_mods directory exists and has files
+    let deadworks_mods_dir = deadlock_dir.join("game").join("citadel").join("deadworks_mods");
+    if deadworks_mods_dir.is_dir() {
+        if let Ok(entries) = std::fs::read_dir(&deadworks_mods_dir) {
+            let mut count = 0;
+            for e in entries.flatten() {
+                count += 1;
+                if count <= 3 {
+                    files.push(format!("citadel/deadworks_mods/{}", e.file_name().to_string_lossy()));
+                }
+            }
+            if count > 3 {
+                files.push(format!("citadel/deadworks_mods/ ({} files total)", count));
+            }
+        }
+    }
+
+    // 3. Check for custom game mode plugins in managed/plugins
+    let plugins_target = deadlock_dir.join("game").join("bin").join("win64").join("managed").join("plugins");
+    if let Ok(entries) = std::fs::read_dir(&plugins_target) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                let fname = path.file_name().unwrap_or_default().to_string_lossy().to_lowercase();
+                if fname.starts_with("abilitydraft") || fname.starts_with("cursedarena") || fname.starts_with("automatch") {
+                    files.push(format!("managed/plugins/{}", path.file_name().unwrap_or_default().to_string_lossy()));
+                }
+            }
+        }
+    }
+
+    // 4. Check for ACTIVE (UNCOMMENTED) Deadworks search paths in gameinfo.gi
+    let gameinfo_path = deadlock_dir.join("game").join("citadel").join("gameinfo.gi");
+    if let Ok(c) = std::fs::read_to_string(&gameinfo_path) {
+        if c.contains(crate::lan_supervisor::SEARCHPATH_BLOCK_START) {
+            let mut has_uncommented_deadworks = false;
+            for line in c.lines() {
+                let trimmed = line.trim();
+                if trimmed.starts_with("//") {
+                    continue;
+                }
+                if trimmed.contains("citadel/deadworks_mods") || trimmed.contains("// #DLP_DEADWORKS_START#") {
+                    has_uncommented_deadworks = true;
+                    break;
+                }
+            }
+            if has_uncommented_deadworks {
+                files.push("gameinfo.gi (active Deadworks SearchPaths)".to_string());
+            }
+        }
+    }
+
+    files
+}
+
+#[cfg(windows)]
+pub fn prompt_user_to_close_deadlock(reasons: &[String]) -> bool {
+    use std::os::windows::ffi::OsStrExt;
+
+    let mut msg = String::from(
+        "Deadlock is currently running, and custom game mode files (such as LAN mods) were detected in your game directory:\n\n"
+    );
+    for r in reasons.iter().take(6) {
+        msg.push_str(&format!("  • {}\n", r));
+    }
+    if reasons.len() > 6 {
+        msg.push_str(&format!("  • ... and {} more file(s)\n", reasons.len() - 6));
+    }
+    msg.push_str(
+        "\nThese files must be removed for normal Valve matchmaking to work properly.\n\
+         Because Deadlock is currently running, the game must be closed to safely restore vanilla files.\n\n\
+         Would you like to close Deadlock now to restore your game files?"
+    );
+
+    let wide_msg: Vec<u16> = std::ffi::OsStr::new(&msg).encode_wide().chain(Some(0)).collect();
+    let wide_title: Vec<u16> = std::ffi::OsStr::new("DLPHub - Close Deadlock to Restore Files?").encode_wide().chain(Some(0)).collect();
+
+    unsafe {
+        #[link(name = "user32")]
+        extern "system" {
+            fn MessageBoxW(hwnd: isize, text: *const u16, caption: *const u16, kind: u32) -> i32;
+        }
+        // MB_YESNO (0x00000004) | MB_ICONWARNING (0x00000030) | MB_DEFBUTTON2 (0x00000100) | MB_TOPMOST (0x00040000) | MB_SETFOREGROUND (0x00010000)
+        let result = MessageBoxW(
+            0,
+            wide_msg.as_ptr(),
+            wide_title.as_ptr(),
+            0x00000004 | 0x00000030 | 0x00000100 | 0x00040000 | 0x00010000,
+        );
+        result == 6 // IDYES = 6
+    }
+}
+
+#[cfg(not(windows))]
+pub fn prompt_user_to_close_deadlock(_reasons: &[String]) -> bool {
+    false
+}
+
+#[cfg(windows)]
+pub fn prompt_user_to_close_deadlock_custom(msg: &str, title: &str) -> bool {
+    use std::os::windows::ffi::OsStrExt;
+
+    let wide_msg: Vec<u16> = std::ffi::OsStr::new(msg).encode_wide().chain(Some(0)).collect();
+    let wide_title: Vec<u16> = std::ffi::OsStr::new(title).encode_wide().chain(Some(0)).collect();
+
+    unsafe {
+        #[link(name = "user32")]
+        extern "system" {
+            fn MessageBoxW(hwnd: isize, text: *const u16, caption: *const u16, kind: u32) -> i32;
+        }
+        let result = MessageBoxW(
+            0,
+            wide_msg.as_ptr(),
+            wide_title.as_ptr(),
+            0x00000004 | 0x00000030 | 0x00000100 | 0x00040000 | 0x00010000,
+        );
+        result == 6 // IDYES = 6
+    }
+}
+
+#[cfg(not(windows))]
+pub fn prompt_user_to_close_deadlock_custom(_msg: &str, _title: &str) -> bool {
+    false
+}
+
 /// Sweeps and cleans all deployed custom game mode files and restores vanilla gameinfo.gi
 pub fn clean_all_mods_and_restore_vanilla() {
     let found = match dlp_core::discovery::find_game() {
@@ -820,27 +961,27 @@ pub fn clean_all_mods_and_restore_vanilla() {
         None => return,
     };
     let deadlock_dir = Path::new(&found.deadlock);
-    let manifest_path = DeadworksManifest::manifest_path(deadlock_dir);
-    let gameinfo_path = deadlock_dir.join("game").join("citadel").join("gameinfo.gi");
 
-    let mut needs_cleanup = manifest_path.is_file();
-    if !needs_cleanup {
-        if let Ok(c) = std::fs::read_to_string(&gameinfo_path) {
-            if c.contains("deadworks_mods") || c.contains("citadel/custom") || c.contains("// #DLP_DEADWORKS_START#") {
-                needs_cleanup = true;
-            }
+    let reasons = get_active_custom_files_needing_cleanup(deadlock_dir);
+    if reasons.is_empty() {
+        return; // Nothing needs cleanup, do not touch game!
+    }
+
+    println!("[cleanup] Detected active custom game mode files needing cleanup: {:?}", reasons);
+
+    // If Deadlock is running, NEVER force-kill it silently!
+    // ONLY prompt the user with a pop-up dialog.
+    if crate::lan_supervisor::is_deadlock_running() {
+        let user_confirmed = prompt_user_to_close_deadlock(&reasons);
+        if !user_confirmed {
+            println!("[cleanup] User chose NOT to close Deadlock. Preserving running game and aborting cleanup.");
+            return;
         }
+
+        println!("[cleanup] User confirmed closing Deadlock to restore files...");
+        crate::lan_supervisor::close_deadlock_game();
+        std::thread::sleep(std::time::Duration::from_millis(300));
     }
-
-    if !needs_cleanup {
-        return;
-    }
-
-    println!("[cleanup] Detected modded custom files or patched search paths. Cleaning up...");
-
-    // Close deadlock to release VPK handles so files are not locked
-    crate::lan_supervisor::close_deadlock_game();
-    std::thread::sleep(std::time::Duration::from_millis(250));
 
     // Revert manifest deployed files
     let mut manifest = DeadworksManifest::load(deadlock_dir);
@@ -866,17 +1007,7 @@ pub fn clean_all_mods_and_restore_vanilla() {
         }
     }
 
-    // Clean empty addons folder if created by us and now empty
-    let addons_dir = deadlock_dir.join("game").join("citadel").join("addons");
-    if addons_dir.is_dir() {
-        if let Ok(mut entries) = std::fs::read_dir(&addons_dir) {
-            if entries.next().is_none() {
-                let _ = std::fs::remove_dir(&addons_dir);
-            }
-        }
-    }
-
-    // Restore gameinfo to vanilla
+    // Restore gameinfo to vanilla comment-toggled state
     let _ = crate::lan_supervisor::restore_gameinfo_vanilla(deadlock_dir);
     println!("[cleanup] Vanilla state restored successfully.");
 }

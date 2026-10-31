@@ -943,9 +943,9 @@ pub fn launch_deadlock_target(target: &str) -> Result<(), String> {
     launch_deadlock_client(ip, port)
 }
 
-const SEARCHPATH_BLOCK_START: &str = "// Deadworks Launcher - Start";
-const SEARCHPATH_BLOCK_END: &str = "// Deadworks Launcher - End";
-const DLP_OFF_TAG: &str = "// #DLP_OFF# ";
+pub const SEARCHPATH_BLOCK_START: &str = "// Deadworks Launcher - Start";
+pub const SEARCHPATH_BLOCK_END: &str = "// Deadworks Launcher - End";
+pub const DLP_OFF_TAG: &str = "// #DLP_OFF# ";
 
 /// Back up gameinfo.gi to gameinfo.gi.dlp_backup and inject/uncomment SearchPaths for Deadworks mods and addons
 pub fn backup_and_patch_gameinfo(deadlock_dir: &Path) -> Result<(), String> {
@@ -1069,9 +1069,17 @@ pub async fn prepare_modded_client(mode: &str) -> Result<(), String> {
 
     // Only close Deadlock if we actually need to patch gameinfo or deploy files that may be locked
     if is_deadlock_running() {
-        println!("[lan_supervisor] Closing Deadlock to apply mod search paths...");
+        let msg = format!(
+            "To join the '{}' game mode, Deadlock must be restarted with custom mod files.\n\n\
+             Would you like to close Deadlock now to apply the mod?",
+            mode
+        );
+        if !crate::storage::prompt_user_to_close_deadlock_custom(&msg, "DLPHub - Restart Deadlock for Mod Mode?") {
+            return Err("Operation cancelled: Deadlock was kept running.".into());
+        }
+        println!("[lan_supervisor] User confirmed closing Deadlock to apply mod search paths...");
         close_deadlock_game();
-        tokio::time::sleep(Duration::from_millis(250)).await;
+        tokio::time::sleep(Duration::from_millis(300)).await;
     }
 
     let found = dlp_core::discovery::find_game()
