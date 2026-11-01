@@ -711,4 +711,12 @@ window.I18N_FA = {
   "optMeshNetwork": "شبکه مش با کارت شبکه اختصاصی (Wintun)",
   "optPortRelay": "رله پورت بدون درایور (Zero-Driver Relay)",
   "optDirectLan": "شبکه محلی مستقیم (Direct Local LAN)",
+  "vipConnModeLabel": "نوع اتصال شبکه (LAN Mode):",
+  "optConnMesh": "شبکه مش همتابه‌همتا (پیش‌فرض سریع)",
+  "optConnRelay": "رله پرسرعت سرور داخلی (بدون درایور)",
+  "optConnDirect": "اتصال مستقیم IP (شبکه محلی دستی)",
+  "lobbyConfigNoteTitle": "معماری اجرای سرور",
+  "lobbyConfigNoteDesc": "حالت اتصال مستقیم بدون بستن بازی و بدون دستکاری فایل‌ها اجرا می‌شود. ددورکس پایه از سرور اختصاصی بهینه‌شده محلی استفاده می‌کند.",
+  "backToProviders": "بازگشت به انتخاب ارائه‌دهنده",
+  "vipLobbySecurityLabel": "امنیت و دسترسی به لابی:",
 };

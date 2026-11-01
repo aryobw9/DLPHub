@@ -83,8 +83,12 @@ const HERO_BY_TAB = {
 };
 
 // ---------- i18n ----------
-function t(key) {
-  return (state.lang === 'en' ? window.I18N_EN : window.I18N_FA)[key] || key;
+function t(key, defaultVal) {
+  const dict = state.lang === 'en' ? window.I18N_EN : window.I18N_FA;
+  const fallbackDict = state.lang === 'en' ? window.I18N_FA : window.I18N_EN;
+  if (dict && dict[key] !== undefined) return dict[key];
+  if (fallbackDict && fallbackDict[key] !== undefined) return fallbackDict[key];
+  return defaultVal !== undefined ? defaultVal : key;
 }
 
 function applyLang() {
@@ -94,7 +98,13 @@ function applyLang() {
   
   document.body.classList.toggle('lang-fa', state.lang === 'fa');
   document.querySelectorAll('[data-i18n]').forEach((el) => {
-    el.textContent = t(el.dataset.i18n);
+    const existing = el.textContent.trim();
+    const val = t(el.dataset.i18n, existing || el.dataset.i18n);
+    if (val && val !== el.dataset.i18n) {
+      el.textContent = val;
+    } else if (!existing) {
+      el.textContent = val;
+    }
     el.classList.toggle('i18n-rtl', state.lang === 'fa');
   });
   document.querySelectorAll('[data-i18n-title]').forEach((el) => {
@@ -5985,6 +5995,10 @@ function openPerfDrawer() {
   const wrapper = document.getElementById('ui-scale-wrapper');
   if (!drawer) return;
 
+  if (window.isFriendsDrawerOpen) {
+    closeFriendsDrawer();
+  }
+
   perfState.isDrawerOpen = true;
   drawer.classList.add('open');
 
@@ -7147,8 +7161,7 @@ function handleProfileAuthAction() {
 function openAuthModal() {
   const modal = document.getElementById('modal-auth');
   if (modal) modal.style.display = 'flex';
-  switchAuthMethod('cmd');
-  requestNewAuthCode();
+  showAuthProvidersView();
 }
 
 function closeAuthModal() {
@@ -7156,6 +7169,49 @@ function closeAuthModal() {
   const modal = document.getElementById('modal-auth');
   if (modal) modal.style.display = 'none';
 }
+
+function showAuthProvidersView() {
+  stopAuthPolling();
+  const provView = document.getElementById('auth-view-providers');
+  const tsView = document.getElementById('auth-view-ts');
+  const soonView = document.getElementById('auth-view-soon');
+  if (provView) provView.style.display = 'block';
+  if (tsView) tsView.style.display = 'none';
+  if (soonView) soonView.style.display = 'none';
+}
+window.showAuthProvidersView = showAuthProvidersView;
+
+function openAuthMethodView(provider) {
+  const provView = document.getElementById('auth-view-providers');
+  const tsView = document.getElementById('auth-view-ts');
+  const soonView = document.getElementById('auth-view-soon');
+  const soonTitle = document.getElementById('auth-soon-title');
+  const soonDesc = document.getElementById('auth-soon-desc');
+  const soonIcon = document.getElementById('auth-soon-icon');
+
+  if (provView) provView.style.display = 'none';
+
+  if (provider === 'teamspeak') {
+    if (tsView) tsView.style.display = 'block';
+    if (soonView) soonView.style.display = 'none';
+    switchAuthMethod('cmd');
+    requestNewAuthCode();
+  } else if (provider === 'google') {
+    if (tsView) tsView.style.display = 'none';
+    if (soonView) soonView.style.display = 'block';
+    if (soonIcon) soonIcon.innerHTML = '<i class="fa-brands fa-google" style="color:#ef4444;"></i>';
+    if (soonTitle) soonTitle.textContent = state.lang === 'fa' ? 'ورود با حساب گوگل' : 'Google Account Sign-In';
+    if (soonDesc) soonDesc.textContent = state.lang === 'fa' ? 'ورود و همگام‌سازی از طریق اکانت گوگل به‌زودی فعال خواهد شد.' : 'Google account authentication will be available in an upcoming update.';
+  } else if (provider === 'dlp') {
+    if (tsView) tsView.style.display = 'none';
+    if (soonView) soonView.style.display = 'block';
+    if (soonIcon) soonIcon.innerHTML = '<img src="assets/app_icon.png" width="48" height="48" alt="" />';
+    if (soonTitle) soonTitle.textContent = state.lang === 'fa' ? 'اکانت ددلاک پرشین' : 'Deadlock Persian Account';
+    if (soonDesc) soonDesc.textContent = state.lang === 'fa' ? 'ورود مستقیم با حساب کاربری سایت ددلاک پرشین به‌زودی فعال خواهد شد.' : 'Direct website account login will be available soon.';
+  }
+}
+window.openAuthMethodView = openAuthMethodView;
+window.selectAuthProvider = openAuthMethodView;
 
 function switchAuthMethod(method) {
   const tabCmd = document.getElementById('auth-tab-cmd');
@@ -7311,7 +7367,7 @@ async function verifyPokeOtpAction() {
 function toggleFriendsDrawer() {
   const drawer = document.getElementById('friends-side-drawer');
   if (!drawer) return;
-  if (drawer.style.display === 'none' || !drawer.classList.contains('open')) {
+  if (!drawer.classList.contains('open')) {
     openFriendsDrawer();
   } else {
     closeFriendsDrawer();
@@ -7321,24 +7377,24 @@ function toggleFriendsDrawer() {
 function openFriendsDrawer() {
   const drawer = document.getElementById('friends-side-drawer');
   const wrapper = document.getElementById('ui-scale-wrapper');
-  if (drawer) {
-    window.isFriendsDrawerOpen = true;
-    drawer.style.display = 'flex';
-    drawer.classList.add('open');
-    if (wrapper) wrapper.classList.add('side-panel-open');
-    updateScale();
-    refreshFriendsList();
+  if (!drawer) return;
+
+  if (window.perfState && window.perfState.isDrawerOpen) {
+    closePerfDrawer();
   }
+
+  window.isFriendsDrawerOpen = true;
+  drawer.classList.add('open');
+  if (wrapper) wrapper.classList.add('side-panel-open');
+  updateScale();
+  refreshFriendsList();
 }
 
 function closeFriendsDrawer() {
   const drawer = document.getElementById('friends-side-drawer');
   const wrapper = document.getElementById('ui-scale-wrapper');
   window.isFriendsDrawerOpen = false;
-  if (drawer) {
-    drawer.classList.remove('open');
-    setTimeout(() => { drawer.style.display = 'none'; }, 200);
-  }
+  if (drawer) drawer.classList.remove('open');
   if (wrapper && (!window.perfState || !window.perfState.isDrawerOpen)) {
     wrapper.classList.remove('side-panel-open');
   }
@@ -7740,6 +7796,52 @@ function copyDpiMatchCode() {
   }).catch(() => {});
 }
 
+
+const HERO_ASSET_NAMES = {
+  1: 'Infernus',
+  2: 'Seven',
+  3: 'Vindicta',
+  4: 'Lady_Geist',
+  6: 'Abrams',
+  7: 'Wraith',
+  8: 'McGinnis',
+  10: 'Paradox',
+  11: 'Dynamo',
+  12: 'Kelvin',
+  13: 'Haze',
+  14: 'Holliday',
+  15: 'Bebop',
+  16: 'Grey_Talon',
+  18: 'Mo_&_Krill',
+  19: 'Shiv',
+  20: 'Ivy',
+  25: 'Warden',
+  27: 'Yamato',
+  31: 'Lash',
+  35: 'Viscous',
+  48: 'Mirage',
+  50: 'Vyper',
+  52: 'Pocket',
+  60: 'Sinclair',
+  66: 'Victor',
+  67: 'Paige',
+  76: 'Graves',
+  78: 'Deadman_Danny',
+  81: 'Celeste',
+  84: 'Rat_King',
+  87: 'Nurse_Harrow',
+};
+
+function getHeroImageUrl(heroId, heroName) {
+  let assetName = HERO_ASSET_NAMES[heroId];
+  if (!assetName && heroName) {
+    assetName = heroName.trim().replace(/\s+&\s+/g, '_&_').replace(/\s+/g, '_');
+  }
+  if (!assetName) assetName = 'Sinclair';
+  return `https://deadlockpersian.ir/assets/images/patch/head-heroes/${assetName}.webp`;
+}
+window.getHeroImageUrl = getHeroImageUrl;
+
 function renderDpiScorecard(sc) {
   const titleEl = document.getElementById('dpi-title');
   const statusEl = document.getElementById('dpi-status');
@@ -7780,6 +7882,8 @@ function renderDpiScorecard(sc) {
   if (mvpKda) mvpKda.innerHTML = `<span class="k">${mvp.kills || 12}</span> / <span class="d">${mvp.deaths || 1}</span> / <span class="a">${mvp.assists || 11}</span>`;
   if (mvpAcc) mvpAcc.textContent = mvp.accuracy || '37.5%';
   if (mvpKp) mvpKp.textContent = mvp.kp || '79.3%';
+  const mvpImg = document.getElementById('dpi-mvp-hero-img');
+  if (mvpImg) mvpImg.src = getHeroImageUrl(mvp.hero_id || 60, mvp.hero || 'Sinclair');
 
   // 2. Key Player #2
   const kp2 = sc.key_player_2 || {};
@@ -7806,6 +7910,8 @@ function renderDpiScorecard(sc) {
   if (kp2Kda) kp2Kda.innerHTML = `<span class="k">${kp2.kills || 8}</span> / <span class="d">${kp2.deaths || 0}</span> / <span class="a">${kp2.assists || 8}</span>`;
   if (kp2Acc) kp2Acc.textContent = kp2.accuracy || '55.2%';
   if (kp2Kp) kp2Kp.textContent = kp2.kp || '69.9%';
+  const kp2Img = document.getElementById('dpi-kp2-hero-img');
+  if (kp2Img) kp2Img.src = getHeroImageUrl(kp2.hero_id || 66, kp2.hero || 'Victor');
 
   // 3. Key Player #3
   const kp3 = sc.key_player_3 || {};
@@ -7832,6 +7938,8 @@ function renderDpiScorecard(sc) {
   if (kp3Kda) kp3Kda.innerHTML = `<span class="k">${kp3.kills || 3}</span> / <span class="d">${kp3.deaths || 4}</span> / <span class="a">${kp3.assists || 14}</span>`;
   if (kp3Acc) kp3Acc.textContent = kp3.accuracy || '58.6%';
   if (kp3Kp) kp3Kp.textContent = kp3.kp || '58.6%';
+  const kp3Img = document.getElementById('dpi-kp3-hero-img');
+  if (kp3Img) kp3Img.src = getHeroImageUrl(kp3.hero_id || 76, kp3.hero || 'Graves');
 
   // 4. Render 12-Player Ranking Table
   const tbody = document.getElementById('dpi-table-body');
@@ -7850,8 +7958,8 @@ function renderDpiScorecard(sc) {
         <div style="font-size:10px; color:#64748b;">#${p.team_rank || 1} در تیم</div>
       </td>
       <td>
-        <div class="player-cell">
-          <div class="table-hero-avatar"><i class="fa-solid fa-user"></i></div>
+        <div class="player-cell" style="display:flex; align-items:center; gap:10px;">
+          <img src="${getHeroImageUrl(p.hero_id, p.hero)}" class="table-hero-avatar-img" alt="${p.hero}" onerror="this.onerror=null;this.src='assets/app_icon.png';" />
           <div>
             <div style="font-weight:700; color:#fff;">${p.player}</div>
             <div style="font-size:11px; color:#94a3b8;">${p.hero}</div>
@@ -7886,9 +7994,6 @@ function renderDpiScorecard(sc) {
       </td>
       <td class="kp-cell">
         ${p.kp || '0.0%'}
-      </td>
-      <td style="text-align:center;">
-        <button type="button" class="btn-table-showcase">شوکیس ←</button>
       </td>
     `;
     tbody.appendChild(tr);

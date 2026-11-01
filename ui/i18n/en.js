@@ -709,4 +709,13 @@ window.I18N_EN = {
   "optMeshNetwork": "Dedicated Mesh Network (Wintun)",
   "optPortRelay": "Zero-Driver UDP Port Relay",
   "optDirectLan": "Direct Local LAN",
+  "lanConnection": "LAN & Online Matchmaking",
+  "vipConnModeLabel": "LAN Connection Mode:",
+  "optConnMesh": "Mesh Network (Virtual IP P2P / Default)",
+  "optConnRelay": "Ultra-Fast Relay (Zero-Driver)",
+  "optConnDirect": "Direct IP (Local LAN)",
+  "lobbyConfigNoteTitle": "Server Engine Configuration",
+  "lobbyConfigNoteDesc": "Direct Connection runs without Deadworks or modifying game files. Deadworks Base utilizes the local dedicated server.",
+  "backToProviders": "Back to Providers",
+  "vipLobbySecurityLabel": "Lobby Access & Security:",
 };
