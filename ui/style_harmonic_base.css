@@ -1,0 +1,349 @@
+/* ==========================================================================
+   DLPHUB MATHEMATICAL DESIGN SYSTEM SPECIFICATION
+   Harmonic Quarter-Scale System (0.75x, 1.00x, 1.25x, 1.50x)
+   Base Height Unit H_base = 40px
+   Base Grid Unit U = 8px
+   ========================================================================== */
+
+:root {
+  /* Strict Clickbox Height Tiers */
+  --h-click-sm: 30px;   /* 0.75x Compact Tier */
+  --h-click-md: 40px;   /* 1.00x Standard Tier (Base) */
+  --h-click-lg: 50px;   /* 1.25x Prominent Hero Tier */
+  --h-click-xl: 60px;   /* 1.50x Monumental Launch Tier */
+
+  /* Spacing Scale (Multiples of 4 / 8) */
+  --sp-micro:   4px;
+  --sp-tight:   8px;
+  --sp-compact: 12px;
+  --sp-base:    16px;
+  --sp-expanded:20px;
+  --sp-generous:24px;
+  --sp-gutter:  32px;
+  --sp-hero:    48px;
+
+  /* Typography Scale */
+  --fs-2xs: 10px;
+  --fs-xs:  11.5px;    /* 0.75x control text */
+  --fs-sm:  13px;
+  --fs-md:  14px;      /* 1.00x control text */
+  --fs-lg:  16px;      /* 1.25x control text */
+  --fs-xl:  20px;      /* 1.50x control text */
+  --fs-2xl: 26px;
+
+  /* DLPHub Signature Colors */
+  --dlp-ember: #f97316;
+  --dlp-ember-hover: #ea580c;
+  --dlp-ember-glow: rgba(249, 115, 22, 0.35);
+  --dlp-cyan: #06b6d4;
+  --dlp-cyan-glow: rgba(6, 182, 212, 0.35);
+  --dlp-gold: #f59e0b;
+  --dlp-gold-glow: rgba(245, 158, 11, 0.35);
+  --dlp-emerald: #10b981;
+  --dlp-ruby: #ef4444;
+}
+
+/* ==========================================================================
+   MATHEMATICAL RESIZING OF ACTUAL DLPHUB UI COMPONENTS
+   ========================================================================== */
+
+/* 1.00x Base Controls (All Standard Inputs, Selects, and Tabs -> Exactly 40px) */
+.lan-input,
+.lan-select,
+.vip-key-input,
+.vip-code-input,
+.convar-search-input,
+.dns-filter-select,
+.field-input,
+.field-select,
+select.lan-select,
+input.lan-input,
+input.vip-key-input {
+  height: var(--h-click-md) !important;
+  min-height: var(--h-click-md) !important;
+  max-height: var(--h-click-md) !important;
+  font-size: var(--fs-md) !important;
+  padding: 0 14px !important;
+  box-sizing: border-box !important;
+  line-height: normal !important;
+}
+
+/* 1.00x Navigation Tabs & Section Switchers (Exactly 40px) */
+.nav-btn,
+.lan-role-btn,
+.vip-mode-tab,
+.preset-btn,
+.apb-custom-select-trigger {
+  height: var(--h-click-md) !important;
+  min-height: var(--h-click-md) !important;
+  font-size: var(--fs-md) !important;
+  padding: 0 16px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+/* 1.00x Titlebar Action Buttons (Top-Left Profile & Friends -> Exactly 40px) */
+.titlebar-left-actions .titlebar-action-btn,
+.titlebar-left-actions .profile-action-btn,
+.titlebar-left-actions .friends-action-btn {
+  height: var(--h-click-md) !important;
+  min-height: var(--h-click-md) !important;
+  font-size: var(--fs-md) !important;
+  padding: 0 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+}
+
+/* 1.00x Window Controls (Close, Minimize, Maximize -> Exactly 40px x 40px) */
+.win-ctl {
+  height: var(--h-click-md) !important;
+  width: var(--h-click-md) !important;
+  min-width: var(--h-click-md) !important;
+  box-sizing: border-box !important;
+}
+
+/* 0.75x Compact Tier (Secondary Actions, Table Buttons, Chips -> Exactly 30px) */
+.btn-sm,
+.btn-xs,
+.btn-reset.btn-sm,
+.btn-table-showcase,
+.btn-refresh-ips,
+.btn-admin-pill,
+.lan-status-pill,
+.category-chip,
+.convar-chip,
+.btn-view-dpi,
+.btn-vip-extend-toggle {
+  height: var(--h-click-sm) !important;
+  min-height: var(--h-click-sm) !important;
+  max-height: var(--h-click-sm) !important;
+  font-size: var(--fs-xs) !important;
+  padding: 0 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  box-sizing: border-box !important;
+}
+
+/* 1.25x Prominent Hero Tier (Primary Room Creation, Hero CTAs, Auth Cards -> Exactly 50px) */
+.btn-heroic-host,
+.btn-vip-create,
+.btn-lan-create,
+.btn-lan-join,
+.btn-vip-join,
+.btn-vip-redeem,
+.auth-provider-card {
+  height: var(--h-click-lg) !important;
+  min-height: var(--h-click-lg) !important;
+  font-size: var(--fs-lg) !important;
+  padding: 0 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  box-sizing: border-box !important;
+}
+
+/* 1.50x Monumental Tier (Main Play Deadlock Launch Button -> Exactly 60px) */
+.btn-play,
+#btn-launch {
+  height: var(--h-click-xl) !important;
+  min-height: var(--h-click-xl) !important;
+  font-size: var(--fs-xl) !important;
+  padding: 0 26px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  box-sizing: border-box !important;
+}
+
+/* Symmetrical Card & Margin Harmonics */
+.lan-card,
+.unified-lan-card,
+.standard-lan-card,
+.vip-lan-card,
+.tweak-card,
+.dns-card,
+.hero-radar-card,
+.card-panel {
+  padding: var(--sp-generous) !important;
+  margin-bottom: var(--sp-generous) !important;
+  box-sizing: border-box !important;
+}
+
+/* Mathematical 2-Column Grid Gap */
+.lobby-creation-grid,
+.lan-layout-grid,
+.grid-2col {
+  gap: var(--sp-expanded) !important;
+}
+
+/* ==========================================================================
+   MATHEMATICAL INSPECTOR OVERLAYS (FOR VISUAL VERIFICATION)
+   ========================================================================== */
+body.show-inspector-badges [data-scale="0.75"] {
+  outline: 1.5px dashed #38bdf8 !important;
+  outline-offset: 1px;
+  position: relative;
+}
+body.show-inspector-badges [data-scale="0.75"]::after {
+  content: '0.75x';
+  position: absolute;
+  top: -8px;
+  left: 4px;
+  background: #082f49;
+  color: #38bdf8;
+  border: 1px solid #38bdf8;
+  font-family: 'Rajdhani', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+body.show-inspector-badges [data-scale="1.00"] {
+  outline: 1.5px dashed #f59e0b !important;
+  outline-offset: 1px;
+  position: relative;
+}
+body.show-inspector-badges [data-scale="1.00"]::after {
+  content: '1.00x';
+  position: absolute;
+  top: -8px;
+  left: 4px;
+  background: #451a03;
+  color: #f59e0b;
+  border: 1px solid #f59e0b;
+  font-family: 'Rajdhani', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+body.show-inspector-badges [data-scale="1.25"] {
+  outline: 1.5px dashed #f97316 !important;
+  outline-offset: 1px;
+  position: relative;
+}
+body.show-inspector-badges [data-scale="1.25"]::after {
+  content: '1.25x';
+  position: absolute;
+  top: -8px;
+  left: 4px;
+  background: #431407;
+  color: #fb923c;
+  border: 1px solid #f97316;
+  font-family: 'Rajdhani', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+body.show-inspector-badges [data-scale="1.50"] {
+  outline: 2px dashed #a855f7 !important;
+  outline-offset: 2px;
+  position: relative;
+}
+body.show-inspector-badges [data-scale="1.50"]::after {
+  content: '1.50x';
+  position: absolute;
+  top: -8px;
+  left: 4px;
+  background: #2e1065;
+  color: #c084fc;
+  border: 1px solid #a855f7;
+  font-family: 'Rajdhani', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* 8px Harmonic Ruler Grid Overlay */
+.harmonic-ruler-overlay-fixed {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999999;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  background-image: 
+    linear-gradient(to right, rgba(6, 182, 212, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(6, 182, 212, 0.08) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+body.show-harmonic-grid .harmonic-ruler-overlay-fixed {
+  opacity: 1;
+}
+
+/* Floating Interactive Design Philosophy Toolbar */
+.design-lab-floating-dock {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999990;
+  background: rgba(8, 12, 22, 0.94);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  border-radius: 9999px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(249, 115, 22, 0.25);
+  font-family: 'Rajdhani', 'Vazirmatn', sans-serif;
+  user-select: none;
+}
+
+.dock-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dock-pill-btn {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.dock-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.dock-pill-btn.active {
+  background: #f97316;
+  border-color: #fdba74;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.5);
+}

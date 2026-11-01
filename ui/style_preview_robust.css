@@ -1,0 +1,121 @@
+/* ==========================================================================
+   STYLE 2: "SOVEREIGN INDUSTRIAL" (Rugged Tactical Esports HUD)
+   Solid layered carbon plates, 45° chamfered cuts, tactile corner ticks (+),
+   recessed milled slots, unshakeable metallic authority, zero floatiness.
+   ========================================================================== */
+
+body {
+  background-color: #080a0e !important;
+  background-image: 
+    radial-gradient(rgba(255, 107, 0, 0.12) 1px, transparent 1px),
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px) !important;
+  background-size: 16px 16px, 32px 32px, 32px 32px !important;
+}
+
+/* Heavy-Duty Solid Basalt/Carbon Plates */
+.lan-card,
+.unified-lan-card,
+.standard-lan-card,
+.vip-lan-card,
+.tweak-card,
+.dns-card,
+.perf-side-drawer,
+.friends-side-drawer,
+.modal-content,
+.vip-privacy-card {
+  background: #0e131b !important;
+  backdrop-filter: none !important;
+  border: 1px solid #222d3d !important;
+  border-radius: 0 !important;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  position: relative;
+}
+
+/* Tactical Corner Crosshairs (+) */
+.lan-card::before,
+.unified-lan-card::before,
+.tweak-card::before,
+.dns-card::before {
+  content: '+' !important;
+  position: absolute !important;
+  top: 4px !important;
+  left: 6px !important;
+  font-family: monospace !important;
+  font-size: 11px !important;
+  color: #f97316 !important;
+  opacity: 0.7 !important;
+  pointer-events: none !important;
+}
+.lan-card::after,
+.unified-lan-card::after,
+.tweak-card::after,
+.dns-card::after {
+  content: '+' !important;
+  position: absolute !important;
+  top: 4px !important;
+  right: 6px !important;
+  font-family: monospace !important;
+  font-size: 11px !important;
+  color: #f97316 !important;
+  opacity: 0.7 !important;
+  pointer-events: none !important;
+}
+
+/* Recessed Milled Inputs */
+.lan-input,
+.lan-select,
+.field-input,
+.field-select {
+  background: #121822 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.7) !important;
+  color: #ffffff !important;
+}
+.lan-input:focus,
+.lan-select:focus {
+  border-color: #ff6b00 !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.7), 0 0 8px rgba(255, 107, 0, 0.4) !important;
+}
+
+/* 45° Chamfered Angular Cuts on Hero Buttons */
+.btn-heroic-host,
+.btn-vip-create,
+.btn-lan-create,
+.btn-lan-join,
+.btn-vip-join {
+  clip-path: polygon(10px 0%, 100% 0%, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0% 100%, 0% 10px) !important;
+  background: #ff6b00 !important;
+  border: none !important;
+  color: #000000 !important;
+  font-weight: 900 !important;
+  border-radius: 0 !important;
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.35) !important;
+}
+.btn-heroic-host:hover,
+.btn-vip-create:hover {
+  background: #ff8533 !important;
+  box-shadow: 0 0 20px rgba(255, 107, 0, 0.6) !important;
+}
+
+/* Monumental Launch Button Chamfer */
+.btn-play,
+#btn-launch {
+  clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px) !important;
+  background: #f59e0b !important;
+  color: #000000 !important;
+  border: none !important;
+  font-weight: 900 !important;
+  border-radius: 0 !important;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4) !important;
+}
+
+/* Clean Sharp Tabs */
+.nav-btn,
+.lan-role-btn,
+.titlebar-action-btn {
+  border-radius: 0 !important;
+  text-transform: uppercase !important;
+  font-family: 'Rajdhani', sans-serif !important;
+}
