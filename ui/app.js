@@ -186,6 +186,15 @@ function applyLang() {
   if (typeof renderDrawer === 'function') {
     renderDrawer();
   }
+  if (typeof renderUserProfile === 'function') {
+    renderUserProfile();
+  }
+  if (typeof renderFriendsList === 'function') {
+    renderFriendsList();
+  }
+  if (typeof renderMatchHistory === 'function') {
+    renderMatchHistory();
+  }
 
   if (!isLangSwitching) {
     setTimeout(() => {
@@ -5923,34 +5932,46 @@ function populatePresetSelect() {
 
 function updatePresetDropdownLang() {
   const sel = document.getElementById('perf-preset-select');
-  if (!sel) return;
+  const customLabel = document.getElementById('apb-custom-select-label');
   const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
   const labelsFa = {
-    'optilock-fps': 'اپتی‌لاک اف‌پی‌اس (پیشنهادی) [رقابتی]',
-    'dmm-clean': 'دی‌ام‌ام کلین (پایدار و ایمن) [متعادل]',
-    'optimizationlock': 'اپتیمایزیشن‌لاک (Sqooky) [متعادل]',
-    'sqooky-max-fps': 'حداکثر فریم اسکوکی [رقابتی]',
-    'optilock-potato': 'اپتی‌لاک پوتیتو [پوتیتو]',
-    'optilock-ultra-potato': 'اپتی‌لاک اولترا پوتیتو [پوتیتو]',
-    'eskay': 'کانفیگ اختصاصی اسکای [شفاف]',
-    'kaizu-min-spec': 'سیستم ضعیف کایزوچانرو [پوتیتو]'
+    'optilock-fps': 'پیشنهادی (OptiLock FPS)',
+    'dmm-clean': 'گرافیک بالا (High Graphics)',
+    'optilock-potato': 'پوتیتو‌لاک (PotatoLock)',
+    'optilock-ultra-potato': 'اولترا پوتیتو‌لاک (Ultra PotatoLock)',
+    'optimizationlock': 'اپتیمایزیشن‌لاک (Sqooky)',
+    'sqooky-max-fps': 'حداکثر فریم اسکوکی',
+    'eskay': 'کانفیگ اختصاصی اسکای',
+    'kaizu-min-spec': 'سیستم ضعیف کایزوچانرو'
   };
   const labelsEn = {
-    'optilock-fps': 'OptiLock FPS (Recommended) [Sweaty]',
-    'dmm-clean': 'DMM Clean (Consensus Safe) [Balanced]',
-    'optimizationlock': 'OptimizationLock (Sqooky) [Balanced]',
-    'sqooky-max-fps': "Sqooky's Max FPS [Sweaty]",
-    'optilock-potato': 'OptiLock Potato [Potato]',
-    'optilock-ultra-potato': 'OptiLock Ultra Potato [Potato]',
-    'eskay': "Eskay's Config [Pretty]",
-    'kaizu-min-spec': "Kaizuchaneru's Minimum Spec [Potato]"
+    'optilock-fps': 'Recommended (OptiLock FPS)',
+    'dmm-clean': 'High Graphics (DMM Clean)',
+    'optilock-potato': 'PotatoLock (OptiLock)',
+    'optilock-ultra-potato': 'Ultra PotatoLock',
+    'optimizationlock': 'OptimizationLock (Sqooky)',
+    'sqooky-max-fps': "Sqooky's Max FPS",
+    'eskay': "Eskay's Config",
+    'kaizu-min-spec': "Kaizuchaneru's Minimum Spec"
   };
-  for (const opt of sel.options) {
-    if (isFa && labelsFa[opt.value]) {
-      opt.textContent = labelsFa[opt.value];
-    } else if (!isFa && labelsEn[opt.value]) {
-      opt.textContent = labelsEn[opt.value];
+  const activeDict = isFa ? labelsFa : labelsEn;
+  if (sel) {
+    for (const opt of sel.options) {
+      if (activeDict[opt.value]) {
+        opt.textContent = activeDict[opt.value];
+      }
     }
+  }
+  document.querySelectorAll('.apb-custom-option').forEach(opt => {
+    const val = opt.getAttribute('data-value');
+    const span = opt.querySelector('span');
+    if (span && val && activeDict[val]) {
+      span.textContent = activeDict[val];
+    }
+  });
+  const curVal = (sel ? sel.value : null) || (typeof perfState !== 'undefined' ? perfState.activePresetId : 'optilock-fps');
+  if (customLabel && activeDict[curVal]) {
+    customLabel.textContent = activeDict[curVal];
   }
 }
 
@@ -7128,11 +7149,13 @@ function updateProfileUI() {
   const pAuthBtnText = document.getElementById('btn-profile-auth-text');
 
   if (userProfile.is_guest) {
-    if (nickEl) nickEl.textContent = `مهمان (${userProfile.nickname || 'Guest'})`;
+    const guestWord = state.lang === 'fa' ? 'مهمان' : 'Guest';
+    const guestNick = userProfile.nickname || guestWord;
+    if (nickEl) nickEl.textContent = `${guestWord} (${guestNick})`;
     if (tsTag) tsTag.classList.remove('verified');
     if (tsLabel) tsLabel.textContent = (state.lang === 'fa' ? 'متصل نشده' : 'Not Linked');
     if (statusDot) { statusDot.classList.remove('online'); }
-    if (pCardName) pCardName.textContent = `مهمان (${userProfile.nickname || 'Guest'})`;
+    if (pCardName) pCardName.textContent = `${guestWord} (${guestNick})`;
     if (pCardCode) pCardCode.textContent = 'DLP-GUEST';
     if (pTsLabel) pTsLabel.textContent = (state.lang === 'fa' ? 'حساب متصل نیست' : 'Not Linked');
     if (myCodeDrawer) myCodeDrawer.textContent = 'DLP-GUEST';
@@ -7529,9 +7552,9 @@ function renderFriendsList() {
       container.innerHTML = `
         <div class="friends-empty-box">
           <i class="fa-brands fa-teamspeak"></i>
-          <span>شما در حالت مهمان هستید. برای ساخت لیست دوستان پایدار و نمایش دوستان آنلاین، حساب تیم‌اسپیک خود را متصل کنید.</span>
+          <span>${t('friendEmptyGuest')}</span>
           <button type="button" class="btn-apply btn-sm" onclick="openAuthModal()" style="margin-top:8px;">
-            <i class="fa-solid fa-link"></i> اتصال به تیم‌اسپیک
+            <i class="fa-solid fa-link"></i> ${state.lang === 'fa' ? 'اتصال به تیم‌اسپیک' : 'Connect TeamSpeak'}
           </button>
         </div>
       `;
@@ -7539,7 +7562,7 @@ function renderFriendsList() {
       container.innerHTML = `
         <div class="friends-empty-box">
           <i class="fa-solid fa-user-group"></i>
-          <span>لیست دوستان شما خالی است. با ارسال کد دوستی به دیگران یا وارد کردن کد دوستی آن‌ها در تب «افزودن دوست»، دوستان خود را اضافه کنید.</span>
+          <span>${t('friendEmptyList')}</span>
         </div>
       `;
     }
@@ -7575,8 +7598,8 @@ function renderFriendsList() {
           </div>
         </div>
         <div class="friend-actions">
-          <button type="button" class="friend-action-btn btn-invite" data-tooltip="دعوت به لابی"><i class="fa-solid fa-paper-plane"></i> <span>دعوت</span></button>
-          <button type="button" class="friend-action-btn btn-remove" data-tooltip="حذف دوست"><i class="fa-solid fa-trash"></i></button>
+          <button type="button" class="friend-action-btn btn-invite" data-tooltip="${t('friendInviteTooltip')}"><i class="fa-solid fa-paper-plane"></i> <span>${state.lang === 'fa' ? 'دعوت' : 'Invite'}</span></button>
+          <button type="button" class="friend-action-btn btn-remove" data-tooltip="${t('friendRemoveTooltip')}"><i class="fa-solid fa-trash"></i></button>
         </div>
       `;
       container.appendChild(card);
@@ -7753,7 +7776,7 @@ function renderMatchHistory(filter = 'all') {
     container.innerHTML = `
       <div style="text-align:center; padding:40px; color:#64748b;">
         <i class="fa-solid fa-trophy" style="font-size:32px; opacity:0.4; margin-bottom:10px; display:block;"></i>
-        <span>هنوز مسابقه‌ای ثبت نشده است.</span>
+        <span>${t('noMatchesRecorded')}</span>
       </div>
     `;
     return;
@@ -7883,11 +7906,11 @@ function renderDpiScorecard(sc) {
   const dateEl = document.getElementById('dpi-date');
   const durEl = document.getElementById('dpi-duration');
 
-  if (titleEl) titleEl.textContent = sc.title || 'مسابقه کاستوم CCM #1 (SEASON 0)';
-  if (statusEl) statusEl.textContent = sc.status || 'پایان‌یافته';
+  if (titleEl) titleEl.textContent = sc.title || t('customMatchTitle');
+  if (statusEl) statusEl.textContent = sc.status || t('matchCompleted');
   if (numEl) numEl.textContent = `# ${sc.match_num || 'CCM #1'}`;
   if (codeEl) codeEl.textContent = sc.match_code || 'QP6BG';
-  if (dateEl) dateEl.textContent = sc.date || '۷ آبان ۱۴۰۵ ساعت ۲۲:۴۸';
+  if (dateEl) dateEl.textContent = sc.date || t('matchDateSample');
   if (durEl) durEl.textContent = sc.duration || '34:19';
 
   // 1. MVP #1
@@ -7988,7 +8011,7 @@ function renderDpiScorecard(sc) {
     tr.innerHTML = `
       <td class="rank-cell">
         <div style="font-weight:800;">#${p.rank || idx + 1}</div>
-        <div style="font-size:10px; color:#64748b;">#${p.team_rank || 1} در تیم</div>
+        <div style="font-size:10px; color:#64748b;">#${p.team_rank || 1} ${t('inTeamSuffix')}</div>
       </td>
       <td>
         <div class="player-cell" style="display:flex; align-items:center; gap:10px;">

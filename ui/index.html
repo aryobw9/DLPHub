@@ -215,7 +215,7 @@
           <img id="header-avatar-img" src="assets/app_icon.png" class="header-avatar" alt="Avatar" />
           <span id="header-online-status" class="header-status-dot"></span>
         </div>
-        <span id="header-nickname" class="header-nickname">مهمان (Guest)</span>
+        <span id="header-nickname" class="header-nickname" data-i18n="guestUser">مهمان (Guest)</span>
       </button>
 
       <!-- Friends Drawer Button: Same Size, Spaced Apart -->
@@ -254,7 +254,7 @@
     <header class="header-hero">
       <img src="assets/app_icon.png?v=1" class="hero-app-icon" width="72" height="72" alt="DLPHub" />
       <div class="header-subtitle-accent">GRAPHICS CONFIG</div>
-      <div class="header-title-fa">تنظیمات اختصاصی افزایش فریم برای ددلاک</div>
+      <div class="header-title-fa" data-i18n="headerSubtitleFa">تنظیمات اختصاصی افزایش فریم برای ددلاک</div>
     </header>
     <section class="content-viewport" id="nogame-panel" style="display:none">
       <div class="content-header">
@@ -307,7 +307,7 @@
         <div class="content-header">
         <div class="content-header-title">
           <i class="fa-solid fa-desktop" id="section-icon" style="font-size:13px;color:var(--deadlock-orange)"></i>
-          <span id="section-title">تنظیمات گرافیکی</span>
+          <span id="section-title" data-i18n="sectionGraphic">تنظیمات گرافیکی</span>
         </div>
         <button class="btn-refresh-ping-top" id="btn-refresh-ping" onclick="refreshValvePings(true)" style="display:none" data-tooltip="تست پینگ / Test Ping" aria-label="Test Ping">
           <div class="ping-cloud-loader">
@@ -376,15 +376,15 @@
               <div class="opt-level-card" role="button" tabindex="0" data-level="1" onclick="selectOptLevel(1)">
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="level-card-top">
-                  <span class="level-num">LEVEL 1</span>
+                  <span class="level-num" data-i18n="level1Tag">LEVEL 1</span>
                   <span class="level-badge badge-safe"><i class="fa-solid fa-microchip"></i> <span data-i18n="badgeCpu">CPU</span></span>
                 </div>
                 <div class="level-name" data-i18n="level1Name">High Graphics</div>
                 <div class="level-desc" data-i18n="level1Desc">only gameinfo.gi · 0% visual risk</div>
                 <div class="level-features">
-                  <span class="level-feat active">GameInfo</span>
-                  <span class="level-feat inactive">Video</span>
-                  <span class="level-feat inactive">Mods</span>
+                  <span class="level-feat active" data-i18n="featGameInfo">GameInfo</span>
+                  <span class="level-feat inactive" data-i18n="featVideo">Video</span>
+                  <span class="level-feat inactive" data-i18n="featMods">Mods</span>
                 </div>
               </div>
 
@@ -392,15 +392,15 @@
               <div class="opt-level-card selected" role="button" tabindex="0" data-level="2" onclick="selectOptLevel(2)">
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="level-card-top">
-                  <span class="level-num">LEVEL 2</span>
+                  <span class="level-num" data-i18n="level2Tag">LEVEL 2</span>
                   <span class="level-badge badge-balanced"><i class="fa-solid fa-bolt"></i> <span data-i18n="badgeCpuGpu">CPU + GPU</span></span>
                 </div>
                 <div class="level-name" data-i18n="level2Name">Recommended</div>
                 <div class="level-desc" data-i18n="level2Desc">gameinfo.gi + video.txt + mods</div>
                 <div class="level-features">
-                  <span class="level-feat active">GameInfo</span>
-                  <span class="level-feat active">Video</span>
-                  <span class="level-feat active">Mods</span>
+                  <span class="level-feat active" data-i18n="featGameInfo">GameInfo</span>
+                  <span class="level-feat active" data-i18n="featVideo">Video</span>
+                  <span class="level-feat active" data-i18n="featMods">Mods</span>
                 </div>
               </div>
 
@@ -408,15 +408,15 @@
               <div class="opt-level-card" role="button" tabindex="0" data-level="3" onclick="selectOptLevel(3)">
                 <span class="border-beam"><span class="beam"></span></span>
                 <div class="level-card-top">
-                  <span class="level-num">LEVEL 3</span>
+                  <span class="level-num" data-i18n="level3Tag">LEVEL 3</span>
                   <span class="level-badge badge-potato"><i class="fa-solid fa-fire"></i> <span data-i18n="badgePotato">POTATO</span></span>
                 </div>
                 <div class="level-name" data-i18n="level3Name">PotatoLock</div>
                 <div class="level-desc" data-i18n="level3Desc">Maximum frames for low-end PCs</div>
                 <div class="level-features">
-                  <span class="level-feat active">GameInfo</span>
-                  <span class="level-feat active">Video</span>
-                  <span class="level-feat active">Potato VPK</span>
+                  <span class="level-feat active" data-i18n="featGameInfo">GameInfo</span>
+                  <span class="level-feat active" data-i18n="featVideo">Video</span>
+                  <span class="level-feat active" data-i18n="featPotatoVpk">Potato VPK</span>
                 </div>
               </div>
             </div>
@@ -506,7 +506,7 @@
                   <div class="fov-slider-bar fov-sub-slider-bar" dir="ltr">
                     <span class="fov-bound">70°</span>
                     <input type="range" id="fov-slider" aria-label="زاویه دید / Field of View Slider" min="70" max="90" step="5" value="90" class="fov-range-input" oninput="setVideoFov(Number(this.value))" />
-                    <span class="fov-bound">90° <span class="fov-max-tag">(MAX)</span></span>
+                    <span class="fov-bound">90° <span class="fov-max-tag" data-i18n="fovMaxTag">(MAX)</span></span>
                   </div>
                 </div>
 
@@ -542,7 +542,7 @@
                     <div class="fov-slider-bar fov-sub-slider-bar" dir="ltr">
                       <span class="fov-bound tabular-num">1.33</span>
                       <input type="range" id="ar-slider" aria-label="نسبت تصویر / Aspect Ratio Slider" min="1.33" max="3.20" step="0.01" value="2.15" class="fov-range-input" oninput="setAspectRatio(this.value)" />
-                      <span class="fov-bound tabular-num">3.20 <span class="fov-max-tag">(MAX)</span></span>
+                      <span class="fov-bound tabular-num">3.20 <span class="fov-max-tag" data-i18n="fovMaxTag">(MAX)</span></span>
                     </div>
 
                   </div>
@@ -565,7 +565,7 @@
                   <label class="hud-switch-card" for="sw-better-breakables" id="lbl-better-breakables" data-i18n-tooltip="betterBreakablesDesc">
                     <div class="hud-switch-info">
                       <span class="hud-switch-label" data-i18n="betterBreakables">Better Breakables</span>
-                      <span class="fps-impact-badge impact-none" data-i18n-tooltip="fpsImpactNone"><i class="fa-solid fa-minus"></i> 0 FPS</span>
+                      <span class="fps-impact-badge impact-none" data-i18n-tooltip="fpsImpactNone"><i class="fa-solid fa-minus"></i> <span data-i18n="hudTagZeroFps">0 FPS</span></span>
                     </div>
                     <div class="neon-checkbox">
                       <input type="checkbox" id="sw-better-breakables">
@@ -588,7 +588,7 @@
                   <label class="hud-switch-card" for="sw-higher-brightness" id="lbl-higher-brightness" data-i18n-tooltip="higherBrightnessDesc">
                     <div class="hud-switch-info">
                       <span class="hud-switch-label" data-i18n="higherBrightness">Higher Brightness</span>
-                      <span class="fps-impact-badge impact-downgrade" data-i18n-tooltip="fpsImpactDowngrade"><span class="impact-chevrons"><i class="fa-solid fa-angle-down"></i></span> -FPS</span>
+                      <span class="fps-impact-badge impact-downgrade" data-i18n-tooltip="fpsImpactDowngrade"><span class="impact-chevrons"><i class="fa-solid fa-angle-down"></i></span> <span data-i18n="hudTagMinusFps">-FPS</span></span>
                     </div>
                     <div class="neon-checkbox">
                       <input type="checkbox" id="sw-higher-brightness">
@@ -611,7 +611,7 @@
                   <label class="hud-switch-card" for="sw-reduce-clutter" id="lbl-reduce-clutter" data-i18n-tooltip="reduceClutterDesc">
                     <div class="hud-switch-info">
                       <span class="hud-switch-label" data-i18n="reduceClutter">Reduce Clutter</span>
-                      <span class="fps-impact-badge impact-ultra" data-i18n-tooltip="fpsImpactUltra"><span class="impact-chevrons"><i class="fa-solid fa-angles-up"></i></span> MAX</span>
+                      <span class="fps-impact-badge impact-ultra" data-i18n-tooltip="fpsImpactUltra"><span class="impact-chevrons"><i class="fa-solid fa-angles-up"></i></span> <span data-i18n="hudTagMax">MAX</span></span>
                     </div>
                     <div class="neon-checkbox">
                       <input type="checkbox" id="sw-reduce-clutter">
@@ -643,7 +643,7 @@
                     <span class="fov-box-title" data-i18n="fpsLimitTitle">FPS LIMIT</span>
                   </div>
                   <div style="display:flex;align-items:center;gap:10px;">
-                    <span class="fps-val-badge" id="fps-val-badge">DEFAULT</span>
+                    <span class="fps-val-badge" id="fps-val-badge" data-i18n="fpsDefault">DEFAULT</span>
                     <button type="button" class="btn-micro-apply" id="btn-apply-fps" onclick="doApplyFpsOnly()" data-tooltip="Apply FPS limit directly to Deadlock">
                       <i class="fa-solid fa-check"></i> <span data-i18n="applyFpsOnly">Apply FPS</span>
                     </button>
@@ -668,7 +668,7 @@
 <div class="action-footer" id="action-footer">
           <div class="active-profile" id="active-profile">
             <span class="active-dot" id="active-dot"></span>
-            <span class="active-label" id="active-profile-label"><span class="active-tag-prefix">ACTIVE CONFIG</span><span class="active-tag-sep">·</span><span class="active-tag-val">—</span></span>
+            <span class="active-label" id="active-profile-label"><span class="active-tag-prefix" data-i18n="activeConfigPrefix">ACTIVE CONFIG</span><span class="active-tag-sep">·</span><span class="active-tag-val">—</span></span>
           </div>
           <div id="step-log" class="step-log" role="status" aria-live="polite" style="flex:1; margin:0 15px; font-size:0.75rem; color:var(--text-muted); text-align:right;"></div>
           <div style="display:flex;gap:12px;align-items:center">
@@ -747,19 +747,19 @@
                     <span class="pill-dot"></span>
                     <span class="pill-label" data-i18n="pillDns">دی‌ان‌اس فعال</span>
                     <span class="pill-colon">:</span>
-                    <strong class="pill-val" id="pill-dns-val">DHCP</strong>
+                    <strong class="pill-val" id="pill-dns-val" data-i18n="pillDnsDhcp">DHCP</strong>
                   </div>
                   <div class="status-pill pill-servers" id="pill-active-servers">
                     <span class="pill-dot green"></span>
                     <span class="pill-label" data-i18n="pillAllowed">سرورهای مجاز</span>
                     <span class="pill-colon">:</span>
-                    <strong class="pill-val" id="pill-servers-val">31 سرور</strong>
+                    <strong class="pill-val" id="pill-servers-val">31 <span data-i18n="serversWord">سرور</span></strong>
                   </div>
                   <div class="status-pill pill-shield" id="pill-active-shield">
                     <span class="pill-dot orange"></span>
                     <span class="pill-label" data-i18n="pillShield">سپر ترافیک</span>
                     <span class="pill-colon">:</span>
-                    <strong class="pill-val" id="pill-shield-val">غیرفعال</strong>
+                    <strong class="pill-val" id="pill-shield-val" data-i18n="shieldDisabled">غیرفعال</strong>
                   </div>
                 </div>
               </div>
@@ -850,12 +850,12 @@
               <!-- Filter & Actions Bar -->
               <div class="server-toolbar">
                 <div class="server-filters">
-                  <button class="filter-pill active" onclick="filterServersByRegion('all')" data-region="all">همه (36)</button>
-                  <button class="filter-pill" onclick="filterServersByRegion('europe')" data-region="europe">اروپا (15)</button>
-                  <button class="filter-pill" onclick="filterServersByRegion('middle_east')" data-region="middle_east">خاورمیانه (3)</button>
-                  <button class="filter-pill" onclick="filterServersByRegion('asia')" data-region="asia">شرق آسیا (4)</button>
-                  <button class="filter-pill" onclick="filterServersByRegion('north_america')" data-region="north_america">آمریکا (7)</button>
-                  <button class="filter-pill" onclick="filterServersByRegion('south_america')" data-region="south_america">سایر (7)</button>
+                  <button class="filter-pill active" onclick="filterServersByRegion('all')" data-region="all"><span data-i18n="regionAll">همه</span> (36)</button>
+                  <button class="filter-pill" onclick="filterServersByRegion('europe')" data-region="europe"><span data-i18n="regionEurope">اروپا</span> (15)</button>
+                  <button class="filter-pill" onclick="filterServersByRegion('middle_east')" data-region="middle_east"><span data-i18n="regionMiddleEast">خاورمیانه</span> (3)</button>
+                  <button class="filter-pill" onclick="filterServersByRegion('asia')" data-region="asia"><span data-i18n="regionAsia">شرق آسیا</span> (4)</button>
+                  <button class="filter-pill" onclick="filterServersByRegion('north_america')" data-region="north_america"><span data-i18n="regionNorthAmerica">آمریکا</span> (7)</button>
+                  <button class="filter-pill" onclick="filterServersByRegion('south_america')" data-region="south_america"><span data-i18n="regionOther">سایر</span> (7)</button>
                 </div>
                 <div class="server-quick-actions">
                   <button class="btn-tool-action btn-tool-top5" onclick="lockToTop5()" data-tooltip="انتخاب خودکار تمام سرورهای با پینگ بهینه و همگن (یکپارچه با ریجن)">
@@ -1140,7 +1140,7 @@
                         <!-- Row 1: Nickname (left) & Server Type (right) -->
                         <div class="lan-form-group">
                           <label class="lan-label" data-i18n="vipNicknameLabel">نام شما:</label>
-                          <input type="text" id="vip-host-nickname" class="lan-input" placeholder="Host" maxlength="16" />
+                          <input type="text" id="vip-host-nickname" class="lan-input" placeholder="Host" data-i18n-placeholder="hostNickPlaceholder" maxlength="16" />
                         </div>
                         <div class="lan-form-group">
                           <label class="lan-label" data-i18n="vipModSelectLabel">نوع سرور و مادها:</label>
@@ -1180,7 +1180,7 @@
                               <span data-i18n="vipProtectWithPassword" style="font-weight:600; color:#fbbf24;"><i class="fa-solid fa-lock" style="font-size:11px; margin-inline-end:4px;"></i>رمز عبور برای لابی</span>
                             </label>
                             <div id="vip-host-password-wrap" style="display:none; margin-top:8px;">
-                              <input type="password" id="vip-host-password" class="lan-input" placeholder="Password" maxlength="24" dir="ltr" />
+                              <input type="password" id="vip-host-password" class="lan-input" placeholder="Password" data-i18n-placeholder="passwordPlaceholder" maxlength="24" dir="ltr" />
                             </div>
                           </div>
                         </div>
@@ -1225,20 +1225,20 @@
                         <!-- Row 1: Nickname (left) & Room Code (right) -->
                         <div class="lan-form-group">
                           <label class="lan-label" data-i18n="vipNicknameLabel">نام شما:</label>
-                          <input type="text" id="vip-join-nickname" class="lan-input" placeholder="Player" maxlength="16" />
+                          <input type="text" id="vip-join-nickname" class="lan-input" placeholder="Player" data-i18n-placeholder="playerNickPlaceholder" maxlength="16" />
                         </div>
                         <div class="lan-form-group">
                           <label class="lan-label" data-i18n="vipEnterCodeLabel">کد لابی یا آدرس سرور:</label>
-                          <input type="text" id="vip-join-code" class="lan-input vip-code-input" placeholder="482910 یا IP:Port" maxlength="32" dir="ltr" />
+                          <input type="text" id="vip-join-code" class="lan-input vip-code-input" placeholder="482910 or IP:Port" data-i18n-placeholder="joinCodePlaceholder" maxlength="32" dir="ltr" />
                         </div>
 
                         <!-- Row 2: Password (left) & Join Button (right) -->
                         <div class="lan-form-group" id="vip-join-password-group">
                           <label class="lan-label" data-i18n="vipPasswordLabel">رمز عبور (در صورت لزوم):</label>
-                          <input type="password" id="vip-join-password" class="lan-input" placeholder="Optional" maxlength="24" dir="ltr" />
+                          <input type="password" id="vip-join-password" class="lan-input" placeholder="Optional" data-i18n-placeholder="optionalPlaceholder" maxlength="24" dir="ltr" />
                         </div>
                         <div class="lan-form-group" style="display:flex; flex-direction:column; justify-content:flex-end;">
-                          <label class="lan-label" style="visibility:hidden;">عملیات:</label>
+                          <label class="lan-label" style="visibility:hidden;" data-i18n="operationLabel">عملیات:</label>
                           <button type="button" class="btn-heroic-host" id="btn-vip-join-room" onclick="joinVipRoomAction()" style="width:100%; height:38px; min-height:38px; font-size:14px; font-weight:700; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
                             <i class="fa-solid fa-right-to-bracket"></i>
                             <span data-i18n="vipConnectToRoomBtn">ورود به لابی و برقراری ارتباط</span>
@@ -1308,7 +1308,7 @@
                       <label class="lan-label" data-i18n="lanHostIpLabel">آدرس آی‌پی شما در شبکه:</label>
                       <div class="lan-input-with-action">
                         <select id="lan-host-ip-select" class="lan-select" onchange="onLanIpSelected(this.value)">
-                          <option value="0.0.0.0">0.0.0.0 (تمام کارت‌های شبکه)</option>
+                          <option value="0.0.0.0" data-i18n="optAllAdapters">0.0.0.0 (تمام کارت‌های شبکه)</option>
                         </select>
                         <input type="text" id="lan-host-ip-custom" class="lan-input" placeholder="IP..." style="max-width:130px; display:none;" />
                         <button type="button" class="btn-refresh-ips" onclick="refreshLocalIps()" data-tooltip="بروزرسانی IPها"><i class="fa-solid fa-rotate-right"></i></button>
@@ -1363,8 +1363,8 @@
                       <span class="probe-ping" id="probe-ping-ms">-- ms</span>
                     </div>
                     <div class="probe-details">
-                      <span>نقشه: <b id="probe-map-name">--</b></span>
-                      <span>بازیکنان: <b id="probe-players">0/12</b></span>
+                      <span><span data-i18n="probeMapLabel">نقشه:</span> <b id="probe-map-name">--</b></span>
+                      <span><span data-i18n="probePlayersLabel">بازیکنان:</span> <b id="probe-players">0/12</b></span>
                     </div>
                   </div>
                 </div>
@@ -1381,8 +1381,8 @@
                     <span class="session-pulse-dot"></span>
                     <span id="session-status-title" data-i18n="sessionActiveTitle">اتاق متصل</span>
                   </div>
-                  <span class="session-mode-badge" id="session-conn-mode-badge">رله پرسرعت</span>
-                  <span class="session-mod-badge" id="session-mod-mode-badge">دد‌ورکس پایه</span>
+                  <span class="session-mode-badge" id="session-conn-mode-badge" data-i18n="badgeFastRelay">رله پرسرعت</span>
+                  <span class="session-mod-badge" id="session-mod-mode-badge" data-i18n="optDeadworksBase">دد‌ورکس پایه</span>
                   <div class="session-lobby-badge" id="lan-lobby-badge" style="display:none;"></div>
                 </div>
 
@@ -1458,7 +1458,7 @@
                           </button>
                           <button type="button" class="btn-reset btn-sm" onclick="copyClientShareCmd()" style="flex:1; min-width:130px;">
                             <i class="fa-solid fa-share-nodes"></i>
-                            <span data-i18n="sessionCopyShareCmd">کپی دستور اتصال برای دوستان</span>
+                            <span data-i18n="sessionCopyShareCmd">کپی لینک اتصال</span>
                           </button>
                         </div>
                       </div>
@@ -1472,7 +1472,7 @@
                         <i class="fa-solid fa-sliders" style="color:var(--deadlock-cyan)"></i>
                         <span class="session-card-title" data-i18n="sessionServerSettings">تنظیمات و ماد سرور ددورکس</span>
                       </div>
-                      <span class="session-badge-mini" id="session-server-state-badge">متوقف شد</span>
+                      <span class="session-badge-mini" id="session-server-state-badge" data-i18n="sessionServerStopped">متوقف شد</span>
                     </div>
 
                     <!-- Mode Selector Cards -->
@@ -1519,9 +1519,9 @@
                       <div class="lan-form-group" style="flex:1">
                         <label class="lan-label" data-i18n="lanMapLabel">انتخاب نقشه:</label>
                         <select id="session-map-select" class="lan-select">
-                          <option value="dl_midtown">dl_midtown (نقشه اصلی)</option>
-                          <option value="dl_streets">dl_streets</option>
-                          <option value="dl_hideout">dl_hideout (محیط تست/تمرین)</option>
+                          <option value="dl_midtown" data-i18n="optMidtownMain">dl_midtown (نقشه اصلی)</option>
+                          <option value="dl_streets" data-i18n="optStreetsMap">dl_streets</option>
+                          <option value="dl_hideout" data-i18n="optHideoutPractice">dl_hideout (محیط تست/تمرین)</option>
                         </select>
                       </div>
                       <div class="lan-form-group" style="flex:1">
@@ -1638,7 +1638,7 @@
                         <i class="fa-solid fa-users" style="color:gold"></i>
                         <span class="session-card-title" data-i18n="sessionRosterTitle">بازیکنان متصل به سرور و لابی</span>
                       </div>
-                      <span class="session-badge-counter" id="session-player-count">1 بازیکن</span>
+                      <span class="session-badge-counter" id="session-player-count">1 <span data-i18n="playerWord">بازیکن</span></span>
                     </div>
 
                     <div class="session-roster-list" id="session-roster-list">
@@ -1736,12 +1736,12 @@
       <div class="perf-drawer-header">
         <div class="perf-drawer-header-row1">
           <div class="drawer-header-left">
-            <span class="drawer-tier-pill" style="background:rgba(6,182,212,0.2); border-color:#06b6d4; color:#67e8f9;">DLP FRIENDS</span>
+            <span class="drawer-tier-pill" style="background:rgba(6,182,212,0.2); border-color:#06b6d4; color:#67e8f9;" data-i18n="friendsDrawerPill">DLP FRIENDS</span>
             <h3 class="perf-drawer-title" data-i18n="friendsListTitle">لیست دوستان ددلاک</h3>
           </div>
           <div class="drawer-header-right">
             <span class="drawer-stats-pill" id="drawer-friends-stats">
-              <strong class="tabular-num" id="drawer-stat-online">0</strong> آنلاین · <strong class="tabular-num" id="drawer-stat-total">0</strong> کل
+              <strong class="tabular-num" id="drawer-stat-online">0</strong> <span data-i18n="friendsOnlineLabel">آنلاین</span> · <strong class="tabular-num" id="drawer-stat-total">0</strong> <span data-i18n="friendsTotalLabel">کل</span>
             </span>
             <button type="button" class="perf-drawer-close" onclick="closeFriendsDrawer()" aria-label="Close">
               <i class="fa-solid fa-xmark"></i>
@@ -1821,7 +1821,7 @@
         <!-- Line 1: Badge + Preset Name (Never Truncates) + Stats Pill + Close Button -->
         <div class="perf-drawer-header-row1">
           <div class="drawer-header-left">
-            <span class="drawer-tier-pill" id="drawer-tier-pill">SWEATY</span>
+            <span class="drawer-tier-pill" id="drawer-tier-pill" data-i18n="tierSweaty">SWEATY</span>
             <h3 class="perf-drawer-title" id="drawer-preset-title" title="OptiLock FPS (Recommended)">OptiLock FPS (Recommended)</h3>
           </div>
           <div class="drawer-header-right">
@@ -1964,8 +1964,8 @@
             <i class="fa-solid fa-triangle-exclamation"></i>
           </div>
           <div class="error-modal-title-wrap">
-            <div class="error-modal-title" id="error-dialog-title">System Error</div>
-            <div class="error-modal-subtitle" id="error-dialog-subtitle">Windows Service Conflict</div>
+            <div class="error-modal-title" id="error-dialog-title" data-i18n="errDialogTitle">System Error</div>
+            <div class="error-modal-subtitle" id="error-dialog-subtitle" data-i18n="errDialogSubtitle">Windows Service Conflict</div>
           </div>
         </div>
         <button class="doorman-close-btn" onclick="closeErrorModal()" title="Close">&times;</button>
@@ -1979,14 +1979,14 @@
         <div class="error-solution-box" id="error-solution-box">
           <div class="error-solution-header">
             <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i>
-            <span class="error-solution-title" id="error-solution-title">Recommended Solution</span>
+            <span class="error-solution-title" id="error-solution-title" data-i18n="errSolutionTitle">Recommended Solution</span>
           </div>
           <div class="error-solution-text" id="error-solution-text"></div>
           <div class="error-solution-cmd-box" id="error-solution-cmd-box" style="display:none;">
             <code id="error-solution-cmd-code"></code>
             <button class="btn-copy-fix-cmd" id="btn-copy-fix-cmd" onclick="copyFixCommand()">
               <i class="fa-solid fa-copy"></i>
-              <span id="btn-copy-fix-label">Copy Command</span>
+              <span id="btn-copy-fix-label" data-i18n="errBtnCopyFix">Copy Command</span>
             </button>
           </div>
         </div>
@@ -1996,7 +1996,7 @@
           <button class="error-tech-toggle" id="btn-toggle-tech-details" onclick="toggleTechDetails()">
             <span class="error-tech-toggle-left">
               <i class="fa-solid fa-terminal"></i>
-              <span id="error-tech-toggle-label">View Technical Details</span>
+              <span id="error-tech-toggle-label" data-i18n="errTechToggle">View Technical Details</span>
             </span>
             <i class="fa-solid fa-chevron-down error-tech-chevron" id="error-tech-chevron"></i>
           </button>
@@ -2010,15 +2010,15 @@
         <div class="error-actions-left">
           <button class="btn-reset btn-sm" id="btn-copy-err-report" onclick="copyErrorReport()">
             <i class="fa-solid fa-clipboard"></i>
-            <span id="label-copy-err-report">Copy Report</span>
+            <span id="label-copy-err-report" data-i18n="errBtnCopyReport">Copy Report</span>
           </button>
           <button class="btn-reset btn-sm" id="btn-open-log-folder" onclick="openLogsFolder()">
             <i class="fa-solid fa-folder-open"></i>
-            <span id="label-open-log-folder">Open Logs</span>
+            <span id="label-open-log-folder" data-i18n="errBtnOpenLogs">Open Logs</span>
           </button>
         </div>
         <button class="btn-apply btn-sm error-btn-dismiss" onclick="closeErrorModal()">
-          <span id="label-dismiss-error">Dismiss</span>
+          <span id="label-dismiss-error" data-i18n="errBtnDismiss">Dismiss</span>
         </button>
       </div>
     </div>
@@ -2106,10 +2106,10 @@
               <i class="fa-brands fa-teamspeak"></i>
             </div>
             <div class="provider-meta">
-              <div class="provider-title">حساب تیم‌اسپیک (TeamSpeak)</div>
-              <div class="provider-sub">ورود سریع با تایید ربات یا ارسال پیام در سرور</div>
+              <div class="provider-title" data-i18n="authTsTitle">حساب تیم‌اسپیک (TeamSpeak)</div>
+              <div class="provider-sub" data-i18n="authTsSub">ورود سریع با تایید ربات یا ارسال پیام در سرور</div>
             </div>
-            <span class="provider-status-badge active">فعال</span>
+            <span class="provider-status-badge active" data-i18n="authStatusActive">فعال</span>
           </div>
 
           <!-- 2. Google Option -->
@@ -2118,10 +2118,10 @@
               <i class="fa-brands fa-google"></i>
             </div>
             <div class="provider-meta">
-              <div class="provider-title">حساب گوگل (Google Account)</div>
-              <div class="provider-sub">ورود با جیمیل و اکانت گوگل</div>
+              <div class="provider-title" data-i18n="authGoogleTitle">حساب گوگل (Google Account)</div>
+              <div class="provider-sub" data-i18n="authGoogleSub">ورود با جیمیل و اکانت گوگل</div>
             </div>
-            <span class="provider-status-badge soon">به‌زودی</span>
+            <span class="provider-status-badge soon" data-i18n="authStatusSoon">به‌زودی</span>
           </div>
 
           <!-- 3. Deadlock Persian Option -->
@@ -2130,10 +2130,10 @@
               <img src="assets/app_icon.png" width="24" height="24" alt="" />
             </div>
             <div class="provider-meta">
-              <div class="provider-title">اکانت ددلاک پرشین (Deadlock Persian)</div>
-              <div class="provider-sub">ورود مستقیم با نام کاربری و رمز سایت</div>
+              <div class="provider-title" data-i18n="authDlpTitle">اکانت ددلاک پرشین (Deadlock Persian)</div>
+              <div class="provider-sub" data-i18n="authDlpSub">ورود مستقیم با نام کاربری و رمز سایت</div>
             </div>
-            <span class="provider-status-badge soon">به‌زودی</span>
+            <span class="provider-status-badge soon" data-i18n="authStatusSoon">به‌زودی</span>
           </div>
         </div>
 
@@ -2153,7 +2153,7 @@
           </button>
           <div class="auth-subpage-badge">
             <i class="fa-brands fa-teamspeak" style="color:#38bdf8;"></i>
-            <span>TeamSpeak Authentication</span>
+            <span data-i18n="authTsHeaderTitle">TeamSpeak Authentication</span>
           </div>
         </div>
 
@@ -2172,15 +2172,15 @@
           <div class="auth-steps-card">
             <div class="auth-step-item">
               <div class="step-num">۱</div>
-              <div class="step-desc">کلاینت تیم‌اسپیک خود را باز کرده و به سرور <strong>ts.deadlockpersian.ir</strong> متصل شوید.</div>
+              <div class="step-desc" data-i18n="authTsStep1">کلاینت تیم‌اسپیک خود را باز کرده و به سرور <strong>ts.deadlockpersian.ir</strong> متصل شوید.</div>
             </div>
             <div class="auth-step-item">
               <div class="step-num">۲</div>
-              <div class="step-desc">روی بات <strong>DLP Bot1</strong> در چت خصوصی دابل کلیک کرده یا پیام ارسال فرمایید.</div>
+              <div class="step-desc" data-i18n="authTsStep2">روی بات <strong>DLP Bot1</strong> در چت خصوصی دابل کلیک کرده یا پیام ارسال فرمایید.</div>
             </div>
             <div class="auth-step-item">
               <div class="step-num">۳</div>
-              <div class="step-desc">دستور زیر را کپی کرده و دقیقاً در چت خصوصی بات ارسال فرمایید:</div>
+              <div class="step-desc" data-i18n="authTsStep3">دستور زیر را کپی کرده و دقیقاً در چت خصوصی بات ارسال فرمایید:</div>
             </div>
           </div>
 
@@ -2235,8 +2235,8 @@
         <div id="auth-soon-icon" style="font-size:48px; margin-bottom:12px; color:#eab308;">
           <i class="fa-solid fa-clock"></i>
         </div>
-        <h4 id="auth-soon-title" style="font-size:16px; font-weight:700; color:#fff; margin-bottom:8px;">به‌زودی</h4>
-        <p id="auth-soon-desc" style="font-size:12px; color:#94a3b8; max-width:320px; margin:0 auto;">این روش احراز هویت در آپدیت‌های آینده فعال خواهد شد.</p>
+        <h4 id="auth-soon-title" style="font-size:16px; font-weight:700; color:#fff; margin-bottom:8px;" data-i18n="authSoonTitle">به‌زودی</h4>
+        <p id="auth-soon-desc" style="font-size:12px; color:#94a3b8; max-width:320px; margin:0 auto;" data-i18n="authSoonDesc">این روش احراز هویت در آپدیت‌های آینده فعال خواهد شد.</p>
       </div>
 
     </div>
@@ -2253,9 +2253,9 @@
           </div>
           <div class="profile-meta-wrap">
             <div class="profile-name-row">
-              <h2 class="profile-display-name" id="profile-card-name">مهمان (Guest)</h2>
+              <h2 class="profile-display-name" id="profile-card-name" data-i18n="guestUser">مهمان (Guest)</h2>
               <span class="profile-ts-tag-pill" id="profile-ts-tag-pill">
-                <i class="fa-brands fa-teamspeak"></i> <span id="profile-ts-id-label">TeamSpeak Verified</span>
+                <i class="fa-brands fa-teamspeak"></i> <span id="profile-ts-id-label" data-i18n="profileTsVerified">TeamSpeak Verified</span>
               </span>
             </div>
             <div class="profile-code-row">
@@ -2285,7 +2285,7 @@
           </div>
 
           <button type="button" class="btn-reset btn-sm" id="btn-profile-auth-action" onclick="handleProfileAuthAction()" style="margin-right:12px;">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i> <span id="btn-profile-auth-text">تغییر حساب</span>
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> <span id="btn-profile-auth-text" data-i18n="profileChangeAccount">تغییر حساب</span>
           </button>
           <button type="button" class="perf-drawer-close" onclick="closeProfileModal()" aria-label="Close">
             <i class="fa-solid fa-xmark"></i>
@@ -2332,7 +2332,7 @@
                       <div class="vip-crown-icon"><i class="fa-solid fa-crown"></i></div>
                       <div class="vip-status-text-wrap">
                         <span class="vip-status-title" data-i18n="vipActiveTitle">اشتراک VIP فعال است</span>
-                        <span class="vip-status-remaining" id="vip-status-remaining">-- روز باقیمانده</span>
+                        <span class="vip-status-remaining" id="vip-status-remaining" data-i18n="profileVipDaysRemaining">-- روز باقیمانده</span>
                       </div>
                     </div>
                     <div class="vip-status-actions">
@@ -2360,9 +2360,9 @@
             <span data-i18n="matchHistoryTitle">تاریخچه مسابقات اخیر</span>
           </div>
           <div class="matches-filter-pills">
-            <button type="button" class="editor-chip active" id="chip-match-all" onclick="filterMatchHistory('all')">همه</button>
-            <button type="button" class="editor-chip" id="chip-match-win" onclick="filterMatchHistory('win')">پیروزی‌ها</button>
-            <button type="button" class="editor-chip" id="chip-match-loss" onclick="filterMatchHistory('loss')">شکست‌ها</button>
+            <button type="button" class="editor-chip active" id="chip-match-all" onclick="filterMatchHistory('all')" data-i18n="chipAllMatches">همه</button>
+            <button type="button" class="editor-chip" id="chip-match-win" onclick="filterMatchHistory('win')" data-i18n="chipWins">پیروزی‌ها</button>
+            <button type="button" class="editor-chip" id="chip-match-loss" onclick="filterMatchHistory('loss')" data-i18n="chipLosses">شکست‌ها</button>
           </div>
         </div>
 
@@ -2383,11 +2383,11 @@
           <div class="dpi-top-badges">
             <span class="dpi-badge-pill gold-border">
               <i class="fa-solid fa-trophy" style="color:gold;"></i>
-              <span id="dpi-title">مسابقه کاستوم CCM #1 (SEASON 0)</span>
+              <span id="dpi-title" data-i18n="customMatchTitle">مسابقه کاستوم CCM #1 (SEASON 0)</span>
             </span>
             <span class="dpi-badge-pill green-border">
               <span class="status-dot-green"></span>
-              <span id="dpi-status">پایان‌یافته</span>
+              <span id="dpi-status" data-i18n="matchCompleted">پایان‌یافته</span>
             </span>
             <span class="dpi-badge-pill" id="dpi-num"># CCM #1</span>
             <span class="dpi-badge-pill code-pill" onclick="copyDpiMatchCode()" data-tooltip="کپی کد مسابقه">
@@ -2396,7 +2396,7 @@
             </span>
             <span class="dpi-badge-pill">
               <i class="fa-solid fa-calendar-days" style="color:#f59e0b;"></i>
-              <span id="dpi-date">۷ آبان ۱۴۰۵ ساعت ۲۲:۴۸</span>
+              <span id="dpi-date" data-i18n="matchDateSample">۷ آبان ۱۴۰۵ ساعت ۲۲:۴۸</span>
             </span>
             <span class="dpi-badge-pill">
               <i class="fa-solid fa-clock" style="color:#94a3b8;"></i>
@@ -2410,9 +2410,9 @@
 
         <!-- DPI Section Header -->
         <div class="dpi-section-header">
-          <div class="dpi-dpi-badge">DEADLOCK PERFORMANCE INDEX 👑</div>
-          <h2 class="dpi-section-title">🏆 ستاره‌های مسابقه (MVP & KEY PLAYERS)</h2>
-          <p class="dpi-section-desc">رتبه‌بندی عملکرد فردی تمام بازیکنان مسابقه بر اساس مدل جامع عملکردی ددلاک. ستاره‌های مسابقه شامل MVP مسابقه (رتبه ۱) و دو Key Player مسابقه (رتبه‌های ۲ و ۳) هستند.</p>
+          <div class="dpi-dpi-badge" data-i18n="dpiBadgeTitle">DEADLOCK PERFORMANCE INDEX 👑</div>
+          <h2 class="dpi-section-title" data-i18n="dpiStarsHeading">🏆 ستاره‌های مسابقه (MVP & KEY PLAYERS)</h2>
+          <p class="dpi-section-desc" data-i18n="dpiStarsSub">رتبه‌بندی عملکرد فردی تمام بازیکنان مسابقه بر اساس مدل جامع عملکردی ددلاک. ستاره‌های مسابقه شامل MVP مسابقه (رتبه ۱) و دو Key Player مسابقه (رتبه‌های ۲ و ۳) هستند.</p>
         </div>
 
         <!-- DPI 3 Podium Cards -->
@@ -2424,7 +2424,7 @@
                 <strong id="dpi-kp2-score">73.7</strong>
                 <span class="dpi-grade-box" id="dpi-kp2-grade">+B</span>
               </span>
-              <span class="dpi-role-title cyan">KEY PLAYER #2 <i class="fa-solid fa-bolt"></i></span>
+              <span class="dpi-role-title cyan"><span data-i18n="dpiKeyPlayer2">KEY PLAYER #2</span> <i class="fa-solid fa-bolt"></i></span>
             </div>
             <div class="dpi-player-row">
               <div class="dpi-player-texts">
@@ -2437,19 +2437,19 @@
               </div>
             </div>
             <div class="dpi-badges-row" id="dpi-kp2-badges">
-              <span class="dpi-stat-badge badge-sup">SUP</span>
-              <span class="dpi-stat-badge badge-tank">TANK</span>
-              <span class="dpi-stat-badge badge-push">PUSH</span>
-              <span class="dpi-stat-badge badge-early">EARLY</span>
-              <span class="dpi-stat-badge badge-dmg">DMG</span>
+              <span class="dpi-stat-badge badge-sup" data-i18n="badgeSup">SUP</span>
+              <span class="dpi-stat-badge badge-tank" data-i18n="badgeTank">TANK</span>
+              <span class="dpi-stat-badge badge-push" data-i18n="badgePush">PUSH</span>
+              <span class="dpi-stat-badge badge-early" data-i18n="badgeEarly">EARLY</span>
+              <span class="dpi-stat-badge badge-dmg" data-i18n="badgeDmg">DMG</span>
             </div>
             <div class="dpi-stats-box">
               <div class="dpi-stat-col">
-                <span class="dpi-col-lbl">DAMAGE</span>
+                <span class="dpi-col-lbl" data-i18n="dpiDamageCol">DAMAGE</span>
                 <strong class="dpi-col-val text-red" id="dpi-kp2-dmg">31,979</strong>
               </div>
               <div class="dpi-stat-col">
-                <span class="dpi-col-lbl">SOULS</span>
+                <span class="dpi-col-lbl" data-i18n="dpiSoulsCol">SOULS</span>
                 <strong class="dpi-col-val text-gold" id="dpi-kp2-souls">49,766</strong>
               </div>
               <div class="dpi-stat-col">
@@ -2458,8 +2458,8 @@
               </div>
             </div>
             <div class="dpi-card-footer">
-              <span>دقت تیر: <strong id="dpi-kp2-acc">55.2%</strong></span>
-              <span>مشارکت در کیل: <strong id="dpi-kp2-kp">69.9%</strong></span>
+              <span><span data-i18n="dpiAccuracyLabel">دقت تیر:</span> <strong id="dpi-kp2-acc">55.2%</strong></span>
+              <span><span data-i18n="dpiKpLabel">مشارکت در کیل:</span> <strong id="dpi-kp2-kp">69.9%</strong></span>
               
             </div>
           </div>
@@ -2471,7 +2471,7 @@
                 <strong id="dpi-mvp-score">81.7</strong>
                 <span class="dpi-grade-box" id="dpi-mvp-grade">A</span>
               </span>
-              <span class="dpi-role-title gold">MVP OF THE MATCH #1 👑</span>
+              <span class="dpi-role-title gold"><span data-i18n="dpiMvp1">MVP OF THE MATCH #1</span> 👑</span>
             </div>
             <div class="dpi-player-row">
               <div class="dpi-player-texts">
@@ -2484,20 +2484,20 @@
               </div>
             </div>
             <div class="dpi-badges-row" id="dpi-mvp-badges">
-              <span class="dpi-stat-badge badge-sup">SUP</span>
-              <span class="dpi-stat-badge badge-tank">TANK</span>
-              <span class="dpi-stat-badge badge-push">PUSH</span>
-              <span class="dpi-stat-badge badge-early">EARLY</span>
-              <span class="dpi-stat-badge badge-dmg">DMG</span>
-              <span class="dpi-stat-badge badge-farm">FARM</span>
+              <span class="dpi-stat-badge badge-sup" data-i18n="badgeSup">SUP</span>
+              <span class="dpi-stat-badge badge-tank" data-i18n="badgeTank">TANK</span>
+              <span class="dpi-stat-badge badge-push" data-i18n="badgePush">PUSH</span>
+              <span class="dpi-stat-badge badge-early" data-i18n="badgeEarly">EARLY</span>
+              <span class="dpi-stat-badge badge-dmg" data-i18n="badgeDmg">DMG</span>
+              <span class="dpi-stat-badge badge-farm" data-i18n="badgeFarm">FARM</span>
             </div>
             <div class="dpi-stats-box">
               <div class="dpi-stat-col">
-                <span class="dpi-col-lbl">DAMAGE</span>
+                <span class="dpi-col-lbl" data-i18n="dpiDamageCol">DAMAGE</span>
                 <strong class="dpi-col-val text-red" id="dpi-mvp-dmg">40,133</strong>
               </div>
               <div class="dpi-stat-col">
-                <span class="dpi-col-lbl">SOULS</span>
+                <span class="dpi-col-lbl" data-i18n="dpiSoulsCol">SOULS</span>
                 <strong class="dpi-col-val text-gold" id="dpi-mvp-souls">46,884</strong>
               </div>
               <div class="dpi-stat-col">
@@ -2506,8 +2506,8 @@
               </div>
             </div>
             <div class="dpi-card-footer">
-              <span>دقت تیر: <strong id="dpi-mvp-acc">37.5%</strong></span>
-              <span>مشارکت در کیل: <strong id="dpi-mvp-kp">79.3%</strong></span>
+              <span><span data-i18n="dpiAccuracyLabel">دقت تیر:</span> <strong id="dpi-mvp-acc">37.5%</strong></span>
+              <span><span data-i18n="dpiKpLabel">مشارکت در کیل:</span> <strong id="dpi-mvp-kp">79.3%</strong></span>
               
             </div>
           </div>
@@ -2519,7 +2519,7 @@
                 <strong id="dpi-kp3-score">58.9</strong>
                 <span class="dpi-grade-box" id="dpi-kp3-grade">-B</span>
               </span>
-              <span class="dpi-role-title orange">KEY PLAYER #3 <i class="fa-solid fa-bolt"></i></span>
+              <span class="dpi-role-title orange"><span data-i18n="dpiKeyPlayer3">KEY PLAYER #3</span> <i class="fa-solid fa-bolt"></i></span>
             </div>
             <div class="dpi-player-row">
               <div class="dpi-player-texts">
@@ -2532,19 +2532,19 @@
               </div>
             </div>
             <div class="dpi-badges-row" id="dpi-kp3-badges">
-              <span class="dpi-stat-badge badge-sup">SUP</span>
-              <span class="dpi-stat-badge badge-tank">TANK</span>
-              <span class="dpi-stat-badge badge-push">PUSH</span>
-              <span class="dpi-stat-badge badge-early">EARLY</span>
-              <span class="dpi-stat-badge badge-dmg">DMG</span>
+              <span class="dpi-stat-badge badge-sup" data-i18n="badgeSup">SUP</span>
+              <span class="dpi-stat-badge badge-tank" data-i18n="badgeTank">TANK</span>
+              <span class="dpi-stat-badge badge-push" data-i18n="badgePush">PUSH</span>
+              <span class="dpi-stat-badge badge-early" data-i18n="badgeEarly">EARLY</span>
+              <span class="dpi-stat-badge badge-dmg" data-i18n="badgeDmg">DMG</span>
             </div>
             <div class="dpi-stats-box">
               <div class="dpi-stat-col">
-                <span class="dpi-col-lbl">DAMAGE</span>
+                <span class="dpi-col-lbl" data-i18n="dpiDamageCol">DAMAGE</span>
                 <strong class="dpi-col-val text-red" id="dpi-kp3-dmg">27,001</strong>
               </div>
               <div class="dpi-stat-col">
-                <span class="dpi-col-lbl">SOULS</span>
+                <span class="dpi-col-lbl" data-i18n="dpiSoulsCol">SOULS</span>
                 <strong class="dpi-col-val text-gold" id="dpi-kp3-souls">38,922</strong>
               </div>
               <div class="dpi-stat-col">
@@ -2553,8 +2553,8 @@
               </div>
             </div>
             <div class="dpi-card-footer">
-              <span>دقت تیر: <strong id="dpi-kp3-acc">58.6%</strong></span>
-              <span>مشارکت در کیل: <strong id="dpi-kp3-kp">58.6%</strong></span>
+              <span><span data-i18n="dpiAccuracyLabel">دقت تیر:</span> <strong id="dpi-kp3-acc">58.6%</strong></span>
+              <span><span data-i18n="dpiKpLabel">مشارکت در کیل:</span> <strong id="dpi-kp3-kp">58.6%</strong></span>
               
             </div>
           </div>
@@ -2563,23 +2563,23 @@
         <!-- DPI Full 12-Player Table -->
         <div class="dpi-table-section">
           <div class="dpi-table-header-bar">
-            <div class="dpi-table-title"><i class="fa-solid fa-list-check" style="color:#06b6d4;"></i> جدول رتبه‌بندی کلی تمام بازیکنان مسابقه:</div>
-            <div class="dpi-table-sub">برای مشاهده مشخصات کامل هر بازیکن در شوکیس، روی ردیف کلیک کنید</div>
+            <div class="dpi-table-title"><i class="fa-solid fa-list-check" style="color:#06b6d4;"></i> <span data-i18n="dpiTableTitle">جدول رتبه‌بندی کلی تمام بازیکنان مسابقه:</span></div>
+            <div class="dpi-table-sub" data-i18n="dpiTableSub">برای مشاهده مشخصات کامل هر بازیکن در شوکیس، روی ردیف کلیک کنید</div>
           </div>
 
           <div class="dpi-table-responsive">
             <table class="dpi-table">
               <thead>
                 <tr>
-                  <th style="width:48px;">رتبه</th>
-                  <th>بازیکن و هیرو</th>
-                  <th>تیم</th>
-                  <th>گرید و امتیاز</th>
-                  <th>نشان‌ها</th>
+                  <th style="width:48px;" data-i18n="dpiColRank">رتبه</th>
+                  <th data-i18n="dpiColPlayer">بازیکن و هیرو</th>
+                  <th data-i18n="dpiColTeam">تیم</th>
+                  <th data-i18n="dpiColGrade">گرید و امتیاز</th>
+                  <th data-i18n="dpiColBadges">نشان‌ها</th>
                   <th>K / D / A</th>
-                  <th>SOULS</th>
-                  <th>DAMAGE</th>
-                  <th>مشارکت (KP%)</th>
+                  <th data-i18n="dpiColSouls">SOULS</th>
+                  <th data-i18n="dpiColDamage">DAMAGE</th>
+                  <th data-i18n="dpiColKp">مشارکت (KP%)</th>
                   
                 </tr>
               </thead>
