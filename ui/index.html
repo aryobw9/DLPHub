@@ -208,6 +208,25 @@
     </div>
     <div class="titlebar-drag-spacer" data-tauri-drag-region style="flex:1; height:100%;"></div>
     <div class="window-controls" data-tauri-drag-region="false">
+      <!-- Friends Panel Drawer Trigger -->
+      <button class="titlebar-pill-btn" id="btn-friends-drawer" onclick="toggleFriendsDrawer()" data-tooltip="لیست دوستان / Friends List">
+        <i class="fa-solid fa-user-group"></i>
+        <span class="friends-btn-label" data-i18n="friends">دوستان</span>
+        <span id="friends-badge-count" class="badge-pill">0</span>
+      </button>
+
+      <!-- User Profile & TS Account Pill Trigger -->
+      <button class="titlebar-profile-btn" id="btn-header-profile" onclick="handleProfileHeaderClick()" data-tooltip="پروفایل کاربری و تاریخچه مسابقات / Account & Match History">
+        <div class="header-avatar-wrap">
+          <img id="header-avatar-img" src="assets/app_icon.png" class="header-avatar" alt="Avatar" />
+          <span id="header-online-status" class="header-status-dot"></span>
+        </div>
+        <div class="header-profile-text">
+          <span id="header-nickname" class="header-nickname">مهمان (Guest)</span>
+          <span id="header-ts-tag" class="header-ts-tag"><i class="fa-brands fa-teamspeak"></i> <span id="header-ts-label" data-i18n="notLinked">متصل نشده</span></span>
+        </div>
+      </button>
+
       <button class="btn-play" id="btn-launch" data-tooltip="اجرای بازی ددلاک / Launch Game">
         <span class="play-chip"><img src="assets/icons_norm/logo_mark.png" class="dlp-icon-play" width="16" height="16" alt="" /></span>
         <span data-i18n="launch">اجرای بازی</span>
@@ -1654,10 +1673,30 @@
                     <div class="session-admin-bar" id="session-admin-bar" style="display:none;">
                       <div class="session-admin-title"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="sessionHostQuickActions">دستورات مدیریت سرور در بازی:</span></div>
                       <div class="session-admin-buttons">
-                        <button type="button" class="btn-admin-pill" onclick="sendAdminCmd('pause')"><i class="fa-solid fa-pause"></i> <span data-i18n="adminPause">توقف بازی</span></button>
-                        <button type="button" class="btn-admin-pill" onclick="sendAdminCmd('unpause')"><i class="fa-solid fa-play"></i> <span data-i18n="adminUnpause">ادامه بازی</span></button>
                         <button type="button" class="btn-admin-pill" onclick="sendAdminCmd('restart')"><i class="fa-solid fa-rotate-left"></i> <span data-i18n="adminRestart">شروع مجدد راند</span></button>
                         <button type="button" class="btn-admin-pill" onclick="sendAdminCmd('reloadmap')"><i class="fa-solid fa-map"></i> <span data-i18n="adminReloadMap">بارگذاری مجدد نقشه</span></button>
+                        <button type="button" class="btn-admin-pill" onclick="sendAdminCmd('bot_kick')"><i class="fa-solid fa-user-xmark"></i> <span data-i18n="adminKickBots">حذف بات‌ها</span></button>
+                        <button type="button" class="btn-admin-pill" id="btn-toggle-coadmin" onclick="toggleFriendsCoAdmin()"><i class="fa-solid fa-shield"></i> <span id="coadmin-toggle-label" data-i18n="coadminToggle">هم‌ادمینی دوستان: غیرفعال</span></button>
+                      </div>
+
+                      <!-- Safe VConsole2 Server Command Bar -->
+                      <div class="session-vconsole-wrap" style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.08); padding-top:8px;">
+                        <div class="session-admin-title"><i class="fa-solid fa-terminal"></i> <span data-i18n="vconsoleTitle">کنسول فرامین سرور سورس ۲ (VConsole2):</span></div>
+                        <div class="vconsole-input-row" style="display:flex; gap:8px; margin-top:6px;">
+                          <input type="text" id="vconsole-cmd-input" class="vconsole-input" placeholder="changelevel dl_midtown, bot_kick, say GL HF! ..." dir="ltr" onkeydown="if(event.key==='Enter') executeVConsoleCommand()" />
+                          <button type="button" class="btn-apply btn-sm" id="btn-vconsole-send" onclick="executeVConsoleCommand()" style="min-width:70px;">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span data-i18n="send">ارسال</span>
+                          </button>
+                        </div>
+                        <div class="vconsole-quick-chips" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;">
+                          <span class="vconsole-chip" onclick="setVConsolePreset('restart_round')">restart_round</span>
+                          <span class="vconsole-chip" onclick="setVConsolePreset('changelevel dl_midtown')">changelevel dl_midtown</span>
+                          <span class="vconsole-chip" onclick="setVConsolePreset('bot_kick')">bot_kick</span>
+                          <span class="vconsole-chip" onclick="setVConsolePreset('bot_add')">bot_add</span>
+                          <span class="vconsole-chip" onclick="setVConsolePreset('sv_cheats 1')">sv_cheats 1</span>
+                          <span class="vconsole-chip" onclick="setVConsolePreset('say GL HF!')">say GL HF!</span>
+                        </div>
                       </div>
 
                       <!-- Cursed Arena Special Actions -->
@@ -1783,6 +1822,92 @@
         </div>
       </section>
     <!-- Performance Details & Settings Side Panel -->
+    
+    <!-- Friends Side Panel Drawer (Matching ConVars Drawer Style) -->
+    <aside class="perf-side-panel perf-side-drawer friends-side-drawer" id="friends-side-drawer" aria-label="Friends Panel" style="display:none;">
+      <!-- Drawer Header -->
+      <div class="perf-drawer-header">
+        <div class="perf-drawer-header-row1">
+          <div class="drawer-header-left">
+            <span class="drawer-tier-pill" style="background:rgba(6,182,212,0.2); border-color:#06b6d4; color:#67e8f9;">DLP FRIENDS</span>
+            <h3 class="perf-drawer-title" data-i18n="friendsListTitle">لیست دوستان ددلاک</h3>
+          </div>
+          <div class="drawer-header-right">
+            <span class="drawer-stats-pill" id="drawer-friends-stats">
+              <strong class="tabular-num" id="drawer-stat-online">0</strong> آنلاین · <strong class="tabular-num" id="drawer-stat-total">0</strong> کل
+            </span>
+            <button type="button" class="perf-drawer-close" onclick="closeFriendsDrawer()" aria-label="Close">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Segmented Tabs -->
+        <div class="perf-drawer-tabs">
+          <button type="button" class="perf-drawer-tab active" id="tab-btn-friends-all" onclick="switchFriendsTab('all')">
+            <i class="fa-solid fa-user-group"></i> <span data-i18n="allFriends">همه دوستان</span>
+          </button>
+          <button type="button" class="perf-drawer-tab" id="tab-btn-friends-active" onclick="switchFriendsTab('active')">
+            <i class="fa-solid fa-gamepad"></i> <span data-i18n="inLobbyOrGame">در لابی / بازی</span>
+          </button>
+          <button type="button" class="perf-drawer-tab" id="tab-btn-friends-add" onclick="switchFriendsTab('add')">
+            <i class="fa-solid fa-user-plus"></i> <span data-i18n="addFriend">افزودن دوست</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Drawer Body -->
+      <div class="perf-drawer-body">
+        <!-- Tab 1 & 2: Friends List & Filters -->
+        <div class="drawer-tab-pane active" id="pane-friends-list">
+          <div class="editor-controls-sticky">
+            <div class="editor-search-bar">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="friend-search-input" placeholder="جستجوی دوست با نام یا کد..." oninput="onFriendSearch(this.value)">
+            </div>
+            <div class="editor-filter-chips">
+              <button type="button" class="editor-chip active" id="chip-friends-all" onclick="setFriendsFilter('all')">همه</button>
+              <button type="button" class="editor-chip" id="chip-friends-online" onclick="setFriendsFilter('online')">آنلاین</button>
+              <button type="button" class="editor-chip" id="chip-friends-lobby" onclick="setFriendsFilter('lobby')">در لابی</button>
+              <button type="button" class="editor-chip" id="chip-friends-admins" onclick="setFriendsFilter('admins')">ادمین‌ها</button>
+            </div>
+          </div>
+
+          <div class="friends-cards-container" id="friends-cards-list">
+            <!-- Dynamic Friends Cards rendered here -->
+          </div>
+        </div>
+
+        <!-- Tab 3: Add Friend -->
+        <div class="drawer-tab-pane" id="pane-friends-add" style="display:none; padding:16px;">
+          <!-- My Friend Code Card -->
+          <div class="friend-my-code-card">
+            <div class="friend-my-code-label" data-i18n="myFriendCodeLabel">کد دوستی اختصاصی شما:</div>
+            <div class="friend-my-code-box">
+              <span class="friend-my-code-text" id="drawer-my-code">DLP-....</span>
+              <button type="button" class="btn-copy-code" onclick="copyMyFriendCode()" data-tooltip="کپی کد دوستی">
+                <i class="fa-solid fa-copy"></i>
+              </button>
+            </div>
+            <div class="friend-my-code-hint" data-i18n="myFriendCodeHint">این کد را به دوستان خود بدهید تا بتوانند شما را به لیست دوستان خود اضافه کنند.</div>
+          </div>
+
+          <!-- Add Friend Input Form -->
+          <div class="friend-add-form" style="margin-top:20px;">
+            <label class="friend-input-label" data-i18n="addFriendInputLabel">کد دوستی یا نام کاربری دوست شما:</label>
+            <div style="display:flex; gap:8px; margin-top:6px;">
+              <input type="text" id="friend-add-input" class="vconsole-input" placeholder="مثال: DLP-4819 یا Nickname" dir="ltr" onkeydown="if(event.key==='Enter') executeAddFriend()" />
+              <button type="button" class="btn-apply btn-sm" onclick="executeAddFriend()" style="min-width:90px;">
+                <i class="fa-solid fa-user-plus"></i>
+                <span data-i18n="addBtn">افزودن</span>
+              </button>
+            </div>
+            <div id="friend-add-feedback" style="margin-top:8px; font-size:12px; display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
     <aside class="perf-side-panel perf-side-drawer" id="perf-side-drawer" aria-label="Performance Details & Settings">
       <!-- Drawer Header -->
       <div class="perf-drawer-header">
@@ -2048,7 +2173,422 @@
       </div>
     </div>
   </div>
-    <!-- Modal: Confirm Revert to Vanilla -->
+    
+  <!-- Two-Way TeamSpeak OTP Login Modal -->
+  <div class="modal-overlay" id="modal-auth" style="display:none" role="dialog" aria-modal="true">
+    <div class="modal-box auth-modal-box">
+      <div class="auth-modal-header">
+        <div class="auth-header-icon-wrap">
+          <i class="fa-brands fa-teamspeak"></i>
+        </div>
+        <div class="auth-header-title-wrap">
+          <h3 class="auth-modal-title" data-i18n="authModalTitle">ورود و اتصال حساب تیم‌اسپیک</h3>
+          <p class="auth-modal-subtitle" data-i18n="authModalSubtitle">اتصال حساب کاربری جهت ذخیره تاریخچه بازی‌ها، رتبه‌بندی و لیست دوستان</p>
+        </div>
+        <button type="button" class="perf-drawer-close" onclick="closeAuthModal()" aria-label="Close" style="margin-right:auto;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Guest Notice Pill -->
+      <div class="auth-guest-notice">
+        <i class="fa-solid fa-circle-info" style="color:#06b6d4;"></i>
+        <span data-i18n="authGuestNotice">شما می‌توانید بدون حساب به عنوان مهمان بازی کنید، اما با اتصال حساب تیم‌اسپیک، تاریخچه مسابقات و لیست دوستان شما محفوظ می‌ماند.</span>
+      </div>
+
+      <!-- Auth Method Selector Tabs -->
+      <div class="auth-method-tabs">
+        <button type="button" class="auth-method-tab active" id="auth-tab-cmd" onclick="switchAuthMethod('cmd')">
+          <i class="fa-solid fa-terminal"></i> <span data-i18n="authMethodCmd">روش ۱: ارسال دستور به بات (توصیه شده)</span>
+        </button>
+        <button type="button" class="auth-method-tab" id="auth-tab-poke" onclick="switchAuthMethod('poke')">
+          <i class="fa-solid fa-bell"></i> <span data-i18n="authMethodPoke">روش ۲: دریافت کد پیام / پوک</span>
+        </button>
+      </div>
+
+      <!-- Auth Method 1: Send Command to Bot -->
+      <div class="auth-pane active" id="auth-pane-cmd">
+        <div class="auth-steps-card">
+          <div class="auth-step-item">
+            <div class="step-num">۱</div>
+            <div class="step-desc">کلاینت تیم‌اسپیک خود را باز کرده و به سرور <strong>ts.deadlockpersian.ir</strong> متصل شوید.</div>
+          </div>
+          <div class="auth-step-item">
+            <div class="step-num">۲</div>
+            <div class="step-desc">روی بات <strong>DLP Bot</strong> در چت خصوصی دابل کلیک کرده یا پیام خصوصی ارسال کنید.</div>
+          </div>
+          <div class="auth-step-item">
+            <div class="step-num">۳</div>
+            <div class="step-desc">دستور زیر را کپی کرده و دقیقاً در چت بات ارسال فرمایید:</div>
+          </div>
+        </div>
+
+        <div class="auth-code-action-box">
+          <div class="auth-cmd-display" id="auth-copy-cmd" onclick="copyAuthCommand()">
+            <span class="cmd-text" id="auth-cmd-text">!hub ......</span>
+            <button type="button" class="btn-copy-cmd-pill">
+              <i class="fa-solid fa-copy"></i>
+              <span data-i18n="copyCmd">کپی دستور</span>
+            </button>
+          </div>
+          <button type="button" class="btn-reset btn-sm" onclick="requestNewAuthCode()" style="margin-top:6px;">
+            <i class="fa-solid fa-rotate"></i> <span data-i18n="regenCode">دریافت کد جدید</span>
+          </button>
+        </div>
+
+        <div class="auth-live-status">
+          <div class="auth-spinner"></div>
+          <span id="auth-status-text" data-i18n="authStatusWaiting">منتظر ارسال دستور شما در چت تیم‌اسپیک...</span>
+        </div>
+      </div>
+
+      <!-- Auth Method 2: Poke / Chat OTP -->
+      <div class="auth-pane" id="auth-pane-poke" style="display:none;">
+        <div class="auth-poke-form">
+          <label class="friend-input-label" data-i18n="authPokeInputLabel">نام مستعار یا Unique ID تیم‌اسپیک شما:</label>
+          <div style="display:flex; gap:8px; margin-top:6px;">
+            <input type="text" id="auth-poke-target" class="vconsole-input" placeholder="مثال: Aryo یا UID..." dir="ltr" />
+            <button type="button" class="btn-apply btn-sm" onclick="sendPokeOtpRequest()" style="min-width:110px;">
+              <i class="fa-solid fa-paper-plane"></i> <span data-i18n="sendPoke">ارسال کد</span>
+            </button>
+          </div>
+          <div id="auth-poke-feedback" style="margin-top:8px; font-size:12px; color:#38bdf8; display:none;"></div>
+
+          <!-- OTP Input Form (Revealed after poke) -->
+          <div id="auth-poke-verify-box" style="margin-top:16px; display:none; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px;">
+            <label class="friend-input-label" data-i18n="authOtpInputLabel">کد ۶ رقمی دریافت شده در تیم‌اسپیک:</label>
+            <div style="display:flex; gap:8px; margin-top:6px;">
+              <input type="text" id="auth-poke-otp-input" class="vconsole-input" placeholder="123456" maxlength="6" dir="ltr" onkeydown="if(event.key==='Enter') verifyPokeOtpAction()" />
+              <button type="button" class="btn-apply btn-sm" onclick="verifyPokeOtpAction()" style="min-width:100px;">
+                <i class="fa-solid fa-check"></i> <span data-i18n="verifyLogin">تأیید و ورود</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disabled Alternative Logins -->
+      <div class="auth-other-providers">
+        <button type="button" class="btn-oauth disabled" disabled>
+          <i class="fa-brands fa-google"></i>
+          <span>ورود با حساب گوگل</span>
+          <span class="badge-soon">به‌زودی</span>
+        </button>
+        <button type="button" class="btn-oauth disabled" disabled>
+          <img src="assets/app_icon.png" width="16" height="16" alt="" />
+          <span>ورود با اکانت اختصاصی ددلاک پرشین</span>
+          <span class="badge-soon">به‌زودی</span>
+        </button>
+      </div>
+
+      <div class="auth-modal-footer">
+        <button type="button" class="btn-reset btn-sm" onclick="closeAuthModal()">
+          <span data-i18n="continueAsGuest">ادامه به عنوان مهمان (Guest)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile & Match History & DPI Scorecard Modal -->
+  <div class="modal-overlay" id="modal-profile" style="display:none" role="dialog" aria-modal="true">
+    <div class="modal-box profile-modal-box">
+      <!-- Profile Header -->
+      <div class="profile-modal-header">
+        <div class="profile-header-left">
+          <div class="profile-avatar-box">
+            <img id="profile-avatar-large" src="assets/app_icon.png" alt="Avatar" />
+            <span class="profile-avatar-badge" id="profile-verified-badge"><i class="fa-solid fa-check"></i></span>
+          </div>
+          <div class="profile-meta-wrap">
+            <div class="profile-name-row">
+              <h2 class="profile-display-name" id="profile-card-name">مهمان (Guest)</h2>
+              <span class="profile-ts-tag-pill" id="profile-ts-tag-pill">
+                <i class="fa-brands fa-teamspeak"></i> <span id="profile-ts-id-label">TeamSpeak Verified</span>
+              </span>
+            </div>
+            <div class="profile-code-row">
+              <span class="profile-code-pill" onclick="copyMyFriendCode()" data-tooltip="کپی کد دوستی">
+                <i class="fa-solid fa-hashtag"></i> <span id="profile-card-code">DLP-....</span> <i class="fa-solid fa-copy"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-header-right">
+          <div class="profile-stat-box">
+            <span class="stat-num" id="pstat-matches">0</span>
+            <span class="stat-lbl" data-i18n="pstatMatches">مسابقات</span>
+          </div>
+          <div class="profile-stat-box">
+            <span class="stat-num" id="pstat-wins">0</span>
+            <span class="stat-lbl" data-i18n="pstatWins">پیروزی</span>
+          </div>
+          <div class="profile-stat-box">
+            <span class="stat-num" id="pstat-winrate">0%</span>
+            <span class="stat-lbl" data-i18n="pstatWinrate">نرخ برد</span>
+          </div>
+          <div class="profile-stat-box">
+            <span class="stat-num" id="pstat-mmr">2,000</span>
+            <span class="stat-lbl" data-i18n="pstatMmr">امتیاز MMR</span>
+          </div>
+
+          <button type="button" class="btn-reset btn-sm" id="btn-profile-auth-action" onclick="handleProfileAuthAction()" style="margin-right:12px;">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> <span id="btn-profile-auth-text">تغییر حساب</span>
+          </button>
+          <button type="button" class="perf-drawer-close" onclick="closeProfileModal()" aria-label="Close">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Profile Modal Body View A: Match History List -->
+      <div class="profile-modal-body" id="profile-match-history-view">
+        <div class="matches-history-topbar">
+          <div class="matches-topbar-title">
+            <i class="fa-solid fa-clock-rotate-left" style="color:var(--deadlock-orange)"></i>
+            <span data-i18n="matchHistoryTitle">تاریخچه مسابقات اخیر</span>
+          </div>
+          <div class="matches-filter-pills">
+            <button type="button" class="editor-chip active" id="chip-match-all" onclick="filterMatchHistory('all')">همه</button>
+            <button type="button" class="editor-chip" id="chip-match-win" onclick="filterMatchHistory('win')">پیروزی‌ها</button>
+            <button type="button" class="editor-chip" id="chip-match-loss" onclick="filterMatchHistory('loss')">شکست‌ها</button>
+          </div>
+        </div>
+
+        <div class="matches-cards-list" id="profile-matches-list">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Profile Modal Body View B: Full Deadlock Performance Index (DPI) Scorecard (Replicating Screenshot 1:1) -->
+      <div class="profile-modal-body dpi-scorecard-view" id="profile-match-dpi-view" style="display:none;">
+        <!-- DPI Top Action Bar -->
+        <div class="dpi-top-bar">
+          <button type="button" class="btn-dpi-back" onclick="backToMatchHistory()">
+            <i class="fa-solid fa-arrow-right"></i>
+            <span data-i18n="backToMatches">بازگشت به مسابقات</span>
+          </button>
+
+          <div class="dpi-top-badges">
+            <span class="dpi-badge-pill gold-border">
+              <i class="fa-solid fa-trophy" style="color:gold;"></i>
+              <span id="dpi-title">مسابقه کاستوم CCM #1 (SEASON 0)</span>
+            </span>
+            <span class="dpi-badge-pill green-border">
+              <span class="status-dot-green"></span>
+              <span id="dpi-status">پایان‌یافته</span>
+            </span>
+            <span class="dpi-badge-pill" id="dpi-num"># CCM #1</span>
+            <span class="dpi-badge-pill code-pill" onclick="copyDpiMatchCode()" data-tooltip="کپی کد مسابقه">
+              <i class="fa-solid fa-copy"></i>
+              <span id="dpi-code">QP6BG</span>
+            </span>
+            <span class="dpi-badge-pill">
+              <i class="fa-solid fa-calendar-days" style="color:#f59e0b;"></i>
+              <span id="dpi-date">۷ آبان ۱۴۰۵ ساعت ۲۲:۴۸</span>
+            </span>
+            <span class="dpi-badge-pill">
+              <i class="fa-solid fa-clock" style="color:#94a3b8;"></i>
+              <span id="dpi-duration">34:19</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- DPI Sub-Navigation Bar -->
+        <div class="dpi-subnav-bar">
+          <button type="button" class="dpi-subnav-tab">خلاصه مسابقه (Match Summary)</button>
+          <button type="button" class="dpi-subnav-tab">شوکیس بازیکنان (Player Showcase)</button>
+          <button type="button" class="dpi-subnav-tab active">ستاره‌های بازی (MVP & Key Players)</button>
+          <button type="button" class="dpi-subnav-tab">تحلیل ۳ لاین مسابقه (Lanes)</button>
+          <button type="button" class="dpi-subnav-tab">نمودارهای روند بازی (Graphs)</button>
+        </div>
+
+        <!-- DPI Section Header -->
+        <div class="dpi-section-header">
+          <div class="dpi-dpi-badge">DEADLOCK PERFORMANCE INDEX 👑</div>
+          <h2 class="dpi-section-title">🏆 ستاره‌های مسابقه (MVP & KEY PLAYERS)</h2>
+          <p class="dpi-section-desc">رتبه‌بندی عملکرد فردی تمام بازیکنان مسابقه بر اساس مدل جامع عملکردی ددلاک. ستاره‌های مسابقه شامل MVP مسابقه (رتبه ۱) و دو Key Player مسابقه (رتبه‌های ۲ و ۳) هستند.</p>
+        </div>
+
+        <!-- DPI 3 Podium Cards -->
+        <div class="dpi-podium-grid">
+          <!-- Key Player #2 (Left, Cyan) -->
+          <div class="dpi-podium-card card-cyan" id="dpi-card-kp2">
+            <div class="dpi-card-toprow">
+              <span class="dpi-score-badge cyan">
+                <strong id="dpi-kp2-score">73.7</strong>
+                <span class="dpi-grade-box" id="dpi-kp2-grade">+B</span>
+              </span>
+              <span class="dpi-role-title cyan">KEY PLAYER #2 <i class="fa-solid fa-bolt"></i></span>
+            </div>
+            <div class="dpi-player-row">
+              <div class="dpi-player-texts">
+                <span class="dpi-mmr-badge green" id="dpi-kp2-mmr">+34 MMR</span>
+                <h3 class="dpi-player-name" id="dpi-kp2-name">Milad3</h3>
+                <div class="dpi-hero-team"><strong id="dpi-kp2-team">HIDDEN KING</strong> · <span id="dpi-kp2-hero">Victor</span></div>
+              </div>
+              <div class="dpi-hero-avatar-box cyan-border">
+                <div class="dpi-avatar-placeholder cyan-avatar"><i class="fa-solid fa-skull"></i></div>
+              </div>
+            </div>
+            <div class="dpi-badges-row" id="dpi-kp2-badges">
+              <span class="dpi-stat-badge badge-sup">SUP</span>
+              <span class="dpi-stat-badge badge-tank">TANK</span>
+              <span class="dpi-stat-badge badge-push">PUSH</span>
+              <span class="dpi-stat-badge badge-early">EARLY</span>
+              <span class="dpi-stat-badge badge-dmg">DMG</span>
+            </div>
+            <div class="dpi-stats-box">
+              <div class="dpi-stat-col">
+                <span class="dpi-col-lbl">DAMAGE</span>
+                <strong class="dpi-col-val text-red" id="dpi-kp2-dmg">31,979</strong>
+              </div>
+              <div class="dpi-stat-col">
+                <span class="dpi-col-lbl">SOULS</span>
+                <strong class="dpi-col-val text-gold" id="dpi-kp2-souls">49,766</strong>
+              </div>
+              <div class="dpi-stat-col">
+                <span class="dpi-col-lbl">K / D / A</span>
+                <strong class="dpi-col-val text-kda" id="dpi-kp2-kda"><span class="k">8</span> / <span class="d">0</span> / <span class="a">8</span></strong>
+              </div>
+            </div>
+            <div class="dpi-card-footer">
+              <span>دقت تیر: <strong id="dpi-kp2-acc">55.2%</strong></span>
+              <span>مشارکت در کیل: <strong id="dpi-kp2-kp">69.9%</strong></span>
+              <span class="dpi-showcase-link">مشاهده شوکیس &gt;</span>
+            </div>
+          </div>
+
+          <!-- MVP #1 (Center, Gold, Elevated) -->
+          <div class="dpi-podium-card card-gold elevated" id="dpi-card-mvp">
+            <div class="dpi-card-toprow">
+              <span class="dpi-score-badge gold">
+                <strong id="dpi-mvp-score">81.7</strong>
+                <span class="dpi-grade-box" id="dpi-mvp-grade">A</span>
+              </span>
+              <span class="dpi-role-title gold">MVP OF THE MATCH #1 👑</span>
+            </div>
+            <div class="dpi-player-row">
+              <div class="dpi-player-texts">
+                <span class="dpi-mmr-badge green" id="dpi-mvp-mmr">+44 MMR</span>
+                <h3 class="dpi-player-name" id="dpi-mvp-name">WilliamNone</h3>
+                <div class="dpi-hero-team"><strong id="dpi-mvp-team">HIDDEN KING</strong> · <span id="dpi-mvp-hero">Sinclair</span></div>
+              </div>
+              <div class="dpi-hero-avatar-box gold-border">
+                <div class="dpi-avatar-placeholder gold-avatar"><i class="fa-solid fa-hat-wizard"></i></div>
+              </div>
+            </div>
+            <div class="dpi-badges-row" id="dpi-mvp-badges">
+              <span class="dpi-stat-badge badge-sup">SUP</span>
+              <span class="dpi-stat-badge badge-tank">TANK</span>
+              <span class="dpi-stat-badge badge-push">PUSH</span>
+              <span class="dpi-stat-badge badge-early">EARLY</span>
+              <span class="dpi-stat-badge badge-dmg">DMG</span>
+              <span class="dpi-stat-badge badge-farm">FARM</span>
+            </div>
+            <div class="dpi-stats-box">
+              <div class="dpi-stat-col">
+                <span class="dpi-col-lbl">DAMAGE</span>
+                <strong class="dpi-col-val text-red" id="dpi-mvp-dmg">40,133</strong>
+              </div>
+              <div class="dpi-stat-col">
+                <span class="dpi-col-lbl">SOULS</span>
+                <strong class="dpi-col-val text-gold" id="dpi-mvp-souls">46,884</strong>
+              </div>
+              <div class="dpi-stat-col">
+                <span class="dpi-col-lbl">K / D / A</span>
+                <strong class="dpi-col-val text-kda" id="dpi-mvp-kda"><span class="k">12</span> / <span class="d">1</span> / <span class="a">11</span></strong>
+              </div>
+            </div>
+            <div class="dpi-card-footer">
+              <span>دقت تیر: <strong id="dpi-mvp-acc">37.5%</strong></span>
+              <span>مشارکت در کیل: <strong id="dpi-mvp-kp">79.3%</strong></span>
+              <span class="dpi-showcase-link">مشاهده شوکیس &gt;</span>
+            </div>
+          </div>
+
+          <!-- Key Player #3 (Right, Orange) -->
+          <div class="dpi-podium-card card-orange" id="dpi-card-kp3">
+            <div class="dpi-card-toprow">
+              <span class="dpi-score-badge orange">
+                <strong id="dpi-kp3-score">58.9</strong>
+                <span class="dpi-grade-box" id="dpi-kp3-grade">-B</span>
+              </span>
+              <span class="dpi-role-title orange">KEY PLAYER #3 <i class="fa-solid fa-bolt"></i></span>
+            </div>
+            <div class="dpi-player-row">
+              <div class="dpi-player-texts">
+                <span class="dpi-mmr-badge green" id="dpi-kp3-mmr">+31 MMR</span>
+                <h3 class="dpi-player-name" id="dpi-kp3-name">aryobw9</h3>
+                <div class="dpi-hero-team"><strong id="dpi-kp3-team">HIDDEN KING</strong> · <span id="dpi-kp3-hero">Graves</span></div>
+              </div>
+              <div class="dpi-hero-avatar-box orange-border">
+                <div class="dpi-avatar-placeholder orange-avatar"><i class="fa-solid fa-ghost"></i></div>
+              </div>
+            </div>
+            <div class="dpi-badges-row" id="dpi-kp3-badges">
+              <span class="dpi-stat-badge badge-sup">SUP</span>
+              <span class="dpi-stat-badge badge-tank">TANK</span>
+              <span class="dpi-stat-badge badge-push">PUSH</span>
+              <span class="dpi-stat-badge badge-early">EARLY</span>
+              <span class="dpi-stat-badge badge-dmg">DMG</span>
+            </div>
+            <div class="dpi-stats-box">
+              <div class="dpi-stat-col">
+                <span class="dpi-col-lbl">DAMAGE</span>
+                <strong class="dpi-col-val text-red" id="dpi-kp3-dmg">27,001</strong>
+              </div>
+              <div class="dpi-stat-col">
+                <span class="dpi-col-lbl">SOULS</span>
+                <strong class="dpi-col-val text-gold" id="dpi-kp3-souls">38,922</strong>
+              </div>
+              <div class="dpi-stat-col">
+                <span class="dpi-col-lbl">K / D / A</span>
+                <strong class="dpi-col-val text-kda" id="dpi-kp3-kda"><span class="k">3</span> / <span class="d">4</span> / <span class="a">14</span></strong>
+              </div>
+            </div>
+            <div class="dpi-card-footer">
+              <span>دقت تیر: <strong id="dpi-kp3-acc">58.6%</strong></span>
+              <span>مشارکت در کیل: <strong id="dpi-kp3-kp">58.6%</strong></span>
+              <span class="dpi-showcase-link">مشاهده شوکیس &gt;</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DPI Full 12-Player Table -->
+        <div class="dpi-table-section">
+          <div class="dpi-table-header-bar">
+            <div class="dpi-table-title"><i class="fa-solid fa-list-check" style="color:#06b6d4;"></i> جدول رتبه‌بندی کلی تمام بازیکنان مسابقه:</div>
+            <div class="dpi-table-sub">برای مشاهده مشخصات کامل هر بازیکن در شوکیس، روی ردیف کلیک کنید</div>
+          </div>
+
+          <div class="dpi-table-responsive">
+            <table class="dpi-table">
+              <thead>
+                <tr>
+                  <th style="width:48px;">رتبه</th>
+                  <th>بازیکن و هیرو</th>
+                  <th>تیم</th>
+                  <th>گرید و امتیاز</th>
+                  <th>نشان‌ها</th>
+                  <th>K / D / A</th>
+                  <th>SOULS</th>
+                  <th>DAMAGE</th>
+                  <th>مشارکت (KP%)</th>
+                  <th style="text-align:center;">عملیات</th>
+                </tr>
+              </thead>
+              <tbody id="dpi-table-body">
+                <!-- Dynamically rendered 12 player rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirm Revert to Vanilla -->
   <div class="modal-overlay" id="modal-confirm-revert" style="display:none" role="dialog" aria-modal="true" aria-labelledby="revert-dialog-title">
     <div class="modal-box revert-confirm-modal-box">
       <div class="revert-modal-icon-badge" aria-hidden="true">

@@ -1333,10 +1333,19 @@ pub fn get_lan_match_metadata(match_id: &str) -> Option<String> {
 }
 
 pub fn send_server_command(command: &str) -> Result<(), String> {
+    let clean = command.trim();
+    if clean.is_empty() {
+        return Ok(());
+    }
+    // Block OS shell metacharacters to ensure safe Source 2 execution only
+    if clean.contains('|') || clean.contains('&') || clean.contains(';') || clean.contains('>') || clean.contains('<') || clean.contains('$') || clean.contains('\n') || clean.contains('\r') {
+        return Err("Command contains disallowed shell characters".to_string());
+    }
+
     for dir in get_all_lan_matches_dirs() {
         let _ = std::fs::create_dir_all(&dir);
         let cmd_file = dir.join("server_cmd.txt");
-        let _ = std::fs::write(&cmd_file, command.trim());
+        let _ = std::fs::write(&cmd_file, clean);
     }
 
     Ok(())

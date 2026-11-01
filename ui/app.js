@@ -6991,3 +6991,965 @@ function initArInputInteractions() {
 
 
 window.initArInputInteractions = initArInputInteractions;
+
+
+// ============================================================
+// DLPHUB ACCOUNT, TWO-WAY TS AUTH, FRIENDS DRAWER & DPI ENGINE
+// ============================================================
+
+const VPS_API_BASE = 'http://5.57.32.52:48080';
+
+let userProfile = {
+  is_guest: true,
+  nickname: 'Player',
+  friend_code: 'DLP-GUEST',
+  ts_uid: null,
+  role: 'player',
+  mmr: 2000,
+  matches_count: 0,
+  wins_count: 0
+};
+
+let friendsData = [];
+let friendsFilter = 'all';
+let friendsSearchQuery = '';
+let currentAuthCode = null;
+let authPollingTimer = null;
+let matchHistoryData = [];
+let currentDpiMatch = null;
+let coAdminsActive = false;
+
+function loadUserProfile() {
+  try {
+    const raw = localStorage.getItem('dlp_user_profile');
+    if (raw) {
+      userProfile = JSON.parse(raw);
+    } else {
+      userProfile = {
+        is_guest: true,
+        nickname: getSavedNickname() || 'Player',
+        friend_code: 'DLP-GUEST',
+        ts_uid: null,
+        role: 'player',
+        mmr: 2000,
+        matches_count: 0,
+        wins_count: 0
+      };
+    }
+  } catch (e) {
+    console.error('Failed to parse user profile:', e);
+  }
+  updateProfileUI();
+}
+
+function saveUserProfile() {
+  try {
+    localStorage.setItem('dlp_user_profile', JSON.stringify(userProfile));
+  } catch (e) {
+    console.error('Failed to save user profile:', e);
+  }
+}
+
+function updateProfileUI() {
+  const nickEl = document.getElementById('header-nickname');
+  const tsTag = document.getElementById('header-ts-tag');
+  const tsLabel = document.getElementById('header-ts-label');
+  const statusDot = document.getElementById('header-online-status');
+  const pCardName = document.getElementById('profile-card-name');
+  const pCardCode = document.getElementById('profile-card-code');
+  const pTsPill = document.getElementById('profile-ts-tag-pill');
+  const pTsLabel = document.getElementById('profile-ts-id-label');
+  const myCodeDrawer = document.getElementById('drawer-my-code');
+  const pMatches = document.getElementById('pstat-matches');
+  const pWins = document.getElementById('pstat-wins');
+  const pWinrate = document.getElementById('pstat-winrate');
+  const pMmr = document.getElementById('pstat-mmr');
+  const pAuthBtnText = document.getElementById('btn-profile-auth-text');
+
+  if (userProfile.is_guest) {
+    if (nickEl) nickEl.textContent = `مهمان (${userProfile.nickname || 'Guest'})`;
+    if (tsTag) tsTag.classList.remove('verified');
+    if (tsLabel) tsLabel.textContent = (state.lang === 'fa' ? 'متصل نشده' : 'Not Linked');
+    if (statusDot) { statusDot.classList.remove('online'); }
+    if (pCardName) pCardName.textContent = `مهمان (${userProfile.nickname || 'Guest'})`;
+    if (pCardCode) pCardCode.textContent = 'DLP-GUEST';
+    if (pTsLabel) pTsLabel.textContent = (state.lang === 'fa' ? 'حساب متصل نیست' : 'Not Linked');
+    if (myCodeDrawer) myCodeDrawer.textContent = 'DLP-GUEST';
+    if (pAuthBtnText) pAuthBtnText.textContent = (state.lang === 'fa' ? 'ورود با تیم‌اسپیک' : 'Login with TS');
+  } else {
+    if (nickEl) nickEl.textContent = userProfile.nickname || 'Player';
+    if (tsTag) tsTag.classList.add('verified');
+    if (tsLabel) tsLabel.textContent = userProfile.role === 'admin' ? (state.lang === 'fa' ? 'مدیر سرور' : 'Admin') : (state.lang === 'fa' ? 'تیم‌اسپیک' : 'TeamSpeak');
+    if (statusDot) { statusDot.classList.add('online'); }
+    if (pCardName) pCardName.textContent = userProfile.nickname || 'Player';
+    if (pCardCode) pCardCode.textContent = userProfile.friend_code || 'DLP-XXXX';
+    if (pTsLabel) pTsLabel.textContent = (state.lang === 'fa' ? 'تیم‌اسپیک متصل است' : 'TS Verified');
+    if (myCodeDrawer) myCodeDrawer.textContent = userProfile.friend_code || 'DLP-XXXX';
+    if (pAuthBtnText) pAuthBtnText.textContent = (state.lang === 'fa' ? 'تغییر حساب / خروج' : 'Switch / Logout');
+  }
+
+  const mCount = userProfile.matches_count || 0;
+  const wCount = userProfile.wins_count || 0;
+  const wr = mCount > 0 ? Math.round((wCount / mCount) * 100) : 0;
+  if (pMatches) pMatches.textContent = mCount;
+  if (pWins) pWins.textContent = wCount;
+  if (pWinrate) pWinrate.textContent = `${wr}%`;
+  if (pMmr) pMmr.textContent = `${(userProfile.mmr || 2000).toLocaleString()} MMR`;
+}
+
+// ----------------- Auth Modal & Two-Way TS Login -----------------
+
+function handleProfileHeaderClick() {
+  if (userProfile.is_guest) {
+    openAuthModal();
+  } else {
+    openProfileModal();
+  }
+}
+
+function handleProfileAuthAction() {
+  if (userProfile.is_guest) {
+    closeProfileModal();
+    openAuthModal();
+  } else {
+    // Logout
+    userProfile = {
+      is_guest: true,
+      nickname: getSavedNickname() || 'Player',
+      friend_code: 'DLP-GUEST',
+      ts_uid: null,
+      role: 'player',
+      mmr: 2000,
+      matches_count: 0,
+      wins_count: 0
+    };
+    saveUserProfile();
+    updateProfileUI();
+    closeProfileModal();
+    showToast(state.lang === 'fa' ? 'از حساب کاربری خارج شدید.' : 'Logged out successfully.', 'info');
+  }
+}
+
+function openAuthModal() {
+  const modal = document.getElementById('modal-auth');
+  if (modal) modal.style.display = 'flex';
+  switchAuthMethod('cmd');
+  requestNewAuthCode();
+}
+
+function closeAuthModal() {
+  stopAuthPolling();
+  const modal = document.getElementById('modal-auth');
+  if (modal) modal.style.display = 'none';
+}
+
+function switchAuthMethod(method) {
+  const tabCmd = document.getElementById('auth-tab-cmd');
+  const tabPoke = document.getElementById('auth-tab-poke');
+  const paneCmd = document.getElementById('auth-pane-cmd');
+  const panePoke = document.getElementById('auth-pane-poke');
+
+  if (method === 'cmd') {
+    if (tabCmd) tabCmd.classList.add('active');
+    if (tabPoke) tabPoke.classList.remove('active');
+    if (paneCmd) paneCmd.style.display = 'block';
+    if (panePoke) panePoke.style.display = 'none';
+  } else {
+    if (tabPoke) tabPoke.classList.add('active');
+    if (tabCmd) tabCmd.classList.remove('active');
+    if (panePoke) panePoke.style.display = 'block';
+    if (paneCmd) paneCmd.style.display = 'none';
+  }
+}
+
+async function requestNewAuthCode() {
+  stopAuthPolling();
+  const cmdText = document.getElementById('auth-cmd-text');
+  const statusText = document.getElementById('auth-status-text');
+  if (cmdText) cmdText.textContent = '!hub ......';
+  if (statusText) statusText.textContent = (state.lang === 'fa' ? 'در حال دریافت کد از سرور...' : 'Fetching code...');
+
+  try {
+    const res = await fetch(`${VPS_API_BASE}/api/auth/ts/request-code`, { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    currentAuthCode = data.code;
+    if (cmdText) cmdText.textContent = data.command || `!hub ${data.code}`;
+    if (statusText) statusText.textContent = (state.lang === 'fa' ? 'منتظر ارسال دستور شما در چت تیم‌اسپیک...' : 'Waiting for command in TeamSpeak...');
+    startAuthPolling(data.code);
+  } catch (err) {
+    if (cmdText) cmdText.textContent = '!hub 123456';
+    if (statusText) statusText.textContent = (state.lang === 'fa' ? 'خطا در ارتباط با سرور VPS.' : 'VPS connection error.');
+  }
+}
+
+function startAuthPolling(code) {
+  stopAuthPolling();
+  authPollingTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`${VPS_API_BASE}/api/auth/ts/check-status/${code}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.verified && data.user) {
+        stopAuthPolling();
+        userProfile = {
+          ...data.user,
+          is_guest: false
+        };
+        saveUserProfile();
+        updateProfileUI();
+        closeAuthModal();
+        showToast(state.lang === 'fa' ? `ورود موفق! خوش آمدید ${data.user.nickname}` : `Welcome back, ${data.user.nickname}!`, 'success');
+        refreshFriendsList();
+      }
+    } catch (_) {}
+  }, 2500);
+}
+
+function stopAuthPolling() {
+  if (authPollingTimer) {
+    clearInterval(authPollingTimer);
+    authPollingTimer = null;
+  }
+}
+
+function copyAuthCommand() {
+  const cmdText = document.getElementById('auth-cmd-text');
+  const txt = cmdText ? cmdText.textContent.trim() : `!hub ${currentAuthCode}`;
+  navigator.clipboard.writeText(txt).then(() => {
+    showToast(state.lang === 'fa' ? 'دستور چت کپی شد!' : 'Command copied!', 'info');
+  }).catch(() => {});
+}
+
+async function sendPokeOtpRequest() {
+  const input = document.getElementById('auth-poke-target');
+  const query = input ? input.value.trim() : '';
+  const feedback = document.getElementById('auth-poke-feedback');
+  const verifyBox = document.getElementById('auth-poke-verify-box');
+
+  if (!query) {
+    showToast(state.lang === 'fa' ? 'لطفاً نام یا آیدی تیم‌اسپیک خود را وارد کنید.' : 'Please enter TS nickname or UID.', 'warning');
+    return;
+  }
+
+  if (feedback) {
+    feedback.style.display = 'block';
+    feedback.textContent = (state.lang === 'fa' ? 'در حال ارسال پیام پوک در سرور تیم‌اسپیک...' : 'Sending poke via TS ClientQuery...');
+  }
+
+  try {
+    const res = await fetch(`${VPS_API_BASE}/api/auth/ts/poke-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      if (feedback) {
+        feedback.textContent = (state.lang === 'fa'
+          ? `کد ورود برای کاربر '${data.target_nickname}' ارسال شد! لطفاً پیام یا پوک خود در تیم‌اسپیک را بررسی کنید.`
+          : `Code sent to '${data.target_nickname}'! Check your TS poke or private chat.`);
+      }
+      if (verifyBox) verifyBox.style.display = 'block';
+    } else {
+      if (feedback) feedback.textContent = data.detail || 'کاربر در تیم‌اسپیک یافت نشد.';
+    }
+  } catch (e) {
+    if (feedback) feedback.textContent = 'خطا در ارتباط با سرور.';
+  }
+}
+
+async function verifyPokeOtpAction() {
+  const input = document.getElementById('auth-poke-otp-input');
+  const code = input ? input.value.trim() : '';
+  if (!code || code.length < 4) {
+    showToast(state.lang === 'fa' ? 'لطفاً کد ورود را به درستی وارد کنید.' : 'Invalid OTP code.', 'warning');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${VPS_API_BASE}/api/auth/ts/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if (res.ok && data.success && data.user) {
+      userProfile = {
+        ...data.user,
+        is_guest: false
+      };
+      saveUserProfile();
+      updateProfileUI();
+      closeAuthModal();
+      showToast(state.lang === 'fa' ? `ورود موفق! خوش آمدید ${data.user.nickname}` : `Welcome ${data.user.nickname}!`, 'success');
+      refreshFriendsList();
+    } else {
+      showToast(data.detail || 'کد تایید نامعتبر است.', 'error');
+    }
+  } catch (err) {
+    showToast(`Error: ${err}`, 'error');
+  }
+}
+
+// ----------------- Friends Drawer Controller -----------------
+
+function toggleFriendsDrawer() {
+  const drawer = document.getElementById('friends-side-drawer');
+  if (!drawer) return;
+  if (drawer.style.display === 'none' || !drawer.classList.contains('open')) {
+    openFriendsDrawer();
+  } else {
+    closeFriendsDrawer();
+  }
+}
+
+function openFriendsDrawer() {
+  const drawer = document.getElementById('friends-side-drawer');
+  if (drawer) {
+    drawer.style.display = 'flex';
+    drawer.classList.add('open');
+    refreshFriendsList();
+  }
+}
+
+function closeFriendsDrawer() {
+  const drawer = document.getElementById('friends-side-drawer');
+  if (drawer) {
+    drawer.classList.remove('open');
+    setTimeout(() => { drawer.style.display = 'none'; }, 200);
+  }
+}
+
+function switchFriendsTab(tab) {
+  const tabAll = document.getElementById('tab-btn-friends-all');
+  const tabActive = document.getElementById('tab-btn-friends-active');
+  const tabAdd = document.getElementById('tab-btn-friends-add');
+  const paneList = document.getElementById('pane-friends-list');
+  const paneAdd = document.getElementById('pane-friends-add');
+
+  [tabAll, tabActive, tabAdd].forEach(el => el && el.classList.remove('active'));
+  if (tab === 'all') {
+    if (tabAll) tabAll.classList.add('active');
+    if (paneList) paneList.style.display = 'block';
+    if (paneAdd) paneAdd.style.display = 'none';
+    setFriendsFilter('all');
+  } else if (tab === 'active') {
+    if (tabActive) tabActive.classList.add('active');
+    if (paneList) paneList.style.display = 'block';
+    if (paneAdd) paneAdd.style.display = 'none';
+    setFriendsFilter('lobby');
+  } else {
+    if (tabAdd) tabAdd.classList.add('active');
+    if (paneList) paneList.style.display = 'none';
+    if (paneAdd) paneAdd.style.display = 'block';
+  }
+}
+
+function onFriendSearch(val) {
+  friendsSearchQuery = (val || '').toLowerCase().trim();
+  renderFriendsList();
+}
+
+function setFriendsFilter(filter) {
+  friendsFilter = filter;
+  ['chip-friends-all', 'chip-friends-online', 'chip-friends-lobby', 'chip-friends-admins'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  const activeChip = document.getElementById(`chip-friends-${filter}`);
+  if (activeChip) activeChip.classList.add('active');
+  renderFriendsList();
+}
+
+async function refreshFriendsList() {
+  if (userProfile.is_guest || !userProfile.ts_uid) {
+    friendsData = [
+      { ts_uid: 'MOCK_1', nickname: 'WilliamNone', friend_code: 'DLP-8812', status: 'online', status_text: 'Online (TeamSpeak)', role: 'admin' },
+      { ts_uid: 'MOCK_2', nickname: 'Milad3', friend_code: 'DLP-3419', status: 'in_lobby', current_room: 'QP6BG', status_text: 'In Lobby #QP6BG', role: 'player' },
+      { ts_uid: 'MOCK_3', nickname: 'aryobw9', friend_code: 'DLP-7492', status: 'in_game', current_room: 'QP6BG', status_text: 'In Game (Match QP6BG)', role: 'player' }
+    ];
+    renderFriendsList();
+    return;
+  }
+
+  try {
+    const res = await fetch(`${VPS_API_BASE}/api/friends/list?uid=${encodeURIComponent(userProfile.ts_uid)}`);
+    if (res.ok) {
+      const data = await res.json();
+      friendsData = data.friends || [];
+      renderFriendsList();
+    }
+  } catch (err) {
+    console.error('Failed to fetch friends list:', err);
+  }
+}
+
+function renderFriendsList() {
+  const container = document.getElementById('friends-cards-list');
+  if (!container) return;
+
+  const onlineCountEl = document.getElementById('drawer-stat-online');
+  const totalCountEl = document.getElementById('drawer-stat-total');
+  const badgeCountEl = document.getElementById('friends-badge-count');
+
+  let onlineCount = 0;
+  friendsData.forEach(f => {
+    if (f.status === 'online' || f.status === 'in_lobby' || f.status === 'in_game') onlineCount++;
+  });
+
+  if (onlineCountEl) onlineCountEl.textContent = onlineCount;
+  if (totalCountEl) totalCountEl.textContent = friendsData.length;
+  if (badgeCountEl) badgeCountEl.textContent = onlineCount;
+
+  // Filter items
+  let filtered = friendsData.filter(f => {
+    if (friendsFilter === 'online' && (f.status === 'offline')) return false;
+    if (friendsFilter === 'lobby' && (f.status !== 'in_lobby' && f.status !== 'in_game')) return false;
+    if (friendsFilter === 'admins' && f.role !== 'admin') return false;
+    if (friendsSearchQuery) {
+      const matchName = (f.nickname || '').toLowerCase().includes(friendsSearchQuery);
+      const matchCode = (f.friend_code || '').toLowerCase().includes(friendsSearchQuery);
+      if (!matchName && !matchCode) return false;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:30px 10px; color:#64748b; font-size:12px;">
+        <i class="fa-solid fa-user-slash" style="font-size:24px; margin-bottom:8px; display:block; opacity:0.5;"></i>
+        <span>هیچ دوستی در این بخش یافت نشد.</span>
+      </div>
+    `;
+    return;
+  }
+
+  // In-place DOM update / diffing
+  const existingElements = new Map();
+  container.querySelectorAll('.friend-card[data-friend-uid]').forEach(el => {
+    existingElements.set(el.dataset.friendUid, el);
+  });
+
+  const seenUids = new Set();
+  filtered.forEach(f => {
+    seenUids.add(f.ts_uid);
+    let card = existingElements.get(f.ts_uid);
+    if (!card) {
+      card = document.createElement('div');
+      card.className = 'friend-card';
+      card.dataset.friendUid = f.ts_uid;
+      card.innerHTML = `
+        <div class="friend-info-left">
+          <div class="friend-avatar-wrap">
+            <i class="fa-solid fa-user"></i>
+            <span class="friend-status-dot"></span>
+          </div>
+          <div class="friend-details">
+            <div class="friend-name-row">
+              <span class="friend-name"></span>
+              <span class="friend-code-badge"></span>
+            </div>
+            <span class="friend-presence-sub"></span>
+          </div>
+        </div>
+        <div class="friend-actions">
+          <button type="button" class="friend-action-btn btn-invite" data-tooltip="دعوت به لابی"><i class="fa-solid fa-paper-plane"></i> <span>دعوت</span></button>
+          <button type="button" class="friend-action-btn btn-remove" data-tooltip="حذف دوست"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      `;
+      container.appendChild(card);
+    }
+
+    const nameEl = card.querySelector('.friend-name');
+    const codeEl = card.querySelector('.friend-code-badge');
+    const presEl = card.querySelector('.friend-presence-sub');
+    const dotEl = card.querySelector('.friend-status-dot');
+    const inviteBtn = card.querySelector('.btn-invite');
+    const removeBtn = card.querySelector('.btn-remove');
+
+    if (nameEl) nameEl.textContent = f.nickname || 'Friend';
+    if (codeEl) codeEl.textContent = f.friend_code || '';
+    if (presEl) {
+      presEl.textContent = f.status_text || f.status || 'Offline';
+      presEl.className = `friend-presence-sub ${f.status || 'offline'}`;
+    }
+    if (dotEl) {
+      dotEl.className = `friend-status-dot ${f.status || 'offline'}`;
+    }
+
+    if (inviteBtn) {
+      inviteBtn.onclick = () => inviteFriendToLobby(f);
+      if (sessionState.role === 'host') {
+        inviteBtn.style.display = 'inline-flex';
+      }
+    }
+    if (removeBtn) {
+      removeBtn.onclick = () => removeFriendAction(f.ts_uid);
+    }
+  });
+
+  existingElements.forEach((el, uid) => {
+    if (!seenUids.has(uid)) {
+      el.remove();
+    }
+  });
+}
+
+async function executeAddFriend() {
+  const input = document.getElementById('friend-add-input');
+  const target = input ? input.value.trim() : '';
+  const feedback = document.getElementById('friend-add-feedback');
+
+  if (!target) {
+    showToast(state.lang === 'fa' ? 'لطفاً کد دوستی را وارد کنید.' : 'Enter a friend code.', 'warning');
+    return;
+  }
+
+  if (userProfile.is_guest || !userProfile.ts_uid) {
+    showToast(state.lang === 'fa' ? 'جهت افزودن دوست، ابتدا باید حساب تیم‌اسپیک خود را متصل کنید.' : 'Link TeamSpeak account first.', 'warning');
+    openAuthModal();
+    return;
+  }
+
+  try {
+    const res = await fetch(`${VPS_API_BASE}/api/friends/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_uid: userProfile.ts_uid, target })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast(state.lang === 'fa' ? `دوست '${data.friend.nickname}' با موفقیت اضافه شد!` : `Friend added!`, 'success');
+      if (input) input.value = '';
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.style.color = '#34d399';
+        feedback.textContent = `دوست با موفقیت اضافه شد: ${data.friend.nickname} (${data.friend.friend_code})`;
+      }
+      refreshFriendsList();
+      switchFriendsTab('all');
+    } else {
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.style.color = '#f87171';
+        feedback.textContent = data.detail || 'کاربر یافت نشد.';
+      }
+    }
+  } catch (err) {
+    showToast(`Error: ${err}`, 'error');
+  }
+}
+
+async function removeFriendAction(friendUid) {
+  if (userProfile.is_guest || !userProfile.ts_uid) {
+    friendsData = friendsData.filter(f => f.ts_uid !== friendUid);
+    renderFriendsList();
+    return;
+  }
+
+  try {
+    const res = await fetch(`${VPS_API_BASE}/api/friends/remove`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_uid: userProfile.ts_uid, friend_uid: friendUid })
+    });
+    if (res.ok) {
+      friendsData = friendsData.filter(f => f.ts_uid !== friendUid);
+      renderFriendsList();
+      showToast(state.lang === 'fa' ? 'دوست از لیست حذف شد.' : 'Friend removed.', 'info');
+    }
+  } catch (err) {
+    console.error('Remove friend error:', err);
+  }
+}
+
+function inviteFriendToLobby(friend) {
+  if (!sessionState.serverActive || !sessionState.roomCode) {
+    showToast(state.lang === 'fa' ? 'شما در حال حاضر هاست لابی فعالی نیستید.' : 'You are not hosting an active lobby.', 'warning');
+    return;
+  }
+  const code = sessionState.roomCode;
+  showToast(state.lang === 'fa' ? `دعوت‌نامه برای ${friend.nickname} جهت ورود به لابی #${code} ارسال شد!` : `Invitation to lobby #${code} sent to ${friend.nickname}!`, 'success');
+}
+
+function copyMyFriendCode() {
+  const code = userProfile.friend_code || 'DLP-XXXX';
+  navigator.clipboard.writeText(code).then(() => {
+    showToast(state.lang === 'fa' ? `کد دوستی '${code}' کپی شد!` : `Friend code '${code}' copied!`, 'info');
+  }).catch(() => {});
+}
+
+// ----------------- Profile Modal & Match History & DPI Scorecard -----------------
+
+function openProfileModal() {
+  const modal = document.getElementById('modal-profile');
+  if (modal) modal.style.display = 'flex';
+  backToMatchHistory();
+  loadMatchHistory();
+}
+
+function closeProfileModal() {
+  const modal = document.getElementById('modal-profile');
+  if (modal) modal.style.display = 'none';
+}
+
+async function loadMatchHistory() {
+  try {
+    const res = await fetch(`${VPS_API_BASE}/api/matches/history`);
+    if (res.ok) {
+      const data = await res.json();
+      matchHistoryData = data.matches || [];
+      renderMatchHistory('all');
+    }
+  } catch (e) {
+    console.error('Failed to load match history:', e);
+  }
+}
+
+function filterMatchHistory(filter) {
+  ['chip-match-all', 'chip-match-win', 'chip-match-loss'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  const activeEl = document.getElementById(`chip-match-${filter}`);
+  if (activeEl) activeEl.classList.add('active');
+  renderMatchHistory(filter);
+}
+
+function renderMatchHistory(filter = 'all') {
+  const container = document.getElementById('profile-matches-list');
+  if (!container) return;
+
+  let list = matchHistoryData;
+  if (filter === 'win') {
+    list = list.filter(m => m.winning_team === 'HiddenKing');
+  } else if (filter === 'loss') {
+    list = list.filter(m => m.winning_team === 'ArchMother');
+  }
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:40px; color:#64748b;">
+        <i class="fa-solid fa-trophy" style="font-size:32px; opacity:0.4; margin-bottom:10px; display:block;"></i>
+        <span>هنوز مسابقه‌ای ثبت نشده است.</span>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = '';
+  list.forEach(m => {
+    const isWin = m.winning_team === 'HiddenKing';
+    const card = document.createElement('div');
+    card.className = 'match-card-row';
+    card.onclick = () => openMatchDpiView(m.match_id);
+    card.innerHTML = `
+      <div class="match-meta-left">
+        <span class="match-outcome-badge ${isWin ? 'victory' : 'defeat'}">
+          ${isWin ? (state.lang === 'fa' ? 'پیروزی' : 'VICTORY') : (state.lang === 'fa' ? 'شکست' : 'DEFEAT')}
+        </span>
+        <div>
+          <div class="match-title-row">${m.title || `Match #${m.match_code}`}</div>
+          <div class="match-subinfo">
+            <span><i class="fa-solid fa-calendar-days"></i> ${m.date_str || ''}</span>
+            <span><i class="fa-solid fa-clock"></i> ${m.duration_str || '34:19'}</span>
+            <span><i class="fa-solid fa-hashtag"></i> ${m.match_code || ''}</span>
+          </div>
+        </div>
+      </div>
+      <div class="match-stats-right">
+        <div class="match-stat-col">
+          <span class="val text-gold">81.7</span>
+          <span class="lbl">DPI SCORE</span>
+        </div>
+        <div class="match-stat-col">
+          <span class="val text-red">40,133</span>
+          <span class="lbl">DAMAGE</span>
+        </div>
+        <button type="button" class="btn-view-dpi">
+          <span>${state.lang === 'fa' ? 'مشاهده جدول رتبه‌بندی مسابقه (DPI)' : 'View DPI Scorecard'}</span>
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+async function openMatchDpiView(matchId) {
+  const historyView = document.getElementById('profile-match-history-view');
+  const dpiView = document.getElementById('profile-match-dpi-view');
+  if (historyView) historyView.style.display = 'none';
+  if (dpiView) dpiView.style.display = 'block';
+
+  try {
+    const res = await fetch(`${VPS_API_BASE}/api/matches/${matchId}/details`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    currentDpiMatch = data;
+    renderDpiScorecard(data.scorecard || {});
+  } catch (err) {
+    console.error('Failed to load match DPI details:', err);
+  }
+}
+
+function backToMatchHistory() {
+  const historyView = document.getElementById('profile-match-history-view');
+  const dpiView = document.getElementById('profile-match-dpi-view');
+  if (historyView) historyView.style.display = 'block';
+  if (dpiView) dpiView.style.display = 'none';
+}
+
+function copyDpiMatchCode() {
+  const code = (currentDpiMatch && currentDpiMatch.match_code) || 'QP6BG';
+  navigator.clipboard.writeText(code).then(() => {
+    showToast(state.lang === 'fa' ? `کد مسابقه '${code}' کپی شد!` : `Match code '${code}' copied!`, 'info');
+  }).catch(() => {});
+}
+
+function renderDpiScorecard(sc) {
+  const titleEl = document.getElementById('dpi-title');
+  const statusEl = document.getElementById('dpi-status');
+  const numEl = document.getElementById('dpi-num');
+  const codeEl = document.getElementById('dpi-code');
+  const dateEl = document.getElementById('dpi-date');
+  const durEl = document.getElementById('dpi-duration');
+
+  if (titleEl) titleEl.textContent = sc.title || 'مسابقه کاستوم CCM #1 (SEASON 0)';
+  if (statusEl) statusEl.textContent = sc.status || 'پایان‌یافته';
+  if (numEl) numEl.textContent = `# ${sc.match_num || 'CCM #1'}`;
+  if (codeEl) codeEl.textContent = sc.match_code || 'QP6BG';
+  if (dateEl) dateEl.textContent = sc.date || '۷ آبان ۱۴۰۵ ساعت ۲۲:۴۸';
+  if (durEl) durEl.textContent = sc.duration || '34:19';
+
+  // 1. MVP #1
+  const mvp = sc.mvp || {};
+  const mvpScore = document.getElementById('dpi-mvp-score');
+  const mvpGrade = document.getElementById('dpi-mvp-grade');
+  const mvpMmr = document.getElementById('dpi-mvp-mmr');
+  const mvpName = document.getElementById('dpi-mvp-player');
+  const mvpTeam = document.getElementById('dpi-mvp-team');
+  const mvpHero = document.getElementById('dpi-mvp-hero');
+  const mvpDmg = document.getElementById('dpi-mvp-damage');
+  const mvpSouls = document.getElementById('dpi-mvp-souls');
+  const mvpKda = document.getElementById('dpi-mvp-kda');
+  const mvpAcc = document.getElementById('dpi-mvp-acc');
+  const mvpKp = document.getElementById('dpi-mvp-kp');
+
+  if (mvpScore) mvpScore.textContent = mvp.score || '81.7';
+  if (mvpGrade) mvpGrade.textContent = mvp.grade || 'A';
+  if (mvpMmr) mvpMmr.textContent = mvp.mmr_delta || '+44 MMR';
+  if (mvpName) mvpName.textContent = mvp.player || 'WilliamNone';
+  if (mvpTeam) mvpTeam.textContent = mvp.team || 'HIDDEN KING';
+  if (mvpHero) mvpHero.textContent = mvp.hero || 'Sinclair';
+  if (mvpDmg) mvpDmg.textContent = (mvp.damage || 40133).toLocaleString();
+  if (mvpSouls) mvpSouls.textContent = (mvp.souls || 46884).toLocaleString();
+  if (mvpKda) mvpKda.innerHTML = `<span class="k">${mvp.kills || 12}</span> / <span class="d">${mvp.deaths || 1}</span> / <span class="a">${mvp.assists || 11}</span>`;
+  if (mvpAcc) mvpAcc.textContent = mvp.accuracy || '37.5%';
+  if (mvpKp) mvpKp.textContent = mvp.kp || '79.3%';
+
+  // 2. Key Player #2
+  const kp2 = sc.key_player_2 || {};
+  const kp2Score = document.getElementById('dpi-kp2-score');
+  const kp2Grade = document.getElementById('dpi-kp2-grade');
+  const kp2Mmr = document.getElementById('dpi-kp2-mmr');
+  const kp2Name = document.getElementById('dpi-kp2-name');
+  const kp2Team = document.getElementById('dpi-kp2-team');
+  const kp2Hero = document.getElementById('dpi-kp2-hero');
+  const kp2Dmg = document.getElementById('dpi-kp2-dmg');
+  const kp2Souls = document.getElementById('dpi-kp2-souls');
+  const kp2Kda = document.getElementById('dpi-kp2-kda');
+  const kp2Acc = document.getElementById('dpi-kp2-acc');
+  const kp2Kp = document.getElementById('dpi-kp2-kp');
+
+  if (kp2Score) kp2Score.textContent = kp2.score || '73.7';
+  if (kp2Grade) kp2Grade.textContent = kp2.grade || '+B';
+  if (kp2Mmr) kp2Mmr.textContent = kp2.mmr_delta || '+34 MMR';
+  if (kp2Name) kp2Name.textContent = kp2.player || 'Milad3';
+  if (kp2Team) kp2Team.textContent = kp2.team || 'HIDDEN KING';
+  if (kp2Hero) kp2Hero.textContent = kp2.hero || 'Victor';
+  if (kp2Dmg) kp2Dmg.textContent = (kp2.damage || 31979).toLocaleString();
+  if (kp2Souls) kp2Souls.textContent = (kp2.souls || 49766).toLocaleString();
+  if (kp2Kda) kp2Kda.innerHTML = `<span class="k">${kp2.kills || 8}</span> / <span class="d">${kp2.deaths || 0}</span> / <span class="a">${kp2.assists || 8}</span>`;
+  if (kp2Acc) kp2Acc.textContent = kp2.accuracy || '55.2%';
+  if (kp2Kp) kp2Kp.textContent = kp2.kp || '69.9%';
+
+  // 3. Key Player #3
+  const kp3 = sc.key_player_3 || {};
+  const kp3Score = document.getElementById('dpi-kp3-score');
+  const kp3Grade = document.getElementById('dpi-kp3-grade');
+  const kp3Mmr = document.getElementById('dpi-kp3-mmr');
+  const kp3Name = document.getElementById('dpi-kp3-name');
+  const kp3Team = document.getElementById('dpi-kp3-team');
+  const kp3Hero = document.getElementById('dpi-kp3-hero');
+  const kp3Dmg = document.getElementById('dpi-kp3-dmg');
+  const kp3Souls = document.getElementById('dpi-kp3-souls');
+  const kp3Kda = document.getElementById('dpi-kp3-kda');
+  const kp3Acc = document.getElementById('dpi-kp3-acc');
+  const kp3Kp = document.getElementById('dpi-kp3-kp');
+
+  if (kp3Score) kp3Score.textContent = kp3.score || '58.9';
+  if (kp3Grade) kp3Grade.textContent = kp3.grade || '-B';
+  if (kp3Mmr) kp3Mmr.textContent = kp3.mmr_delta || '+31 MMR';
+  if (kp3Name) kp3Name.textContent = kp3.player || 'aryobw9';
+  if (kp3Team) kp3Team.textContent = kp3.team || 'HIDDEN KING';
+  if (kp3Hero) kp3Hero.textContent = kp3.hero || 'Graves';
+  if (kp3Dmg) kp3Dmg.textContent = (kp3.damage || 27001).toLocaleString();
+  if (kp3Souls) kp3Souls.textContent = (kp3.souls || 38922).toLocaleString();
+  if (kp3Kda) kp3Kda.innerHTML = `<span class="k">${kp3.kills || 3}</span> / <span class="d">${kp3.deaths || 4}</span> / <span class="a">${kp3.assists || 14}</span>`;
+  if (kp3Acc) kp3Acc.textContent = kp3.accuracy || '58.6%';
+  if (kp3Kp) kp3Kp.textContent = kp3.kp || '58.6%';
+
+  // 4. Render 12-Player Ranking Table
+  const tbody = document.getElementById('dpi-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const players = sc.players || [];
+  players.forEach((p, idx) => {
+    const tr = document.createElement('tr');
+    const isHiddenKing = p.team === 'HIDDEN KING';
+    const badgesHtml = (p.badges || []).map(b => `<span class="dpi-stat-badge badge-${b.toLowerCase()}">${b}</span>`).join(' ');
+
+    tr.innerHTML = `
+      <td class="rank-cell">
+        <div style="font-weight:800;">#${p.rank || idx + 1}</div>
+        <div style="font-size:10px; color:#64748b;">#${p.team_rank || 1} در تیم</div>
+      </td>
+      <td>
+        <div class="player-cell">
+          <div class="table-hero-avatar"><i class="fa-solid fa-user"></i></div>
+          <div>
+            <div style="font-weight:700; color:#fff;">${p.player}</div>
+            <div style="font-size:11px; color:#94a3b8;">${p.hero}</div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <div>
+          <span class="team-pill" style="color:${isHiddenKing ? '#38bdf8' : '#fb923c'};">${p.team}</span>
+          <span class="dpi-mmr-badge ${p.mmr_delta && p.mmr_delta.startsWith('+') ? 'green' : 'red'}" style="margin-right:6px; font-size:10px; padding:1px 5px; border-radius:4px; background:${p.mmr_delta && p.mmr_delta.startsWith('+') ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}; border:1px solid ${p.mmr_delta && p.mmr_delta.startsWith('+') ? '#10b981' : '#ef4444'}; color:${p.mmr_delta && p.mmr_delta.startsWith('+') ? '#6ee7b7' : '#fca5a5'};">${p.mmr_delta}</span>
+        </div>
+      </td>
+      <td>
+        <span class="dpi-score-badge" style="font-size:12px; padding:1px 6px;">
+          <strong>${p.score}</strong>
+          <span class="dpi-grade-box" style="font-size:10px; padding:0 4px;">${p.grade}</span>
+        </span>
+      </td>
+      <td>
+        <div class="dpi-badges-row" style="margin-bottom:0;">
+          ${badgesHtml}
+        </div>
+      </td>
+      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700;">
+        <span class="text-kda">${p.kda || `${p.kills || 0} / ${p.deaths || 0} / ${p.assists || 0}`}</span>
+      </td>
+      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#facc15;">
+        ${(p.souls || 0).toLocaleString()}
+      </td>
+      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#f87171;">
+        ${(p.damage || 0).toLocaleString()}
+      </td>
+      <td class="kp-cell">
+        ${p.kp || '0.0%'}
+      </td>
+      <td style="text-align:center;">
+        <button type="button" class="btn-table-showcase">شوکیس ←</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ----------------- VConsole Command & Co-Admin -----------------
+
+function toggleFriendsCoAdmin() {
+  coAdminsActive = !coAdminsActive;
+  const label = document.getElementById('coadmin-toggle-label');
+  const btn = document.getElementById('btn-toggle-coadmin');
+  if (label) {
+    label.textContent = coAdminsActive
+      ? (state.lang === 'fa' ? 'هم‌ادمینی دوستان: فعال' : 'Friends Co-Admin: Active')
+      : (state.lang === 'fa' ? 'هم‌ادمینی دوستان: غیرفعال' : 'Friends Co-Admin: Off');
+  }
+  if (btn) {
+    if (coAdminsActive) {
+      btn.style.borderColor = '#10b981';
+      btn.style.color = '#6ee7b7';
+      showToast(state.lang === 'fa' ? 'تمام دوستان در این لابی به عنوان هم‌ادمین (Tier 2) ارتقا یافتند.' : 'All friends in this lobby granted Tier 2 Co-Admin.', 'success');
+    } else {
+      btn.style.borderColor = '';
+      btn.style.color = '';
+      showToast(state.lang === 'fa' ? 'سطح هم‌ادمینی دوستان غیرفعال شد.' : 'Friends Co-Admin disabled.', 'info');
+    }
+  }
+}
+
+async function executeVConsoleCommand() {
+  const input = document.getElementById('vconsole-cmd-input');
+  if (!input) return;
+  const rawCmd = input.value.trim();
+  if (!rawCmd) return;
+
+  const badChars = ['|', '&', ';', '>', '<', '$', '\n', '\r'];
+  if (badChars.some(ch => rawCmd.includes(ch))) {
+    showToast(state.lang === 'fa' ? 'دستور شامل کاراکترهای شل غیرمجاز است.' : 'Command contains disallowed shell characters.', 'error');
+    return;
+  }
+
+  try {
+    await call('send_lan_server_command', { command: rawCmd });
+    showToast(state.lang === 'fa' ? `دستور '${rawCmd}' با موفقیت به سرور ارسال شد!` : `Command '${rawCmd}' sent to server!`, 'info');
+    input.value = '';
+  } catch (err) {
+    showToast(`Command error: ${err}`, 'error');
+  }
+}
+
+function setVConsolePreset(cmd) {
+  const input = document.getElementById('vconsole-cmd-input');
+  if (input) {
+    input.value = cmd;
+    executeVConsoleCommand();
+  }
+}
+
+// Global Exports
+window.handleProfileHeaderClick = handleProfileHeaderClick;
+window.handleProfileAuthAction = handleProfileAuthAction;
+window.openAuthModal = openAuthModal;
+window.closeAuthModal = closeAuthModal;
+window.switchAuthMethod = switchAuthMethod;
+window.requestNewAuthCode = requestNewAuthCode;
+window.copyAuthCommand = copyAuthCommand;
+window.sendPokeOtpRequest = sendPokeOtpRequest;
+window.verifyPokeOtpAction = verifyPokeOtpAction;
+
+window.toggleFriendsDrawer = toggleFriendsDrawer;
+window.openFriendsDrawer = openFriendsDrawer;
+window.closeFriendsDrawer = closeFriendsDrawer;
+window.switchFriendsTab = switchFriendsTab;
+window.onFriendSearch = onFriendSearch;
+window.setFriendsFilter = setFriendsFilter;
+window.executeAddFriend = executeAddFriend;
+window.removeFriendAction = removeFriendAction;
+window.inviteFriendToLobby = inviteFriendToLobby;
+window.copyMyFriendCode = copyMyFriendCode;
+
+window.openProfileModal = openProfileModal;
+window.closeProfileModal = closeProfileModal;
+window.filterMatchHistory = filterMatchHistory;
+window.openMatchDpiView = openMatchDpiView;
+window.backToMatchHistory = backToMatchHistory;
+window.copyDpiMatchCode = copyDpiMatchCode;
+
+window.toggleFriendsCoAdmin = toggleFriendsCoAdmin;
+window.executeVConsoleCommand = executeVConsoleCommand;
+window.setVConsolePreset = setVConsolePreset;
+
+// Boot Hook
+document.addEventListener('DOMContentLoaded', () => {
+  loadUserProfile();
+});
