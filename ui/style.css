@@ -3914,21 +3914,29 @@ body.lang-fa .fov-sub-title {
 }
 
 .fov-val-chip {
-  font-family: 'Rajdhani', monospace;
-  font-size: 0.70rem;
-  font-weight: 700;
-  color: var(--deadlock-cyan);
-  background: rgba(56, 189, 248, 0.1);
-  border: 1px solid rgba(56, 189, 248, 0.28);
-  border-radius: 3px;
-  padding: 0 5px;
-  height: 18px;
-  min-height: 18px;
-  line-height: 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 5px rgba(56, 189, 248, 0.15);
+  width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  max-height: 20px !important;
+  line-height: 18px !important;
+  padding: 0 4px !important;
+  text-align: center !important;
+  font-family: 'Rajdhani', monospace, sans-serif !important;
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  color: #e2e8f0 !important;
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  font-variant-numeric: tabular-nums !important;
+  transition: all 0.15s ease !important;
 }
 
 .fov-sub-slider-bar {
@@ -4034,33 +4042,34 @@ body:not(.reduced-motion) .fov-sub-slider-bar .fov-range-input::-webkit-slider-r
   height: 20px !important;
   min-height: 20px !important;
   max-height: 20px !important;
+  line-height: 18px !important;
   padding: 0 4px !important;
-  text-align: center;
+  text-align: center !important;
   font-family: 'Rajdhani', monospace, sans-serif !important;
   font-size: 0.74rem !important;
-  font-weight: 700;
-  color: var(--deadlock-orange) !important;
-  background: rgba(10, 15, 25, 0.9) !important;
-  border: 1px solid rgba(249, 115, 22, 0.45) !important;
-  border-radius: 3px;
+  font-weight: 700 !important;
+  color: #e2e8f0 !important;
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 4px !important;
   outline: none;
   font-variant-numeric: tabular-nums !important;
   cursor: ew-resize;
-  box-shadow: 0 0 6px rgba(249, 115, 22, 0.15);
-  transition: all 0.15s ease;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  transition: all 0.15s ease !important;
 }
 
 .ar-real-input:focus,
-.ar-real-input:hover {
-  border-color: var(--deadlock-orange) !important;
-  box-shadow: 0 0 12px rgba(249, 115, 22, 0.35);
+.ar-real-input:hover,
+.fov-val-chip:hover {
+  border-color: rgba(255, 255, 255, 0.35) !important;
   color: #ffffff !important;
-}
-
-.ar-real-input:focus {
-  border-color: var(--deadlock-orange);
-  box-shadow: 0 0 6px rgba(249, 115, 22, 0.45);
-  background: rgba(20, 30, 52, 0.95);
+  background: rgba(20, 30, 52, 0.95) !important;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4) !important;
 }
 
 .ar-toggle-check {
@@ -13646,4 +13655,113 @@ body.lang-fa .convar-item-def-badge .def-badge-label {
   height: 58px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+/* App Titlebar unblurred above modal overlays */
+.app-titlebar {
+  z-index: 999999 !important;
+}
+
+#modal-profile.modal-overlay {
+  top: 40px !important;
+  height: calc(100% - 40px) !important;
+}
+
+/* Persian RTL Layout Fixes */
+body.lang-fa .active-preset-bar {
+  direction: rtl !important;
+}
+body.lang-fa .apb-left {
+  direction: rtl !important;
+}
+body.lang-fa .apb-right {
+  direction: rtl !important;
+}
+body.lang-fa .apb-custom-select-trigger {
+  direction: rtl !important;
+  text-align: right !important;
+}
+body.lang-fa .apb-custom-options-menu {
+  direction: rtl !important;
+  text-align: right !important;
+}
+body.lang-fa .apb-custom-option {
+  direction: rtl !important;
+  text-align: right !important;
+}
+body.lang-fa .lan-mode-nav-tabs {
+  direction: rtl !important;
+}
+
+/* LAN Mode Nav Tabs (Direct LAN vs VIP Mesh) */
+.lan-mode-nav-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.lan-mode-nav-tab {
+  flex: 1;
+  height: 34px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lan-mode-nav-tab:hover {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.35);
+  color: #f1f5f9;
+}
+
+.lan-mode-nav-tab.active {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(15, 23, 42, 0.85));
+  border-color: var(--deadlock-orange);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.25);
+}
+
+/* Admin Lobby Delete Button & Admin Badge */
+.btn-lobby-admin-del {
+  background: rgba(239, 68, 68, 0.16) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: #f87171 !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  transition: all 0.2s ease !important;
+}
+.btn-lobby-admin-del:hover {
+  background: rgba(239, 68, 68, 0.35) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5) !important;
+}
+
+.badge-app-admin {
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }

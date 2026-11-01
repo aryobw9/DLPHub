@@ -499,7 +499,7 @@
                   <div class="fov-sub-header">
                     <span class="fov-sub-title">
                       <i class="fa-solid fa-gamepad" style="color:var(--deadlock-cyan);font-size:9.5px"></i>
-                      <span data-i18n="videoFovTitle">In-Game FOV (video.txt)</span>
+                      <span data-i18n="videoFovTitle">In-Game FOV</span>
                     </span>
                     <span class="fov-val-chip" id="fov-video-val">90°</span>
                   </div>
@@ -515,7 +515,7 @@
                   <div class="fov-sub-header">
                     <span class="fov-sub-title">
                       <i class="fa-solid fa-arrows-left-right-to-line" style="color:var(--deadlock-orange);font-size:9.5px"></i>
-                      <span data-i18n="giAspectTitle">Aspect Ratio (gameinfo.gi)</span>
+                      <span data-i18n="giAspectTitle">Aspect Ratio</span>
                     </span>
                     <div style="display:flex;align-items:center;gap:4px">
                       <input type="text" id="ar-input" aria-label="عدد نسبت تصویر / Aspect Ratio Value" class="ar-real-input" value="2.15" placeholder="2.15" onchange="setAspectRatio(this.value)" data-tooltip="Aspect Ratio (1.33 - 3.20) · Scroll wheel or type numbers" />
@@ -1102,6 +1102,16 @@
 
 
             <div id="lan-lobby-browser" class="lan-lobby-browser">
+                          <div class="lan-mode-nav-tabs">
+              <button type="button" class="lan-mode-nav-tab active" id="tab-lan-mode-vip" onclick="switchLanMode('vip')">
+                <i class="fa-solid fa-cloud"></i>
+                <span data-i18n="tabVipMesh">سرورهای اختصاصی مش VIP</span>
+              </button>
+              <button type="button" class="lan-mode-nav-tab" id="tab-lan-mode-direct" onclick="switchLanMode('direct')">
+                <i class="fa-solid fa-ethernet"></i>
+                <span data-i18n="tabDirectLan">اتصال مستقیم شبکه محلی (Direct LAN)</span>
+              </button>
+            </div>
               <div class="lan-card unified-lan-card" id="vip-lan-card">
                 
 
@@ -1183,35 +1193,23 @@
                           </select>
                         </div>
 
-                        <!-- Row 4: Hidden Lobby (left) & Server Architecture Note (right) -->
-                        <div class="vip-privacy-card" style="box-sizing:border-box;">
-                          <label class="session-checkbox-label" style="cursor:pointer; display:flex; align-items:center; gap:8px;">
+                        <!-- Row 4: Hidden Lobby (left) & Create Lobby Button (right) -->
+                        <div class="vip-privacy-card" style="box-sizing:border-box; height:100%; display:flex; flex-direction:column; justify-content:center;">
+                          <label class="session-checkbox-label" style="cursor:pointer; display:flex; align-items:center; gap:8px; margin:0;">
                             <input type="checkbox" id="vip-host-hidden" />
                             <span class="checkmark"></span>
                             <span data-i18n="vipHiddenLobby" style="font-weight:600; color:#a78bfa;"><i class="fa-solid fa-eye-slash" style="font-size:11px; margin-inline-end:4px;"></i>لابی مخفی (عدم نمایش)</span>
                           </label>
-                          <div class="vip-privacy-sub" data-i18n="vipHiddenLobbyDesc">
+                          <div class="vip-privacy-sub" data-i18n="vipHiddenLobbyDesc" style="margin-top:4px;">
                             لابی در لیست عمومی نشان داده نمی‌شود؛ ورود فقط با کد ۶ رقمی.
                           </div>
                         </div>
-                        <div class="vip-privacy-card" style="background:rgba(20,30,50,0.4); border-color:rgba(56,189,248,0.15); box-sizing:border-box;">
-                          <div style="display:flex; align-items:center; gap:8px; font-weight:600; color:#38bdf8; font-size:12px;">
-                            <i class="fa-solid fa-circle-info"></i>
-                            <span data-i18n="lobbyConfigNoteTitle">معماری اجرای سرور</span>
-                          </div>
-                          <div class="vip-privacy-sub" style="color:#94a3b8; font-size:11px; margin-top:4px;" data-i18n="lobbyConfigNoteDesc">
-                            حالت اتصال مستقیم بدون بستن بازی و بدون دستکاری فایل‌ها اجرا می‌شود. ددورکس پایه از سرور اختصاصی بهینه‌شده محلی استفاده می‌کند.
-                          </div>
-                        </div>
-
-                        <!-- Row 5: Action Button (bottom left) -->
-                        <div>
-                          <button type="button" class="btn-heroic-host" id="btn-vip-create-room" onclick="createVipRoomAction()">
-                            <i class="fa-solid fa-link"></i>
+                        <div style="display:flex; align-items:stretch;">
+                          <button type="button" class="btn-heroic-host" id="btn-vip-create-room" onclick="createVipRoomAction()" style="width:100%; height:100%; min-height:48px; font-size:14px; font-weight:700; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                            <i class="fa-solid fa-cloud-bolt"></i>
                             <span data-i18n="vipConnectAndCreateBtn">برقراری اتصال و ساخت لابی</span>
                           </button>
                         </div>
-                        <div></div>
                       </div>
                     </div>
                   </div>
@@ -1223,27 +1221,31 @@
 
                     <!-- Step 1: Join Setup View -->
                     <div id="vip-join-setup-view">
-                      <div class="lan-form-row">
-                        <div class="lan-form-group" style="flex:1">
+                      <div class="lobby-grid-aligned">
+                        <!-- Row 1: Nickname (left) & Room Code (right) -->
+                        <div class="lan-form-group">
                           <label class="lan-label" data-i18n="vipNicknameLabel">نام شما:</label>
                           <input type="text" id="vip-join-nickname" class="lan-input" placeholder="Player" maxlength="16" />
                         </div>
-                        <div class="lan-form-group" style="flex:1">
+                        <div class="lan-form-group">
                           <label class="lan-label" data-i18n="vipEnterCodeLabel">کد لابی یا آدرس سرور:</label>
                           <input type="text" id="vip-join-code" class="lan-input vip-code-input" placeholder="482910 یا IP:Port" maxlength="32" dir="ltr" />
                         </div>
-                        <div class="lan-form-group" style="flex:1" id="vip-join-password-group">
+
+                        <!-- Row 2: Password (left) & Join Button (right) -->
+                        <div class="lan-form-group" id="vip-join-password-group">
                           <label class="lan-label" data-i18n="vipPasswordLabel">رمز عبور (در صورت لزوم):</label>
                           <input type="password" id="vip-join-password" class="lan-input" placeholder="Optional" maxlength="24" dir="ltr" />
                         </div>
+                        <div class="lan-form-group" style="display:flex; flex-direction:column; justify-content:flex-end;">
+                          <label class="lan-label" style="visibility:hidden;">عملیات:</label>
+                          <button type="button" class="btn-heroic-host" id="btn-vip-join-room" onclick="joinVipRoomAction()" style="width:100%; height:38px; min-height:38px; font-size:14px; font-weight:700; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            <span data-i18n="vipConnectToRoomBtn">ورود به لابی و برقراری ارتباط</span>
+                          </button>
+                        </div>
                       </div>
-
-                      <div class="lan-action-bar">
-                        <button type="button" class="btn-heroic-host" id="btn-vip-join-room" onclick="joinVipRoomAction()" style="max-width:280px; margin:0 auto;">
-                          <i class="fa-solid fa-right-to-bracket"></i>
-                          <span data-i18n="vipConnectToRoomBtn">ورود به لابی و برقراری ارتباط</span>
-                        </button>
-                      </div>
+                      <div style="margin-top:16px;"></div>
 
                       <!-- Active Public VIP Lobbies List -->
                       <div class="vip-lobby-browser-section" id="vip-lobby-browser-section">
@@ -1265,6 +1267,109 @@
                   </div>
                 </div> <!-- /vip-mesh-controls -->
               </div> <!-- /vip-lan-card -->
+
+              <div class="lan-card standard-lan-card" id="standard-lan-card" style="display:none;">
+                
+                <div class="lan-role-tabs">
+                  <button type="button" class="lan-role-btn active" id="btn-lan-role-host" onclick="switchLanRole('host')">
+                    <i class="fa-solid fa-server"></i>
+                    <span data-i18n="lanRoleHost">ساخت لابی لن</span>
+                  </button>
+                  <button type="button" class="lan-role-btn" id="btn-lan-role-client" onclick="switchLanRole('client')">
+                    <i class="fa-solid fa-door-open"></i>
+                    <span data-i18n="lanRoleClient">ورود با آی‌پی</span>
+                  </button>
+                </div>
+
+                <!-- Role Subpanel: HOST LOBBY -->
+                <div class="lan-role-panel" id="lan-panel-host">
+                  <div class="vip-host-lead" data-i18n="lanHostLead">
+                    آی‌پی شبکه و نوع سرور مورد نظر را انتخاب کرده و لابی لن خود را ایجاد کنید.
+                  </div>
+
+                  <div class="lan-form-row">
+                    <div class="lan-form-group" style="flex:1">
+                      <label class="lan-label" data-i18n="vipNicknameLabel">نام شما:</label>
+                      <input type="text" id="lan-host-nickname" class="lan-input" placeholder="Host" maxlength="16" />
+                    </div>
+                    <div class="lan-form-group" style="flex:1">
+                      <label class="lan-label" data-i18n="vipModSelectLabel">نوع سرور و مادها:</label>
+                      <select id="lan-host-mod-mode" class="lan-select">
+                        <option value="vanilla" data-i18n="optDeadworksBase">دد‌ورکس پایه (پیشنهادی)</option>
+                        <option value="cursed_arena" data-i18n="optCursedArena">ماد کرسد آرنا (دوئل)</option>
+                        <option value="ability_brawl" data-i18n="optAbilityBrawl">ماد درفت اسکیل</option>
+                        <option value="automatch" data-i18n="optAutoMatch">ماد مسابقه تیمی ۶ به ۶</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="lan-form-row">
+                    <div class="lan-form-group" style="flex:2">
+                      <label class="lan-label" data-i18n="lanHostIpLabel">آدرس آی‌پی شما در شبکه:</label>
+                      <div class="lan-input-with-action">
+                        <select id="lan-host-ip-select" class="lan-select" onchange="onLanIpSelected(this.value)">
+                          <option value="0.0.0.0">0.0.0.0 (تمام کارت‌های شبکه)</option>
+                        </select>
+                        <input type="text" id="lan-host-ip-custom" class="lan-input" placeholder="IP..." style="max-width:130px; display:none;" />
+                        <button type="button" class="btn-refresh-ips" onclick="refreshLocalIps()" data-tooltip="بروزرسانی IPها"><i class="fa-solid fa-rotate-right"></i></button>
+                      </div>
+                    </div>
+                    <div class="lan-form-group" style="flex:1">
+                      <label class="lan-label" data-i18n="lanPublicPortLabel">پورت سرور:</label>
+                      <input type="number" id="lan-public-port" class="lan-input" value="27005" />
+                    </div>
+                  </div>
+
+                  <div class="lan-action-bar">
+                    <button type="button" class="btn-apply btn-lan-create" id="btn-lan-create-lobby" onclick="createLanLobbyAction()">
+                      <i class="fa-solid fa-link"></i>
+                      <span data-i18n="lanConnectAndCreateBtn">ساخت لابی لن</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Role Subpanel: CLIENT / JOIN LOBBY -->
+                <div class="lan-role-panel" id="lan-panel-client" style="display:none;">
+                  <div class="vip-join-lead" data-i18n="lanJoinLead">
+                    نام مستعار و آدرس سرور میزبان را وارد کنید تا به لابی متصل شوید.
+                  </div>
+
+                  <div class="lan-form-row">
+                    <div class="lan-form-group" style="flex:1">
+                      <label class="lan-label" data-i18n="vipNicknameLabel">نام شما:</label>
+                      <input type="text" id="lan-client-nickname" class="lan-input" placeholder="Player" maxlength="16" />
+                    </div>
+                    <div class="lan-form-group" style="flex:1.5">
+                      <label class="lan-label" data-i18n="lanClientTargetLabel">آدرس سرور میزبان:</label>
+                      <input type="text" id="lan-client-target-ip" class="lan-input" placeholder="192.168.1.15:27005" dir="ltr" />
+                    </div>
+                  </div>
+
+                  <div class="lan-action-bar">
+                    <button type="button" class="btn-apply btn-lan-join" id="btn-lan-join-lobby" onclick="joinLanLobbyAction()">
+                      <i class="fa-solid fa-right-to-bracket"></i>
+                      <span data-i18n="lanConnectToLobbyBtn">ورود به لابی لن</span>
+                    </button>
+                    <button type="button" class="btn-reset btn-sm" id="btn-lan-probe-server" onclick="probeLanServerAction()">
+                      <i class="fa-solid fa-radar"></i>
+                      <span data-i18n="lanProbeServer">تست وضعیت سرور</span>
+                    </button>
+                  </div>
+
+                  <div class="lan-probe-result" id="lan-probe-result" style="display:none;">
+                    <div class="probe-header">
+                      <span class="probe-dot online"></span>
+                      <span id="probe-server-name">Deadlock Dedicated Server</span>
+                      <span class="probe-ping" id="probe-ping-ms">-- ms</span>
+                    </div>
+                    <div class="probe-details">
+                      <span>نقشه: <b id="probe-map-name">--</b></span>
+                      <span>بازیکنان: <b id="probe-players">0/12</b></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div> <!-- /lan-lobby-browser -->
 
             <!-- Part 3: Active Match Session (Screen changes upon connecting) -->
@@ -1665,13 +1770,13 @@
           <div class="editor-controls-sticky">
             <div class="editor-search-bar">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" id="friend-search-input" placeholder="جستجوی دوست با نام یا کد..." oninput="onFriendSearch(this.value)">
+              <input type="text" id="friend-search-input" placeholder="جستجوی دوست با نام یا کد..." data-i18n-placeholder="searchFriendPlaceholder" oninput="onFriendSearch(this.value)">
             </div>
             <div class="editor-filter-chips">
-              <button type="button" class="editor-chip active" id="chip-friends-all" onclick="setFriendsFilter('all')">همه</button>
-              <button type="button" class="editor-chip" id="chip-friends-online" onclick="setFriendsFilter('online')">آنلاین</button>
-              <button type="button" class="editor-chip" id="chip-friends-lobby" onclick="setFriendsFilter('lobby')">در لابی</button>
-              <button type="button" class="editor-chip" id="chip-friends-admins" onclick="setFriendsFilter('admins')">ادمین‌ها</button>
+              <button type="button" class="editor-chip active" id="chip-friends-all" onclick="setFriendsFilter('all')" data-i18n="chipAll">همه</button>
+              <button type="button" class="editor-chip" id="chip-friends-online" onclick="setFriendsFilter('online')" data-i18n="chipOnline">آنلاین</button>
+              <button type="button" class="editor-chip" id="chip-friends-lobby" onclick="setFriendsFilter('lobby')" data-i18n="chipInLobby">در لابی</button>
+              <button type="button" class="editor-chip" id="chip-friends-admins" onclick="setFriendsFilter('admins')" data-i18n="chipAdmins">ادمین‌ها</button>
             </div>
           </div>
 
@@ -2355,7 +2460,7 @@
             <div class="dpi-card-footer">
               <span>دقت تیر: <strong id="dpi-kp2-acc">55.2%</strong></span>
               <span>مشارکت در کیل: <strong id="dpi-kp2-kp">69.9%</strong></span>
-              <span class="dpi-showcase-link">مشاهده شوکیس &gt;</span>
+              
             </div>
           </div>
 
@@ -2403,7 +2508,7 @@
             <div class="dpi-card-footer">
               <span>دقت تیر: <strong id="dpi-mvp-acc">37.5%</strong></span>
               <span>مشارکت در کیل: <strong id="dpi-mvp-kp">79.3%</strong></span>
-              <span class="dpi-showcase-link">مشاهده شوکیس &gt;</span>
+              
             </div>
           </div>
 
@@ -2450,7 +2555,7 @@
             <div class="dpi-card-footer">
               <span>دقت تیر: <strong id="dpi-kp3-acc">58.6%</strong></span>
               <span>مشارکت در کیل: <strong id="dpi-kp3-kp">58.6%</strong></span>
-              <span class="dpi-showcase-link">مشاهده شوکیس &gt;</span>
+              
             </div>
           </div>
         </div>

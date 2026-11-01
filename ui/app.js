@@ -107,6 +107,13 @@ function applyLang() {
     }
     el.classList.toggle('i18n-rtl', state.lang === 'fa');
   });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    const val = t(key, el.placeholder);
+    if (val && val !== key) {
+      el.placeholder = val;
+    }
+  });
   document.querySelectorAll('[data-i18n-title]').forEach((el) => {
     el.title = t(el.dataset.i18nTitle);
   });
@@ -5690,6 +5697,7 @@ async function copyVipJoinCmd() {
 }
 
 async function refreshVipLobbiesList() {
+  fetchAppAdmins();
   const container = document.getElementById('vip-lobby-list');
   if (!container) return;
 
@@ -5741,6 +5749,13 @@ async function refreshVipLobbiesList() {
         ? `<span class="tag-locked" title="${t('lobbyProtected')}"><i class="fa-solid fa-lock"></i> ${t('lobbyProtected')}</span>`
         : '';
 
+      const adminDelBtn = isAppAdmin()
+        ? `<button type="button" class="btn-lobby-admin-del" title="${t('adminDeleteLobbyTitle') || 'حذف لابی (ادمین)'}">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>${state.lang === 'fa' ? 'حذف' : 'Delete'}</span>
+           </button>`
+        : '';
+
       card.innerHTML = `
         <div class="vip-lobby-info">
           <span class="vip-lobby-code">${safeRoomCode}</span>
@@ -5757,11 +5772,22 @@ async function refreshVipLobbiesList() {
             </div>
           </div>
         </div>
-        <button type="button" class="btn-lobby-quickjoin">
-          <i class="fa-solid fa-arrow-right-to-bracket"></i>
-          <span>${state.lang === 'fa' ? 'ورود' : 'Join'}</span>
-        </button>
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${adminDelBtn}
+          <button type="button" class="btn-lobby-quickjoin">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            <span>${state.lang === 'fa' ? 'ورود' : 'Join'}</span>
+          </button>
+        </div>
       `;
+
+      const btnAdminDel = card.querySelector('.btn-lobby-admin-del');
+      if (btnAdminDel) {
+        btnAdminDel.addEventListener('click', (e) => {
+          e.stopPropagation();
+          adminDeleteLobby(r.room_code);
+        });
+      }
 
       const btnJoin = card.querySelector('.btn-lobby-quickjoin');
       if (btnJoin) {
@@ -6938,11 +6964,16 @@ async function doApplyFovOnly() {
   const btn = document.getElementById('btn-apply-fov');
   if (btn) btn.disabled = true;
   try {
+    const fovVal = state.fov || 90;
+    const arVal = String(state.aspectRatio || '2.15');
+    const arEnabled = state.aspectRatioEnabled !== false;
     const res = await call('apply_fov_only_cmd', {
       path: state.gamePath,
-      fov: state.fov || 90,
-      aspect_ratio: state.aspectRatio || '2.15',
-      aspect_ratio_enabled: state.aspectRatioEnabled !== false,
+      fov: fovVal,
+      aspectRatio: arVal,
+      aspectRatioEnabled: arEnabled,
+      aspect_ratio: arVal,
+      aspect_ratio_enabled: arEnabled,
     });
     stepLine('[FOV/Aspect] ' + res, 'ok');
     showModal(t('doneTitle'), res, [{ label: 'OK' }]);
@@ -6961,9 +6992,11 @@ async function doApplyFpsOnly() {
   const btn = document.getElementById('btn-apply-fps');
   if (btn) btn.disabled = true;
   try {
+    const fpsVal = String(state.fpsLimit || 'DEFAULT');
     const res = await call('apply_fps_only_cmd', {
       path: state.gamePath,
-      fps_limit: state.fpsLimit || 'DEFAULT',
+      fpsLimit: fpsVal,
+      fps_limit: fpsVal,
     });
     stepLine('[FPS Max] ' + res, 'ok');
     showModal(t('doneTitle'), res, [{ label: 'OK' }]);
@@ -8106,3 +8139,101 @@ function selectAuthProvider(provider) {
 }
 
 window.selectAuthProvider = selectAuthProvider;
+
+
+// ----------------- App Admin & LAN Mode Controls -----------------
+window.switchLanMode = function(mode) {
+  const vipCard = document.getElementById('vip-lan-card');
+  const directCard = document.getElementById('standard-lan-card');
+  const tabVip = document.getElementById('tab-lan-mode-vip');
+  const tabDirect = document.getElementById('tab-lan-mode-direct');
+  if (mode === 'direct') {
+    if (vipCard) vipCard.style.display = 'none';
+    if (directCard) directCard.style.display = 'block';
+    if (tabVip) tabVip.classList.remove('active');
+    if (tabDirect) tabDirect.classList.add('active');
+  } else {
+    if (vipCard) vipCard.style.display = 'block';
+    if (directCard) directCard.style.display = 'none';
+    if (tabVip) tabVip.classList.add('active');
+    if (tabDirect) tabDirect.classList.remove('active');
+  }
+};
+
+let appAdminsList = ['aryobw9'];
+const APP_SUPER_ADMINS = ['aryobw9'];
+
+function isAppAdmin() {
+  const myNick = ((state.vipNickname || state.user?.nickname || userProfile?.nickname || '') + '').trim().toLowerCase();
+  if (!myNick) return false;
+  return APP_SUPER_ADMINS.map(s => s.toLowerCase()).includes(myNick) || 
+         appAdminsList.map(a => a.toLowerCase()).includes(myNick);
+}
+window.isAppAdmin = isAppAdmin;
+
+function isSuperAdmin() {
+  const myNick = ((state.vipNickname || state.user?.nickname || userProfile?.nickname || '') + '').trim().toLowerCase();
+  if (!myNick) return false;
+  return APP_SUPER_ADMINS.map(s => s.toLowerCase()).includes(myNick);
+}
+window.isSuperAdmin = isSuperAdmin;
+
+async function fetchAppAdmins() {
+  try {
+    const res = await fetch(`${VIP_VPS_HTTP}/api/app-admins/list`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.admins)) {
+        appAdminsList = data.admins;
+      }
+    }
+  } catch (e) {
+    // offline or localhost fallback
+  }
+}
+window.fetchAppAdmins = fetchAppAdmins;
+
+async function adminDeleteLobby(roomCode) {
+  if (!confirm(t('adminDeleteConfirm') || 'آیا از حذف این لابی فعال توسط ادمین اطمینان دارید؟')) {
+    return;
+  }
+  const caller = ((state.vipNickname || state.user?.nickname || userProfile?.nickname || '') + '').trim();
+  try {
+    const res = await fetch(`${VIP_VPS_HTTP}/api/app-admins/delete-lobby`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caller, room_code: roomCode })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showModal(t('doneTitle') || 'موفق', t('adminLobbyRemoved') || 'لابی توسط ادمین حذف شد.', [{ label: 'OK' }]);
+      refreshVipLobbiesList();
+    } else {
+      showModal(t('errorTitle') || 'خطا', data.detail || data.message || 'خطا در حذف لابی', [{ label: 'OK' }]);
+    }
+  } catch (e) {
+    showModal(t('errorTitle') || 'خطا', String(e), [{ label: 'OK' }]);
+  }
+}
+window.adminDeleteLobby = adminDeleteLobby;
+
+async function toggleAppAdmin(targetNickname, makeAdmin) {
+  const caller = ((state.vipNickname || state.user?.nickname || userProfile?.nickname || '') + '').trim();
+  try {
+    const res = await fetch(`${VIP_VPS_HTTP}/api/app-admins/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caller, target: targetNickname, make_admin: makeAdmin })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      appAdminsList = data.admins || [];
+      renderFriendsList();
+    } else {
+      showModal(t('errorTitle') || 'خطا', data.detail || 'خطا در تغییر دسترسی ادمین', [{ label: 'OK' }]);
+    }
+  } catch (e) {
+    showModal(t('errorTitle') || 'خطا', String(e), [{ label: 'OK' }]);
+  }
+}
+window.toggleAppAdmin = toggleAppAdmin;
