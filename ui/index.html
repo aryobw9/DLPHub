@@ -206,26 +206,28 @@
       <span class="brand-badge" data-tauri-drag-region data-i18n="brand">ددلاک پرشین</span>
       <span data-tauri-drag-region data-i18n="brandTagline">ابزار بهینه‌سازی گرافیک و کانفیگ</span>
     </div>
-    <div class="titlebar-drag-spacer" data-tauri-drag-region style="flex:1; height:100%;"></div>
-    <div class="window-controls" data-tauri-drag-region="false">
-      <!-- Friends Panel Drawer Trigger -->
-      <button class="titlebar-pill-btn" id="btn-friends-drawer" onclick="toggleFriendsDrawer()" data-tooltip="لیست دوستان / Friends List">
-        <i class="fa-solid fa-user-group"></i>
-        <span class="friends-btn-label" data-i18n="friends">دوستان</span>
-        <span id="friends-badge-count" class="badge-pill">0</span>
-      </button>
 
-      <!-- User Profile & TS Account Pill Trigger -->
-      <button class="titlebar-profile-btn" id="btn-header-profile" onclick="handleProfileHeaderClick()" data-tooltip="پروفایل کاربری و تاریخچه مسابقات / Account & Match History">
+    <!-- Top Left Quick Actions: Profile & Friends -->
+    <div class="titlebar-left-actions" data-tauri-drag-region="false">
+      <!-- User Profile Button: Only Avatar and Name -->
+      <button class="titlebar-action-btn profile-action-btn" id="btn-header-profile" onclick="handleProfileHeaderClick()" data-tooltip="پروفایل کاربری و تاریخچه مسابقات / User Profile">
         <div class="header-avatar-wrap">
           <img id="header-avatar-img" src="assets/app_icon.png" class="header-avatar" alt="Avatar" />
           <span id="header-online-status" class="header-status-dot"></span>
         </div>
-        <div class="header-profile-text">
-          <span id="header-nickname" class="header-nickname">مهمان (Guest)</span>
-          <span id="header-ts-tag" class="header-ts-tag"><i class="fa-brands fa-teamspeak"></i> <span id="header-ts-label" data-i18n="notLinked">متصل نشده</span></span>
-        </div>
+        <span id="header-nickname" class="header-nickname">مهمان (Guest)</span>
       </button>
+
+      <!-- Friends Drawer Button: Same Size, Spaced Apart -->
+      <button class="titlebar-action-btn friends-action-btn" id="btn-friends-drawer" onclick="toggleFriendsDrawer()" data-tooltip="لیست دوستان / Friends List">
+        <i class="fa-solid fa-user-group"></i>
+        <span class="friends-btn-label" data-i18n="friends">دوستان</span>
+        <span id="friends-badge-count" class="badge-pill">0</span>
+      </button>
+    </div>
+
+    <div class="titlebar-drag-spacer" data-tauri-drag-region style="flex:1; height:100%;"></div>
+    <div class="window-controls" data-tauri-drag-region="false">
 
       <button class="btn-play" id="btn-launch" data-tooltip="اجرای بازی ددلاک / Launch Game">
         <span class="play-chip"><img src="assets/icons_norm/logo_mark.png" class="dlp-icon-play" width="16" height="16" alt="" /></span>
@@ -1097,325 +1099,140 @@
         </div>
         <div class="panel" id="panel-lan" style="display:none">
           <div class="lan-container">
-            <div class="lan-header-bar">
-              <div class="lan-header-meta">
-                <i class="fa-solid fa-network-wired lan-header-icon"></i>
-                <div class="lan-header-text-group">
-                  <div class="lan-header-title" data-i18n="lanHeaderTitle">لابی شبکه و بازی چندنفره ددلاک</div>
-                  <div class="lan-header-subtitle" data-i18n="lanHeaderSubtitle">اتصال و اجرای مستقیم بازی تحت شبکه محلی، وی‌پی‌ان و سرورهای اختصاصی داخلی</div>
-                </div>
-              </div>
-              <div class="lan-status-pill" id="lan-global-status-pill">
-                <span class="lan-status-dot idle" id="lan-status-dot"></span>
-                <span id="lan-status-text" data-i18n="lanStatusIdle">آماده به کار</span>
-              </div>
-            </div>
+
 
             <div id="lan-lobby-browser" class="lan-lobby-browser">
-            <div class="lan-layout-grid">
-              <!-- Section 1: Standard LAN Connector (Host & Client) -->
-              <div class="lan-card standard-lan-card">
-                <div class="lan-card-header">
-                  <div class="lan-card-title-group">
-                    <span class="lan-badge standard"><i class="fa-solid fa-ethernet"></i> <span data-i18n="badgeStandardLan">اتصال لن دستی</span></span>
-                    <span class="lan-card-title" data-i18n="stdLanTitle">اتصال لن محلی و دستی</span>
-                  </div>
-                  <span class="lan-card-badge-info" data-i18n="stdLanDesc">شبکه محلی، وای‌فای، PacketCraft، الکترو، WireGuard</span>
-                </div>
-
-                <div class="lan-role-tabs">
-                  <button type="button" class="lan-role-btn active" id="btn-lan-role-host" onclick="switchLanRole('host')">
-                    <i class="fa-solid fa-server"></i>
-                    <span data-i18n="lanRoleHost">ساخت لابی لن</span>
-                  </button>
-                  <button type="button" class="lan-role-btn" id="btn-lan-role-client" onclick="switchLanRole('client')">
-                    <i class="fa-solid fa-door-open"></i>
-                    <span data-i18n="lanRoleClient">ورود با آی‌پی</span>
-                  </button>
-                </div>
-
-                <!-- Role Subpanel: HOST LOBBY -->
-                <div class="lan-role-panel" id="lan-panel-host">
-                  <div class="vip-host-lead" data-i18n="lanHostLead">
-                    آی‌پی شبکه و نوع سرور مورد نظر را انتخاب کرده و لابی لن خود را ایجاد کنید.
-                  </div>
-
-                  <div class="lan-form-row">
-                    <div class="lan-form-group" style="flex:1">
-                      <label class="lan-label" data-i18n="vipNicknameLabel">نام شما:</label>
-                      <input type="text" id="lan-host-nickname" class="lan-input" placeholder="Host" maxlength="16" />
-                    </div>
-                    <div class="lan-form-group" style="flex:1">
-                      <label class="lan-label" data-i18n="vipModSelectLabel">نوع سرور و مادها:</label>
-                      <select id="lan-host-mod-mode" class="lan-select">
-                        <option value="vanilla" data-i18n="optDeadworksBase">دد‌ورکس پایه (پیشنهادی)</option>
-                        <option value="cursed_arena" data-i18n="optCursedArena">ماد کرسد آرنا (دوئل)</option>
-                        <option value="ability_brawl" data-i18n="optAbilityBrawl">ماد درفت اسکیل</option>
-                        <option value="automatch" data-i18n="optAutoMatch">ماد مسابقه تیمی ۶ به ۶</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div class="lan-form-row">
-                    <div class="lan-form-group" style="flex:2">
-                      <label class="lan-label" data-i18n="lanHostIpLabel">آدرس آی‌پی شما در شبکه:</label>
-                      <div class="lan-input-with-action">
-                        <select id="lan-host-ip-select" class="lan-select" onchange="onLanIpSelected(this.value)">
-                          <option value="0.0.0.0">0.0.0.0 (تمام کارت‌های شبکه)</option>
-                        </select>
-                        <input type="text" id="lan-host-ip-custom" class="lan-input" placeholder="IP..." style="max-width:130px; display:none;" />
-                        <button type="button" class="btn-refresh-ips" onclick="refreshLocalIps()" data-tooltip="بروزرسانی IPها"><i class="fa-solid fa-rotate-right"></i></button>
-                      </div>
-                    </div>
-                    <div class="lan-form-group" style="flex:1">
-                      <label class="lan-label" data-i18n="lanPublicPortLabel">پورت سرور:</label>
-                      <input type="number" id="lan-public-port" class="lan-input" value="27005" />
-                    </div>
-                  </div>
-
-                  <div class="lan-action-bar">
-                    <button type="button" class="btn-apply btn-lan-create" id="btn-lan-create-lobby" onclick="createLanLobbyAction()">
-                      <i class="fa-solid fa-link"></i>
-                      <span data-i18n="lanConnectAndCreateBtn">ساخت لابی لن</span>
-                    </button>
+              <div class="lan-card unified-lan-card" id="vip-lan-card">
+                <div class="lan-card-header-clean">
+                  <div class="lan-card-title-group" style="display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-network-wired" style="color:var(--deadlock-orange); font-size:18px;"></i>
+                    <span class="lan-card-title" data-i18n="lanConnection" style="font-size:16px; font-weight:700; color:#fff;">اتصال شبکه و لابی آنلاین</span>
                   </div>
                 </div>
 
-                <!-- Role Subpanel: CLIENT / JOIN LOBBY -->
-                <div class="lan-role-panel" id="lan-panel-client" style="display:none;">
-                  <div class="vip-join-lead" data-i18n="lanJoinLead">
-                    نام مستعار و آدرس سرور میزبان را وارد کنید تا به لابی متصل شوید.
-                  </div>
-
-                  <div class="lan-form-row">
-                    <div class="lan-form-group" style="flex:1">
-                      <label class="lan-label" data-i18n="vipNicknameLabel">نام شما:</label>
-                      <input type="text" id="lan-client-nickname" class="lan-input" placeholder="Player" maxlength="16" />
-                    </div>
-                    <div class="lan-form-group" style="flex:1.5">
-                      <label class="lan-label" data-i18n="lanClientTargetLabel">آدرس سرور میزبان:</label>
-                      <input type="text" id="lan-client-target-ip" class="lan-input" placeholder="192.168.1.15:27005" dir="ltr" />
-                    </div>
-                  </div>
-
-                  <div class="lan-action-bar">
-                    <button type="button" class="btn-apply btn-lan-join" id="btn-lan-join-lobby" onclick="joinLanLobbyAction()">
-                      <i class="fa-solid fa-right-to-bracket"></i>
-                      <span data-i18n="lanConnectToLobbyBtn">ورود به لابی لن</span>
-                    </button>
-                    <button type="button" class="btn-reset btn-sm" id="btn-lan-probe-server" onclick="probeLanServerAction()">
-                      <i class="fa-solid fa-radar"></i>
-                      <span data-i18n="lanProbeServer">تست وضعیت سرور</span>
-                    </button>
-                  </div>
-
-                  <div class="lan-probe-result" id="lan-probe-result" style="display:none;">
-                    <div class="probe-header">
-                      <span class="probe-dot online"></span>
-                      <span id="probe-server-name">Deadlock Dedicated Server</span>
-                      <span class="probe-ping" id="probe-ping-ms" dir="ltr">-- ms</span>
-                    </div>
-                    <div class="probe-details">
-                      <span><span data-i18n="probeMapLabel">نقشه:</span> <b id="probe-map-name" dir="ltr">--</b></span>
-                      <span><span data-i18n="probePlayersLabel">بازیکنان:</span> <b id="probe-players" dir="ltr">0/12</b></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Section 2: VIP Automated LAN (VPS Powered) -->
-              <div class="lan-card vip-lan-card" id="vip-lan-card">
-                <div class="lan-card-header">
-                  <div class="lan-card-title-group">
-                    <span class="lan-badge vip"><i class="fa-solid fa-crown"></i> <span data-i18n="badgeVipMesh">سرور اختصاصی VIP</span></span>
-                    <span class="lan-card-title" data-i18n="vipLanTitle">اتصال هوشمند سرور ایران</span>
-                  </div>
-                  <span class="lan-card-badge-info" data-i18n="vipLanDesc">پینگ ۵ تا ۱۵ میلی‌ثانیه، بدون نیاز به تنظیمات پورت یا وی‌پی‌ان</span>
-                </div>
-
-                <!-- VIP License & Activation Section -->
-                <div class="vip-license-section" id="vip-license-section">
-                  <!-- State 1: When VIP is NOT active -->
-                  <div class="vip-activation-box" id="vip-activation-box">
-                    <div class="vip-act-header">
-                      <div class="vip-act-title-wrap">
-                        <i class="fa-solid fa-key" style="color:#f59e0b"></i>
-                        <span class="vip-act-title" data-i18n="vipActTitle">فعال‌سازی اشتراک سرور اختصاصی VIP</span>
-                      </div>
-                      <span class="vip-act-badge" id="vip-act-badge" data-i18n="vipActLocked">اشتراک غیرفعال</span>
-                    </div>
-                    <div class="vip-act-desc" data-i18n="vipActDesc">
-                      جهت اتصال به رله و مش فوق سریع سرورهای ایران با پینگ تک رقمی، کلید لایسنس VIP خود را وارد کنید.
-                    </div>
-                    <div class="vip-act-form">
-                      <div class="vip-act-input-row">
-                        <input type="text" id="vip-key-input" class="vip-key-input" placeholder="DLP-VIP-XXXX-XXXX-XXXX" maxlength="36" dir="ltr" autocomplete="off" spellcheck="false" />
-                        <button type="button" class="btn-vip-redeem" id="btn-vip-redeem" onclick="redeemVipKeyAction()">
-                          <i class="fa-solid fa-bolt"></i>
-                          <span data-i18n="vipRedeemBtn">فعال‌سازی کلید</span>
-                        </button>
-                      </div>
-                      <div class="vip-hwid-row">
-                        <span class="vip-hwid-label" data-i18n="vipHwidLabel">شناسه سخت‌افزاری دستگاه:</span>
-                        <span class="vip-hwid-val" id="vip-hwid-display" onclick="copyHwid()" data-i18n="vipHwidLoading" dir="ltr" title="Click to copy">در حال دریافت...</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- State 2: When VIP IS active -->
-                  <div class="vip-status-bar" id="vip-status-bar" style="display:none;">
-                    <div class="vip-status-info">
-                      <div class="vip-crown-icon"><i class="fa-solid fa-crown"></i></div>
-                      <div class="vip-status-text-wrap">
-                        <span class="vip-status-title" data-i18n="vipActiveTitle">اشتراک VIP فعال است</span>
-                        <span class="vip-status-remaining" id="vip-status-remaining">-- روز باقیمانده</span>
-                      </div>
-                    </div>
-                    <div class="vip-status-actions">
-                      <button type="button" class="btn-reset btn-sm" id="btn-vip-extend-toggle" onclick="toggleVipExtendInput()">
-                        <i class="fa-solid fa-plus"></i>
-                        <span data-i18n="vipExtendBtn">تمدید با کلید جدید</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="vip-extend-box" id="vip-extend-box" style="display:none;">
-                    <div class="vip-act-input-row">
-                      <input type="text" id="vip-extend-key-input" class="vip-key-input" placeholder="DLP-VIP-XXXX-XXXX-XXXX" maxlength="36" dir="ltr" autocomplete="off" spellcheck="false" />
-                      <button type="button" class="btn-vip-redeem btn-sm" id="btn-vip-extend-redeem" onclick="redeemVipExtendKeyAction()">
-                        <i class="fa-solid fa-check"></i>
-                        <span data-i18n="vipRedeemBtn">فعال‌سازی کلید</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- VIP Mesh Controls (Locked/hidden until VIP is validated) -->
-                <div class="vip-mesh-controls" id="vip-mesh-controls" style="display:none;">
-                  <!-- Connection Mode Selector Switch (Relay vs Wintun) -->
-                  <div class="vip-mode-selection">
-                    <div class="vip-mode-tabs">
-                      <button type="button" class="vip-mode-tab active" id="btn-vip-mode-relay" onclick="setVipConnectionMode('relay')">
-                        <i class="fa-solid fa-bolt"></i>
-                        <div class="vip-mode-tab-text">
-                          <span class="vip-mode-tab-title" data-i18n="vipModeRelayTitle">رله پرسرعت (پیشنهادی / بدون درایور)</span>
-                          <span class="vip-mode-tab-desc" data-i18n="vipModeRelayDesc">سریع‌ترین پینگ، بدون نیاز به ادمین و کارت شبکه، پایداری بالا</span>
-                        </div>
-                      </button>
-                      <button type="button" class="vip-mode-tab" id="btn-vip-mode-wintun" onclick="setVipConnectionMode('wintun')">
-                        <i class="fa-solid fa-network-wired"></i>
-                        <div class="vip-mode-tab-text">
-                          <span class="vip-mode-tab-title" data-i18n="vipModeWintunTitle">شبکه مش با کارت شبکه اختصاصی</span>
-                          <span class="vip-mode-tab-desc" data-i18n="vipModeWintunDesc">اختصاص IP مجازی (10.10.x.x)، قابلیت پینگ در خط فرمان و شبکه محلی</span>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-
+                <!-- Unified Lobby Controls -->
+                <div class="vip-mesh-controls" id="vip-mesh-controls">
                   <!-- Role Choice (Host vs Join) -->
                   <div class="vip-role-choice">
                     <button type="button" class="lan-role-btn active" id="btn-vip-role-host" onclick="switchVipRole('host')">
                       <i class="fa-solid fa-server"></i>
-                      <span data-i18n="vipCreateRoomTab">ساخت لابی اختصاصی</span>
+                      <span data-i18n="vipCreateRoomTab">ساخت لابی (میزبان)</span>
                     </button>
                     <button type="button" class="lan-role-btn" id="btn-vip-role-join" onclick="switchVipRole('join')">
                       <i class="fa-solid fa-door-open"></i>
-                      <span data-i18n="vipJoinRoomTab">پیوستن با کد لابی</span>
+                      <span data-i18n="vipJoinRoomTab">پیوستن به لابی (بازیکن)</span>
                     </button>
                   </div>
 
                   <!-- VIP Subpanel: HOST ROOM -->
                   <div class="vip-role-panel" id="vip-panel-host">
-                    <div class="vip-host-lead" data-i18n="vipHostLead">
-                      نام و نوع سرور مورد نظر را مشخص کرده و لابی اختصاصی ایران خود را بسازید.
+                    <div class="vip-host-lead" data-i18n="vipHostLead" style="font-size:12px; color:#94a3b8; margin-top:4px;">
+                      ابتدا اتصال شبکه را برقرار کنید تا کد لابی اختصاصی دریافت شود، سپس سرور یا بازی را اجرا کنید.
                     </div>
 
                     <div id="vip-host-setup-view">
-                      <div class="lan-form-row">
-                        <div class="lan-form-group" style="flex:1">
-                          <label class="lan-label" data-i18n="vipNicknameLabel">نام شما:</label>
-                          <input type="text" id="vip-host-nickname" class="lan-input" placeholder="Host" maxlength="16" />
-                        </div>
-                        <div class="lan-form-group" style="flex:1" id="vip-mod-group">
-                          <label class="lan-label" data-i18n="vipModSelectLabel">نوع سرور و مادها:</label>
-                          <select id="vip-host-mod-mode" class="lan-select">
-                            <option value="vanilla" data-i18n="optDeadworksBase">دد‌ورکس پایه (پیشنهادی)</option>
-                            <option value="cursed_arena" data-i18n="optCursedArena">ماد کرسد آرنا (دوئل)</option>
-                            <option value="ability_brawl" data-i18n="optAbilityBrawl">ماد درفت اسکیل</option>
-                            <option value="automatch" data-i18n="optAutoMatch">ماد مسابقه تیمی ۶ به ۶</option>
-                          </select>
-                        </div>
-                      </div>
+                      <div class="lobby-creation-grid">
+                        <!-- Left Column: Lobby & Identity Details -->
+                        <div class="lobby-col lobby-col-left">
+                          <!-- 1. Your Nickname -->
+                          <div class="lan-form-group">
+                            <label class="lan-label" data-i18n="vipNicknameLabel">نام شما:</label>
+                            <input type="text" id="vip-host-nickname" class="lan-input" placeholder="Host" maxlength="16" />
+                          </div>
 
-                      <div class="lan-form-row">
-                        <div class="lan-form-group" style="flex:2">
-                          <label class="lan-label" data-i18n="vipRoomNameLabel">عنوان / نام لابی:</label>
-                          <input type="text" id="vip-host-room-name" class="lan-input" placeholder="Deadlock Custom Match" maxlength="32" />
-                        </div>
-                        <div class="lan-form-group" style="flex:1">
-                          <label class="lan-label" data-i18n="vipMaxPlayersLabel">ظرفیت بازیکنان:</label>
-                          <select id="vip-host-max-players" class="lan-select">
-                            <option value="12" selected data-i18n="opt12Players">۱۲ نفر (۶ به ۶)</option>
-                            <option value="2" data-i18n="opt2Players">۲ نفر (دوئل ۱ به ۱)</option>
-                            <option value="4" data-i18n="opt4Players">۴ نفر (۲ به ۲)</option>
-                            <option value="6" data-i18n="opt6Players">۶ نفر (۳ به ۳)</option>
-                            <option value="10" data-i18n="opt10Players">۱۰ نفر (۵ به ۵)</option>
-                            <option value="16" data-i18n="opt16Players">۱۶ نفر (کاستوم)</option>
-                          </select>
-                        </div>
-                      </div>
+                          <!-- 2. Lobby / Room Name -->
+                          <div class="lan-form-group">
+                            <label class="lan-label" data-i18n="vipRoomNameLabel">عنوان / نام لابی:</label>
+                            <input type="text" id="vip-host-room-name" class="lan-input" placeholder="Deadlock Custom Match" maxlength="32" />
+                          </div>
 
-                      <!-- Privacy & Security Options: Password & Hidden Lobby -->
-                      <div class="vip-lobby-privacy-grid">
-                        <!-- Password Option -->
-                        <div class="vip-privacy-card">
-                          <label class="session-checkbox-label" style="cursor:pointer; display:flex; align-items:center; gap:8px;">
-                            <input type="checkbox" id="vip-host-has-password" onchange="document.getElementById('vip-host-password-wrap').style.display = this.checked ? 'block' : 'none';" />
-                            <span class="checkmark"></span>
-                            <span data-i18n="vipProtectWithPassword" style="font-weight:600; color:#fbbf24;"><i class="fa-solid fa-lock" style="font-size:11px; margin-inline-end:4px;"></i>رمز عبور برای لابی</span>
-                          </label>
-                          <div id="vip-host-password-wrap" style="display:none; margin-top:6px;">
-                            <input type="password" id="vip-host-password" class="lan-input" placeholder="Password" maxlength="24" dir="ltr" />
+                          <!-- 3. Password Protected Lobby -->
+                          <div class="vip-privacy-card">
+                            <label class="session-checkbox-label" style="cursor:pointer; display:flex; align-items:center; gap:8px;">
+                              <input type="checkbox" id="vip-host-has-password" onchange="document.getElementById('vip-host-password-wrap').style.display = this.checked ? 'block' : 'none';" />
+                              <span class="checkmark"></span>
+                              <span data-i18n="vipProtectWithPassword" style="font-weight:600; color:#fbbf24;"><i class="fa-solid fa-lock" style="font-size:11px; margin-inline-end:4px;"></i>رمز عبور برای لابی</span>
+                            </label>
+                            <div id="vip-host-password-wrap" style="display:none; margin-top:8px;">
+                              <input type="password" id="vip-host-password" class="lan-input" placeholder="Password" maxlength="24" dir="ltr" />
+                            </div>
+                          </div>
+
+                          <!-- 4. Hidden / Unlisted Lobby -->
+                          <div class="vip-privacy-card">
+                            <label class="session-checkbox-label" style="cursor:pointer; display:flex; align-items:center; gap:8px;">
+                              <input type="checkbox" id="vip-host-hidden" />
+                              <span class="checkmark"></span>
+                              <span data-i18n="vipHiddenLobby" style="font-weight:600; color:#a78bfa;"><i class="fa-solid fa-eye-slash" style="font-size:11px; margin-inline-end:4px;"></i>لابی مخفی (عدم نمایش)</span>
+                            </label>
+                            <div class="vip-privacy-sub" data-i18n="vipHiddenLobbyDesc">
+                              لابی در لیست عمومی نشان داده نمی‌شود؛ ورود فقط با کد ۶ رقمی.
+                            </div>
+                          </div>
+
+                          <!-- 5. Connect Network & Create Room (Bottom Left - Matching SC 4) -->
+                          <button type="button" class="btn-heroic-host" id="btn-vip-create-room" onclick="createVipRoomAction()">
+                            <i class="fa-solid fa-link"></i>
+                            <span data-i18n="vipConnectAndCreateBtn">برقراری اتصال و ساخت لابی</span>
+                          </button>
+                        </div>
+
+                        <!-- Right Column: Game Options & Server Configuration -->
+                        <div class="lobby-col lobby-col-right">
+                          <!-- 1. Server Type & Mods (with Direct Connection option) -->
+                          <div class="lan-form-group">
+                            <label class="lan-label" data-i18n="vipModSelectLabel">نوع سرور و مادها:</label>
+                            <select id="vip-host-mod-mode" class="lan-select" onchange="onVipModModeChange(this.value)">
+                              <option value="vanilla" data-i18n="optDeadworksBase" selected>دد‌ورکس پایه (فوق‌سریع و پایدار)</option>
+                              <option value="direct" data-i18n="optDirectConnection">اتصال مستقیم به لابی (بدون ددورکس و بدون تغییر فایل‌های بازی)</option>
+                              <option value="cursed_arena" data-i18n="optCursedArena">ماد کرسد آرنا (دوئل ۱ به ۱)</option>
+                              <option value="ability_brawl" data-i18n="optAbilityBrawl">ماد درفت اسکیل</option>
+                              <option value="automatch" data-i18n="optAutoMatch">ماد مسابقه تیمی ۶ به ۶</option>
+                            </select>
+                          </div>
+
+                          <!-- 2. Player Capacity -->
+                          <div class="lan-form-group">
+                            <label class="lan-label" data-i18n="vipMaxPlayersLabel">ظرفیت بازیکنان:</label>
+                            <select id="vip-host-max-players" class="lan-select">
+                              <option value="12" selected data-i18n="opt12Players">۱۲ نفر (۶ به ۶)</option>
+                              <option value="2" data-i18n="opt2Players">۲ نفر (دوئل ۱ به ۱)</option>
+                              <option value="4" data-i18n="opt4Players">۴ نفر (۲ به ۲)</option>
+                              <option value="6" data-i18n="opt6Players">۶ نفر (۳ به ۳)</option>
+                              <option value="10" data-i18n="opt10Players">۱۰ نفر (۵ به ۵)</option>
+                              <option value="16" data-i18n="opt16Players">۱۶ نفر (کاستوم)</option>
+                            </select>
+                          </div>
+
+                          <!-- 3. LAN Connection Mode (Mesh as Default) -->
+                          <div class="lan-form-group">
+                            <label class="lan-label" data-i18n="vipConnModeLabel">نوع اتصال شبکه (LAN Mode):</label>
+                            <select id="vip-host-conn-mode" class="lan-select" onchange="onVipConnModeSelectChange(this.value)">
+                              <option value="wintun" data-i18n="optConnMesh" selected>شبکه مش همتابه‌همتا (پیش‌فرض سریع)</option>
+                              <option value="relay" data-i18n="optConnRelay">رله پرسرعت سرور داخلی (بدون درایور)</option>
+                              <option value="direct" data-i18n="optConnDirect">اتصال مستقیم IP (شبکه محلی دستی)</option>
+                            </select>
+                          </div>
+
+                          <!-- Explanatory note matching SC 4 aesthetic -->
+                          <div class="vip-privacy-card" style="background:rgba(20,30,50,0.4); border-color:rgba(56,189,248,0.15);">
+                            <div style="display:flex; align-items:center; gap:8px; font-weight:600; color:#38bdf8; font-size:12px;">
+                              <i class="fa-solid fa-circle-info"></i>
+                              <span data-i18n="lobbyConfigNoteTitle">معماری اجرای سرور</span>
+                            </div>
+                            <div class="vip-privacy-sub" style="color:#94a3b8; font-size:11px; margin-top:4px;" data-i18n="lobbyConfigNoteDesc">
+                              حالت اتصال مستقیم بدون بستن بازی و بدون دستکاری فایل‌ها اجرا می‌شود. ددورکس پایه از سرور اختصاصی بهینه‌شده محلی استفاده می‌کند.
+                            </div>
                           </div>
                         </div>
-
-                        <!-- Hidden / Unlisted Option -->
-                        <div class="vip-privacy-card">
-                          <label class="session-checkbox-label" style="cursor:pointer; display:flex; align-items:center; gap:8px;">
-                            <input type="checkbox" id="vip-host-hidden" />
-                            <span class="checkmark"></span>
-                            <span data-i18n="vipHiddenLobby" style="font-weight:600; color:#a78bfa;"><i class="fa-solid fa-eye-slash" style="font-size:11px; margin-inline-end:4px;"></i>لابی مخفی (عدم نمایش)</span>
-                          </label>
-                          <div style="font-size:10px; color:#94a3b8; margin-top:4px;" data-i18n="vipHiddenLobbyDesc">
-                            لابی در لیست عمومی نشان داده نمی‌شود؛ ورود فقط با کد ۶ رقمی.
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Temporary option: No Deadworks / Network Lobby Only -->
-                      <div class="vip-temp-option-row" style="margin-top:10px; margin-bottom:8px; padding:10px 14px; background:rgba(30,41,59,0.5); border:1px solid rgba(56,189,248,0.2); border-radius:8px;">
-                        <label class="session-checkbox-label" style="cursor:pointer; display:flex; align-items:center; gap:8px;">
-                          <input type="checkbox" id="vip-skip-deadworks" onchange="onVipSkipDeadworksChange(this.checked)" />
-                          <span class="checkmark"></span>
-                          <span data-i18n="vipSkipDeadworks" style="font-weight:600; color:#38bdf8;">اتصال مستقیم به لابی (بدون ددورکس و بدون تغییر فایل‌های بازی)</span>
-                        </label>
-                        <div style="font-size:11px; color:#94a3b8; margin-top:4px; padding-right:26px;" data-i18n="vipSkipDeadworksDesc">
-                          حالت موقت: بدون نیاز به بستن بازی، بدون دانلود یا نصب دد‌ورکس و بدون تغییر در فایل‌های بازی. فقط اتصال به لابی انجام می‌شود.
-                        </div>
-                      </div>
-
-                      <div class="lan-action-bar">
-                        <button type="button" class="btn-apply btn-vip-create" id="btn-vip-create-room" onclick="createVipRoomAction()">
-                          <i class="fa-solid fa-link"></i>
-                          <span data-i18n="vipConnectAndCreateBtn">ساخت لابی اختصاصی</span>
-                        </button>
                       </div>
                     </div>
                   </div>
 
                   <!-- VIP Subpanel: JOIN ROOM -->
                   <div class="vip-role-panel" id="vip-panel-join" style="display:none;">
-                    <div class="vip-join-lead" data-i18n="vipJoinLead">
-                      کد ۶ رقمی دریافتی از میزبان را وارد کنید تا به اتاق و شبکه متصل شوید.
+                    <div class="vip-join-lead" data-i18n="vipJoinLead" style="font-size:12px; color:#94a3b8; margin-top:4px;">
+                      کد ۶ رقمی دریافتی از میزبان یا آدرس IP سرور را وارد کنید تا به لابی متصل شوید.
                     </div>
 
                     <!-- Step 1: Join Setup View -->
@@ -1426,8 +1243,8 @@
                           <input type="text" id="vip-join-nickname" class="lan-input" placeholder="Player" maxlength="16" />
                         </div>
                         <div class="lan-form-group" style="flex:1">
-                          <label class="lan-label" data-i18n="vipEnterCodeLabel">کد ۶ رقمی لابی:</label>
-                          <input type="text" id="vip-join-code" class="lan-input vip-code-input" placeholder="482910" maxlength="6" dir="ltr" />
+                          <label class="lan-label" data-i18n="vipEnterCodeLabel">کد لابی یا آدرس سرور:</label>
+                          <input type="text" id="vip-join-code" class="lan-input vip-code-input" placeholder="482910 یا IP:Port" maxlength="32" dir="ltr" />
                         </div>
                         <div class="lan-form-group" style="flex:1" id="vip-join-password-group">
                           <label class="lan-label" data-i18n="vipPasswordLabel">رمز عبور (در صورت لزوم):</label>
@@ -1436,9 +1253,9 @@
                       </div>
 
                       <div class="lan-action-bar">
-                        <button type="button" class="btn-apply btn-vip-join" id="btn-vip-join-room" onclick="joinVipRoomAction()">
+                        <button type="button" class="btn-heroic-host" id="btn-vip-join-room" onclick="joinVipRoomAction()" style="max-width:280px; margin:0 auto;">
                           <i class="fa-solid fa-right-to-bracket"></i>
-                          <span data-i18n="vipConnectToRoomBtn">ورود به لابی</span>
+                          <span data-i18n="vipConnectToRoomBtn">ورود به لابی و برقراری ارتباط</span>
                         </button>
                       </div>
 
@@ -1462,7 +1279,6 @@
                   </div>
                 </div> <!-- /vip-mesh-controls -->
               </div> <!-- /vip-lan-card -->
-            </div> <!-- /lan-layout-grid -->
             </div> <!-- /lan-lobby-browser -->
 
             <!-- Part 3: Active Match Session (Screen changes upon connecting) -->
@@ -2179,106 +1995,128 @@
     <div class="modal-box auth-modal-box">
       <div class="auth-modal-header">
         <div class="auth-header-icon-wrap">
-          <i class="fa-brands fa-teamspeak"></i>
+          <i class="fa-solid fa-shield-halved"></i>
         </div>
         <div class="auth-header-title-wrap">
-          <h3 class="auth-modal-title" data-i18n="authModalTitle">ورود و اتصال حساب تیم‌اسپیک</h3>
-          <p class="auth-modal-subtitle" data-i18n="authModalSubtitle">اتصال حساب کاربری جهت ذخیره تاریخچه بازی‌ها، رتبه‌بندی و لیست دوستان</p>
+          <h3 class="auth-modal-title" data-i18n="authModalTitle">ورود به حساب کاربری</h3>
+          <p class="auth-modal-subtitle" data-i18n="authModalSubtitle">انتخاب ارائه‌دهنده احراز هویت جهت ذخیره دوستان، رتبه‌بندی و تاریخچه مسابقات</p>
         </div>
         <button type="button" class="perf-drawer-close" onclick="closeAuthModal()" aria-label="Close" style="margin-right:auto;">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <!-- Guest Notice Pill -->
-      <div class="auth-guest-notice">
-        <i class="fa-solid fa-circle-info" style="color:#06b6d4;"></i>
-        <span data-i18n="authGuestNotice">شما می‌توانید بدون حساب به عنوان مهمان بازی کنید، اما با اتصال حساب تیم‌اسپیک، تاریخچه مسابقات و لیست دوستان شما محفوظ می‌ماند.</span>
-      </div>
-
-      <!-- Auth Method Selector Tabs -->
-      <div class="auth-method-tabs">
-        <button type="button" class="auth-method-tab active" id="auth-tab-cmd" onclick="switchAuthMethod('cmd')">
-          <i class="fa-solid fa-terminal"></i> <span data-i18n="authMethodCmd">روش ۱: ارسال دستور به بات (توصیه شده)</span>
-        </button>
-        <button type="button" class="auth-method-tab" id="auth-tab-poke" onclick="switchAuthMethod('poke')">
-          <i class="fa-solid fa-bell"></i> <span data-i18n="authMethodPoke">روش ۲: دریافت کد پیام / پوک</span>
-        </button>
-      </div>
-
-      <!-- Auth Method 1: Send Command to Bot -->
-      <div class="auth-pane active" id="auth-pane-cmd">
-        <div class="auth-steps-card">
-          <div class="auth-step-item">
-            <div class="step-num">۱</div>
-            <div class="step-desc">کلاینت تیم‌اسپیک خود را باز کرده و به سرور <strong>ts.deadlockpersian.ir</strong> متصل شوید.</div>
+      <!-- 3 Main Login Options: TeamSpeak, Google, DeadlockPersian -->
+      <div class="auth-providers-grid">
+        <!-- 1. TeamSpeak Option (Active & Clickable) -->
+        <div class="auth-provider-card active" id="auth-provider-ts" onclick="selectAuthProvider('teamspeak')">
+          <div class="provider-icon-wrap ts-wrap">
+            <i class="fa-brands fa-teamspeak"></i>
           </div>
-          <div class="auth-step-item">
-            <div class="step-num">۲</div>
-            <div class="step-desc">روی بات <strong>DLP Bot</strong> در چت خصوصی دابل کلیک کرده یا پیام خصوصی ارسال کنید.</div>
+          <div class="provider-meta">
+            <div class="provider-title">حساب تیم‌اسپیک (TeamSpeak)</div>
+            <div class="provider-sub">ورود سریع با تایید ربات یا ارسال پیام در سرور</div>
           </div>
-          <div class="auth-step-item">
-            <div class="step-num">۳</div>
-            <div class="step-desc">دستور زیر را کپی کرده و دقیقاً در چت بات ارسال فرمایید:</div>
-          </div>
+          <span class="provider-status-badge active">فعال</span>
         </div>
 
-        <div class="auth-code-action-box">
-          <div class="auth-cmd-display" id="auth-copy-cmd" onclick="copyAuthCommand()">
-            <span class="cmd-text" id="auth-cmd-text">!hub ......</span>
-            <button type="button" class="btn-copy-cmd-pill">
-              <i class="fa-solid fa-copy"></i>
-              <span data-i18n="copyCmd">کپی دستور</span>
-            </button>
+        <!-- 2. Google Option (Disabled) -->
+        <div class="auth-provider-card disabled" id="auth-provider-google">
+          <div class="provider-icon-wrap google-wrap">
+            <i class="fa-brands fa-google"></i>
           </div>
-          <button type="button" class="btn-reset btn-sm" onclick="requestNewAuthCode()" style="margin-top:6px;">
-            <i class="fa-solid fa-rotate"></i> <span data-i18n="regenCode">دریافت کد جدید</span>
+          <div class="provider-meta">
+            <div class="provider-title">حساب گوگل (Google Account)</div>
+            <div class="provider-sub">ورود با جیمیل و اکانت گوگل</div>
+          </div>
+          <span class="provider-status-badge soon">به‌زودی</span>
+        </div>
+
+        <!-- 3. Deadlock Persian Option (Disabled) -->
+        <div class="auth-provider-card disabled" id="auth-provider-dlp">
+          <div class="provider-icon-wrap dlp-wrap">
+            <img src="assets/app_icon.png" width="24" height="24" alt="" />
+          </div>
+          <div class="provider-meta">
+            <div class="provider-title">اکانت ددلاک پرشین (Deadlock Persian)</div>
+            <div class="provider-sub">ورود مستقیم با نام کاربری و رمز سایت</div>
+          </div>
+          <span class="provider-status-badge soon">به‌زودی</span>
+        </div>
+      </div>
+
+      <!-- TeamSpeak Details Container (Expanded when TeamSpeak is chosen) -->
+      <div class="auth-ts-details-container" id="auth-ts-details-container" style="display:block;">
+        <!-- Auth Method Selector Tabs -->
+        <div class="auth-method-tabs">
+          <button type="button" class="auth-method-tab active" id="auth-tab-cmd" onclick="switchAuthMethod('cmd')">
+            <i class="fa-solid fa-terminal"></i> <span data-i18n="authMethodCmd">روش ۱: ارسال دستور به بات (توصیه شده)</span>
+          </button>
+          <button type="button" class="auth-method-tab" id="auth-tab-poke" onclick="switchAuthMethod('poke')">
+            <i class="fa-solid fa-bell"></i> <span data-i18n="authMethodPoke">روش ۲: دریافت کد پیام / پوک</span>
           </button>
         </div>
 
-        <div class="auth-live-status">
-          <div class="auth-spinner"></div>
-          <span id="auth-status-text" data-i18n="authStatusWaiting">منتظر ارسال دستور شما در چت تیم‌اسپیک...</span>
-        </div>
-      </div>
+        <!-- Auth Method 1: Send Command to Bot -->
+        <div class="auth-pane active" id="auth-pane-cmd">
+          <div class="auth-steps-card">
+            <div class="auth-step-item">
+              <div class="step-num">۱</div>
+              <div class="step-desc">کلاینت تیم‌اسپیک خود را باز کرده و به سرور <strong>ts.deadlockpersian.ir</strong> متصل شوید.</div>
+            </div>
+            <div class="auth-step-item">
+              <div class="step-num">۲</div>
+              <div class="step-desc">روی بات <strong>DLP Bot1</strong> در چت خصوصی دابل کلیک کرده یا پیام ارسال فرمایید.</div>
+            </div>
+            <div class="auth-step-item">
+              <div class="step-num">۳</div>
+              <div class="step-desc">دستور زیر را کپی کرده و دقیقاً در چت خصوصی بات ارسال فرمایید:</div>
+            </div>
+          </div>
 
-      <!-- Auth Method 2: Poke / Chat OTP -->
-      <div class="auth-pane" id="auth-pane-poke" style="display:none;">
-        <div class="auth-poke-form">
-          <label class="friend-input-label" data-i18n="authPokeInputLabel">نام مستعار یا Unique ID تیم‌اسپیک شما:</label>
-          <div style="display:flex; gap:8px; margin-top:6px;">
-            <input type="text" id="auth-poke-target" class="vconsole-input" placeholder="مثال: Aryo یا UID..." dir="ltr" />
-            <button type="button" class="btn-apply btn-sm" onclick="sendPokeOtpRequest()" style="min-width:110px;">
-              <i class="fa-solid fa-paper-plane"></i> <span data-i18n="sendPoke">ارسال کد</span>
+          <div class="auth-code-action-box">
+            <div class="auth-cmd-display" id="auth-copy-cmd" onclick="copyAuthCommand()">
+              <span class="cmd-text" id="auth-cmd-text">!hub ......</span>
+              <button type="button" class="btn-copy-cmd-pill">
+                <i class="fa-solid fa-copy"></i>
+                <span data-i18n="copyCmd">کپی دستور</span>
+              </button>
+            </div>
+            <button type="button" class="btn-reset btn-sm" onclick="requestNewAuthCode()" style="margin-top:6px;">
+              <i class="fa-solid fa-rotate"></i> <span data-i18n="regenCode">دریافت کد جدید</span>
             </button>
           </div>
-          <div id="auth-poke-feedback" style="margin-top:8px; font-size:12px; color:#38bdf8; display:none;"></div>
 
-          <!-- OTP Input Form (Revealed after poke) -->
-          <div id="auth-poke-verify-box" style="margin-top:16px; display:none; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px;">
-            <label class="friend-input-label" data-i18n="authOtpInputLabel">کد ۶ رقمی دریافت شده در تیم‌اسپیک:</label>
+          <div class="auth-live-status">
+            <div class="auth-spinner"></div>
+            <span id="auth-status-text" data-i18n="authStatusWaiting">منتظر ارسال دستور شما در چت تیم‌اسپیک...</span>
+          </div>
+        </div>
+
+        <!-- Auth Method 2: Poke / Chat OTP -->
+        <div class="auth-pane" id="auth-pane-poke" style="display:none;">
+          <div class="auth-poke-form">
+            <label class="friend-input-label" data-i18n="authPokeInputLabel">نام مستعار یا Unique ID تیم‌اسپیک شما:</label>
             <div style="display:flex; gap:8px; margin-top:6px;">
-              <input type="text" id="auth-poke-otp-input" class="vconsole-input" placeholder="123456" maxlength="6" dir="ltr" onkeydown="if(event.key==='Enter') verifyPokeOtpAction()" />
-              <button type="button" class="btn-apply btn-sm" onclick="verifyPokeOtpAction()" style="min-width:100px;">
-                <i class="fa-solid fa-check"></i> <span data-i18n="verifyLogin">تأیید و ورود</span>
+              <input type="text" id="auth-poke-target" class="vconsole-input" placeholder="مثال: Aryo یا UID..." dir="ltr" />
+              <button type="button" class="btn-apply btn-sm" onclick="sendPokeOtpRequest()" style="min-width:110px;">
+                <i class="fa-solid fa-paper-plane"></i> <span data-i18n="sendPoke">ارسال کد</span>
               </button>
+            </div>
+            <div id="auth-poke-feedback" style="margin-top:8px; font-size:12px; color:#38bdf8; display:none;"></div>
+
+            <!-- OTP Input Form -->
+            <div id="auth-poke-verify-box" style="margin-top:16px; display:none; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px;">
+              <label class="friend-input-label" data-i18n="authOtpInputLabel">کد ۶ رقمی دریافت شده در تیم‌اسپیک:</label>
+              <div style="display:flex; gap:8px; margin-top:6px;">
+                <input type="text" id="auth-poke-otp-input" class="vconsole-input" placeholder="123456" maxlength="6" dir="ltr" onkeydown="if(event.key==='Enter') verifyPokeOtpAction()" />
+                <button type="button" class="btn-apply btn-sm" onclick="verifyPokeOtpAction()" style="min-width:100px;">
+                  <i class="fa-solid fa-check"></i> <span data-i18n="verifyLogin">تأیید و ورود</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Disabled Alternative Logins -->
-      <div class="auth-other-providers">
-        <button type="button" class="btn-oauth disabled" disabled>
-          <i class="fa-brands fa-google"></i>
-          <span>ورود با حساب گوگل</span>
-          <span class="badge-soon">به‌زودی</span>
-        </button>
-        <button type="button" class="btn-oauth disabled" disabled>
-          <img src="assets/app_icon.png" width="16" height="16" alt="" />
-          <span>ورود با اکانت اختصاصی ددلاک پرشین</span>
-          <span class="badge-soon">به‌زودی</span>
-        </button>
       </div>
 
       <div class="auth-modal-footer">
@@ -2343,6 +2181,65 @@
 
       <!-- Profile Modal Body View A: Match History List -->
       <div class="profile-modal-body" id="profile-match-history-view">
+
+        <!-- VIP Membership & License Section (Moved to Profile Page) -->
+        <div class="profile-vip-container" style="margin-bottom:18px;">
+          <div class="vip-license-section" id="vip-license-section">
+                  <!-- State 1: When VIP is NOT active -->
+                  <div class="vip-activation-box" id="vip-activation-box">
+                    <div class="vip-act-header">
+                      <div class="vip-act-title-wrap">
+                        <i class="fa-solid fa-key" style="color:#f59e0b"></i>
+                        <span class="vip-act-title" data-i18n="vipActTitle">فعال‌سازی اشتراک سرور اختصاصی VIP</span>
+                      </div>
+                      <span class="vip-act-badge" id="vip-act-badge" data-i18n="vipActLocked">اشتراک غیرفعال</span>
+                    </div>
+                    <div class="vip-act-desc" data-i18n="vipActDesc">
+                      جهت اتصال به رله و مش فوق سریع سرورهای ایران با پینگ تک رقمی، کلید لایسنس VIP خود را وارد کنید.
+                    </div>
+                    <div class="vip-act-form">
+                      <div class="vip-act-input-row">
+                        <input type="text" id="vip-key-input" class="vip-key-input" placeholder="DLP-VIP-XXXX-XXXX-XXXX" maxlength="36" dir="ltr" autocomplete="off" spellcheck="false" />
+                        <button type="button" class="btn-vip-redeem" id="btn-vip-redeem" onclick="redeemVipKeyAction()">
+                          <i class="fa-solid fa-bolt"></i>
+                          <span data-i18n="vipRedeemBtn">فعال‌سازی کلید</span>
+                        </button>
+                      </div>
+                      <div class="vip-hwid-row">
+                        <span class="vip-hwid-label" data-i18n="vipHwidLabel">شناسه سخت‌افزاری دستگاه:</span>
+                        <span class="vip-hwid-val" id="vip-hwid-display" onclick="copyHwid()" data-i18n="vipHwidLoading" dir="ltr" title="Click to copy">در حال دریافت...</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- State 2: When VIP IS active -->
+                  <div class="vip-status-bar" id="vip-status-bar" style="display:none;">
+                    <div class="vip-status-info">
+                      <div class="vip-crown-icon"><i class="fa-solid fa-crown"></i></div>
+                      <div class="vip-status-text-wrap">
+                        <span class="vip-status-title" data-i18n="vipActiveTitle">اشتراک VIP فعال است</span>
+                        <span class="vip-status-remaining" id="vip-status-remaining">-- روز باقیمانده</span>
+                      </div>
+                    </div>
+                    <div class="vip-status-actions">
+                      <button type="button" class="btn-reset btn-sm" id="btn-vip-extend-toggle" onclick="toggleVipExtendInput()">
+                        <i class="fa-solid fa-plus"></i>
+                        <span data-i18n="vipExtendBtn">تمدید با کلید جدید</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="vip-extend-box" id="vip-extend-box" style="display:none;">
+                    <div class="vip-act-input-row">
+                      <input type="text" id="vip-extend-key-input" class="vip-key-input" placeholder="DLP-VIP-XXXX-XXXX-XXXX" maxlength="36" dir="ltr" autocomplete="off" spellcheck="false" />
+                      <button type="button" class="btn-vip-redeem btn-sm" id="btn-vip-extend-redeem" onclick="redeemVipExtendKeyAction()">
+                        <i class="fa-solid fa-check"></i>
+                        <span data-i18n="vipRedeemBtn">فعال‌سازی کلید</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+        </div>
+        
         <div class="matches-history-topbar">
           <div class="matches-topbar-title">
             <i class="fa-solid fa-clock-rotate-left" style="color:var(--deadlock-orange)"></i>

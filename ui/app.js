@@ -3820,7 +3820,7 @@ function setupTitlebarDrag() {
 function updateScale() {
   const wrapper = document.getElementById('ui-scale-wrapper');
   if (!wrapper) return;
-  const isDrawerOpen = !!(window.perfState && window.perfState.isDrawerOpen);
+  const isDrawerOpen = !!((window.perfState && window.perfState.isDrawerOpen) || window.isFriendsDrawerOpen);
   const availW = window.innerWidth;
   const availH = window.innerHeight - 40;
   
@@ -4238,10 +4238,11 @@ function updateVipLicenseUI() {
   const remainingEl = document.getElementById('vip-status-remaining');
   const extendBox = document.getElementById('vip-extend-box');
 
+  if (meshControls) meshControls.style.display = 'block';
+
   if (lanState.isVip) {
     if (actBox) actBox.style.display = 'none';
     if (statusBar) statusBar.style.display = 'flex';
-    if (meshControls) meshControls.style.display = 'flex';
 
     if (remainingEl && lanState.vipDaysRemaining !== null && lanState.vipDaysRemaining !== undefined) {
       const days = lanState.vipDaysRemaining;
@@ -4255,10 +4256,20 @@ function updateVipLicenseUI() {
   } else {
     if (actBox) actBox.style.display = 'flex';
     if (statusBar) statusBar.style.display = 'none';
-    if (meshControls) meshControls.style.display = 'none';
     if (extendBox) extendBox.style.display = 'none';
   }
 }
+
+function onVipModModeChange(mode) {
+  console.log('[LAN] Mod mode selected:', mode);
+}
+window.onVipModModeChange = onVipModModeChange;
+
+function onVipConnModeSelectChange(mode) {
+  lanState.vipMode = mode;
+  console.log('[LAN] Connection mode selected:', mode);
+}
+window.onVipConnModeSelectChange = onVipConnModeSelectChange;
 
 async function redeemVipKeyAction() {
   const input = document.getElementById('vip-key-input');
@@ -5442,14 +5453,17 @@ window.setVipConnectionMode = function(mode) {
 async function createVipRoomAction() {
   const nickname = document.getElementById('vip-host-nickname')?.value?.trim() || getSavedNickname();
   saveNickname(nickname);
-  const skipDeadworks = document.getElementById('vip-skip-deadworks')?.checked ?? false;
   const modSelect = document.getElementById('vip-host-mod-mode');
-  const chosenMod = skipDeadworks ? 'none' : (modSelect ? modSelect.value : 'vanilla');
+  const modModeVal = modSelect ? modSelect.value : 'vanilla';
+  const isDirectConn = (modModeVal === 'direct');
+  const skipDeadworks = isDirectConn || (document.getElementById('vip-skip-deadworks')?.checked ?? false);
+  const chosenMod = isDirectConn ? 'none' : modModeVal;
   const btn = document.getElementById('btn-vip-create-room');
   if (btn) btn.disabled = true;
 
   try {
-    const selectedMode = lanState.vipMode || 'relay';
+    const connModeSelect = document.getElementById('vip-host-conn-mode') || document.getElementById('vip-host-connection-mode');
+    const selectedMode = connModeSelect ? connModeSelect.value : (lanState.vipMode || 'wintun');
     if (selectedMode === 'wintun') {
       const hasBinaries = await call('check_vip_binaries_cmd');
       if (!hasBinaries) {
@@ -7306,19 +7320,29 @@ function toggleFriendsDrawer() {
 
 function openFriendsDrawer() {
   const drawer = document.getElementById('friends-side-drawer');
+  const wrapper = document.getElementById('ui-scale-wrapper');
   if (drawer) {
+    window.isFriendsDrawerOpen = true;
     drawer.style.display = 'flex';
     drawer.classList.add('open');
+    if (wrapper) wrapper.classList.add('side-panel-open');
+    updateScale();
     refreshFriendsList();
   }
 }
 
 function closeFriendsDrawer() {
   const drawer = document.getElementById('friends-side-drawer');
+  const wrapper = document.getElementById('ui-scale-wrapper');
+  window.isFriendsDrawerOpen = false;
   if (drawer) {
     drawer.classList.remove('open');
     setTimeout(() => { drawer.style.display = 'none'; }, 200);
   }
+  if (wrapper && (!window.perfState || !window.perfState.isDrawerOpen)) {
+    wrapper.classList.remove('side-panel-open');
+  }
+  updateScale();
 }
 
 function switchFriendsTab(tab) {
@@ -7364,11 +7388,7 @@ function setFriendsFilter(filter) {
 
 async function refreshFriendsList() {
   if (userProfile.is_guest || !userProfile.ts_uid) {
-    friendsData = [
-      { ts_uid: 'MOCK_1', nickname: 'WilliamNone', friend_code: 'DLP-8812', status: 'online', status_text: 'Online (TeamSpeak)', role: 'admin' },
-      { ts_uid: 'MOCK_2', nickname: 'Milad3', friend_code: 'DLP-3419', status: 'in_lobby', current_room: 'QP6BG', status_text: 'In Lobby #QP6BG', role: 'player' },
-      { ts_uid: 'MOCK_3', nickname: 'aryobw9', friend_code: 'DLP-7492', status: 'in_game', current_room: 'QP6BG', status_text: 'In Game (Match QP6BG)', role: 'player' }
-    ];
+    friendsData = [];
     renderFriendsList();
     return;
   }
@@ -7416,12 +7436,24 @@ function renderFriendsList() {
   });
 
   if (filtered.length === 0) {
-    container.innerHTML = `
-      <div style="text-align:center; padding:30px 10px; color:#64748b; font-size:12px;">
-        <i class="fa-solid fa-user-slash" style="font-size:24px; margin-bottom:8px; display:block; opacity:0.5;"></i>
-        <span>هیچ دوستی در این بخش یافت نشد.</span>
-      </div>
-    `;
+    if (userProfile.is_guest) {
+      container.innerHTML = `
+        <div class="friends-empty-box">
+          <i class="fa-brands fa-teamspeak"></i>
+          <span>شما در حالت مهمان هستید. برای ساخت لیست دوستان پایدار و نمایش دوستان آنلاین، حساب تیم‌اسپیک خود را متصل کنید.</span>
+          <button type="button" class="btn-apply btn-sm" onclick="openAuthModal()" style="margin-top:8px;">
+            <i class="fa-solid fa-link"></i> اتصال به تیم‌اسپیک
+          </button>
+        </div>
+      `;
+    } else {
+      container.innerHTML = `
+        <div class="friends-empty-box">
+          <i class="fa-solid fa-user-group"></i>
+          <span>لیست دوستان شما خالی است. با ارسال کد دوستی به دیگران یا وارد کردن کد دوستی آن‌ها در تب «افزودن دوست»، دوستان خود را اضافه کنید.</span>
+        </div>
+      `;
+    }
     return;
   }
 
@@ -7953,3 +7985,19 @@ window.setVConsolePreset = setVConsolePreset;
 document.addEventListener('DOMContentLoaded', () => {
   loadUserProfile();
 });
+
+
+function selectAuthProvider(provider) {
+  const tsCard = document.getElementById('auth-provider-ts');
+  const tsContainer = document.getElementById('auth-ts-details-container');
+  if (provider === 'teamspeak') {
+    if (tsCard) tsCard.classList.add('active');
+    if (tsContainer) {
+      tsContainer.style.display = 'block';
+    }
+    switchAuthMethod('cmd');
+    requestNewAuthCode();
+  }
+}
+
+window.selectAuthProvider = selectAuthProvider;

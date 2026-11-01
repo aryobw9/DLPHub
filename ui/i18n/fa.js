@@ -706,4 +706,9 @@ window.I18N_FA = {
   "pstatMmr": "امتیاز MMR",
   "matchHistoryTitle": "تاریخچه مسابقات اخیر",
   "backToMatches": "بازگشت به مسابقات",
+  "optDirectConnection": "اتصال مستقیم (بدون ددورکس و بدون تغییر فایل)",
+  "lanConnectionTypeLabel": "نوع اتصال شبکه لابی:",
+  "optMeshNetwork": "شبکه مش با کارت شبکه اختصاصی (Wintun)",
+  "optPortRelay": "رله پورت بدون درایور (Zero-Driver Relay)",
+  "optDirectLan": "شبکه محلی مستقیم (Direct Local LAN)",
 };

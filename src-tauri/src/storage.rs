@@ -846,19 +846,8 @@ pub fn get_active_custom_files_needing_cleanup(deadlock_dir: &Path) -> Vec<Strin
         }
     }
 
-    // 3. Check for custom game mode plugins in managed/plugins
-    let plugins_target = deadlock_dir.join("game").join("bin").join("win64").join("managed").join("plugins");
-    if let Ok(entries) = std::fs::read_dir(&plugins_target) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_file() {
-                let fname = path.file_name().unwrap_or_default().to_string_lossy().to_lowercase();
-                if fname.starts_with("abilitydraft") || fname.starts_with("cursedarena") || fname.starts_with("automatch") {
-                    files.push(format!("managed/plugins/{}", path.file_name().unwrap_or_default().to_string_lossy()));
-                }
-            }
-        }
-    }
+    // 3. Note: managed/plugins are only used by deadworks.exe and never loaded by deadlock.exe
+    // via gameinfo.gi, so they do not conflict with normal Valve matchmaking and do not require cleanup.
 
     // 4. Check for ACTIVE (UNCOMMENTED) Deadworks search paths in gameinfo.gi
     let gameinfo_path = deadlock_dir.join("game").join("citadel").join("gameinfo.gi");

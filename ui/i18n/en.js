@@ -704,4 +704,9 @@ window.I18N_EN = {
   "pstatMmr": "MMR Rating",
   "matchHistoryTitle": "Recent Match History",
   "backToMatches": "Back to Matches",
+  "optDirectConnection": "Direct Connection (No Deadworks / No File Changes)",
+  "lanConnectionTypeLabel": "Lobby Network Connection Type:",
+  "optMeshNetwork": "Dedicated Mesh Network (Wintun)",
+  "optPortRelay": "Zero-Driver UDP Port Relay",
+  "optDirectLan": "Direct Local LAN",
 };
