@@ -430,28 +430,28 @@
                 </div>
                                 <div class="apb-select-wrap" id="apb-dropdown-container">
                   <div class="apb-custom-select-trigger" id="apb-custom-select-trigger" onclick="toggleCustomDropdown()" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-                    <span id="apb-custom-select-label">OptiLock FPS (Recommended) [Sweaty]</span>
+                    <span id="apb-custom-select-label">Recommended (Sqooky's Max FPS)</span>
                     <i class="fa-solid fa-chevron-down apb-custom-chevron"></i>
                   </div>
                   <div class="apb-custom-options-menu" id="apb-custom-options-menu" style="display:none;" role="listbox">
-                    <div class="apb-custom-option selected" data-value="optilock-fps" onclick="selectCustomOption('optilock-fps', this)">
-                      <span>OptiLock FPS (Recommended) [Sweaty]</span>
+                    <div class="apb-custom-option selected" data-value="sqooky-max-fps" onclick="selectCustomOption('sqooky-max-fps', this)">
+                      <span>Recommended (Sqooky's Max FPS)</span>
                       <i class="fa-solid fa-check apb-custom-option-check"></i>
                     </div>
                     <div class="apb-custom-option" data-value="dmm-clean" onclick="selectCustomOption('dmm-clean', this)">
-                      <span>DMM Clean (Consensus Safe) [Balanced]</span>
+                      <span>High Graphics (DMM Clean)</span>
+                    </div>
+                    <div class="apb-custom-option" data-value="optilock-potato" onclick="selectCustomOption('optilock-potato', this)">
+                      <span>PotatoLock (OptiLock)</span>
+                    </div>
+                    <div class="apb-custom-option" data-value="optilock-fps" onclick="selectCustomOption('optilock-fps', this)">
+                      <span>OptiLock FPS [Sweaty]</span>
                     </div>
                     <div class="apb-custom-option" data-value="optimizationlock" onclick="selectCustomOption('optimizationlock', this)">
                       <span>OptimizationLock (Sqooky) [Balanced]</span>
                     </div>
-                    <div class="apb-custom-option" data-value="sqooky-max-fps" onclick="selectCustomOption('sqooky-max-fps', this)">
-                      <span>Sqooky's Max FPS [Sweaty]</span>
-                    </div>
-                    <div class="apb-custom-option" data-value="optilock-potato" onclick="selectCustomOption('optilock-potato', this)">
-                      <span>OptiLock Potato [Potato]</span>
-                    </div>
                     <div class="apb-custom-option" data-value="optilock-ultra-potato" onclick="selectCustomOption('optilock-ultra-potato', this)">
-                      <span>OptiLock Ultra Potato [Potato]</span>
+                      <span>Ultra PotatoLock</span>
                     </div>
                     <div class="apb-custom-option" data-value="eskay" onclick="selectCustomOption('eskay', this)">
                       <span>Eskay's Config [Pretty]</span>
@@ -565,7 +565,6 @@
                   <label class="hud-switch-card" for="sw-better-breakables" id="lbl-better-breakables" data-i18n-tooltip="betterBreakablesDesc">
                     <div class="hud-switch-info">
                       <span class="hud-switch-label" data-i18n="betterBreakables">Better Breakables</span>
-                      <span class="fps-impact-badge impact-none" data-i18n-tooltip="fpsImpactNone"><i class="fa-solid fa-minus"></i> <span data-i18n="hudTagZeroFps">0 FPS</span></span>
                     </div>
                     <div class="neon-checkbox">
                       <input type="checkbox" id="sw-better-breakables">
@@ -588,7 +587,6 @@
                   <label class="hud-switch-card" for="sw-higher-brightness" id="lbl-higher-brightness" data-i18n-tooltip="higherBrightnessDesc">
                     <div class="hud-switch-info">
                       <span class="hud-switch-label" data-i18n="higherBrightness">Higher Brightness</span>
-                      <span class="fps-impact-badge impact-downgrade" data-i18n-tooltip="fpsImpactDowngrade"><span class="impact-chevrons"><i class="fa-solid fa-angle-down"></i></span> <span data-i18n="hudTagMinusFps">-FPS</span></span>
                     </div>
                     <div class="neon-checkbox">
                       <input type="checkbox" id="sw-higher-brightness">
@@ -611,7 +609,6 @@
                   <label class="hud-switch-card" for="sw-reduce-clutter" id="lbl-reduce-clutter" data-i18n-tooltip="reduceClutterDesc">
                     <div class="hud-switch-info">
                       <span class="hud-switch-label" data-i18n="reduceClutter">Reduce Clutter</span>
-                      <span class="fps-impact-badge impact-ultra" data-i18n-tooltip="fpsImpactUltra"><span class="impact-chevrons"><i class="fa-solid fa-angles-up"></i></span> <span data-i18n="hudTagMax">MAX</span></span>
                     </div>
                     <div class="neon-checkbox">
                       <input type="checkbox" id="sw-reduce-clutter">
@@ -1102,16 +1099,16 @@
 
 
             <div id="lan-lobby-browser" class="lan-lobby-browser">
-                          <div class="lan-mode-nav-tabs">
-              <button type="button" class="lan-mode-nav-tab active" id="tab-lan-mode-vip" onclick="switchLanMode('vip')">
-                <i class="fa-solid fa-cloud"></i>
-                <span data-i18n="tabVipMesh">سرورهای اختصاصی مش VIP</span>
-              </button>
-              <button type="button" class="lan-mode-nav-tab" id="tab-lan-mode-direct" onclick="switchLanMode('direct')">
-                <i class="fa-solid fa-ethernet"></i>
-                <span data-i18n="tabDirectLan">اتصال مستقیم شبکه محلی (Direct LAN)</span>
-              </button>
-            </div>
+              <div class="lan-mode-nav-tabs">
+                <button type="button" class="lan-mode-nav-tab" id="tab-lan-mode-direct" onclick="switchLanMode('direct')">
+                  <i class="fa-solid fa-ethernet"></i>
+                  <span data-i18n="tabDirectLan">اتصال مستقیم شبکه محلی (Direct LAN)</span>
+                </button>
+                <button type="button" class="lan-mode-nav-tab active" id="tab-lan-mode-vip" onclick="switchLanMode('vip')">
+                  <i class="fa-solid fa-cloud"></i>
+                  <span data-i18n="tabVipMesh">سرورهای اختصاصی مش VIP</span>
+                </button>
+              </div>
               <div class="lan-card unified-lan-card" id="vip-lan-card">
                 
 
@@ -2252,8 +2249,11 @@
             <span class="profile-avatar-badge" id="profile-verified-badge"><i class="fa-solid fa-check"></i></span>
           </div>
           <div class="profile-meta-wrap">
-            <div class="profile-name-row">
+            <div class="profile-name-row" style="display:flex; align-items:center; gap:8px;">
               <h2 class="profile-display-name" id="profile-card-name" data-i18n="guestUser">مهمان (Guest)</h2>
+              <button type="button" class="btn-profile-edit-name" onclick="editProfileNicknameAction()" data-tooltip="ویرایش نام کاربری / Edit Nickname" title="Edit Nickname">
+                <i class="fa-solid fa-pen-to-square"></i> <span data-i18n="editName">ویرایش نام</span>
+              </button>
               <span class="profile-ts-tag-pill" id="profile-ts-tag-pill">
                 <i class="fa-brands fa-teamspeak"></i> <span id="profile-ts-id-label" data-i18n="profileTsVerified">TeamSpeak Verified</span>
               </span>
@@ -2267,23 +2267,6 @@
         </div>
 
         <div class="profile-header-right">
-          <div class="profile-stat-box">
-            <span class="stat-num" id="pstat-matches">0</span>
-            <span class="stat-lbl" data-i18n="pstatMatches">مسابقات</span>
-          </div>
-          <div class="profile-stat-box">
-            <span class="stat-num" id="pstat-wins">0</span>
-            <span class="stat-lbl" data-i18n="pstatWins">پیروزی</span>
-          </div>
-          <div class="profile-stat-box">
-            <span class="stat-num" id="pstat-winrate">0%</span>
-            <span class="stat-lbl" data-i18n="pstatWinrate">نرخ برد</span>
-          </div>
-          <div class="profile-stat-box">
-            <span class="stat-num" id="pstat-mmr">2,000</span>
-            <span class="stat-lbl" data-i18n="pstatMmr">امتیاز MMR</span>
-          </div>
-
           <button type="button" class="btn-reset btn-sm" id="btn-profile-auth-action" onclick="handleProfileAuthAction()" style="margin-right:12px;">
             <i class="fa-solid fa-arrow-right-from-bracket"></i> <span id="btn-profile-auth-text" data-i18n="profileChangeAccount">تغییر حساب</span>
           </button>
@@ -2408,179 +2391,27 @@
         <!-- DPI Sub-Navigation Bar -->
         
 
-        <!-- DPI Section Header -->
-        <div class="dpi-section-header">
-          <div class="dpi-dpi-badge" data-i18n="dpiBadgeTitle">DEADLOCK PERFORMANCE INDEX 👑</div>
-          <h2 class="dpi-section-title" data-i18n="dpiStarsHeading">🏆 ستاره‌های مسابقه (MVP & KEY PLAYERS)</h2>
-          <p class="dpi-section-desc" data-i18n="dpiStarsSub">رتبه‌بندی عملکرد فردی تمام بازیکنان مسابقه بر اساس مدل جامع عملکردی ددلاک. ستاره‌های مسابقه شامل MVP مسابقه (رتبه ۱) و دو Key Player مسابقه (رتبه‌های ۲ و ۳) هستند.</p>
-        </div>
-
-        <!-- DPI 3 Podium Cards -->
-        <div class="dpi-podium-grid">
-          <!-- Key Player #2 (Left, Cyan) -->
-          <div class="dpi-podium-card card-cyan" id="dpi-card-kp2">
-            <div class="dpi-card-toprow">
-              <span class="dpi-score-badge cyan">
-                <strong id="dpi-kp2-score">73.7</strong>
-                <span class="dpi-grade-box" id="dpi-kp2-grade">+B</span>
-              </span>
-              <span class="dpi-role-title cyan"><span data-i18n="dpiKeyPlayer2">KEY PLAYER #2</span> <i class="fa-solid fa-bolt"></i></span>
-            </div>
-            <div class="dpi-player-row">
-              <div class="dpi-player-texts">
-                <span class="dpi-mmr-badge green" id="dpi-kp2-mmr">+34 MMR</span>
-                <h3 class="dpi-player-name" id="dpi-kp2-name">Milad3</h3>
-                <div class="dpi-hero-team"><strong id="dpi-kp2-team">HIDDEN KING</strong> · <span id="dpi-kp2-hero">Victor</span></div>
-              </div>
-              <div class="dpi-hero-avatar-box cyan-border">
-                <img id="dpi-kp2-hero-img" class="dpi-hero-avatar-img" src="https://deadlockpersian.ir/assets/images/patch/head-heroes/Victor.webp" alt="Victor" />
-              </div>
-            </div>
-            <div class="dpi-badges-row" id="dpi-kp2-badges">
-              <span class="dpi-stat-badge badge-sup" data-i18n="badgeSup">SUP</span>
-              <span class="dpi-stat-badge badge-tank" data-i18n="badgeTank">TANK</span>
-              <span class="dpi-stat-badge badge-push" data-i18n="badgePush">PUSH</span>
-              <span class="dpi-stat-badge badge-early" data-i18n="badgeEarly">EARLY</span>
-              <span class="dpi-stat-badge badge-dmg" data-i18n="badgeDmg">DMG</span>
-            </div>
-            <div class="dpi-stats-box">
-              <div class="dpi-stat-col">
-                <span class="dpi-col-lbl" data-i18n="dpiDamageCol">DAMAGE</span>
-                <strong class="dpi-col-val text-red" id="dpi-kp2-dmg">31,979</strong>
-              </div>
-              <div class="dpi-stat-col">
-                <span class="dpi-col-lbl" data-i18n="dpiSoulsCol">SOULS</span>
-                <strong class="dpi-col-val text-gold" id="dpi-kp2-souls">49,766</strong>
-              </div>
-              <div class="dpi-stat-col">
-                <span class="dpi-col-lbl">K / D / A</span>
-                <strong class="dpi-col-val text-kda" id="dpi-kp2-kda"><span class="k">8</span> / <span class="d">0</span> / <span class="a">8</span></strong>
-              </div>
-            </div>
-            <div class="dpi-card-footer">
-              <span><span data-i18n="dpiAccuracyLabel">دقت تیر:</span> <strong id="dpi-kp2-acc">55.2%</strong></span>
-              <span><span data-i18n="dpiKpLabel">مشارکت در کیل:</span> <strong id="dpi-kp2-kp">69.9%</strong></span>
-              
-            </div>
-          </div>
-
-          <!-- MVP #1 (Center, Gold, Elevated) -->
-          <div class="dpi-podium-card card-gold elevated" id="dpi-card-mvp">
-            <div class="dpi-card-toprow">
-              <span class="dpi-score-badge gold">
-                <strong id="dpi-mvp-score">81.7</strong>
-                <span class="dpi-grade-box" id="dpi-mvp-grade">A</span>
-              </span>
-              <span class="dpi-role-title gold"><span data-i18n="dpiMvp1">MVP OF THE MATCH #1</span> 👑</span>
-            </div>
-            <div class="dpi-player-row">
-              <div class="dpi-player-texts">
-                <span class="dpi-mmr-badge green" id="dpi-mvp-mmr">+44 MMR</span>
-                <h3 class="dpi-player-name" id="dpi-mvp-name">WilliamNone</h3>
-                <div class="dpi-hero-team"><strong id="dpi-mvp-team">HIDDEN KING</strong> · <span id="dpi-mvp-hero">Sinclair</span></div>
-              </div>
-              <div class="dpi-hero-avatar-box gold-border">
-                <div class="dpi-avatar-placeholder gold-avatar"><i class="fa-solid fa-hat-wizard"></i></div>
-              </div>
-            </div>
-            <div class="dpi-badges-row" id="dpi-mvp-badges">
-              <span class="dpi-stat-badge badge-sup" data-i18n="badgeSup">SUP</span>
-              <span class="dpi-stat-badge badge-tank" data-i18n="badgeTank">TANK</span>
-              <span class="dpi-stat-badge badge-push" data-i18n="badgePush">PUSH</span>
-              <span class="dpi-stat-badge badge-early" data-i18n="badgeEarly">EARLY</span>
-              <span class="dpi-stat-badge badge-dmg" data-i18n="badgeDmg">DMG</span>
-              <span class="dpi-stat-badge badge-farm" data-i18n="badgeFarm">FARM</span>
-            </div>
-            <div class="dpi-stats-box">
-              <div class="dpi-stat-col">
-                <span class="dpi-col-lbl" data-i18n="dpiDamageCol">DAMAGE</span>
-                <strong class="dpi-col-val text-red" id="dpi-mvp-dmg">40,133</strong>
-              </div>
-              <div class="dpi-stat-col">
-                <span class="dpi-col-lbl" data-i18n="dpiSoulsCol">SOULS</span>
-                <strong class="dpi-col-val text-gold" id="dpi-mvp-souls">46,884</strong>
-              </div>
-              <div class="dpi-stat-col">
-                <span class="dpi-col-lbl">K / D / A</span>
-                <strong class="dpi-col-val text-kda" id="dpi-mvp-kda"><span class="k">12</span> / <span class="d">1</span> / <span class="a">11</span></strong>
-              </div>
-            </div>
-            <div class="dpi-card-footer">
-              <span><span data-i18n="dpiAccuracyLabel">دقت تیر:</span> <strong id="dpi-mvp-acc">37.5%</strong></span>
-              <span><span data-i18n="dpiKpLabel">مشارکت در کیل:</span> <strong id="dpi-mvp-kp">79.3%</strong></span>
-              
-            </div>
-          </div>
-
-          <!-- Key Player #3 (Right, Orange) -->
-          <div class="dpi-podium-card card-orange" id="dpi-card-kp3">
-            <div class="dpi-card-toprow">
-              <span class="dpi-score-badge orange">
-                <strong id="dpi-kp3-score">58.9</strong>
-                <span class="dpi-grade-box" id="dpi-kp3-grade">-B</span>
-              </span>
-              <span class="dpi-role-title orange"><span data-i18n="dpiKeyPlayer3">KEY PLAYER #3</span> <i class="fa-solid fa-bolt"></i></span>
-            </div>
-            <div class="dpi-player-row">
-              <div class="dpi-player-texts">
-                <span class="dpi-mmr-badge green" id="dpi-kp3-mmr">+31 MMR</span>
-                <h3 class="dpi-player-name" id="dpi-kp3-name">aryobw9</h3>
-                <div class="dpi-hero-team"><strong id="dpi-kp3-team">HIDDEN KING</strong> · <span id="dpi-kp3-hero">Graves</span></div>
-              </div>
-              <div class="dpi-hero-avatar-box orange-border">
-                <div class="dpi-avatar-placeholder orange-avatar"><i class="fa-solid fa-ghost"></i></div>
-              </div>
-            </div>
-            <div class="dpi-badges-row" id="dpi-kp3-badges">
-              <span class="dpi-stat-badge badge-sup" data-i18n="badgeSup">SUP</span>
-              <span class="dpi-stat-badge badge-tank" data-i18n="badgeTank">TANK</span>
-              <span class="dpi-stat-badge badge-push" data-i18n="badgePush">PUSH</span>
-              <span class="dpi-stat-badge badge-early" data-i18n="badgeEarly">EARLY</span>
-              <span class="dpi-stat-badge badge-dmg" data-i18n="badgeDmg">DMG</span>
-            </div>
-            <div class="dpi-stats-box">
-              <div class="dpi-stat-col">
-                <span class="dpi-col-lbl" data-i18n="dpiDamageCol">DAMAGE</span>
-                <strong class="dpi-col-val text-red" id="dpi-kp3-dmg">27,001</strong>
-              </div>
-              <div class="dpi-stat-col">
-                <span class="dpi-col-lbl" data-i18n="dpiSoulsCol">SOULS</span>
-                <strong class="dpi-col-val text-gold" id="dpi-kp3-souls">38,922</strong>
-              </div>
-              <div class="dpi-stat-col">
-                <span class="dpi-col-lbl">K / D / A</span>
-                <strong class="dpi-col-val text-kda" id="dpi-kp3-kda"><span class="k">3</span> / <span class="d">4</span> / <span class="a">14</span></strong>
-              </div>
-            </div>
-            <div class="dpi-card-footer">
-              <span><span data-i18n="dpiAccuracyLabel">دقت تیر:</span> <strong id="dpi-kp3-acc">58.6%</strong></span>
-              <span><span data-i18n="dpiKpLabel">مشارکت در کیل:</span> <strong id="dpi-kp3-kp">58.6%</strong></span>
-              
-            </div>
-          </div>
-        </div>
-
         <!-- DPI Full 12-Player Table -->
         <div class="dpi-table-section">
           <div class="dpi-table-header-bar">
             <div class="dpi-table-title"><i class="fa-solid fa-list-check" style="color:#06b6d4;"></i> <span data-i18n="dpiTableTitle">جدول رتبه‌بندی کلی تمام بازیکنان مسابقه:</span></div>
-            <div class="dpi-table-sub" data-i18n="dpiTableSub">برای مشاهده مشخصات کامل هر بازیکن در شوکیس، روی ردیف کلیک کنید</div>
+            <div class="dpi-table-sub" data-i18n="dpiTableSub">بر اساس مدل عملکردی DPI و محاسبه جامع شاخص‌های درون بازی</div>
           </div>
 
           <div class="dpi-table-responsive">
             <table class="dpi-table">
               <thead>
                 <tr>
-                  <th style="width:48px;" data-i18n="dpiColRank">رتبه</th>
+                  <th style="width:56px;" data-i18n="dpiColRank">رتبه</th>
                   <th data-i18n="dpiColPlayer">بازیکن و هیرو</th>
-                  <th data-i18n="dpiColTeam">تیم</th>
-                  <th data-i18n="dpiColGrade">گرید و امتیاز</th>
-                  <th data-i18n="dpiColBadges">نشان‌ها</th>
+                  <th data-i18n="dpiColTeam">تیم و MMR</th>
+                  <th style="width:100px;" data-i18n="dpiColGrade">امتیاز و گرید</th>
                   <th>K / D / A</th>
                   <th data-i18n="dpiColSouls">SOULS</th>
                   <th data-i18n="dpiColDamage">DAMAGE</th>
+                  <th data-i18n="dpiColObjDmg">OBJ DMG</th>
+                  <th data-i18n="dpiColHealing">HEALING</th>
                   <th data-i18n="dpiColKp">مشارکت (KP%)</th>
-                  
                 </tr>
               </thead>
               <tbody id="dpi-table-body">

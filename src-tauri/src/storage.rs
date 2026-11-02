@@ -822,6 +822,12 @@ pub fn get_active_custom_files_needing_cleanup(deadlock_dir: &Path) -> Vec<Strin
     if manifest_path.is_file() {
         let manifest = DeadworksManifest::load(deadlock_dir);
         for rel in &manifest.deployed_files {
+            let norm_rel = rel.replace('\\', "/").to_lowercase();
+            // Note: managed/plugins are only used by deadworks.exe and never loaded by deadlock.exe
+            // via gameinfo.gi, so they do not conflict with normal Valve matchmaking and do not require cleanup.
+            if norm_rel.contains("managed/plugins") || norm_rel.contains("bin/win64/managed") {
+                continue;
+            }
             let full = deadlock_dir.join(rel.replace('/', std::path::MAIN_SEPARATOR_STR));
             if full.is_file() {
                 files.push(format!("Deployed mod asset: {}", rel));

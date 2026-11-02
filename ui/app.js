@@ -5881,7 +5881,7 @@ window.addEventListener('unhandledrejection', (e) => console.warn('[unhandledrej
 window.perfState = {
   catalog: null,
   activeLevel: 2,
-  activePresetId: 'optilock-fps',
+  activePresetId: 'sqooky-max-fps',
   includeEngineSections: false,
   userOverrides: {},
   editorFilter: 'all',
@@ -5935,22 +5935,22 @@ function updatePresetDropdownLang() {
   const customLabel = document.getElementById('apb-custom-select-label');
   const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
   const labelsFa = {
-    'optilock-fps': 'پیشنهادی (OptiLock FPS)',
+    'sqooky-max-fps': 'پیشنهادی (Sqooky Max FPS)',
     'dmm-clean': 'گرافیک بالا (High Graphics)',
-    'optilock-potato': 'پوتیتو‌لاک (PotatoLock)',
-    'optilock-ultra-potato': 'اولترا پوتیتو‌لاک (Ultra PotatoLock)',
+    'optilock-potato': 'پوتیتولاک (PotatoLock)',
+    'optilock-fps': 'اپتی‌لاک اف‌پی‌اس (OptiLock FPS)',
+    'optilock-ultra-potato': 'اولترا پوتیتولاک (Ultra PotatoLock)',
     'optimizationlock': 'اپتیمایزیشن‌لاک (Sqooky)',
-    'sqooky-max-fps': 'حداکثر فریم اسکوکی',
     'eskay': 'کانفیگ اختصاصی اسکای',
     'kaizu-min-spec': 'سیستم ضعیف کایزوچانرو'
   };
   const labelsEn = {
-    'optilock-fps': 'Recommended (OptiLock FPS)',
-    'dmm-clean': 'High Graphics (DMM Clean)',
-    'optilock-potato': 'PotatoLock (OptiLock)',
+    'sqooky-max-fps': "Recommended (Sqooky's Max FPS)",
+    'dmm-clean': 'High Graphics',
+    'optilock-potato': 'PotatoLock',
+    'optilock-fps': 'OptiLock FPS',
     'optilock-ultra-potato': 'Ultra PotatoLock',
     'optimizationlock': 'OptimizationLock (Sqooky)',
-    'sqooky-max-fps': "Sqooky's Max FPS",
     'eskay': "Eskay's Config",
     'kaizu-min-spec': "Kaizuchaneru's Minimum Spec"
   };
@@ -5969,7 +5969,7 @@ function updatePresetDropdownLang() {
       span.textContent = activeDict[val];
     }
   });
-  const curVal = (sel ? sel.value : null) || (typeof perfState !== 'undefined' ? perfState.activePresetId : 'optilock-fps');
+  const curVal = (sel ? sel.value : null) || (typeof perfState !== 'undefined' ? perfState.activePresetId : 'sqooky-max-fps');
   if (customLabel && activeDict[curVal]) {
     customLabel.textContent = activeDict[curVal];
   }
@@ -6009,7 +6009,7 @@ function selectOptLevel(lvl, triggerAnimation = true) {
   } else if (perfState.activeLevel === 3) {
     setPreset('optilock-ultra-potato');
   } else if (!perfState.activePresetId || perfState.activePresetId === 'dmm-clean') {
-    setPreset('optilock-fps');
+    setPreset('sqooky-max-fps');
   } else {
     updatePresetStatsDisplay();
   }
@@ -7132,6 +7132,30 @@ function saveUserProfile() {
   }
 }
 
+function editProfileNicknameAction() {
+  const current = userProfile.nickname || (state.lang === 'fa' ? 'مهمان' : 'Player');
+  const promptMsg = state.lang === 'fa' 
+    ? 'نام کاربری جدید خود را وارد کنید:' 
+    : 'Enter your new nickname:';
+  const newNick = window.prompt(promptMsg, current);
+  if (!newNick || !newNick.trim()) return;
+  const trimmed = newNick.trim().substring(0, 24);
+  userProfile.nickname = trimmed;
+  state.vipNickname = trimmed;
+  try {
+    localStorage.setItem('dlp_nickname', trimmed);
+    localStorage.setItem('vip_nickname', trimmed);
+  } catch (e) {}
+  saveUserProfile();
+  updateProfileUI();
+  ['vip-host-nickname', 'vip-join-nickname', 'inp-host-nickname', 'inp-client-nickname'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = trimmed;
+  });
+  showToast(state.lang === 'fa' ? `نام کاربری به "${trimmed}" تغییر کرد.` : `Nickname changed to "${trimmed}".`, 'info');
+}
+window.editProfileNicknameAction = editProfileNicknameAction;
+
 function updateProfileUI() {
   const nickEl = document.getElementById('header-nickname');
   const tsTag = document.getElementById('header-ts-tag');
@@ -7832,9 +7856,11 @@ async function openMatchDpiView(matchId) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     currentDpiMatch = data;
-    renderDpiScorecard(data.scorecard || {});
+    renderDpiScorecard(data.scorecard || getDefaultSampleScorecard());
   } catch (err) {
     console.error('Failed to load match DPI details:', err);
+    currentDpiMatch = { match_code: 'QP6BG' };
+    renderDpiScorecard(getDefaultSampleScorecard());
   }
 }
 
@@ -7868,7 +7894,7 @@ const HERO_ASSET_NAMES = {
   14: 'Holliday',
   15: 'Bebop',
   16: 'Grey_Talon',
-  18: 'Mo_&_Krill',
+  18: 'MoKrill',
   19: 'Shiv',
   20: 'Ivy',
   25: 'Warden',
@@ -7884,21 +7910,82 @@ const HERO_ASSET_NAMES = {
   76: 'Graves',
   78: 'Deadman_Danny',
   81: 'Celeste',
-  84: 'Rat_King',
+  84: 'RatKing',
   87: 'Nurse_Harrow',
 };
 
+function handleHeroImgError(img, heroName) {
+  if (!img) return;
+  img.__fallbackStep = (img.__fallbackStep || 0) + 1;
+  const clean = (heroName || '').trim().toLowerCase();
+  if (img.__fallbackStep === 1) {
+    if (clean.includes('mo') && clean.includes('krill')) {
+      img.src = 'https://deadlockpersian.ir/assets/images/patch/head-heroes/Mo_Krill.webp';
+      return;
+    }
+    if (clean.includes('rat') && clean.includes('king')) {
+      img.src = 'https://deadlockpersian.ir/assets/images/patch/head-heroes/Rat_King.webp';
+      return;
+    }
+  }
+  if (img.__fallbackStep === 2) {
+    if (clean.includes('mo') && clean.includes('krill')) {
+      img.src = 'https://deadlockpersian.ir/assets/images/patch/head-heroes/MoKrill.webp';
+      return;
+    }
+  }
+  img.onerror = null;
+  img.src = 'assets/app_icon.png';
+}
+window.handleHeroImgError = handleHeroImgError;
+
 function getHeroImageUrl(heroId, heroName) {
+  const hName = (heroName || '').trim().toLowerCase();
+  if (heroId === 18 || (hName.includes('mo') && hName.includes('krill'))) {
+    return 'https://deadlockpersian.ir/assets/images/patch/head-heroes/MoKrill.webp';
+  }
+  if (heroId === 84 || (hName.includes('rat') && hName.includes('king'))) {
+    return 'https://deadlockpersian.ir/assets/images/patch/head-heroes/RatKing.webp';
+  }
   let assetName = HERO_ASSET_NAMES[heroId];
   if (!assetName && heroName) {
-    assetName = heroName.trim().replace(/\s+&\s+/g, '_&_').replace(/\s+/g, '_');
+    assetName = heroName.trim().replace(/[\s&]+/g, '_').replace(/__+/g, '_');
   }
   if (!assetName) assetName = 'Sinclair';
   return `https://deadlockpersian.ir/assets/images/patch/head-heroes/${assetName}.webp`;
 }
 window.getHeroImageUrl = getHeroImageUrl;
 
+function getDefaultSampleScorecard() {
+  return {
+    title: 'Custom Competitive Match #1',
+    status: 'MATCH COMPLETED (Victory)',
+    match_num: 'CCM #1',
+    match_code: 'QP6BG',
+    date: 'July 30, 2026',
+    duration: '34:19',
+    winner_team: 'HIDDEN KING',
+    players: [
+      { rank: 1, player: 'WilliamNone', hero: 'Sinclair', hero_id: 60, team: 'HIDDEN KING', mmr_delta: '+44 MMR', score: '81.7', grade: 'A', kills: 12, deaths: 1, assists: 11, souls: 46884, damage: 40133, obj_damage: 14200, healing: 850, kp: '79.3%' },
+      { rank: 2, player: 'Milad3', hero: 'Victor', hero_id: 66, team: 'HIDDEN KING', mmr_delta: '+34 MMR', score: '73.7', grade: '+B', kills: 8, deaths: 0, assists: 8, souls: 49766, damage: 31979, obj_damage: 18500, healing: 1200, kp: '69.9%' },
+      { rank: 3, player: 'aryobw9', hero: 'Graves', hero_id: 76, team: 'HIDDEN KING', mmr_delta: '+31 MMR', score: '58.9', grade: '-B', kills: 3, deaths: 4, assists: 14, souls: 38922, damage: 27001, obj_damage: 8900, healing: 450, kp: '58.6%' },
+      { rank: 4, player: 'ShadowRider', hero: 'Infernus', hero_id: 1, team: 'ARCH MOTHER', mmr_delta: '-12 MMR', score: '56.2', grade: 'B', kills: 10, deaths: 5, assists: 6, souls: 41200, damage: 35400, obj_damage: 6200, healing: 300, kp: '61.5%' },
+      { rank: 5, player: 'beevojdan', hero: 'Mo & Krill', hero_id: 18, team: 'ARCH MOTHER', mmr_delta: '-18 MMR', score: '52.4', grade: '-B', kills: 6, deaths: 3, assists: 9, souls: 34100, damage: 22100, obj_damage: 4100, healing: 7800, kp: '57.7%' },
+      { rank: 6, player: 'sukunapoori', hero: 'Seven', hero_id: 2, team: 'HIDDEN KING', mmr_delta: '+22 MMR', score: '49.8', grade: 'C', kills: 5, deaths: 6, assists: 12, souls: 32050, damage: 24800, obj_damage: 9800, healing: 150, kp: '58.6%' },
+      { rank: 7, player: 'orange', hero: 'Paige', hero_id: 67, team: 'HIDDEN KING', mmr_delta: '+19 MMR', score: '47.1', grade: 'C', kills: 2, deaths: 2, assists: 19, souls: 28900, damage: 16500, obj_damage: 3200, healing: 14200, kp: '72.4%' },
+      { rank: 8, player: 'Xyr0', hero: 'Rat King', hero_id: 84, team: 'ARCH MOTHER', mmr_delta: '-24 MMR', score: '44.3', grade: '-C', kills: 7, deaths: 8, assists: 5, souls: 31400, damage: 26300, obj_damage: 5100, healing: 600, kp: '46.2%' },
+      { rank: 9, player: 'GhostKillah', hero: 'Haze', hero_id: 13, team: 'ARCH MOTHER', mmr_delta: '-26 MMR', score: '41.0', grade: 'D', kills: 4, deaths: 9, assists: 4, souls: 27800, damage: 19400, obj_damage: 4800, healing: 0, kp: '30.8%' },
+      { rank: 10, player: 'CyberViper', hero: 'Vyper', hero_id: 50, team: 'HIDDEN KING', mmr_delta: '+15 MMR', score: '38.6', grade: 'D', kills: 1, deaths: 3, assists: 15, souls: 25100, damage: 14200, obj_damage: 2900, healing: 2100, kp: '55.2%' },
+      { rank: 11, player: 'IronWall', hero: 'Abrams', hero_id: 6, team: 'ARCH MOTHER', mmr_delta: '-30 MMR', score: '35.2', grade: '-D', kills: 2, deaths: 8, assists: 7, souls: 24300, damage: 18100, obj_damage: 3400, healing: 950, kp: '34.6%' },
+      { rank: 12, player: 'StormEye', hero: 'Grey Talon', hero_id: 16, team: 'ARCH MOTHER', mmr_delta: '-32 MMR', score: '31.5', grade: 'F', kills: 1, deaths: 10, assists: 3, souls: 21500, damage: 15200, obj_damage: 1800, healing: 0, kp: '15.4%' }
+    ]
+  };
+}
+
 function renderDpiScorecard(sc) {
+  if (!sc || !sc.players || sc.players.length === 0) {
+    sc = getDefaultSampleScorecard();
+  }
   const titleEl = document.getElementById('dpi-title');
   const statusEl = document.getElementById('dpi-status');
   const numEl = document.getElementById('dpi-num');
@@ -7913,148 +8000,122 @@ function renderDpiScorecard(sc) {
   if (dateEl) dateEl.textContent = sc.date || t('matchDateSample');
   if (durEl) durEl.textContent = sc.duration || '34:19';
 
-  // 1. MVP #1
-  const mvp = sc.mvp || {};
-  const mvpScore = document.getElementById('dpi-mvp-score');
-  const mvpGrade = document.getElementById('dpi-mvp-grade');
-  const mvpMmr = document.getElementById('dpi-mvp-mmr');
-  const mvpName = document.getElementById('dpi-mvp-player');
-  const mvpTeam = document.getElementById('dpi-mvp-team');
-  const mvpHero = document.getElementById('dpi-mvp-hero');
-  const mvpDmg = document.getElementById('dpi-mvp-damage');
-  const mvpSouls = document.getElementById('dpi-mvp-souls');
-  const mvpKda = document.getElementById('dpi-mvp-kda');
-  const mvpAcc = document.getElementById('dpi-mvp-acc');
-  const mvpKp = document.getElementById('dpi-mvp-kp');
-
-  if (mvpScore) mvpScore.textContent = mvp.score || '81.7';
-  if (mvpGrade) mvpGrade.textContent = mvp.grade || 'A';
-  if (mvpMmr) mvpMmr.textContent = mvp.mmr_delta || '+44 MMR';
-  if (mvpName) mvpName.textContent = mvp.player || 'WilliamNone';
-  if (mvpTeam) mvpTeam.textContent = mvp.team || 'HIDDEN KING';
-  if (mvpHero) mvpHero.textContent = mvp.hero || 'Sinclair';
-  if (mvpDmg) mvpDmg.textContent = (mvp.damage || 40133).toLocaleString();
-  if (mvpSouls) mvpSouls.textContent = (mvp.souls || 46884).toLocaleString();
-  if (mvpKda) mvpKda.innerHTML = `<span class="k">${mvp.kills || 12}</span> / <span class="d">${mvp.deaths || 1}</span> / <span class="a">${mvp.assists || 11}</span>`;
-  if (mvpAcc) mvpAcc.textContent = mvp.accuracy || '37.5%';
-  if (mvpKp) mvpKp.textContent = mvp.kp || '79.3%';
-  const mvpImg = document.getElementById('dpi-mvp-hero-img');
-  if (mvpImg) mvpImg.src = getHeroImageUrl(mvp.hero_id || 60, mvp.hero || 'Sinclair');
-
-  // 2. Key Player #2
-  const kp2 = sc.key_player_2 || {};
-  const kp2Score = document.getElementById('dpi-kp2-score');
-  const kp2Grade = document.getElementById('dpi-kp2-grade');
-  const kp2Mmr = document.getElementById('dpi-kp2-mmr');
-  const kp2Name = document.getElementById('dpi-kp2-name');
-  const kp2Team = document.getElementById('dpi-kp2-team');
-  const kp2Hero = document.getElementById('dpi-kp2-hero');
-  const kp2Dmg = document.getElementById('dpi-kp2-dmg');
-  const kp2Souls = document.getElementById('dpi-kp2-souls');
-  const kp2Kda = document.getElementById('dpi-kp2-kda');
-  const kp2Acc = document.getElementById('dpi-kp2-acc');
-  const kp2Kp = document.getElementById('dpi-kp2-kp');
-
-  if (kp2Score) kp2Score.textContent = kp2.score || '73.7';
-  if (kp2Grade) kp2Grade.textContent = kp2.grade || '+B';
-  if (kp2Mmr) kp2Mmr.textContent = kp2.mmr_delta || '+34 MMR';
-  if (kp2Name) kp2Name.textContent = kp2.player || 'Milad3';
-  if (kp2Team) kp2Team.textContent = kp2.team || 'HIDDEN KING';
-  if (kp2Hero) kp2Hero.textContent = kp2.hero || 'Victor';
-  if (kp2Dmg) kp2Dmg.textContent = (kp2.damage || 31979).toLocaleString();
-  if (kp2Souls) kp2Souls.textContent = (kp2.souls || 49766).toLocaleString();
-  if (kp2Kda) kp2Kda.innerHTML = `<span class="k">${kp2.kills || 8}</span> / <span class="d">${kp2.deaths || 0}</span> / <span class="a">${kp2.assists || 8}</span>`;
-  if (kp2Acc) kp2Acc.textContent = kp2.accuracy || '55.2%';
-  if (kp2Kp) kp2Kp.textContent = kp2.kp || '69.9%';
-  const kp2Img = document.getElementById('dpi-kp2-hero-img');
-  if (kp2Img) kp2Img.src = getHeroImageUrl(kp2.hero_id || 66, kp2.hero || 'Victor');
-
-  // 3. Key Player #3
-  const kp3 = sc.key_player_3 || {};
-  const kp3Score = document.getElementById('dpi-kp3-score');
-  const kp3Grade = document.getElementById('dpi-kp3-grade');
-  const kp3Mmr = document.getElementById('dpi-kp3-mmr');
-  const kp3Name = document.getElementById('dpi-kp3-name');
-  const kp3Team = document.getElementById('dpi-kp3-team');
-  const kp3Hero = document.getElementById('dpi-kp3-hero');
-  const kp3Dmg = document.getElementById('dpi-kp3-dmg');
-  const kp3Souls = document.getElementById('dpi-kp3-souls');
-  const kp3Kda = document.getElementById('dpi-kp3-kda');
-  const kp3Acc = document.getElementById('dpi-kp3-acc');
-  const kp3Kp = document.getElementById('dpi-kp3-kp');
-
-  if (kp3Score) kp3Score.textContent = kp3.score || '58.9';
-  if (kp3Grade) kp3Grade.textContent = kp3.grade || '-B';
-  if (kp3Mmr) kp3Mmr.textContent = kp3.mmr_delta || '+31 MMR';
-  if (kp3Name) kp3Name.textContent = kp3.player || 'aryobw9';
-  if (kp3Team) kp3Team.textContent = kp3.team || 'HIDDEN KING';
-  if (kp3Hero) kp3Hero.textContent = kp3.hero || 'Graves';
-  if (kp3Dmg) kp3Dmg.textContent = (kp3.damage || 27001).toLocaleString();
-  if (kp3Souls) kp3Souls.textContent = (kp3.souls || 38922).toLocaleString();
-  if (kp3Kda) kp3Kda.innerHTML = `<span class="k">${kp3.kills || 3}</span> / <span class="d">${kp3.deaths || 4}</span> / <span class="a">${kp3.assists || 14}</span>`;
-  if (kp3Acc) kp3Acc.textContent = kp3.accuracy || '58.6%';
-  if (kp3Kp) kp3Kp.textContent = kp3.kp || '58.6%';
-  const kp3Img = document.getElementById('dpi-kp3-hero-img');
-  if (kp3Img) kp3Img.src = getHeroImageUrl(kp3.hero_id || 76, kp3.hero || 'Graves');
-
-  // 4. Render 12-Player Ranking Table
   const tbody = document.getElementById('dpi-table-body');
   if (!tbody) return;
   tbody.innerHTML = '';
 
   const players = sc.players || [];
-  players.forEach((p, idx) => {
-    const tr = document.createElement('tr');
-    const isHiddenKing = p.team === 'HIDDEN KING';
-    const badgesHtml = (p.badges || []).map(b => `<span class="dpi-stat-badge badge-${b.toLowerCase()}">${b}</span>`).join(' ');
+  if (players.length === 0) return;
 
+  // Determine losing team
+  const winningTeam = sc.winner_team || players[0]?.team || 'HIDDEN KING';
+  const losingTeamPlayers = players.filter(p => p.team !== winningTeam);
+  const losingTeamTopPlayer = losingTeamPlayers.length > 0 ? losingTeamPlayers[0] : null;
+
+  // Key Player for losing team: if losingTeamTopPlayer rank is in #3, #4, #5, tag them. Otherwise fallback to #3.
+  let losingKpPlayerName = null;
+  if (losingTeamTopPlayer) {
+    const topRank = losingTeamTopPlayer.rank || (players.indexOf(losingTeamTopPlayer) + 1);
+    if (topRank >= 3 && topRank <= 5) {
+      losingKpPlayerName = losingTeamTopPlayer.player;
+    }
+  }
+  if (!losingKpPlayerName && players.length >= 3) {
+    losingKpPlayerName = players[2].player;
+  }
+
+  // Calculate highest values across all players for stat highlighting
+  const maxDamage = Math.max(...players.map(p => p.damage || 0));
+  const maxKills = Math.max(...players.map(p => p.kills !== undefined ? p.kills : (parseInt((p.kda || '').split('/')[0]) || 0)));
+  const minDeaths = Math.min(...players.map(p => p.deaths !== undefined ? p.deaths : (parseInt((p.kda || '').split('/')[1]) || 999)));
+  const maxAssists = Math.max(...players.map(p => p.assists !== undefined ? p.assists : (parseInt((p.kda || '').split('/')[2]) || 0)));
+  const maxObjDamage = Math.max(...players.map(p => p.obj_damage || p.objective_damage || 0));
+  const maxHealing = Math.max(...players.map(p => p.healing || 0));
+  const maxKp = Math.max(...players.map(p => parseFloat(String(p.kp || '0').replace('%', ''))));
+
+  players.forEach((p, idx) => {
+    const rankNum = p.rank || idx + 1;
+    const isHiddenKing = p.team === 'HIDDEN KING';
+    const isMvp = rankNum === 1;
+    const isKeyPlayer = rankNum === 2 || p.player === losingKpPlayerName;
+
+    let roleTagHtml = '';
+    if (isMvp) {
+      roleTagHtml = `<div class="dpi-role-tag tag-mvp"><i class="fa-solid fa-crown" style="font-size:8px;"></i> ${t('tagMvp') || 'MVP'}</div>`;
+    } else if (isKeyPlayer) {
+      roleTagHtml = `<div class="dpi-role-tag tag-kp"><i class="fa-solid fa-bolt" style="font-size:8px;"></i> ${t('tagKeyPlayer') || 'KEY PLAYER'}</div>`;
+    }
+
+    const kills = p.kills !== undefined ? p.kills : (parseInt((p.kda || '').split('/')[0]) || 0);
+    const deaths = p.deaths !== undefined ? p.deaths : (parseInt((p.kda || '').split('/')[1]) || 0);
+    const assists = p.assists !== undefined ? p.assists : (parseInt((p.kda || '').split('/')[2]) || 0);
+    const dmg = p.damage || 0;
+    const objDmg = p.obj_damage || p.objective_damage || 0;
+    const heal = p.healing || 0;
+    const kpNum = parseFloat(String(p.kp || '0').replace('%', ''));
+
+    const kClass = (kills === maxKills && maxKills > 0) ? 'stat-highlight' : 'k';
+    const dClass = (deaths === minDeaths) ? 'stat-highlight-cyan' : 'd';
+    const aClass = (assists === maxAssists && maxAssists > 0) ? 'stat-highlight' : 'a';
+    const dmgClass = (dmg === maxDamage && maxDamage > 0) ? 'stat-highlight' : '';
+    const objDmgClass = (objDmg === maxObjDamage && maxObjDamage > 0) ? 'stat-highlight' : '';
+    const healClass = (heal === maxHealing && maxHealing > 0) ? 'stat-highlight' : '';
+    const kpClass = (kpNum === maxKp && maxKp > 0) ? 'stat-highlight' : '';
+
+    const mmrIsPositive = p.mmr_delta && p.mmr_delta.startsWith('+');
+
+    const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="rank-cell">
-        <div style="font-weight:800;">#${p.rank || idx + 1}</div>
-        <div style="font-size:10px; color:#64748b;">#${p.team_rank || 1} ${t('inTeamSuffix')}</div>
+      <td class="rank-cell" style="font-weight:800; font-size:14px; font-family:'Rajdhani', monospace;">
+        #${rankNum}
       </td>
       <td>
         <div class="player-cell" style="display:flex; align-items:center; gap:10px;">
-          <img src="${getHeroImageUrl(p.hero_id, p.hero)}" class="table-hero-avatar-img" alt="${p.hero}" onerror="this.onerror=null;this.src='assets/app_icon.png';" />
-          <div>
-            <div style="font-weight:700; color:#fff;">${p.player}</div>
+          <img src="${getHeroImageUrl(p.hero_id, p.hero)}" class="table-hero-avatar-img" alt="${p.hero}" onerror="handleHeroImgError(this, '${p.hero}')" />
+          <div style="text-align:start;">
+            <div style="font-weight:700; color:#fff; display:flex; align-items:center; gap:6px;">
+              <span>${p.player}</span>
+            </div>
             <div style="font-size:11px; color:#94a3b8;">${p.hero}</div>
+            ${roleTagHtml}
           </div>
         </div>
       </td>
       <td>
-        <div>
-          <span class="team-pill" style="color:${isHiddenKing ? '#38bdf8' : '#fb923c'};">${p.team}</span>
-          <span class="dpi-mmr-badge ${p.mmr_delta && p.mmr_delta.startsWith('+') ? 'green' : 'red'}" style="margin-right:6px; font-size:10px; padding:1px 5px; border-radius:4px; background:${p.mmr_delta && p.mmr_delta.startsWith('+') ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}; border:1px solid ${p.mmr_delta && p.mmr_delta.startsWith('+') ? '#10b981' : '#ef4444'}; color:${p.mmr_delta && p.mmr_delta.startsWith('+') ? '#6ee7b7' : '#fca5a5'};">${p.mmr_delta}</span>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
+          <span class="team-pill" style="color:${isHiddenKing ? '#38bdf8' : '#fb923c'}; font-size:10px; font-weight:700;">${p.team}</span>
+          <span class="dpi-mmr-badge ${mmrIsPositive ? 'green' : 'red'}">${p.mmr_delta || ''}</span>
         </div>
       </td>
       <td>
-        <span class="dpi-score-badge" style="font-size:12px; padding:1px 6px;">
+        <span class="dpi-score-badge">
           <strong>${p.score}</strong>
-          <span class="dpi-grade-box" style="font-size:10px; padding:0 4px;">${p.grade}</span>
+          <span class="dpi-grade-box">${p.grade}</span>
         </span>
       </td>
-      <td>
-        <div class="dpi-badges-row" style="margin-bottom:0;">
-          ${badgesHtml}
-        </div>
-      </td>
       <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700;">
-        <span class="text-kda">${p.kda || `${p.kills || 0} / ${p.deaths || 0} / ${p.assists || 0}`}</span>
+        <span class="${kClass}">${kills}</span> / <span class="${dClass}">${deaths}</span> / <span class="${aClass}">${assists}</span>
       </td>
       <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#facc15;">
         ${(p.souls || 0).toLocaleString()}
       </td>
-      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#f87171;">
-        ${(p.damage || 0).toLocaleString()}
+      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#f87171;" class="${dmgClass}">
+        ${dmg.toLocaleString()}
       </td>
-      <td class="kp-cell">
+      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#fb923c;" class="${objDmgClass}">
+        ${objDmg.toLocaleString()}
+      </td>
+      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#34d399;" class="${healClass}">
+        ${heal.toLocaleString()}
+      </td>
+      <td class="kp-cell ${kpClass}" style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700;">
         ${p.kp || '0.0%'}
       </td>
     `;
     tbody.appendChild(tr);
   });
 }
+window.renderDpiScorecard = renderDpiScorecard;
 
 // ----------------- VConsole Command & Co-Admin -----------------
 

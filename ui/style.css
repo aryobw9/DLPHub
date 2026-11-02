@@ -13682,6 +13682,8 @@ body.lang-fa .apb-custom-select-trigger {
   text-align: right !important;
 }
 body.lang-fa .apb-custom-options-menu {
+  left: auto !important;
+  right: 0 !important;
   direction: rtl !important;
   text-align: right !important;
 }
@@ -13764,4 +13766,119 @@ body.lang-fa .lan-mode-nav-tabs {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+/* DPI Match Scorecard Table & Badges Standardization */
+.dpi-table th,
+.dpi-table td {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.dpi-table .player-cell {
+  justify-content: flex-start !important;
+  margin: 0 auto !important;
+  max-width: 180px !important;
+}
+
+/* Static Fixed Size Score & Grade Box */
+.dpi-table .dpi-score-badge {
+  width: 84px !important;
+  min-width: 84px !important;
+  max-width: 84px !important;
+  height: 28px !important;
+  padding: 0 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  box-sizing: border-box !important;
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 5px !important;
+  font-family: 'Rajdhani', monospace, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+/* Grade text without blue box background */
+.dpi-table .dpi-grade-box {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  color: #38bdf8 !important;
+}
+
+/* MMR Pure Colored Text without background box */
+.dpi-table .dpi-mmr-badge {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  display: inline-block !important;
+}
+.dpi-table .dpi-mmr-badge.green {
+  color: #34d399 !important;
+}
+.dpi-table .dpi-mmr-badge.red {
+  color: #f87171 !important;
+}
+
+/* MVP and Key Player Role Badges */
+.dpi-role-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+.dpi-role-tag.tag-mvp {
+  background: rgba(234, 179, 8, 0.2);
+  border: 1px solid rgba(234, 179, 8, 0.6);
+  color: #facc15;
+}
+.dpi-role-tag.tag-kp {
+  background: rgba(6, 182, 212, 0.2);
+  border: 1px solid rgba(6, 182, 212, 0.6);
+  color: #22d3ee;
+}
+
+/* Stat Highlighting */
+.stat-highlight {
+  color: #facc15 !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.45);
+}
+.stat-highlight-cyan {
+  color: #38bdf8 !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.45);
+}
+
+/* Profile Edit Name Button */
+.btn-profile-edit-name {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+.btn-profile-edit-name:hover {
+  background: rgba(249, 115, 22, 0.2);
+  border-color: var(--deadlock-orange);
+  color: #ffffff;
 }
