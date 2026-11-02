@@ -601,11 +601,11 @@
     }
 
     .content-header {
+      display: none !important;
       position: relative;
       height: 24px;
       min-height: 24px;
       max-height: 24px;
-      display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -4073,13 +4073,13 @@ body:not(.reduced-motion) .fov-sub-slider-bar .fov-range-input::-webkit-slider-r
 }
 
 .ar-toggle-check {
-  --size: 18px !important;
-  width: 18px !important;
-  min-width: 18px !important;
-  max-width: 18px !important;
-  height: 18px !important;
-  min-height: 18px !important;
-  max-height: 18px !important;
+  --size: 11px !important;
+  width: 11px !important;
+  min-width: 11px !important;
+  max-width: 11px !important;
+  height: 11px !important;
+  min-height: 11px !important;
+  max-height: 11px !important;
   margin: 0 !important;
   flex-shrink: 0 !important;
   box-sizing: border-box !important;
@@ -13054,6 +13054,111 @@ body.lang-fa .auth-guest-clean-link i {
   flex-direction: column;
   gap: 10px;
 }
+/* Simplified Match History Card */
+.match-card-row.simplified-match-card {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 12px 20px !important;
+  direction: ltr !important;
+  background: rgba(14, 22, 38, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.match-card-row.simplified-match-card:hover {
+  background: rgba(22, 34, 55, 0.95) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+.match-team-heroes {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex: 1 !important;
+}
+
+.match-team-heroes.team-hk {
+  justify-content: flex-start !important;
+}
+
+.match-team-heroes.team-am {
+  justify-content: flex-end !important;
+}
+
+.match-hero-avatar-icon {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  object-fit: cover !important;
+  background: #0f172a !important;
+  transition: transform 0.15s ease !important;
+}
+
+.match-hero-avatar-icon:hover {
+  transform: scale(1.1) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  z-index: 2 !important;
+}
+
+.match-center-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 0 16px !important;
+  min-width: 160px !important;
+}
+
+.match-winner-title {
+  font-family: 'Rajdhani', monospace, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  text-shadow: none !important;
+}
+
+.match-winner-title.winner-hk {
+  color: #fbbf24 !important;
+}
+
+.match-winner-title.winner-am {
+  color: #38bdf8 !important;
+}
+
+.match-souls-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-family: 'Rajdhani', monospace, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+.match-souls-row .souls-val.hk-souls {
+  color: #fbbf24 !important;
+}
+
+.match-souls-row .souls-val.am-souls {
+  color: #38bdf8 !important;
+}
+
+.match-souls-row .souls-vs {
+  color: #64748b !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+}
+
 .match-card-row {
   display: flex;
   align-items: center;

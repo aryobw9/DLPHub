@@ -306,7 +306,7 @@
         </div>
       </section>
       <section class="content-viewport">
-        <div class="content-header">
+        <div class="content-header" style="display:none !important;">
         <div class="content-header-title">
           <i class="fa-solid fa-desktop" id="section-icon" style="font-size:13px;color:var(--deadlock-orange)"></i>
           <span id="section-title" data-i18n="sectionGraphic">تنظیمات گرافیکی</span>
@@ -508,19 +508,16 @@
                   <div class="fov-slider-bar fov-sub-slider-bar" dir="ltr">
                     <span class="fov-bound">70°</span>
                     <input type="range" id="fov-slider" aria-label="زاویه دید / Field of View Slider" min="70" max="90" step="5" value="90" class="fov-range-input" oninput="setVideoFov(Number(this.value))" />
-                    <span class="fov-bound">90° <span class="fov-max-tag" data-i18n="fovMaxTag">(MAX)</span></span>
+                    <span class="fov-bound">90°</span>
                   </div>
                 </div>
 
                 <!-- Part 2: Aspect Ratio (gameinfo.gi, real number, can be disabled) -->
                 <div class="fov-part-section fov-part-aspect">
                   <div class="fov-sub-header">
-                    <span class="fov-sub-title">
+                    <span class="fov-sub-title" style="display:inline-flex; align-items:center; gap:6px;">
                       <i class="fa-solid fa-arrows-left-right-to-line" style="color:var(--deadlock-orange);font-size:9.5px"></i>
                       <span data-i18n="giAspectTitle">Aspect Ratio</span>
-                    </span>
-                    <div style="display:flex;align-items:center;gap:4px">
-                      <input type="text" id="ar-input" aria-label="عدد نسبت تصویر / Aspect Ratio Value" class="ar-real-input" value="2.15" placeholder="2.15" onchange="setAspectRatio(this.value)" data-tooltip="Aspect Ratio (1.33 - 3.20) · Scroll wheel or type numbers" />
                       <label class="neon-checkbox ar-toggle-check" data-tooltip="Enable or disable aspect ratio in gameinfo.gi">
                         <input type="checkbox" id="sw-ar-enable" checked onchange="toggleAspectRatio(this.checked)" />
                         <div class="neon-checkbox__frame">
@@ -538,13 +535,16 @@
                           </div>
                         </div>
                       </label>
+                    </span>
+                    <div style="display:flex;align-items:center;">
+                      <input type="text" id="ar-input" aria-label="عدد نسبت تصویر / Aspect Ratio Value" class="ar-real-input" value="2.15" placeholder="2.15" onchange="setAspectRatio(this.value)" data-tooltip="Aspect Ratio (1.33 - 3.20) · Scroll wheel or type numbers" />
                     </div>
                   </div>
                   <div class="ar-controls-body" id="ar-controls-body">
                     <div class="fov-slider-bar fov-sub-slider-bar" dir="ltr">
                       <span class="fov-bound tabular-num">1.33</span>
                       <input type="range" id="ar-slider" aria-label="نسبت تصویر / Aspect Ratio Slider" min="1.33" max="3.20" step="0.01" value="2.15" class="fov-range-input" oninput="setAspectRatio(this.value)" />
-                      <span class="fov-bound tabular-num">3.20 <span class="fov-max-tag" data-i18n="fovMaxTag">(MAX)</span></span>
+                      <span class="fov-bound tabular-num">3.20</span>
                     </div>
 
                   </div>
@@ -2174,6 +2174,10 @@
               </button>
             </div>
 
+            <button type="button" class="auth-solid-pill-btn" onclick="checkAuthCodeNow()" style="margin-top:10px;">
+              <i class="fa-solid fa-check" style="margin-inline-end:6px;"></i> <span data-i18n="checkVerifyStatus">بررسی وضعیت تایید</span>
+            </button>
+
             <div class="auth-live-status">
               <div class="auth-spinner"></div>
               <span id="auth-status-text" data-i18n="authStatusWaiting">منتظر ارسال دستور شما در چت تیم‌اسپیک...</span>
@@ -2243,9 +2247,6 @@
               <button type="button" class="btn-profile-save-name" id="btn-profile-save-icon" onclick="saveInlineNicknameEdit()" style="display:none;" data-tooltip="ذخیره / Save" title="Save Nickname">
                 <i class="fa-solid fa-check"></i>
               </button>
-              <span class="profile-ts-tag-pill" id="profile-ts-tag-pill">
-                <i class="fa-brands fa-teamspeak"></i> <span id="profile-ts-id-label" data-i18n="profileTsVerified">TeamSpeak Verified</span>
-              </span>
             </div>
             <div class="profile-code-row">
               <span class="profile-code-pill" onclick="copyMyFriendCode()" data-tooltip="کپی کد دوستی">
@@ -2257,7 +2258,7 @@
 
         <div class="profile-header-right">
           <button type="button" class="btn-reset btn-sm" id="btn-profile-auth-action" onclick="handleProfileAuthAction()" style="margin-right:12px;">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i> <span id="btn-profile-auth-text" data-i18n="profileChangeAccount">تغییر حساب</span>
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> <span id="btn-profile-auth-text" data-i18n="profileLogout">خروج از اکانت</span>
           </button>
           <button type="button" class="perf-drawer-close" onclick="closeProfileModal()" aria-label="Close">
             <i class="fa-solid fa-xmark"></i>
@@ -2343,13 +2344,13 @@
         </div>
       </div>
 
-      <!-- Profile Modal Body View B: Full Deadlock Performance Index (DPI) Scorecard (Replicating Screenshot 1:1) -->
-      <div class="profile-modal-body dpi-scorecard-view" id="profile-match-dpi-view" style="display:none;">
+      <!-- Profile Modal Body View B: Full Deadlock Performance Index (DPI) Scorecard (EN Only) -->
+      <div class="profile-modal-body dpi-scorecard-view" id="profile-match-dpi-view" style="display:none;" dir="ltr">
         <!-- DPI Top Action Bar -->
-        <div class="dpi-top-bar">
+        <div class="dpi-top-bar" dir="ltr">
           <button type="button" class="btn-dpi-back" onclick="backToMatchHistory()">
-            <i class="fa-solid fa-arrow-right"></i>
-            <span data-i18n="backToMatches">بازگشت به مسابقات</span>
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to Matches</span>
           </button>
 
           <div class="dpi-top-badges">
@@ -2360,22 +2361,22 @@
           </div>
         </div>
 
-        <!-- DPI Full 12-Player Table -->
-        <div class="dpi-table-section">
-          <div class="dpi-table-responsive">
-            <table class="dpi-table">
+        <!-- DPI Full 12-Player Table (English Only) -->
+        <div class="dpi-table-section" dir="ltr">
+          <div class="dpi-table-responsive" dir="ltr">
+            <table class="dpi-table" dir="ltr">
               <thead>
                 <tr>
-                  <th style="width:36px;" data-i18n="dpiColRank">#</th>
-                  <th class="th-player" data-i18n="dpiColPlayer">بازیکن و هیرو</th>
-                  <th style="width:85px;" data-i18n="dpiColTeam">تیم و MMR</th>
-                  <th style="width:70px;" data-i18n="dpiColGrade">امتیاز و گرید</th>
+                  <th style="width:36px;">#</th>
+                  <th class="th-player">PLAYER & HERO</th>
+                  <th style="width:85px;">TEAM & MMR</th>
+                  <th style="width:70px;">SCORE & GRADE</th>
                   <th style="width:85px;">K / D / A</th>
-                  <th class="th-stat-col" data-i18n="dpiColSouls">SOULS</th>
-                  <th class="th-stat-col" data-i18n="dpiColDamage">DAMAGE</th>
-                  <th class="th-stat-col" data-i18n="dpiColObjDmg">OBJ DMG</th>
-                  <th class="th-stat-col" data-i18n="dpiColHealing">HEALING</th>
-                  <th class="th-stat-col" data-i18n="dpiColKp">KP%</th>
+                  <th class="th-stat-col">SOULS</th>
+                  <th class="th-stat-col">DAMAGE</th>
+                  <th class="th-stat-col">OBJ DMG</th>
+                  <th class="th-stat-col">HEALING</th>
+                  <th class="th-stat-col">KP%</th>
                 </tr>
               </thead>
               <tbody id="dpi-table-body">

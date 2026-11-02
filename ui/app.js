@@ -755,13 +755,13 @@ function getCornerOrEdge(x, y) {
     }
 
     // 4. Number boxes only get the number adjuster cursor
-    if (t instanceof Element && t.closest('.fov-number-box, .ar-number-box, input[type="number"], .number-box')) {
+    if (t instanceof Element && t.closest('.fov-number-box, .ar-number-box, input[type="number"], .number-box, .ar-real-input')) {
       return 'text';
     }
 
-    // Normal text inputs get normal hover (pointer)
+    // Normal text inputs get standard default arrow cursor
     if (t instanceof Element && t.closest('input, textarea, select, .path-input, .step-log')) {
-      return isPressed ? 'click' : 'pointer';
+      return isPressed ? 'click' : 'default';
     }
 
     // 5. Sliders
@@ -7276,7 +7276,7 @@ function updateProfileUI() {
     if (pCardCode) pCardCode.textContent = userProfile.friend_code || 'DLP-XXXX';
     if (pTsLabel) pTsLabel.textContent = (state.lang === 'fa' ? 'تیم‌اسپیک متصل است' : 'TS Verified');
     if (myCodeDrawer) myCodeDrawer.textContent = userProfile.friend_code || 'DLP-XXXX';
-    if (pAuthBtnText) pAuthBtnText.textContent = (state.lang === 'fa' ? 'تغییر حساب / خروج' : 'Switch / Logout');
+    if (pAuthBtnText) pAuthBtnText.textContent = (state.lang === 'fa' ? 'خروج از اکانت' : 'Sign Out');
   }
 
   const mCount = userProfile.matches_count || 0;
@@ -7325,6 +7325,7 @@ function openAuthModal() {
   const modal = document.getElementById('modal-auth');
   if (modal) modal.style.display = 'flex';
   selectAuthOption('teamspeak');
+  updatePokeCooldownUI();
 }
 window.openAuthModal = openAuthModal;
 
@@ -7385,6 +7386,7 @@ function switchAuthMethod(method) {
     if (tabCmd) tabCmd.classList.remove('active');
     if (panePoke) panePoke.style.display = 'block';
     if (paneCmd) paneCmd.style.display = 'none';
+    updatePokeCooldownUI();
   }
 }
 
@@ -7439,6 +7441,73 @@ function stopAuthPolling() {
   }
 }
 
+let pokeCooldownTimer = null;
+
+function updatePokeCooldownUI() {
+  const sendBtn = document.getElementById('btn-auth-poke-send');
+  if (!sendBtn) return;
+  const rawEnd = localStorage.getItem('dlp_poke_cooldown_end');
+  if (!rawEnd) {
+    sendBtn.disabled = false;
+    const txt = state.lang === 'fa' ? 'ارسال کد پوک' : 'Send Code';
+    sendBtn.innerHTML = `<i class="fa-solid fa-paper-plane" style="margin-inline-end:6px;"></i> <span>${txt}</span>`;
+    if (pokeCooldownTimer) {
+      clearInterval(pokeCooldownTimer);
+      pokeCooldownTimer = null;
+    }
+    return;
+  }
+  const diff = Math.ceil((parseInt(rawEnd, 10) - Date.now()) / 1000);
+  if (diff <= 0) {
+    localStorage.removeItem('dlp_poke_cooldown_end');
+    sendBtn.disabled = false;
+    const txt = state.lang === 'fa' ? 'ارسال کد پوک' : 'Send Code';
+    sendBtn.innerHTML = `<i class="fa-solid fa-paper-plane" style="margin-inline-end:6px;"></i> <span>${txt}</span>`;
+    if (pokeCooldownTimer) {
+      clearInterval(pokeCooldownTimer);
+      pokeCooldownTimer = null;
+    }
+  } else {
+    sendBtn.disabled = true;
+    const txt = state.lang === 'fa' ? `ارسال مجدد (${diff} ثانیه)` : `Resend in (${diff}s)`;
+    sendBtn.innerHTML = `<i class="fa-solid fa-clock" style="margin-inline-end:6px;"></i> <span>${txt}</span>`;
+    if (!pokeCooldownTimer) {
+      pokeCooldownTimer = setInterval(updatePokeCooldownUI, 1000);
+    }
+  }
+}
+window.updatePokeCooldownUI = updatePokeCooldownUI;
+
+async function checkAuthCodeNow() {
+  if (!currentAuthCode) {
+    requestNewAuthCode();
+    return;
+  }
+  const statusText = document.getElementById('auth-status-text');
+  if (statusText) statusText.textContent = state.lang === 'fa' ? 'در حال بررسی وضعیت تایید...' : 'Checking verification status...';
+  try {
+    const res = await fetch(`${VPS_API_BASE}/api/auth/ts/check-status/${currentAuthCode}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.verified && data.user) {
+        stopAuthPolling();
+        userProfile = { ...data.user, is_guest: false };
+        saveUserProfile();
+        updateProfileUI();
+        closeAuthModal();
+        showToast(state.lang === 'fa' ? `ورود موفق! خوش آمدید ${data.user.nickname}` : `Welcome back, ${data.user.nickname}!`, 'success');
+        refreshFriendsList();
+        return;
+      }
+    }
+    showToast(state.lang === 'fa' ? 'دستور !hub هنوز دریافت نشده است. لطفاً پیام را به بات ارسال کنید یا از تب پوک استفاده نمایید.' : 'Command !hub not detected yet. Send it in TS or use Poke tab.', 'warning');
+    if (statusText) statusText.textContent = state.lang === 'fa' ? 'منتظر ارسال دستور شما در چت تیم‌اسپیک...' : 'Waiting for command in TeamSpeak...';
+  } catch (err) {
+    showToast(state.lang === 'fa' ? 'خطا در ارتباط با سرور.' : 'Server connection error.', 'error');
+  }
+}
+window.checkAuthCodeNow = checkAuthCodeNow;
+
 function copyAuthCommand() {
   const cmdText = document.getElementById('auth-cmd-text');
   const txt = cmdText ? cmdText.textContent.trim() : `!hub ${currentAuthCode}`;
@@ -7448,6 +7517,13 @@ function copyAuthCommand() {
 }
 
 async function sendPokeOtpRequest() {
+  const rawEnd = localStorage.getItem('dlp_poke_cooldown_end');
+  if (rawEnd && Date.now() < parseInt(rawEnd, 10)) {
+    const remaining = Math.ceil((parseInt(rawEnd, 10) - Date.now()) / 1000);
+    showToast(state.lang === 'fa' ? `لطفاً ${remaining} ثانیه قبل از ارسال مجدد صبر کنید.` : `Please wait ${remaining}s before sending another poke.`, 'warning');
+    return;
+  }
+
   const input = document.getElementById('auth-poke-target');
   const query = input ? input.value.trim() : '';
   const feedback = document.getElementById('auth-poke-feedback');
@@ -7473,6 +7549,7 @@ async function sendPokeOtpRequest() {
     });
     const data = await res.json();
     if (res.ok && data.success) {
+      localStorage.setItem('dlp_poke_cooldown_end', String(Date.now() + 60000));
       if (feedback) {
         feedback.textContent = (state.lang === 'fa'
           ? `کد ورود برای کاربر '${data.target_nickname}' ارسال شد! لطفاً پیام یا پوک خود در تیم‌اسپیک را بررسی کنید.`
@@ -7482,12 +7559,15 @@ async function sendPokeOtpRequest() {
       const otpInp = document.getElementById('auth-poke-otp-val') || document.getElementById('auth-poke-otp-input');
       if (otpInp) otpInp.focus();
     } else {
+      if (res.status === 429) {
+        localStorage.setItem('dlp_poke_cooldown_end', String(Date.now() + 60000));
+      }
       if (feedback) feedback.textContent = data.detail || (state.lang === 'fa' ? 'کاربر در تیم‌اسپیک یافت نشد.' : 'User not found on TeamSpeak.');
     }
   } catch (e) {
     if (feedback) feedback.textContent = state.lang === 'fa' ? 'خطا در ارتباط با سرور VPS.' : 'Connection error with VPS server.';
   } finally {
-    if (sendBtn) sendBtn.disabled = false;
+    updatePokeCooldownUI();
   }
 }
 window.sendPokeOtpRequest = sendPokeOtpRequest;
@@ -7912,37 +7992,51 @@ function renderMatchHistory(filter = 'all') {
 
   container.innerHTML = '';
   list.forEach(m => {
-    const isWin = m.winning_team === 'HiddenKing';
+    let sc = m.scorecard;
+    if (!sc && m.scorecard_json) {
+      try { sc = JSON.parse(m.scorecard_json); } catch (_) {}
+    }
+    if (!sc) sc = getDefaultSampleScorecard();
+
+    const players = sc.players || [];
+    const team1Players = players.filter(p => (p.team || '').toUpperCase().includes('HIDDEN') || p.team_id === 0);
+    const team2Players = players.filter(p => (p.team || '').toUpperCase().includes('ARCH') || p.team_id === 1);
+
+    const team1Souls = team1Players.reduce((sum, p) => sum + (p.souls || 0), 0);
+    const team2Souls = team2Players.reduce((sum, p) => sum + (p.souls || 0), 0);
+
+    const isHkWin = (m.winning_team === 'HiddenKing') || ((sc.winner_team || '').toUpperCase().includes('HIDDEN'));
+    const winnerName = isHkWin ? 'HIDDEN KING' : 'ARCH MOTHER';
+    const winnerClass = isHkWin ? 'winner-hk' : 'winner-am';
+
+    const team1Icons = team1Players.map(p =>
+      `<img src="${getHeroImageUrl(p.hero_id, p.hero)}" class="match-hero-avatar-icon" alt="${p.hero}" title="${p.player} (${p.hero})" onerror="handleHeroImgError(this, '${p.hero}')" />`
+    ).join('');
+
+    const team2Icons = team2Players.map(p =>
+      `<img src="${getHeroImageUrl(p.hero_id, p.hero)}" class="match-hero-avatar-icon" alt="${p.hero}" title="${p.player} (${p.hero})" onerror="handleHeroImgError(this, '${p.hero}')" />`
+    ).join('');
+
     const card = document.createElement('div');
-    card.className = 'match-card-row';
+    card.className = 'match-card-row simplified-match-card';
+    card.setAttribute('dir', 'ltr');
     card.onclick = () => openMatchDpiView(m.match_id);
     card.innerHTML = `
-      <div class="match-meta-left">
-        <span class="match-outcome-badge ${isWin ? 'victory' : 'defeat'}">
-          ${isWin ? (state.lang === 'fa' ? 'پیروزی' : 'VICTORY') : (state.lang === 'fa' ? 'شکست' : 'DEFEAT')}
-        </span>
-        <div>
-          <div class="match-title-row">${m.title || `Match #${m.match_code}`}</div>
-          <div class="match-subinfo">
-            <span><i class="fa-solid fa-calendar-days"></i> ${m.date_str || ''}</span>
-            <span><i class="fa-solid fa-clock"></i> ${m.duration_str || '34:19'}</span>
-            <span><i class="fa-solid fa-hashtag"></i> ${m.match_code || ''}</span>
-          </div>
+      <div class="match-team-heroes team-hk">
+        ${team1Icons}
+      </div>
+      <div class="match-center-wrap">
+        <div class="match-winner-title ${winnerClass}">
+          ${winnerName}
+        </div>
+        <div class="match-souls-row">
+          <span class="souls-val hk-souls">${team1Souls.toLocaleString()}</span>
+          <span class="souls-vs">VS</span>
+          <span class="souls-val am-souls">${team2Souls.toLocaleString()}</span>
         </div>
       </div>
-      <div class="match-stats-right">
-        <div class="match-stat-col">
-          <span class="val text-gold">81.7</span>
-          <span class="lbl">DPI SCORE</span>
-        </div>
-        <div class="match-stat-col">
-          <span class="val text-red">40,133</span>
-          <span class="lbl">DAMAGE</span>
-        </div>
-        <button type="button" class="btn-view-dpi">
-          <span>${state.lang === 'fa' ? 'مشاهده جدول رتبه‌بندی مسابقه (DPI)' : 'View DPI Scorecard'}</span>
-          <i class="fa-solid fa-chevron-left"></i>
-        </button>
+      <div class="match-team-heroes team-am">
+        ${team2Icons}
       </div>
     `;
     container.appendChild(card);
