@@ -12350,6 +12350,11 @@ body.lang-fa .convar-item-def-badge .def-badge-label {
   border-color: #ef4444;
   color: #fca5a5;
 }
+.friend-action-btn.btn-admin-toggle:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
 
 .friend-my-code-card {
   background: rgba(10, 16, 28, 0.8);
@@ -14078,32 +14083,49 @@ body.lang-fa .lan-mode-nav-tabs {
 .dpi-table td {
   text-align: center !important;
   vertical-align: middle !important;
+  color: #ffffff !important;
+  text-shadow: none !important;
+}
+
+.dpi-table .rank-cell {
+  width: 36px !important;
+  padding: 6px 2px !important;
+  text-align: center !important;
+  color: #ffffff !important;
+}
+
+.dpi-table th.th-player,
+.dpi-table td:nth-child(2) {
+  padding-left: 2px !important;
+  padding-right: 6px !important;
 }
 
 .dpi-table .player-cell {
   justify-content: flex-start !important;
-  margin: 0 auto !important;
-  max-width: 180px !important;
+  margin: 0 !important;
+  max-width: 175px !important;
 }
 
-/* Static Fixed Size Score & Grade Box */
+/* Compact Score & Grade Box */
 .dpi-table .dpi-score-badge {
-  width: 84px !important;
-  min-width: 84px !important;
-  max-width: 84px !important;
-  height: 28px !important;
-  padding: 0 6px !important;
+  width: 66px !important;
+  min-width: 66px !important;
+  max-width: 66px !important;
+  height: 24px !important;
+  padding: 0 4px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 6px !important;
+  gap: 4px !important;
   box-sizing: border-box !important;
   background: rgba(15, 23, 42, 0.75) !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  border-radius: 5px !important;
+  border-radius: 4px !important;
   font-family: 'Rajdhani', monospace, sans-serif !important;
-  font-size: 13px !important;
+  font-size: 11.5px !important;
   font-weight: 700 !important;
+  color: #ffffff !important;
+  text-shadow: none !important;
 }
 
 /* Grade text without blue box background */
@@ -14112,9 +14134,10 @@ body.lang-fa .lan-mode-nav-tabs {
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  font-size: 11px !important;
+  font-size: 10.5px !important;
   font-weight: 800 !important;
-  color: #38bdf8 !important;
+  color: #ffffff !important;
+  text-shadow: none !important;
 }
 
 /* MMR Pure Colored Text without background box */
@@ -14126,6 +14149,7 @@ body.lang-fa .lan-mode-nav-tabs {
   font-weight: 700 !important;
   font-size: 11px !important;
   display: inline-block !important;
+  text-shadow: none !important;
 }
 .dpi-table .dpi-mmr-badge.green {
   color: #34d399 !important;
@@ -14134,38 +14158,102 @@ body.lang-fa .lan-mode-nav-tabs {
   color: #f87171 !important;
 }
 
-/* MVP and Key Player Role Badges */
-.dpi-role-tag {
-  display: inline-block;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  padding: 1px 6px;
-  border-radius: 4px;
-  margin-top: 3px;
-  text-transform: uppercase;
+/* Team Text Colors: Hidden King Yellow, Arch Mother Blue */
+.dpi-table .team-hidden-king {
+  color: #fbbf24 !important;
+  font-weight: 700 !important;
+  font-size: 10.5px !important;
+  text-shadow: none !important;
 }
-.dpi-role-tag.tag-mvp {
-  background: rgba(234, 179, 8, 0.2);
-  border: 1px solid rgba(234, 179, 8, 0.6);
-  color: #facc15;
-}
-.dpi-role-tag.tag-kp {
-  background: rgba(6, 182, 212, 0.2);
-  border: 1px solid rgba(6, 182, 212, 0.6);
-  color: #22d3ee;
+.dpi-table .team-arch-mother {
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+  font-size: 10.5px !important;
+  text-shadow: none !important;
 }
 
-/* Stat Highlighting */
-.stat-highlight {
-  color: #facc15 !important;
-  font-weight: 900 !important;
-  text-shadow: 0 0 8px rgba(250, 204, 21, 0.45);
+/* Small Colored Text Tags for MVP & Key Player on Top/Right of Name (No Glowing Box) */
+.player-role-label {
+  display: inline-block !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  margin-inline-start: 5px !important;
+  vertical-align: middle !important;
+  text-transform: uppercase !important;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
 }
-.stat-highlight-cyan {
+.player-role-label.role-mvp {
+  color: #fbbf24 !important;
+}
+.player-role-label.role-kp {
   color: #38bdf8 !important;
-  font-weight: 900 !important;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.45);
+}
+
+/* 5 Symmetrical Stat Columns: Souls, DMG, OBJ DMG, Healing, KP% */
+.dpi-table th.th-stat-col,
+.dpi-table td.td-stat-col {
+  width: 76px !important;
+  min-width: 76px !important;
+  max-width: 76px !important;
+  text-align: center !important;
+}
+
+/* Stat Highlighting: Yellow Only, NO GLOW */
+.stat-highlight,
+.stat-highlight-cyan,
+.stat-highlight-yellow {
+  color: #fbbf24 !important;
+  font-weight: 800 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+/* Coming Soon text in Auth Modal */
+.auth-coming-soon-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  font-family: 'Rajdhani', 'Vazirmatn', sans-serif;
+  text-align: center;
+}
+
+/* Inline Edit Input for Profile Nickname */
+.profile-name-inline-input {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1.5px solid #f59e0b;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-family: 'Rajdhani', 'Vazirmatn', sans-serif;
+  padding: 2px 8px;
+  outline: none;
+  width: 150px;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
+.btn-profile-edit-name,
+.btn-profile-save-name {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.btn-profile-edit-name:hover,
+.btn-profile-save-name:hover {
+  color: #fbbf24;
 }
 
 /* Profile Edit Name Button */

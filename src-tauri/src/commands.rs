@@ -185,12 +185,10 @@ pub fn apply_fov_only_cmd(
 pub fn apply_fps_only_cmd(
     path: String,
     fps_limit: Option<String>,
-    #[allow(non_snake_case)]
-    fpsLimit: Option<String>,
 ) -> Result<String, String> {
     let deadlock = resolve_path(&path)?;
     let data_dir = settings::data_dir();
-    let limit = fps_limit.or(fpsLimit).unwrap_or_else(|| "DEFAULT".to_string());
+    let limit = fps_limit.unwrap_or_else(|| "DEFAULT".to_string());
     dlp_core::perf_overlay::apply_fps_only_flow(
         std::path::Path::new(&deadlock),
         &limit,

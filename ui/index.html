@@ -72,7 +72,9 @@
       position: absolute;
       top: calc(100% + 6px);
       left: 0;
-      min-width: 320px;
+      min-width: 220px;
+      max-width: 260px;
+      width: max-content;
       background: #090e17;
       border: 1px solid rgba(249, 115, 22, 0.45);
       border-radius: 8px;
@@ -430,46 +432,46 @@
                 </div>
                                 <div class="apb-select-wrap" id="apb-dropdown-container">
                   <div class="apb-custom-select-trigger" id="apb-custom-select-trigger" onclick="toggleCustomDropdown()" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
-                    <span id="apb-custom-select-label">Recommended (Sqooky's Max FPS)</span>
+                    <span id="apb-custom-select-label">Sqooky's Max FPS (Recommended)</span>
                     <i class="fa-solid fa-chevron-down apb-custom-chevron"></i>
                   </div>
                   <div class="apb-custom-options-menu" id="apb-custom-options-menu" style="display:none;" role="listbox">
                     <div class="apb-custom-option selected" data-value="sqooky-max-fps" onclick="selectCustomOption('sqooky-max-fps', this)">
-                      <span>Recommended (Sqooky's Max FPS)</span>
+                      <span>Sqooky's Max FPS (Recommended)</span>
                       <i class="fa-solid fa-check apb-custom-option-check"></i>
                     </div>
                     <div class="apb-custom-option" data-value="dmm-clean" onclick="selectCustomOption('dmm-clean', this)">
-                      <span>High Graphics (DMM Clean)</span>
+                      <span>High Graphics</span>
                     </div>
                     <div class="apb-custom-option" data-value="optilock-potato" onclick="selectCustomOption('optilock-potato', this)">
-                      <span>PotatoLock (OptiLock)</span>
+                      <span>PotatoLock</span>
                     </div>
                     <div class="apb-custom-option" data-value="optilock-fps" onclick="selectCustomOption('optilock-fps', this)">
-                      <span>OptiLock FPS [Sweaty]</span>
+                      <span>OptiLock FPS</span>
                     </div>
                     <div class="apb-custom-option" data-value="optimizationlock" onclick="selectCustomOption('optimizationlock', this)">
-                      <span>OptimizationLock (Sqooky) [Balanced]</span>
+                      <span>OptimizationLock (Sqooky)</span>
                     </div>
                     <div class="apb-custom-option" data-value="optilock-ultra-potato" onclick="selectCustomOption('optilock-ultra-potato', this)">
                       <span>Ultra PotatoLock</span>
                     </div>
                     <div class="apb-custom-option" data-value="eskay" onclick="selectCustomOption('eskay', this)">
-                      <span>Eskay's Config [Pretty]</span>
+                      <span>Eskay's Config</span>
                     </div>
                     <div class="apb-custom-option" data-value="kaizu-min-spec" onclick="selectCustomOption('kaizu-min-spec', this)">
-                      <span>Kaizuchaneru's Minimum Spec [Potato]</span>
+                      <span>Kaizuchaneru's Minimum Spec</span>
                     </div>
                   </div>
                   <!-- Hidden native select kept for full internal logic & event sync -->
                   <select class="apb-select" id="perf-preset-select" style="display:none;" onchange="onPerfPresetChange(this.value)">
-                    <option value="optilock-fps">OptiLock FPS (Recommended) [Sweaty]</option>
-                    <option value="dmm-clean">DMM Clean (Consensus Safe) [Balanced]</option>
-                    <option value="optimizationlock">OptimizationLock (Sqooky) [Balanced]</option>
-                    <option value="sqooky-max-fps">Sqooky's Max FPS [Sweaty]</option>
-                    <option value="optilock-potato">OptiLock Potato [Potato]</option>
-                    <option value="optilock-ultra-potato">OptiLock Ultra Potato [Potato]</option>
-                    <option value="eskay">Eskay's Config [Pretty]</option>
-                    <option value="kaizu-min-spec">Kaizuchaneru's Minimum Spec [Potato]</option>
+                    <option value="sqooky-max-fps">Sqooky's Max FPS (Recommended)</option>
+                    <option value="dmm-clean">High Graphics</option>
+                    <option value="optilock-potato">PotatoLock</option>
+                    <option value="optilock-fps">OptiLock FPS</option>
+                    <option value="optimizationlock">OptimizationLock (Sqooky)</option>
+                    <option value="optilock-ultra-potato">Ultra PotatoLock</option>
+                    <option value="eskay">Eskay's Config</option>
+                    <option value="kaizu-min-spec">Kaizuchaneru's Minimum Spec</option>
                   </select>
                 </div>
                 <span class="apb-stats-chip" id="apb-stats-chip" onclick="togglePerfDrawer()" title="Click to view details & tweaks"><i class="fa-solid fa-circle-check" style="color:#22c55e;font-size:9px"></i> <span id="apb-applied-text">348 applied</span> · <span id="apb-unused-text">37 unused</span></span>
@@ -2101,11 +2103,9 @@
           <path d="M0 0 H240 C210 40 180 85 130 100 C75 115 35 145 0 165 Z" fill="url(#authWaveGrad1)" />
         </svg>
 
-        <!-- Top Navigation Bar: Flame Logo & Close Button -->
+        <!-- Top Navigation Bar: Close Button Only (Flame Removed) -->
         <div class="auth-card-topbar">
-          <div class="auth-brand-mark">
-            <i class="fa-solid fa-fire auth-flame-icon"></i>
-          </div>
+          <div></div>
           <button type="button" class="auth-card-close-btn" onclick="closeAuthModal()" aria-label="Close">
             <i class="fa-solid fa-xmark"></i>
           </button>
@@ -2113,15 +2113,15 @@
       </div>
 
       <div class="auth-card-body">
-        <!-- 3 Providers Selector Bar (Deadlock Persian - TeamSpeak - Google) -->
+        <!-- 3 Providers Selector Bar (TeamSpeak - Deadlock Persian - Google) -->
         <div class="auth-provider-selector">
-          <button type="button" class="auth-provider-chip active" id="auth-opt-dlp" onclick="selectAuthOption('dlp')">
-            <img src="assets/app_icon.png" class="auth-chip-icon-img" alt="" />
-            <span data-i18n="authDlpShort">ددلاک پرشین</span>
-          </button>
-          <button type="button" class="auth-provider-chip" id="auth-opt-ts" onclick="selectAuthOption('teamspeak')">
+          <button type="button" class="auth-provider-chip active" id="auth-opt-ts" onclick="selectAuthOption('teamspeak')">
             <i class="fa-brands fa-teamspeak"></i>
             <span data-i18n="authTsShort">تیم‌اسپیک</span>
+          </button>
+          <button type="button" class="auth-provider-chip" id="auth-opt-dlp" onclick="selectAuthOption('dlp')">
+            <img src="assets/app_icon.png" class="auth-chip-icon-img" alt="" />
+            <span data-i18n="authDlpShort">ددلاک پرشین</span>
           </button>
           <button type="button" class="auth-provider-chip" id="auth-opt-google" onclick="selectAuthOption('google')">
             <i class="fa-brands fa-google"></i>
@@ -2129,101 +2129,13 @@
           </button>
         </div>
 
-        <!-- PANE 1: Deadlock Persian (Login & Sign Up) -->
-        <div class="auth-provider-pane active" id="auth-pane-dlp">
-          
-          <!-- View 1A: Login Form (Screen 1 in reference) -->
-          <div class="auth-sub-view" id="auth-sub-dlp-login">
-            <h2 class="auth-clean-title" data-i18n="loginTitle">ورود (Login)</h2>
-
-            <div class="auth-fields-stack">
-              <div class="auth-underline-field">
-                <i class="fa-regular fa-envelope auth-field-icon"></i>
-                <input type="text" id="auth-dlp-user" class="auth-underline-input" placeholder="Email or Username" data-i18n-placeholder="authEmailOrUserPlaceholder" autocomplete="username" />
-              </div>
-
-              <div class="auth-underline-field">
-                <i class="fa-solid fa-lock auth-field-icon"></i>
-                <input type="password" id="auth-dlp-pass" class="auth-underline-input" placeholder="Password" data-i18n-placeholder="authPasswordPlaceholder" autocomplete="current-password" />
-                <button type="button" class="auth-field-eye" onclick="toggleAuthPassVisibility('auth-dlp-pass', this)">
-                  <i class="fa-regular fa-eye-slash"></i>
-                </button>
-              </div>
-            </div>
-
-            <div class="auth-meta-row">
-              <label class="auth-remember-wrap">
-                <input type="checkbox" id="auth-dlp-remember" checked />
-                <span class="auth-custom-check"></span>
-                <span class="auth-remember-label" data-i18n="authRememberMe">مرا به خاطر بسپار</span>
-              </label>
-              <a href="javascript:void(0)" class="auth-plain-link" onclick="handleDlpForgotPassword()" data-i18n="authForgotPassword">فراموشی رمز عبور؟</a>
-            </div>
-
-            <button type="button" class="auth-solid-pill-btn" onclick="submitDlpLogin()">
-              <span data-i18n="authLoginBtn">ورود (LOGIN)</span>
-            </button>
-
-            <div class="auth-toggle-prompt">
-              <span data-i18n="authDontHaveAccount">حساب کاربری ندارید؟</span>
-              <a href="javascript:void(0)" class="auth-link-accent" onclick="switchDlpAuthMode('signup')" data-i18n="authSignUp">ثبت نام (Sign Up)</a>
-            </div>
-          </div>
-
-          <!-- View 1B: Sign Up Form (Screen 2 in reference) -->
-          <div class="auth-sub-view" id="auth-sub-dlp-signup" style="display:none;">
-            <h2 class="auth-clean-title" data-i18n="createAccountTitle">ایجاد حساب کاربری</h2>
-
-            <div class="auth-fields-stack">
-              <div class="auth-underline-field">
-                <i class="fa-regular fa-user auth-field-icon"></i>
-                <input type="text" id="auth-signup-name" class="auth-underline-input" placeholder="Name" data-i18n-placeholder="authNamePlaceholder" autocomplete="nickname" />
-              </div>
-
-              <div class="auth-underline-field">
-                <i class="fa-regular fa-envelope auth-field-icon"></i>
-                <input type="email" id="auth-signup-email" class="auth-underline-input" placeholder="Email" data-i18n-placeholder="authEmailPlaceholder" autocomplete="email" />
-              </div>
-
-              <div class="auth-underline-field">
-                <i class="fa-solid fa-lock auth-field-icon"></i>
-                <input type="password" id="auth-signup-password" class="auth-underline-input" placeholder="Password" data-i18n-placeholder="authPasswordPlaceholder" autocomplete="new-password" />
-                <button type="button" class="auth-field-eye" onclick="toggleAuthPassVisibility('auth-signup-password', this)">
-                  <i class="fa-regular fa-eye-slash"></i>
-                </button>
-              </div>
-
-              <div class="auth-underline-field">
-                <i class="fa-solid fa-lock auth-field-icon"></i>
-                <input type="password" id="auth-signup-confirm" class="auth-underline-input" placeholder="Confirm Password" data-i18n-placeholder="authConfirmPasswordPlaceholder" autocomplete="new-password" />
-                <button type="button" class="auth-field-eye" onclick="toggleAuthPassVisibility('auth-signup-confirm', this)">
-                  <i class="fa-regular fa-eye-slash"></i>
-                </button>
-              </div>
-            </div>
-
-            <div class="auth-meta-row">
-              <label class="auth-remember-wrap">
-                <input type="checkbox" id="auth-signup-remember" checked />
-                <span class="auth-custom-check"></span>
-                <span class="auth-remember-label" data-i18n="authRememberMe">مرا به خاطر بسپار</span>
-              </label>
-            </div>
-
-            <button type="button" class="auth-solid-pill-btn" onclick="submitDlpSignup()">
-              <span data-i18n="authSignUpBtn">ثبت نام (SIGN UP)</span>
-            </button>
-
-            <div class="auth-toggle-prompt">
-              <span data-i18n="authAlreadyHaveAccount">قبلاً ثبت نام کرده‌اید؟</span>
-              <a href="javascript:void(0)" class="auth-link-accent" onclick="switchDlpAuthMode('login')" data-i18n="authLoginLink">ورود (Login)</a>
-            </div>
-          </div>
-
+        <!-- PANE 1: Deadlock Persian (Coming Soon placeholder only) -->
+        <div class="auth-provider-pane" id="auth-pane-dlp" style="display:none; text-align:center; padding: 48px 10px;">
+          <div class="auth-coming-soon-text" data-i18n="comingSoon">Coming Soon...</div>
         </div>
 
-        <!-- PANE 2: TeamSpeak Login Screen -->
-        <div class="auth-provider-pane" id="auth-pane-ts" style="display:none;">
+        <!-- PANE 2: TeamSpeak Login Screen (Active Working TS3 Login) -->
+        <div class="auth-provider-pane active" id="auth-pane-ts">
           <h2 class="auth-clean-title" data-i18n="authTsTitleClean">ورود با تیم‌اسپیک</h2>
 
           <div class="auth-ts-tab-row">
@@ -2275,9 +2187,11 @@
               <input type="text" id="auth-poke-target" class="auth-underline-input" placeholder="Nickname or TS UID" data-i18n-placeholder="authPokeInputLabel" />
             </div>
             
-            <button type="button" class="auth-solid-pill-btn" onclick="requestPokeOtpAction()" style="margin-top:14px;">
+            <button type="button" class="auth-solid-pill-btn" id="btn-auth-poke-send" onclick="sendPokeOtpRequest()" style="margin-top:14px;">
               <i class="fa-solid fa-paper-plane" style="margin-inline-end:6px;"></i> <span data-i18n="sendPoke">ارسال کد پوک</span>
             </button>
+
+            <div id="auth-poke-feedback" class="auth-poke-feedback-msg" style="display:none; font-size:12px; color:#fbbf24; margin-top:10px; text-align:center;"></div>
 
             <div id="auth-poke-otp-group" style="display:none; margin-top:16px;">
               <div class="auth-underline-field">
@@ -2292,20 +2206,9 @@
 
         </div>
 
-        <!-- PANE 3: Google Login Screen -->
-        <div class="auth-provider-pane" id="auth-pane-google" style="display:none;">
-          <h2 class="auth-clean-title" data-i18n="authGoogleTitleClean">ورود با حساب گوگل</h2>
-          <p class="auth-clean-desc" data-i18n="authGoogleCardSub">ورود سریع با جیمیل و اکانت گوگل جهت همگام‌سازی ابری</p>
-
-          <button type="button" class="auth-google-pill-btn" onclick="handleGoogleSignIn()">
-            <i class="fa-brands fa-google"></i>
-            <span data-i18n="authContinueGoogle">ورود مستقیم با حساب گوگل</span>
-          </button>
-
-          <p class="auth-soon-note" data-i18n="authGoogleSoonDesc">
-            <i class="fa-solid fa-circle-info" style="color:#fbbf24;"></i>
-            <span>این قابلیت در آپدیت‌های آینده هاب به صورت کامل فعال خواهد شد.</span>
-          </p>
+        <!-- PANE 3: Google Login (Coming Soon placeholder only) -->
+        <div class="auth-provider-pane" id="auth-pane-google" style="display:none; text-align:center; padding: 48px 10px;">
+          <div class="auth-coming-soon-text" data-i18n="comingSoon">Coming Soon...</div>
         </div>
 
         <!-- Bottom Guest Link -->
@@ -2331,10 +2234,14 @@
             <span class="profile-avatar-badge" id="profile-verified-badge"><i class="fa-solid fa-check"></i></span>
           </div>
           <div class="profile-meta-wrap">
-            <div class="profile-name-row" style="display:flex; align-items:center; gap:8px;">
+            <div class="profile-name-row" id="profile-name-container" style="display:flex; align-items:center; gap:8px;">
               <h2 class="profile-display-name" id="profile-card-name" data-i18n="guestUser">مهمان (Guest)</h2>
-              <button type="button" class="btn-profile-edit-name" onclick="editProfileNicknameAction()" data-tooltip="ویرایش نام کاربری / Edit Nickname" title="Edit Nickname">
-                <i class="fa-solid fa-pen-to-square"></i> <span data-i18n="editName">ویرایش نام</span>
+              <input type="text" id="profile-name-inline-input" class="profile-name-inline-input" style="display:none;" maxlength="20" autocomplete="off" />
+              <button type="button" class="btn-profile-edit-name" id="btn-profile-edit-icon" onclick="startInlineNicknameEdit()" data-tooltip="ویرایش نام / Edit" title="Edit Nickname">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button type="button" class="btn-profile-save-name" id="btn-profile-save-icon" onclick="saveInlineNicknameEdit()" style="display:none;" data-tooltip="ذخیره / Save" title="Save Nickname">
+                <i class="fa-solid fa-check"></i>
               </button>
               <span class="profile-ts-tag-pill" id="profile-ts-tag-pill">
                 <i class="fa-brands fa-teamspeak"></i> <span id="profile-ts-id-label" data-i18n="profileTsVerified">TeamSpeak Verified</span>
@@ -2446,23 +2353,6 @@
           </button>
 
           <div class="dpi-top-badges">
-            <span class="dpi-badge-pill gold-border">
-              <i class="fa-solid fa-trophy" style="color:gold;"></i>
-              <span id="dpi-title" data-i18n="customMatchTitle">مسابقه کاستوم CCM #1 (SEASON 0)</span>
-            </span>
-            <span class="dpi-badge-pill green-border">
-              <span class="status-dot-green"></span>
-              <span id="dpi-status" data-i18n="matchCompleted">پایان‌یافته</span>
-            </span>
-            <span class="dpi-badge-pill" id="dpi-num"># CCM #1</span>
-            <span class="dpi-badge-pill code-pill" onclick="copyDpiMatchCode()" data-tooltip="کپی کد مسابقه">
-              <i class="fa-solid fa-copy"></i>
-              <span id="dpi-code">QP6BG</span>
-            </span>
-            <span class="dpi-badge-pill">
-              <i class="fa-solid fa-calendar-days" style="color:#f59e0b;"></i>
-              <span id="dpi-date" data-i18n="matchDateSample">۷ آبان ۱۴۰۵ ساعت ۲۲:۴۸</span>
-            </span>
             <span class="dpi-badge-pill">
               <i class="fa-solid fa-clock" style="color:#94a3b8;"></i>
               <span id="dpi-duration">34:19</span>
@@ -2470,30 +2360,22 @@
           </div>
         </div>
 
-        <!-- DPI Sub-Navigation Bar -->
-        
-
         <!-- DPI Full 12-Player Table -->
         <div class="dpi-table-section">
-          <div class="dpi-table-header-bar">
-            <div class="dpi-table-title"><i class="fa-solid fa-list-check" style="color:#06b6d4;"></i> <span data-i18n="dpiTableTitle">جدول رتبه‌بندی کلی تمام بازیکنان مسابقه:</span></div>
-            <div class="dpi-table-sub" data-i18n="dpiTableSub">بر اساس مدل عملکردی DPI و محاسبه جامع شاخص‌های درون بازی</div>
-          </div>
-
           <div class="dpi-table-responsive">
             <table class="dpi-table">
               <thead>
                 <tr>
-                  <th style="width:56px;" data-i18n="dpiColRank">رتبه</th>
-                  <th data-i18n="dpiColPlayer">بازیکن و هیرو</th>
-                  <th data-i18n="dpiColTeam">تیم و MMR</th>
-                  <th style="width:100px;" data-i18n="dpiColGrade">امتیاز و گرید</th>
-                  <th>K / D / A</th>
-                  <th data-i18n="dpiColSouls">SOULS</th>
-                  <th data-i18n="dpiColDamage">DAMAGE</th>
-                  <th data-i18n="dpiColObjDmg">OBJ DMG</th>
-                  <th data-i18n="dpiColHealing">HEALING</th>
-                  <th data-i18n="dpiColKp">مشارکت (KP%)</th>
+                  <th style="width:36px;" data-i18n="dpiColRank">#</th>
+                  <th class="th-player" data-i18n="dpiColPlayer">بازیکن و هیرو</th>
+                  <th style="width:85px;" data-i18n="dpiColTeam">تیم و MMR</th>
+                  <th style="width:70px;" data-i18n="dpiColGrade">امتیاز و گرید</th>
+                  <th style="width:85px;">K / D / A</th>
+                  <th class="th-stat-col" data-i18n="dpiColSouls">SOULS</th>
+                  <th class="th-stat-col" data-i18n="dpiColDamage">DAMAGE</th>
+                  <th class="th-stat-col" data-i18n="dpiColObjDmg">OBJ DMG</th>
+                  <th class="th-stat-col" data-i18n="dpiColHealing">HEALING</th>
+                  <th class="th-stat-col" data-i18n="dpiColKp">KP%</th>
                 </tr>
               </thead>
               <tbody id="dpi-table-body">

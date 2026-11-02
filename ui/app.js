@@ -754,9 +754,14 @@ function getCornerOrEdge(x, y) {
       return isPressed ? 'click' : 'pointer';
     }
 
-    // 4. Text inputs & logs
-    if (t instanceof Element && t.closest('input[type="text"], input[type="password"], textarea, .path-input, .step-log')) {
+    // 4. Number boxes only get the number adjuster cursor
+    if (t instanceof Element && t.closest('.fov-number-box, .ar-number-box, input[type="number"], .number-box')) {
       return 'text';
+    }
+
+    // Normal text inputs get normal hover (pointer)
+    if (t instanceof Element && t.closest('input, textarea, select, .path-input, .step-log')) {
+      return isPressed ? 'click' : 'pointer';
     }
 
     // 5. Sliders
@@ -5933,19 +5938,9 @@ function populatePresetSelect() {
 function updatePresetDropdownLang() {
   const sel = document.getElementById('perf-preset-select');
   const customLabel = document.getElementById('apb-custom-select-label');
-  const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
-  const labelsFa = {
-    'sqooky-max-fps': 'پیشنهادی (Sqooky Max FPS)',
-    'dmm-clean': 'گرافیک بالا (High Graphics)',
-    'optilock-potato': 'پوتیتولاک (PotatoLock)',
-    'optilock-fps': 'اپتی‌لاک اف‌پی‌اس (OptiLock FPS)',
-    'optilock-ultra-potato': 'اولترا پوتیتولاک (Ultra PotatoLock)',
-    'optimizationlock': 'اپتیمایزیشن‌لاک (Sqooky)',
-    'eskay': 'کانفیگ اختصاصی اسکای',
-    'kaizu-min-spec': 'سیستم ضعیف کایزوچانرو'
-  };
-  const labelsEn = {
-    'sqooky-max-fps': "Recommended (Sqooky's Max FPS)",
+  // Keep English config names intact in both languages (no Farsi translations)
+  const activeDict = {
+    'sqooky-max-fps': "Sqooky's Max FPS (Recommended)",
     'dmm-clean': 'High Graphics',
     'optilock-potato': 'PotatoLock',
     'optilock-fps': 'OptiLock FPS',
@@ -5954,7 +5949,6 @@ function updatePresetDropdownLang() {
     'eskay': "Eskay's Config",
     'kaizu-min-spec': "Kaizuchaneru's Minimum Spec"
   };
-  const activeDict = isFa ? labelsFa : labelsEn;
   if (sel) {
     for (const opt of sel.options) {
       if (activeDict[opt.value]) {
@@ -6255,15 +6249,15 @@ function renderDrawer() {
 
   const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
   const PRESET_FA_NAMES = {
-    'optilock-fps': 'اپتی‌لاک اف‌پی‌اس (پیشنهادی)',
-    'dmm-clean': 'دی‌ام‌ام کلین (پایدار و ایمن)',
-    'optimizationlock': 'اپتیمایزیشن‌لاک (Sqooky)',
-    'sqooky-max-fps': 'حداکثر فریم اسکوکی (Sqooky)',
-    'optilock-potato': 'اپتی‌لاک پوتیتو',
-    'optilock-ultra-potato': 'اپتی‌لاک اولترا پوتیتو',
-    'eskay': 'کانفیگ اختصاصی اسکای (Eskay)',
-    'kaizu-min-spec': 'سیستم ضعیف کایزوچانرو',
-    'none': 'پیش‌فرض وانیلا'
+    'optilock-fps': 'OptiLock FPS',
+    'dmm-clean': 'High Graphics',
+    'optimizationlock': 'OptimizationLock (Sqooky)',
+    'sqooky-max-fps': "Sqooky's Max FPS (Recommended)",
+    'optilock-potato': 'PotatoLock',
+    'optilock-ultra-potato': 'Ultra PotatoLock',
+    'eskay': "Eskay's Config",
+    'kaizu-min-spec': "Kaizuchaneru's Minimum Spec",
+    'none': 'Vanilla Default'
   };
   const TIER_FA_NAMES = {
     'balanced': 'متعادل',
@@ -7132,29 +7126,118 @@ function saveUserProfile() {
   }
 }
 
-function editProfileNicknameAction() {
+function startInlineNicknameEdit() {
+  const nameEl = document.getElementById('profile-card-name');
+  const inputEl = document.getElementById('profile-name-inline-input');
+  const editBtn = document.getElementById('btn-profile-edit-icon');
+  const saveBtn = document.getElementById('btn-profile-save-icon');
+
+  if (!inputEl || !nameEl) return;
   const current = userProfile.nickname || (state.lang === 'fa' ? 'مهمان' : 'Player');
-  const promptMsg = state.lang === 'fa' 
-    ? 'نام کاربری جدید خود را وارد کنید:' 
-    : 'Enter your new nickname:';
-  const newNick = window.prompt(promptMsg, current);
-  if (!newNick || !newNick.trim()) return;
-  const trimmed = newNick.trim().substring(0, 24);
-  userProfile.nickname = trimmed;
-  state.vipNickname = trimmed;
+  inputEl.value = current;
+  nameEl.style.display = 'none';
+  inputEl.style.display = 'inline-block';
+  if (editBtn) editBtn.style.display = 'none';
+  if (saveBtn) saveBtn.style.display = 'inline-flex';
+
+  inputEl.focus();
+  inputEl.select();
+
+  inputEl.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveInlineNicknameEdit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelInlineNicknameEdit();
+    }
+  };
+}
+window.startInlineNicknameEdit = startInlineNicknameEdit;
+window.editProfileNicknameAction = startInlineNicknameEdit;
+
+function cancelInlineNicknameEdit() {
+  const nameEl = document.getElementById('profile-card-name');
+  const inputEl = document.getElementById('profile-name-inline-input');
+  const editBtn = document.getElementById('btn-profile-edit-icon');
+  const saveBtn = document.getElementById('btn-profile-save-icon');
+
+  if (inputEl) inputEl.style.display = 'none';
+  if (nameEl) nameEl.style.display = 'inline-block';
+  if (editBtn) editBtn.style.display = 'inline-flex';
+  if (saveBtn) saveBtn.style.display = 'none';
+}
+window.cancelInlineNicknameEdit = cancelInlineNicknameEdit;
+
+function saveInlineNicknameEdit() {
+  const nameEl = document.getElementById('profile-card-name');
+  const inputEl = document.getElementById('profile-name-inline-input');
+  const editBtn = document.getElementById('btn-profile-edit-icon');
+  const saveBtn = document.getElementById('btn-profile-save-icon');
+  if (!inputEl) return;
+
+  const raw = inputEl.value.trim();
+  
+  // Nicknames have to contain words and numbers only (letters, numbers, underscore), 3-20 characters
+  const validRegex = /^[a-zA-Z0-9_]{3,20}$/;
+  if (!validRegex.test(raw)) {
+    showToast(state.lang === 'fa' 
+      ? 'نام کاربری باید بین ۳ تا ۲۰ کاراکتر و فقط شامل حروف انگلیسی، اعداد و زیرخط باشد.' 
+      : 'Nickname must be 3-20 characters and contain only letters, numbers, and underscores.', 
+      'warning');
+    inputEl.focus();
+    return;
+  }
+
+  // Nicknames have to be unique (check against known players)
+  const existingNames = [
+    'WilliamNone', 'Milad3', 'ShadowRider', 'beevojdan', 
+    'sukunapoori', 'orange', 'Xyr0', 'GhostKillah', 
+    'CyberViper', 'IronWall', 'StormEye'
+  ].map(s => s.toLowerCase());
+
+  if (friendsData && Array.isArray(friendsData)) {
+    friendsData.forEach(f => {
+      if (f.nickname) existingNames.push(f.nickname.toLowerCase());
+    });
+  }
+
+  const currentLower = (userProfile.nickname || '').toLowerCase();
+  if (raw.toLowerCase() !== currentLower && existingNames.includes(raw.toLowerCase())) {
+    showToast(state.lang === 'fa' 
+      ? 'این نام کاربری قبلاً توسط بازیکن دیگری ثبت شده است. لطفاً نام دیگری انتخاب فرمایید.' 
+      : 'This nickname is already taken by another player. Please choose a different one.', 
+      'error');
+    inputEl.focus();
+    return;
+  }
+
+  userProfile.nickname = raw;
+  state.vipNickname = raw;
   try {
-    localStorage.setItem('dlp_nickname', trimmed);
-    localStorage.setItem('vip_nickname', trimmed);
+    localStorage.setItem('dlp_nickname', raw);
+    localStorage.setItem('vip_nickname', raw);
   } catch (e) {}
+
   saveUserProfile();
   updateProfileUI();
+
   ['vip-host-nickname', 'vip-join-nickname', 'inp-host-nickname', 'inp-client-nickname'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.value = trimmed;
+    if (el) el.value = raw;
   });
-  showToast(state.lang === 'fa' ? `نام کاربری به "${trimmed}" تغییر کرد.` : `Nickname changed to "${trimmed}".`, 'info');
+
+  if (inputEl) inputEl.style.display = 'none';
+  if (nameEl) {
+    nameEl.textContent = raw;
+    nameEl.style.display = 'inline-block';
+  }
+  if (editBtn) editBtn.style.display = 'inline-flex';
+  if (saveBtn) saveBtn.style.display = 'none';
+
+  showToast(state.lang === 'fa' ? `نام کاربری به "${raw}" تغییر یافت.` : `Nickname updated to "${raw}".`, 'success');
 }
-window.editProfileNicknameAction = editProfileNicknameAction;
+window.saveInlineNicknameEdit = saveInlineNicknameEdit;
 
 function updateProfileUI() {
   const nickEl = document.getElementById('header-nickname');
@@ -7241,7 +7324,7 @@ function handleProfileAuthAction() {
 function openAuthModal() {
   const modal = document.getElementById('modal-auth');
   if (modal) modal.style.display = 'flex';
-  selectAuthOption('dlp');
+  selectAuthOption('teamspeak');
 }
 window.openAuthModal = openAuthModal;
 
@@ -7253,7 +7336,7 @@ function closeAuthModal() {
 window.closeAuthModal = closeAuthModal;
 
 function selectAuthOption(opt) {
-  const providers = ['dlp', 'teamspeak', 'google'];
+  const providers = ['teamspeak', 'dlp', 'google'];
   providers.forEach(p => {
     const chipKey = p === 'teamspeak' ? 'ts' : p;
     const chip = document.getElementById(`auth-opt-${chipKey}`);
@@ -7282,109 +7365,9 @@ window.selectAuthProvider = selectAuthOption;
 window.openAuthMethodView = selectAuthOption;
 
 function showAuthProvidersView() {
-  selectAuthOption('dlp');
+  selectAuthOption('teamspeak');
 }
 window.showAuthProvidersView = showAuthProvidersView;
-
-function switchDlpAuthMode(mode) {
-  const loginSub = document.getElementById('auth-sub-dlp-login');
-  const signupSub = document.getElementById('auth-sub-dlp-signup');
-  if (mode === 'signup') {
-    if (loginSub) loginSub.style.display = 'none';
-    if (signupSub) signupSub.style.display = 'block';
-  } else {
-    if (signupSub) signupSub.style.display = 'none';
-    if (loginSub) loginSub.style.display = 'block';
-  }
-}
-window.switchDlpAuthMode = switchDlpAuthMode;
-
-function toggleAuthPassVisibility(inputId, btnEl) {
-  const inp = document.getElementById(inputId);
-  if (!inp) return;
-  const isPass = inp.type === 'password';
-  inp.type = isPass ? 'text' : 'password';
-  if (btnEl) {
-    const icon = btnEl.querySelector('i');
-    if (icon) {
-      icon.className = isPass ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
-    }
-  }
-}
-window.toggleAuthPassVisibility = toggleAuthPassVisibility;
-
-function submitDlpLogin() {
-  const userInp = document.getElementById('auth-dlp-user');
-  const passInp = document.getElementById('auth-dlp-pass');
-  const userVal = (userInp?.value || '').trim();
-  const passVal = (passInp?.value || '').trim();
-
-  if (!userVal || !passVal) {
-    showToast(state.lang === 'fa' ? 'لطفاً نام کاربری/ایمیل و رمز عبور را وارد فرمایید.' : 'Please enter your username/email and password.', 'warning');
-    return;
-  }
-
-  // Set user profile
-  userProfile = {
-    ...userProfile,
-    is_guest: false,
-    nickname: userVal.includes('@') ? userVal.split('@')[0] : userVal,
-    ts_uid: 'DLP-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-    vip_rank: 'Active Member'
-  };
-  saveUserProfile();
-  updateProfileUI();
-  closeAuthModal();
-  showToast(state.lang === 'fa' ? `ورود موفق! خوش آمدید ${userProfile.nickname}` : `Welcome back, ${userProfile.nickname}!`, 'success');
-  refreshFriendsList();
-}
-window.submitDlpLogin = submitDlpLogin;
-
-function submitDlpSignup() {
-  const nameInp = document.getElementById('auth-signup-name');
-  const emailInp = document.getElementById('auth-signup-email');
-  const passInp = document.getElementById('auth-signup-password');
-  const confirmInp = document.getElementById('auth-signup-confirm');
-
-  const nameVal = (nameInp?.value || '').trim();
-  const emailVal = (emailInp?.value || '').trim();
-  const passVal = (passInp?.value || '').trim();
-  const confirmVal = (confirmInp?.value || '').trim();
-
-  if (!nameVal || !emailVal || !passVal) {
-    showToast(state.lang === 'fa' ? 'لطفاً کلیه فیلدهای نام، ایمیل و رمز عبور را تکمیل فرمایید.' : 'Please fill in all name, email, and password fields.', 'warning');
-    return;
-  }
-
-  if (passVal !== confirmVal) {
-    showToast(state.lang === 'fa' ? 'رمز عبور با تکرار آن مطابقت ندارد.' : 'Passwords do not match.', 'error');
-    return;
-  }
-
-  userProfile = {
-    ...userProfile,
-    is_guest: false,
-    nickname: nameVal,
-    ts_uid: 'DLP-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-    vip_rank: 'New Member'
-  };
-  saveUserProfile();
-  updateProfileUI();
-  closeAuthModal();
-  showToast(state.lang === 'fa' ? `حساب کاربری شما با موفقیت ایجاد شد! خوش آمدید ${nameVal}` : `Account created successfully! Welcome, ${nameVal}!`, 'success');
-  refreshFriendsList();
-}
-window.submitDlpSignup = submitDlpSignup;
-
-function handleDlpForgotPassword() {
-  showToast(state.lang === 'fa' ? 'جهت بازیابی رمز عبور، به پشتیبانی سرور دیسکورد یا تیم‌اسپیک مراجعه فرمایید.' : 'For password recovery, please contact support on Discord or TeamSpeak.', 'info');
-}
-window.handleDlpForgotPassword = handleDlpForgotPassword;
-
-function handleGoogleSignIn() {
-  showToast(state.lang === 'fa' ? 'ورود سریع با گوگل به زودی فعال خواهد شد.' : 'Google Sign-In will be available soon.', 'info');
-}
-window.handleGoogleSignIn = handleGoogleSignIn;
 
 function switchAuthMethod(method) {
   const tabCmd = document.getElementById('auth-tab-cmd');
@@ -7468,7 +7451,8 @@ async function sendPokeOtpRequest() {
   const input = document.getElementById('auth-poke-target');
   const query = input ? input.value.trim() : '';
   const feedback = document.getElementById('auth-poke-feedback');
-  const verifyBox = document.getElementById('auth-poke-verify-box');
+  const verifyBox = document.getElementById('auth-poke-otp-group') || document.getElementById('auth-poke-verify-box');
+  const sendBtn = document.getElementById('btn-auth-poke-send');
 
   if (!query) {
     showToast(state.lang === 'fa' ? 'لطفاً نام یا آیدی تیم‌اسپیک خود را وارد کنید.' : 'Please enter TS nickname or UID.', 'warning');
@@ -7479,6 +7463,7 @@ async function sendPokeOtpRequest() {
     feedback.style.display = 'block';
     feedback.textContent = (state.lang === 'fa' ? 'در حال ارسال پیام پوک در سرور تیم‌اسپیک...' : 'Sending poke via TS ClientQuery...');
   }
+  if (sendBtn) sendBtn.disabled = true;
 
   try {
     const res = await fetch(`${VPS_API_BASE}/api/auth/ts/poke-otp`, {
@@ -7494,16 +7479,22 @@ async function sendPokeOtpRequest() {
           : `Code sent to '${data.target_nickname}'! Check your TS poke or private chat.`);
       }
       if (verifyBox) verifyBox.style.display = 'block';
+      const otpInp = document.getElementById('auth-poke-otp-val') || document.getElementById('auth-poke-otp-input');
+      if (otpInp) otpInp.focus();
     } else {
-      if (feedback) feedback.textContent = data.detail || 'کاربر در تیم‌اسپیک یافت نشد.';
+      if (feedback) feedback.textContent = data.detail || (state.lang === 'fa' ? 'کاربر در تیم‌اسپیک یافت نشد.' : 'User not found on TeamSpeak.');
     }
   } catch (e) {
-    if (feedback) feedback.textContent = 'خطا در ارتباط با سرور.';
+    if (feedback) feedback.textContent = state.lang === 'fa' ? 'خطا در ارتباط با سرور VPS.' : 'Connection error with VPS server.';
+  } finally {
+    if (sendBtn) sendBtn.disabled = false;
   }
 }
+window.sendPokeOtpRequest = sendPokeOtpRequest;
+window.requestPokeOtpAction = sendPokeOtpRequest;
 
 async function verifyPokeOtpAction() {
-  const input = document.getElementById('auth-poke-otp-input');
+  const input = document.getElementById('auth-poke-otp-val') || document.getElementById('auth-poke-otp-input');
   const code = input ? input.value.trim() : '';
   if (!code || code.length < 4) {
     showToast(state.lang === 'fa' ? 'لطفاً کد ورود را به درستی وارد کنید.' : 'Invalid OTP code.', 'warning');
@@ -7528,12 +7519,13 @@ async function verifyPokeOtpAction() {
       showToast(state.lang === 'fa' ? `ورود موفق! خوش آمدید ${data.user.nickname}` : `Welcome ${data.user.nickname}!`, 'success');
       refreshFriendsList();
     } else {
-      showToast(data.detail || 'کد تایید نامعتبر است.', 'error');
+      showToast(data.detail || (state.lang === 'fa' ? 'کد تایید نامعتبر است.' : 'Invalid code.'), 'error');
     }
   } catch (err) {
-    showToast(`Error: ${err}`, 'error');
+    showToast(state.lang === 'fa' ? 'خطا در ارتباط با سرور.' : 'Server connection error.', 'error');
   }
 }
+window.verifyPokeOtpAction = verifyPokeOtpAction;
 
 // ----------------- Friends Drawer Controller -----------------
 
@@ -7747,6 +7739,25 @@ function renderFriendsList() {
     }
     if (removeBtn) {
       removeBtn.onclick = () => removeFriendAction(f.ts_uid);
+    }
+
+    if (typeof isSuperAdmin === 'function' && isSuperAdmin()) {
+      const isTargetAdmin = (appAdminsList || []).map(a => a.toLowerCase()).includes((f.nickname || '').toLowerCase());
+      let adminBtn = card.querySelector('.btn-admin-toggle');
+      if (!adminBtn) {
+        adminBtn = document.createElement('button');
+        adminBtn.type = 'button';
+        adminBtn.className = 'friend-action-btn btn-admin-toggle';
+        const actionsDiv = card.querySelector('.friend-actions');
+        if (actionsDiv) actionsDiv.appendChild(adminBtn);
+      }
+      adminBtn.innerHTML = isTargetAdmin 
+        ? `<i class="fa-solid fa-user-shield" style="color:#22c55e;"></i>` 
+        : `<i class="fa-solid fa-shield" style="color:#64748b;"></i>`;
+      adminBtn.title = isTargetAdmin 
+        ? (state.lang === 'fa' ? 'حذف دسترسی ادمین اپلیکیشن' : 'Remove App Admin') 
+        : (state.lang === 'fa' ? 'ارتقا به ادمین اپلیکیشن' : 'Make App Admin');
+      adminBtn.onclick = () => toggleAppAdmin(f.nickname, !isTargetAdmin);
     }
   });
 
@@ -7976,7 +7987,7 @@ const HERO_ASSET_NAMES = {
   1: 'Infernus',
   2: 'Seven',
   3: 'Vindicta',
-  4: 'Lady_Geist',
+  4: 'LadyGeist',
   6: 'Abrams',
   7: 'Wraith',
   8: 'McGinnis',
@@ -7986,8 +7997,8 @@ const HERO_ASSET_NAMES = {
   13: 'Haze',
   14: 'Holliday',
   15: 'Bebop',
-  16: 'Grey_Talon',
-  18: 'MoKrill',
+  16: 'GreyTalon',
+  18: 'Mo',
   19: 'Shiv',
   20: 'Ivy',
   25: 'Warden',
@@ -8012,18 +8023,20 @@ function handleHeroImgError(img, heroName) {
   img.__fallbackStep = (img.__fallbackStep || 0) + 1;
   const clean = (heroName || '').trim().toLowerCase();
   if (img.__fallbackStep === 1) {
-    if (clean.includes('mo') && clean.includes('krill')) {
-      img.src = 'https://deadlockpersian.ir/assets/images/patch/head-heroes/Mo_Krill.webp';
+    if (clean.includes('mo')) {
+      img.src = 'https://deadlockpersian.ir/assets/images/patch/head-heroes/Mo.webp';
       return;
     }
-    if (clean.includes('rat') && clean.includes('king')) {
-      img.src = 'https://deadlockpersian.ir/assets/images/patch/head-heroes/Rat_King.webp';
+    if (clean.includes('rat')) {
+      img.src = 'https://deadlockpersian.ir/assets/images/patch/head-heroes/RatKing.webp';
       return;
     }
-  }
-  if (img.__fallbackStep === 2) {
-    if (clean.includes('mo') && clean.includes('krill')) {
-      img.src = 'https://deadlockpersian.ir/assets/images/patch/head-heroes/MoKrill.webp';
+    if (clean.includes('geist')) {
+      img.src = 'https://deadlockpersian.ir/assets/images/patch/head-heroes/LadyGeist.webp';
+      return;
+    }
+    if (clean.includes('talon')) {
+      img.src = 'https://deadlockpersian.ir/assets/images/patch/head-heroes/GreyTalon.webp';
       return;
     }
   }
@@ -8034,15 +8047,21 @@ window.handleHeroImgError = handleHeroImgError;
 
 function getHeroImageUrl(heroId, heroName) {
   const hName = (heroName || '').trim().toLowerCase();
-  if (heroId === 18 || (hName.includes('mo') && hName.includes('krill'))) {
-    return 'https://deadlockpersian.ir/assets/images/patch/head-heroes/MoKrill.webp';
+  if (heroId === 18 || (hName.includes('mo') && (hName.includes('krill') || hName.length <= 4))) {
+    return 'https://deadlockpersian.ir/assets/images/patch/head-heroes/Mo.webp';
   }
   if (heroId === 84 || (hName.includes('rat') && hName.includes('king'))) {
     return 'https://deadlockpersian.ir/assets/images/patch/head-heroes/RatKing.webp';
   }
+  if (heroId === 4 || hName.includes('lady') || hName.includes('geist')) {
+    return 'https://deadlockpersian.ir/assets/images/patch/head-heroes/LadyGeist.webp';
+  }
+  if (heroId === 16 || hName.includes('grey') || hName.includes('talon')) {
+    return 'https://deadlockpersian.ir/assets/images/patch/head-heroes/GreyTalon.webp';
+  }
   let assetName = HERO_ASSET_NAMES[heroId];
   if (!assetName && heroName) {
-    assetName = heroName.trim().replace(/[\s&]+/g, '_').replace(/__+/g, '_');
+    assetName = heroName.trim().replace(/[\s&]+/g, '').replace(/_+/g, '');
   }
   if (!assetName) assetName = 'Sinclair';
   return `https://deadlockpersian.ir/assets/images/patch/head-heroes/${assetName}.webp`;
@@ -8134,9 +8153,9 @@ function renderDpiScorecard(sc) {
 
     let roleTagHtml = '';
     if (isMvp) {
-      roleTagHtml = `<div class="dpi-role-tag tag-mvp"><i class="fa-solid fa-crown" style="font-size:8px;"></i> ${t('tagMvp') || 'MVP'}</div>`;
+      roleTagHtml = `<span class="player-role-label role-mvp">${t('tagMvp') || 'MVP'}</span>`;
     } else if (isKeyPlayer) {
-      roleTagHtml = `<div class="dpi-role-tag tag-kp"><i class="fa-solid fa-bolt" style="font-size:8px;"></i> ${t('tagKeyPlayer') || 'KEY PLAYER'}</div>`;
+      roleTagHtml = `<span class="player-role-label role-kp">${t('tagKeyPlayer') || 'KEY PLAYER'}</span>`;
     }
 
     const kills = p.kills !== undefined ? p.kills : (parseInt((p.kda || '').split('/')[0]) || 0);
@@ -8147,36 +8166,38 @@ function renderDpiScorecard(sc) {
     const heal = p.healing || 0;
     const kpNum = parseFloat(String(p.kp || '0').replace('%', ''));
 
-    const kClass = (kills === maxKills && maxKills > 0) ? 'stat-highlight' : 'k';
-    const dClass = (deaths === minDeaths) ? 'stat-highlight-cyan' : 'd';
-    const aClass = (assists === maxAssists && maxAssists > 0) ? 'stat-highlight' : 'a';
+    // Highlighted values: Yellow Only (#fbbf24), no glow
+    const kClass = (kills === maxKills && maxKills > 0) ? 'stat-highlight' : '';
+    const dClass = (deaths === minDeaths) ? 'stat-highlight' : '';
+    const aClass = (assists === maxAssists && maxAssists > 0) ? 'stat-highlight' : '';
     const dmgClass = (dmg === maxDamage && maxDamage > 0) ? 'stat-highlight' : '';
     const objDmgClass = (objDmg === maxObjDamage && maxObjDamage > 0) ? 'stat-highlight' : '';
     const healClass = (heal === maxHealing && maxHealing > 0) ? 'stat-highlight' : '';
     const kpClass = (kpNum === maxKp && maxKp > 0) ? 'stat-highlight' : '';
 
     const mmrIsPositive = p.mmr_delta && p.mmr_delta.startsWith('+');
+    const teamClass = isHiddenKing ? 'team-hidden-king' : 'team-arch-mother';
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="rank-cell" style="font-weight:800; font-size:14px; font-family:'Rajdhani', monospace;">
+      <td class="rank-cell" style="font-weight:800; font-size:13px; font-family:'Rajdhani', monospace; color:#ffffff;">
         #${rankNum}
       </td>
       <td>
-        <div class="player-cell" style="display:flex; align-items:center; gap:10px;">
+        <div class="player-cell" style="display:flex; align-items:center; gap:8px;">
           <img src="${getHeroImageUrl(p.hero_id, p.hero)}" class="table-hero-avatar-img" alt="${p.hero}" onerror="handleHeroImgError(this, '${p.hero}')" />
           <div style="text-align:start;">
-            <div style="font-weight:700; color:#fff; display:flex; align-items:center; gap:6px;">
+            <div style="font-weight:700; color:#ffffff; display:flex; align-items:center; gap:4px;">
               <span>${p.player}</span>
+              ${roleTagHtml}
             </div>
             <div style="font-size:11px; color:#94a3b8;">${p.hero}</div>
-            ${roleTagHtml}
           </div>
         </div>
       </td>
       <td>
-        <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
-          <span class="team-pill" style="color:${isHiddenKing ? '#38bdf8' : '#fb923c'}; font-size:10px; font-weight:700;">${p.team}</span>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+          <span class="${teamClass}">${p.team}</span>
           <span class="dpi-mmr-badge ${mmrIsPositive ? 'green' : 'red'}">${p.mmr_delta || ''}</span>
         </div>
       </td>
@@ -8186,23 +8207,23 @@ function renderDpiScorecard(sc) {
           <span class="dpi-grade-box">${p.grade}</span>
         </span>
       </td>
-      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700;">
+      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#ffffff;">
         <span class="${kClass}">${kills}</span> / <span class="${dClass}">${deaths}</span> / <span class="${aClass}">${assists}</span>
       </td>
-      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#facc15;">
+      <td class="td-stat-col" style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#ffffff;">
         ${(p.souls || 0).toLocaleString()}
       </td>
-      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#f87171;" class="${dmgClass}">
-        ${dmg.toLocaleString()}
+      <td class="td-stat-col" style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#ffffff;">
+        <span class="${dmgClass}">${dmg.toLocaleString()}</span>
       </td>
-      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#fb923c;" class="${objDmgClass}">
-        ${objDmg.toLocaleString()}
+      <td class="td-stat-col" style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#ffffff;">
+        <span class="${objDmgClass}">${objDmg.toLocaleString()}</span>
       </td>
-      <td style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#34d399;" class="${healClass}">
-        ${heal.toLocaleString()}
+      <td class="td-stat-col" style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#ffffff;">
+        <span class="${healClass}">${heal.toLocaleString()}</span>
       </td>
-      <td class="kp-cell ${kpClass}" style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700;">
-        ${p.kp || '0.0%'}
+      <td class="td-stat-col" style="font-family:'Rajdhani', monospace; font-size:13px; font-weight:700; color:#ffffff;">
+        <span class="${kpClass}">${p.kp || '0.0%'}</span>
       </td>
     `;
     tbody.appendChild(tr);
