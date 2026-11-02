@@ -2078,162 +2078,244 @@
     </div>
   </div>
     
-  <!-- Two-Way TeamSpeak OTP Login Modal -->
+  <!-- Modern Auth Modal (Styled matching reference card with our dark theme, warm amber curves, and 3 providers: TS, DLP, Google) -->
   <div class="modal-overlay" id="modal-auth" style="display:none" role="dialog" aria-modal="true">
     <div class="modal-box auth-modal-box">
-      <div class="auth-modal-header">
-        <div class="auth-header-icon-wrap">
-          <i class="fa-solid fa-shield-halved"></i>
-        </div>
-        <div class="auth-header-title-wrap">
-          <h3 class="auth-modal-title" data-i18n="authModalTitle">ورود به حساب کاربری</h3>
-          <p class="auth-modal-subtitle" data-i18n="authModalSubtitle">جهت ذخیره لیست دوستان، آمار و رتبه‌بندی عملکرد در مسابقات</p>
-        </div>
-        <button type="button" class="perf-drawer-close" onclick="closeAuthModal()" aria-label="Close" style="margin-right:auto;">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
+      
+      <!-- Top Organic Amber Wave Graphic -->
+      <div class="auth-wave-header-wrap">
+        <svg class="auth-wave-svg" viewBox="0 0 400 170" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="authWaveGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.95" />
+              <stop offset="50%" stop-color="#f97316" stop-opacity="0.8" />
+              <stop offset="90%" stop-color="#ea580c" stop-opacity="0.4" />
+              <stop offset="100%" stop-color="#ea580c" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="authWaveGrad2" x1="0%" y1="0%" x2="80%" y2="100%">
+              <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.4" />
+              <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.05" />
+            </linearGradient>
+          </defs>
+          <path d="M0 0 H400 V65 C340 110 280 25 200 80 C130 130 65 70 0 130 Z" fill="url(#authWaveGrad2)" />
+          <path d="M0 0 H240 C210 40 180 85 130 100 C75 115 35 145 0 165 Z" fill="url(#authWaveGrad1)" />
+        </svg>
 
-      <!-- View 1: 3 Main Login Options Screen -->
-      <div class="auth-view-step" id="auth-view-providers">
-        <div class="auth-providers-grid">
-          <!-- 1. TeamSpeak Option (Click navigates into TS view) -->
-          <div class="auth-provider-card active" id="auth-provider-ts" onclick="openAuthMethodView('teamspeak')">
-            <div class="provider-icon-wrap ts-wrap">
-              <i class="fa-brands fa-teamspeak"></i>
-            </div>
-            <div class="provider-meta">
-              <div class="provider-title" data-i18n="authTsTitle">حساب تیم‌اسپیک (TeamSpeak)</div>
-              <div class="provider-sub" data-i18n="authTsSub">ورود سریع با تایید ربات یا ارسال پیام در سرور</div>
-            </div>
-            <span class="provider-status-badge active" data-i18n="authStatusActive">فعال</span>
+        <!-- Top Navigation Bar: Flame Logo & Close Button -->
+        <div class="auth-card-topbar">
+          <div class="auth-brand-mark">
+            <i class="fa-solid fa-fire auth-flame-icon"></i>
           </div>
-
-          <!-- 2. Google Option -->
-          <div class="auth-provider-card" id="auth-provider-google" onclick="openAuthMethodView('google')">
-            <div class="provider-icon-wrap google-wrap">
-              <i class="fa-brands fa-google"></i>
-            </div>
-            <div class="provider-meta">
-              <div class="provider-title" data-i18n="authGoogleTitle">حساب گوگل (Google Account)</div>
-              <div class="provider-sub" data-i18n="authGoogleSub">ورود با جیمیل و اکانت گوگل</div>
-            </div>
-            <span class="provider-status-badge soon" data-i18n="authStatusSoon">به‌زودی</span>
-          </div>
-
-          <!-- 3. Deadlock Persian Option -->
-          <div class="auth-provider-card" id="auth-provider-dlp" onclick="openAuthMethodView('dlp')">
-            <div class="provider-icon-wrap dlp-wrap">
-              <img src="assets/app_icon.png" width="24" height="24" alt="" />
-            </div>
-            <div class="provider-meta">
-              <div class="provider-title" data-i18n="authDlpTitle">اکانت ددلاک پرشین (Deadlock Persian)</div>
-              <div class="provider-sub" data-i18n="authDlpSub">ورود مستقیم با نام کاربری و رمز سایت</div>
-            </div>
-            <span class="provider-status-badge soon" data-i18n="authStatusSoon">به‌زودی</span>
-          </div>
-        </div>
-
-        <div class="auth-modal-footer">
-          <button type="button" class="btn-reset btn-sm" onclick="closeAuthModal()">
-            <span data-i18n="continueAsGuest">ادامه به عنوان مهمان (Guest)</span>
+          <button type="button" class="auth-card-close-btn" onclick="closeAuthModal()" aria-label="Close">
+            <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
       </div>
 
-      <!-- View 2: TeamSpeak Login Screen -->
-      <div class="auth-view-step" id="auth-view-ts" style="display:none;">
-        <div class="auth-subpage-topbar">
-          <button type="button" class="btn-auth-back" onclick="showAuthProvidersView()">
-            <i class="fa-solid fa-arrow-right"></i>
-            <span data-i18n="backToProviders">بازگشت به انتخاب ارائه‌دهنده</span>
+      <div class="auth-card-body">
+        <!-- 3 Providers Selector Bar (Deadlock Persian - TeamSpeak - Google) -->
+        <div class="auth-provider-selector">
+          <button type="button" class="auth-provider-chip active" id="auth-opt-dlp" onclick="selectAuthOption('dlp')">
+            <img src="assets/app_icon.png" class="auth-chip-icon-img" alt="" />
+            <span data-i18n="authDlpShort">ددلاک پرشین</span>
           </button>
-          <div class="auth-subpage-badge">
-            <i class="fa-brands fa-teamspeak" style="color:#38bdf8;"></i>
-            <span data-i18n="authTsHeaderTitle">TeamSpeak Authentication</span>
-          </div>
-        </div>
-
-        <!-- Auth Method Selector Tabs -->
-        <div class="auth-method-tabs" style="margin-top:12px;">
-          <button type="button" class="auth-method-tab active" id="auth-tab-cmd" onclick="switchAuthMethod('cmd')">
-            <i class="fa-solid fa-terminal"></i> <span data-i18n="authMethodCmd">روش ۱: ارسال دستور به بات (توصیه شده)</span>
+          <button type="button" class="auth-provider-chip" id="auth-opt-ts" onclick="selectAuthOption('teamspeak')">
+            <i class="fa-brands fa-teamspeak"></i>
+            <span data-i18n="authTsShort">تیم‌اسپیک</span>
           </button>
-          <button type="button" class="auth-method-tab" id="auth-tab-poke" onclick="switchAuthMethod('poke')">
-            <i class="fa-solid fa-bell"></i> <span data-i18n="authMethodPoke">روش ۲: دریافت کد پیام / پوک</span>
+          <button type="button" class="auth-provider-chip" id="auth-opt-google" onclick="selectAuthOption('google')">
+            <i class="fa-brands fa-google"></i>
+            <span data-i18n="authGoogleShort">گوگل</span>
           </button>
         </div>
 
-        <!-- Auth Method 1: Send Command to Bot -->
-        <div class="auth-pane active" id="auth-pane-cmd">
-          <div class="auth-steps-card">
-            <div class="auth-step-item">
-              <div class="step-num">۱</div>
-              <div class="step-desc" data-i18n="authTsStep1">کلاینت تیم‌اسپیک خود را باز کرده و به سرور <strong>ts.deadlockpersian.ir</strong> متصل شوید.</div>
-            </div>
-            <div class="auth-step-item">
-              <div class="step-num">۲</div>
-              <div class="step-desc" data-i18n="authTsStep2">روی بات <strong>DLP Bot1</strong> در چت خصوصی دابل کلیک کرده یا پیام ارسال فرمایید.</div>
-            </div>
-            <div class="auth-step-item">
-              <div class="step-num">۳</div>
-              <div class="step-desc" data-i18n="authTsStep3">دستور زیر را کپی کرده و دقیقاً در چت خصوصی بات ارسال فرمایید:</div>
-            </div>
-          </div>
+        <!-- PANE 1: Deadlock Persian (Login & Sign Up) -->
+        <div class="auth-provider-pane active" id="auth-pane-dlp">
+          
+          <!-- View 1A: Login Form (Screen 1 in reference) -->
+          <div class="auth-sub-view" id="auth-sub-dlp-login">
+            <h2 class="auth-clean-title" data-i18n="loginTitle">ورود (Login)</h2>
 
-          <div class="auth-code-action-box">
-            <div class="auth-cmd-display" id="auth-copy-cmd" onclick="copyAuthCommand()">
-              <span class="cmd-text" id="auth-cmd-text">!hub ......</span>
-              <button type="button" class="btn-copy-cmd-pill">
-                <i class="fa-solid fa-copy"></i>
-                <span data-i18n="copyCmd">کپی دستور</span>
-              </button>
-            </div>
-            <button type="button" class="btn-reset btn-sm" onclick="requestNewAuthCode()" style="margin-top:6px;">
-              <i class="fa-solid fa-rotate"></i> <span data-i18n="regenCode">دریافت کد جدید</span>
-            </button>
-          </div>
+            <div class="auth-fields-stack">
+              <div class="auth-underline-field">
+                <i class="fa-regular fa-envelope auth-field-icon"></i>
+                <input type="text" id="auth-dlp-user" class="auth-underline-input" placeholder="Email or Username" data-i18n-placeholder="authEmailOrUserPlaceholder" autocomplete="username" />
+              </div>
 
-          <div class="auth-live-status">
-            <div class="auth-spinner"></div>
-            <span id="auth-status-text" data-i18n="authStatusWaiting">منتظر ارسال دستور شما در چت تیم‌اسپیک...</span>
-          </div>
-        </div>
-
-        <!-- Auth Method 2: Poke / Chat OTP -->
-        <div class="auth-pane" id="auth-pane-poke" style="display:none;">
-          <div class="auth-poke-form">
-            <label class="friend-input-label" data-i18n="authPokeInputLabel">نام مستعار یا Unique ID تیم‌اسپیک شما:</label>
-            <div style="display:flex; gap:8px; margin-top:6px;">
-              <input type="text" id="auth-poke-target" class="friend-input" placeholder="Nickname or TS UID" />
-              <button type="button" class="btn-apply btn-sm" onclick="requestPokeOtpAction()">
-                <i class="fa-solid fa-paper-plane"></i> <span data-i18n="sendPoke">ارسال کد</span>
-              </button>
-            </div>
-            <div id="auth-poke-otp-group" style="display:none; margin-top:14px;">
-              <label class="friend-input-label" data-i18n="authOtpInputLabel">کد ۶ رقمی دریافت شده در تیم‌اسپیک:</label>
-              <div style="display:flex; gap:8px; margin-top:6px;">
-                <input type="text" id="auth-poke-otp-val" class="friend-input" placeholder="123456" maxlength="6" dir="ltr" />
-                <button type="button" class="btn-apply btn-sm" onclick="verifyPokeOtpAction()">
-                  <i class="fa-solid fa-check"></i> <span data-i18n="verifyLogin">تأیید و ورود</span>
+              <div class="auth-underline-field">
+                <i class="fa-solid fa-lock auth-field-icon"></i>
+                <input type="password" id="auth-dlp-pass" class="auth-underline-input" placeholder="Password" data-i18n-placeholder="authPasswordPlaceholder" autocomplete="current-password" />
+                <button type="button" class="auth-field-eye" onclick="toggleAuthPassVisibility('auth-dlp-pass', this)">
+                  <i class="fa-regular fa-eye-slash"></i>
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- View 3: Coming Soon View (Google / DLP) -->
-      <div class="auth-view-step" id="auth-view-soon" style="display:none; text-align:center; padding:30px 10px;">
-        <button type="button" class="btn-auth-back" onclick="showAuthProvidersView()" style="margin-bottom:20px;">
-          <i class="fa-solid fa-arrow-right"></i>
-          <span data-i18n="backToProviders">بازگشت به انتخاب ارائه‌دهنده</span>
-        </button>
-        <div id="auth-soon-icon" style="font-size:48px; margin-bottom:12px; color:#eab308;">
-          <i class="fa-solid fa-clock"></i>
+            <div class="auth-meta-row">
+              <label class="auth-remember-wrap">
+                <input type="checkbox" id="auth-dlp-remember" checked />
+                <span class="auth-custom-check"></span>
+                <span class="auth-remember-label" data-i18n="authRememberMe">مرا به خاطر بسپار</span>
+              </label>
+              <a href="javascript:void(0)" class="auth-plain-link" onclick="handleDlpForgotPassword()" data-i18n="authForgotPassword">فراموشی رمز عبور؟</a>
+            </div>
+
+            <button type="button" class="auth-solid-pill-btn" onclick="submitDlpLogin()">
+              <span data-i18n="authLoginBtn">ورود (LOGIN)</span>
+            </button>
+
+            <div class="auth-toggle-prompt">
+              <span data-i18n="authDontHaveAccount">حساب کاربری ندارید؟</span>
+              <a href="javascript:void(0)" class="auth-link-accent" onclick="switchDlpAuthMode('signup')" data-i18n="authSignUp">ثبت نام (Sign Up)</a>
+            </div>
+          </div>
+
+          <!-- View 1B: Sign Up Form (Screen 2 in reference) -->
+          <div class="auth-sub-view" id="auth-sub-dlp-signup" style="display:none;">
+            <h2 class="auth-clean-title" data-i18n="createAccountTitle">ایجاد حساب کاربری</h2>
+
+            <div class="auth-fields-stack">
+              <div class="auth-underline-field">
+                <i class="fa-regular fa-user auth-field-icon"></i>
+                <input type="text" id="auth-signup-name" class="auth-underline-input" placeholder="Name" data-i18n-placeholder="authNamePlaceholder" autocomplete="nickname" />
+              </div>
+
+              <div class="auth-underline-field">
+                <i class="fa-regular fa-envelope auth-field-icon"></i>
+                <input type="email" id="auth-signup-email" class="auth-underline-input" placeholder="Email" data-i18n-placeholder="authEmailPlaceholder" autocomplete="email" />
+              </div>
+
+              <div class="auth-underline-field">
+                <i class="fa-solid fa-lock auth-field-icon"></i>
+                <input type="password" id="auth-signup-password" class="auth-underline-input" placeholder="Password" data-i18n-placeholder="authPasswordPlaceholder" autocomplete="new-password" />
+                <button type="button" class="auth-field-eye" onclick="toggleAuthPassVisibility('auth-signup-password', this)">
+                  <i class="fa-regular fa-eye-slash"></i>
+                </button>
+              </div>
+
+              <div class="auth-underline-field">
+                <i class="fa-solid fa-lock auth-field-icon"></i>
+                <input type="password" id="auth-signup-confirm" class="auth-underline-input" placeholder="Confirm Password" data-i18n-placeholder="authConfirmPasswordPlaceholder" autocomplete="new-password" />
+                <button type="button" class="auth-field-eye" onclick="toggleAuthPassVisibility('auth-signup-confirm', this)">
+                  <i class="fa-regular fa-eye-slash"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="auth-meta-row">
+              <label class="auth-remember-wrap">
+                <input type="checkbox" id="auth-signup-remember" checked />
+                <span class="auth-custom-check"></span>
+                <span class="auth-remember-label" data-i18n="authRememberMe">مرا به خاطر بسپار</span>
+              </label>
+            </div>
+
+            <button type="button" class="auth-solid-pill-btn" onclick="submitDlpSignup()">
+              <span data-i18n="authSignUpBtn">ثبت نام (SIGN UP)</span>
+            </button>
+
+            <div class="auth-toggle-prompt">
+              <span data-i18n="authAlreadyHaveAccount">قبلاً ثبت نام کرده‌اید؟</span>
+              <a href="javascript:void(0)" class="auth-link-accent" onclick="switchDlpAuthMode('login')" data-i18n="authLoginLink">ورود (Login)</a>
+            </div>
+          </div>
+
         </div>
-        <h4 id="auth-soon-title" style="font-size:16px; font-weight:700; color:#fff; margin-bottom:8px;" data-i18n="authSoonTitle">به‌زودی</h4>
-        <p id="auth-soon-desc" style="font-size:12px; color:#94a3b8; max-width:320px; margin:0 auto;" data-i18n="authSoonDesc">این روش احراز هویت در آپدیت‌های آینده فعال خواهد شد.</p>
+
+        <!-- PANE 2: TeamSpeak Login Screen -->
+        <div class="auth-provider-pane" id="auth-pane-ts" style="display:none;">
+          <h2 class="auth-clean-title" data-i18n="authTsTitleClean">ورود با تیم‌اسپیک</h2>
+
+          <div class="auth-ts-tab-row">
+            <button type="button" class="auth-ts-tab active" id="auth-tab-cmd" onclick="switchAuthMethod('cmd')">
+              <i class="fa-solid fa-terminal"></i> <span data-i18n="authMethodCmdShort">دستور بات</span>
+            </button>
+            <button type="button" class="auth-ts-tab" id="auth-tab-poke" onclick="switchAuthMethod('poke')">
+              <i class="fa-solid fa-bell"></i> <span data-i18n="authMethodPokeShort">دریافت کد پوک</span>
+            </button>
+          </div>
+
+          <!-- Method 1: Bot Command -->
+          <div class="auth-method-box" id="auth-pane-cmd">
+            <div class="auth-ts-guidance-list">
+              <div class="auth-ts-guide-line">
+                <span class="auth-guide-dot">۱</span>
+                <span data-i18n="authTsStep1">به سرور تیم‌اسپیک <strong>ts.deadlockpersian.ir</strong> متصل شوید.</span>
+              </div>
+              <div class="auth-ts-guide-line">
+                <span class="auth-guide-dot">۲</span>
+                <span data-i18n="authTsStep2">روی بات <strong>DLP Bot1</strong> کلیک کرده یا در چت خصوصی پیام دهید:</span>
+              </div>
+            </div>
+
+            <div class="auth-cmd-sleek-card" onclick="copyAuthCommand()">
+              <span class="auth-cmd-value" id="auth-cmd-text">!hub ......</span>
+              <button type="button" class="auth-cmd-copy-pill">
+                <i class="fa-solid fa-copy"></i>
+                <span data-i18n="copyCmd">کپی</span>
+              </button>
+            </div>
+
+            <div class="auth-ts-actions-row">
+              <button type="button" class="auth-plain-text-btn" onclick="requestNewAuthCode()">
+                <i class="fa-solid fa-rotate"></i> <span data-i18n="regenCode">دریافت کد جدید</span>
+              </button>
+            </div>
+
+            <div class="auth-live-status">
+              <div class="auth-spinner"></div>
+              <span id="auth-status-text" data-i18n="authStatusWaiting">منتظر ارسال دستور شما در چت تیم‌اسپیک...</span>
+            </div>
+          </div>
+
+          <!-- Method 2: Poke OTP -->
+          <div class="auth-method-box" id="auth-pane-poke" style="display:none;">
+            <div class="auth-underline-field" style="margin-top:10px;">
+              <i class="fa-regular fa-user auth-field-icon"></i>
+              <input type="text" id="auth-poke-target" class="auth-underline-input" placeholder="Nickname or TS UID" data-i18n-placeholder="authPokeInputLabel" />
+            </div>
+            
+            <button type="button" class="auth-solid-pill-btn" onclick="requestPokeOtpAction()" style="margin-top:14px;">
+              <i class="fa-solid fa-paper-plane" style="margin-inline-end:6px;"></i> <span data-i18n="sendPoke">ارسال کد پوک</span>
+            </button>
+
+            <div id="auth-poke-otp-group" style="display:none; margin-top:16px;">
+              <div class="auth-underline-field">
+                <i class="fa-solid fa-key auth-field-icon"></i>
+                <input type="text" id="auth-poke-otp-val" class="auth-underline-input" placeholder="123456" maxlength="6" dir="ltr" />
+              </div>
+              <button type="button" class="auth-solid-pill-btn" onclick="verifyPokeOtpAction()" style="margin-top:14px;">
+                <i class="fa-solid fa-check" style="margin-inline-end:6px;"></i> <span data-i18n="verifyLogin">تأیید و ورود</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- PANE 3: Google Login Screen -->
+        <div class="auth-provider-pane" id="auth-pane-google" style="display:none;">
+          <h2 class="auth-clean-title" data-i18n="authGoogleTitleClean">ورود با حساب گوگل</h2>
+          <p class="auth-clean-desc" data-i18n="authGoogleCardSub">ورود سریع با جیمیل و اکانت گوگل جهت همگام‌سازی ابری</p>
+
+          <button type="button" class="auth-google-pill-btn" onclick="handleGoogleSignIn()">
+            <i class="fa-brands fa-google"></i>
+            <span data-i18n="authContinueGoogle">ورود مستقیم با حساب گوگل</span>
+          </button>
+
+          <p class="auth-soon-note" data-i18n="authGoogleSoonDesc">
+            <i class="fa-solid fa-circle-info" style="color:#fbbf24;"></i>
+            <span>این قابلیت در آپدیت‌های آینده هاب به صورت کامل فعال خواهد شد.</span>
+          </p>
+        </div>
+
+        <!-- Bottom Guest Link -->
+        <div class="auth-bottom-guest-row">
+          <button type="button" class="auth-guest-clean-link" onclick="closeAuthModal()">
+            <span data-i18n="continueAsGuest">ادامه به عنوان مهمان (Continue as Guest)</span>
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+        </div>
+
       </div>
 
     </div>

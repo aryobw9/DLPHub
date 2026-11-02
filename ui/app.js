@@ -7241,57 +7241,150 @@ function handleProfileAuthAction() {
 function openAuthModal() {
   const modal = document.getElementById('modal-auth');
   if (modal) modal.style.display = 'flex';
-  showAuthProvidersView();
+  selectAuthOption('dlp');
 }
+window.openAuthModal = openAuthModal;
 
 function closeAuthModal() {
   stopAuthPolling();
   const modal = document.getElementById('modal-auth');
   if (modal) modal.style.display = 'none';
 }
+window.closeAuthModal = closeAuthModal;
+
+function selectAuthOption(opt) {
+  const providers = ['dlp', 'teamspeak', 'google'];
+  providers.forEach(p => {
+    const chipKey = p === 'teamspeak' ? 'ts' : p;
+    const chip = document.getElementById(`auth-opt-${chipKey}`);
+    const paneKey = p === 'teamspeak' ? 'ts' : p;
+    const pane = document.getElementById(`auth-pane-${paneKey}`);
+    
+    const isTarget = (p === opt || (p === 'teamspeak' && opt === 'ts'));
+    if (chip) {
+      if (isTarget) chip.classList.add('active');
+      else chip.classList.remove('active');
+    }
+    if (pane) {
+      pane.style.display = isTarget ? 'block' : 'none';
+    }
+  });
+
+  if (opt === 'teamspeak' || opt === 'ts') {
+    switchAuthMethod('cmd');
+    requestNewAuthCode();
+  } else {
+    stopAuthPolling();
+  }
+}
+window.selectAuthOption = selectAuthOption;
+window.selectAuthProvider = selectAuthOption;
+window.openAuthMethodView = selectAuthOption;
 
 function showAuthProvidersView() {
-  stopAuthPolling();
-  const provView = document.getElementById('auth-view-providers');
-  const tsView = document.getElementById('auth-view-ts');
-  const soonView = document.getElementById('auth-view-soon');
-  if (provView) provView.style.display = 'block';
-  if (tsView) tsView.style.display = 'none';
-  if (soonView) soonView.style.display = 'none';
+  selectAuthOption('dlp');
 }
 window.showAuthProvidersView = showAuthProvidersView;
 
-function openAuthMethodView(provider) {
-  const provView = document.getElementById('auth-view-providers');
-  const tsView = document.getElementById('auth-view-ts');
-  const soonView = document.getElementById('auth-view-soon');
-  const soonTitle = document.getElementById('auth-soon-title');
-  const soonDesc = document.getElementById('auth-soon-desc');
-  const soonIcon = document.getElementById('auth-soon-icon');
-
-  if (provView) provView.style.display = 'none';
-
-  if (provider === 'teamspeak') {
-    if (tsView) tsView.style.display = 'block';
-    if (soonView) soonView.style.display = 'none';
-    switchAuthMethod('cmd');
-    requestNewAuthCode();
-  } else if (provider === 'google') {
-    if (tsView) tsView.style.display = 'none';
-    if (soonView) soonView.style.display = 'block';
-    if (soonIcon) soonIcon.innerHTML = '<i class="fa-brands fa-google" style="color:#ef4444;"></i>';
-    if (soonTitle) soonTitle.textContent = state.lang === 'fa' ? 'ورود با حساب گوگل' : 'Google Account Sign-In';
-    if (soonDesc) soonDesc.textContent = state.lang === 'fa' ? 'ورود و همگام‌سازی از طریق اکانت گوگل به‌زودی فعال خواهد شد.' : 'Google account authentication will be available in an upcoming update.';
-  } else if (provider === 'dlp') {
-    if (tsView) tsView.style.display = 'none';
-    if (soonView) soonView.style.display = 'block';
-    if (soonIcon) soonIcon.innerHTML = '<img src="assets/app_icon.png" width="48" height="48" alt="" />';
-    if (soonTitle) soonTitle.textContent = state.lang === 'fa' ? 'اکانت ددلاک پرشین' : 'Deadlock Persian Account';
-    if (soonDesc) soonDesc.textContent = state.lang === 'fa' ? 'ورود مستقیم با حساب کاربری سایت ددلاک پرشین به‌زودی فعال خواهد شد.' : 'Direct website account login will be available soon.';
+function switchDlpAuthMode(mode) {
+  const loginSub = document.getElementById('auth-sub-dlp-login');
+  const signupSub = document.getElementById('auth-sub-dlp-signup');
+  if (mode === 'signup') {
+    if (loginSub) loginSub.style.display = 'none';
+    if (signupSub) signupSub.style.display = 'block';
+  } else {
+    if (signupSub) signupSub.style.display = 'none';
+    if (loginSub) loginSub.style.display = 'block';
   }
 }
-window.openAuthMethodView = openAuthMethodView;
-window.selectAuthProvider = openAuthMethodView;
+window.switchDlpAuthMode = switchDlpAuthMode;
+
+function toggleAuthPassVisibility(inputId, btnEl) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  const isPass = inp.type === 'password';
+  inp.type = isPass ? 'text' : 'password';
+  if (btnEl) {
+    const icon = btnEl.querySelector('i');
+    if (icon) {
+      icon.className = isPass ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+    }
+  }
+}
+window.toggleAuthPassVisibility = toggleAuthPassVisibility;
+
+function submitDlpLogin() {
+  const userInp = document.getElementById('auth-dlp-user');
+  const passInp = document.getElementById('auth-dlp-pass');
+  const userVal = (userInp?.value || '').trim();
+  const passVal = (passInp?.value || '').trim();
+
+  if (!userVal || !passVal) {
+    showToast(state.lang === 'fa' ? 'لطفاً نام کاربری/ایمیل و رمز عبور را وارد فرمایید.' : 'Please enter your username/email and password.', 'warning');
+    return;
+  }
+
+  // Set user profile
+  userProfile = {
+    ...userProfile,
+    is_guest: false,
+    nickname: userVal.includes('@') ? userVal.split('@')[0] : userVal,
+    ts_uid: 'DLP-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+    vip_rank: 'Active Member'
+  };
+  saveUserProfile();
+  updateProfileUI();
+  closeAuthModal();
+  showToast(state.lang === 'fa' ? `ورود موفق! خوش آمدید ${userProfile.nickname}` : `Welcome back, ${userProfile.nickname}!`, 'success');
+  refreshFriendsList();
+}
+window.submitDlpLogin = submitDlpLogin;
+
+function submitDlpSignup() {
+  const nameInp = document.getElementById('auth-signup-name');
+  const emailInp = document.getElementById('auth-signup-email');
+  const passInp = document.getElementById('auth-signup-password');
+  const confirmInp = document.getElementById('auth-signup-confirm');
+
+  const nameVal = (nameInp?.value || '').trim();
+  const emailVal = (emailInp?.value || '').trim();
+  const passVal = (passInp?.value || '').trim();
+  const confirmVal = (confirmInp?.value || '').trim();
+
+  if (!nameVal || !emailVal || !passVal) {
+    showToast(state.lang === 'fa' ? 'لطفاً کلیه فیلدهای نام، ایمیل و رمز عبور را تکمیل فرمایید.' : 'Please fill in all name, email, and password fields.', 'warning');
+    return;
+  }
+
+  if (passVal !== confirmVal) {
+    showToast(state.lang === 'fa' ? 'رمز عبور با تکرار آن مطابقت ندارد.' : 'Passwords do not match.', 'error');
+    return;
+  }
+
+  userProfile = {
+    ...userProfile,
+    is_guest: false,
+    nickname: nameVal,
+    ts_uid: 'DLP-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+    vip_rank: 'New Member'
+  };
+  saveUserProfile();
+  updateProfileUI();
+  closeAuthModal();
+  showToast(state.lang === 'fa' ? `حساب کاربری شما با موفقیت ایجاد شد! خوش آمدید ${nameVal}` : `Account created successfully! Welcome, ${nameVal}!`, 'success');
+  refreshFriendsList();
+}
+window.submitDlpSignup = submitDlpSignup;
+
+function handleDlpForgotPassword() {
+  showToast(state.lang === 'fa' ? 'جهت بازیابی رمز عبور، به پشتیبانی سرور دیسکورد یا تیم‌اسپیک مراجعه فرمایید.' : 'For password recovery, please contact support on Discord or TeamSpeak.', 'info');
+}
+window.handleDlpForgotPassword = handleDlpForgotPassword;
+
+function handleGoogleSignIn() {
+  showToast(state.lang === 'fa' ? 'ورود سریع با گوگل به زودی فعال خواهد شد.' : 'Google Sign-In will be available soon.', 'info');
+}
+window.handleGoogleSignIn = handleGoogleSignIn;
 
 function switchAuthMethod(method) {
   const tabCmd = document.getElementById('auth-tab-cmd');
