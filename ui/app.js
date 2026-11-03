@@ -3861,20 +3861,31 @@ function updateScale() {
   const availW = window.innerWidth;
   const availH = window.innerHeight - 40;
   
-  // When drawer is open, base layout is 900px main + 14px gap + 410px side drawer = 1324px
-  const baseW = isDrawerOpen ? 1344 : 920;
-  const baseH = 790;
-  
-  const scale = Math.min(1, Math.min(availW / baseW, availH / baseH));
-  const shiftX = isDrawerOpen ? -212 : 0;
-  
-  if (!isDrawerOpen && availW >= 920 && availH >= 790) {
-    wrapper.style.transform = 'none';
-  } else if (!isDrawerOpen) {
-    wrapper.style.transform = `scale(${scale.toFixed(4)})`;
+  if (!isDrawerOpen) {
+    // When no drawer is open, base layout is 920px width and ~730px height.
+    // If window accommodates the layout (default 800px window gives 760px availH),
+    // strictly use transform = 'none' to preserve 100% vector font sharpness without GPU texture downsampling blur.
+    if (availW >= 900 && availH >= 710) {
+      wrapper.style.transform = 'none';
+    } else {
+      const scale = Math.min(1, Math.min(availW / 920, availH / 730));
+      wrapper.style.transform = scale >= 0.96 ? 'none' : `scale(${scale.toFixed(4)})`;
+    }
   } else {
-    // When drawer is open, shift wrapper left by 212px in local coords so combined (main + drawer) is symmetrically centered
-    wrapper.style.transform = `scale(${scale.toFixed(4)}) translateX(${shiftX}px)`;
+    // When drawer is open, base layout is 920px main + 14px gap + 410px side drawer = 1344px
+    const baseW = 1344;
+    const baseH = 730;
+    const shiftX = -212;
+    if (availW >= baseW && availH >= baseH) {
+      wrapper.style.transform = `translateX(${shiftX}px)`;
+    } else {
+      const scale = Math.min(1, Math.min(availW / baseW, availH / baseH));
+      if (scale >= 0.97) {
+        wrapper.style.transform = `translateX(${shiftX}px)`;
+      } else {
+        wrapper.style.transform = `scale(${scale.toFixed(4)}) translateX(${shiftX}px)`;
+      }
+    }
   }
 }
 

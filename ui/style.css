@@ -175,10 +175,8 @@
       color: var(--text-main);
       font-family: 'Vazirmatn', sans-serif;
       font-weight: 500;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      text-rendering: optimizeLegibility;
-      image-rendering: -webkit-optimize-contrast;
+      -webkit-font-smoothing: subpixel-antialiased;
+      text-rendering: geometricPrecision;
       height: 100vh;
       max-height: 100vh;
       overflow: hidden !important;
@@ -321,8 +319,8 @@
       align-items: center;
       justify-content: center;
       transform-origin: center center;
-      transform: scale(0.8);
-      transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: none;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       flex-shrink: 0;
       box-sizing: border-box;
       padding: 0 10px;
@@ -6161,28 +6159,26 @@ body.lang-revealing.to-en #panel-advanced .adv-col:nth-child(2) .adv-card:nth-ch
   }
 }
 
-/* Unified Lightweight Overall Panel Blur Transition */
+/* Unified Lightweight Overall Panel Fade Transition (blur-free to preserve font sharpness) */
 @keyframes panel-overall-blur-in {
   0% {
     opacity: 0.15;
-    filter: blur(5px);
-    transform: translateY(4px);
+    transform: translateY(3px);
   }
   100% {
     opacity: 1;
-    filter: blur(0px);
     transform: translateY(0);
   }
 }
 
 .panel.panel-revealing {
-  animation: panel-overall-blur-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) backwards !important;
-  will-change: opacity, filter, transform;
+  animation: panel-overall-blur-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) backwards !important;
+  will-change: opacity, transform;
 }
 
 .content-header.panel-revealing {
-  animation: panel-overall-blur-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) backwards !important;
-  will-change: opacity, filter, transform;
+  animation: panel-overall-blur-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) backwards !important;
+  will-change: opacity, transform;
 }
 
 body.reduced-motion .panel.panel-revealing,
@@ -13705,8 +13701,7 @@ body.lang-fa .auth-guest-clean-link i {
   width: 100%;
   max-width: 980px;
   margin: 0 auto;
-  background: rgba(13, 20, 36, 0.75);
-  backdrop-filter: blur(12px);
+  background: rgba(13, 20, 36, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 20px 24px;
