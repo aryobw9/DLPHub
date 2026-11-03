@@ -1593,7 +1593,13 @@ function showModal(title, body, actions) {
     act.innerHTML = '';
     for (const a of actions) {
       const b = document.createElement('button');
-      b.className = a.kind === 'apply' ? 'btn-apply' : 'btn-reset';
+      if (a.kind === 'danger') {
+        b.className = 'btn-reset btn-danger';
+      } else if (a.kind === 'apply') {
+        b.className = 'btn-apply';
+      } else {
+        b.className = 'btn-reset';
+      }
       b.textContent = a.label;
       b.onclick = () => { overlay.style.display = 'none'; resolve(a.value); };
       act.appendChild(b);
@@ -4910,7 +4916,7 @@ async function copySessionTarget() {
 
 async function startSessionDedicatedServerAction() {
   const mapSelect = document.getElementById('session-map-select');
-  const mapName = mapSelect ? mapSelect.value : 'dl_midtown';
+  const mapName = (mapSelect && mapSelect.value.trim()) ? mapSelect.value.trim() : 'dl_midtown';
   const maxPlayers = parseInt(document.getElementById('session-max-players')?.value || '12', 10);
   const isOffline = document.getElementById('session-check-offline')?.checked ?? true;
   const isSdr = document.getElementById('session-check-sdr')?.checked ?? false;
@@ -5276,7 +5282,7 @@ async function handleHostPreflightAndSetup(modMode) {
         {
           label: state.lang === 'fa' ? 'دستی بستم، ادامه بده' : 'I Closed Game Manually, Continue',
           value: 'manual_closed',
-          kind: 'apply'
+          kind: 'normal'
         },
         {
           label: state.lang === 'fa' ? 'انصراف' : 'Cancel',

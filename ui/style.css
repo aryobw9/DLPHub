@@ -999,11 +999,22 @@
 }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(3,6,10,.75); backdrop-filter: blur(8px); z-index: 100; display: flex; align-items: center; justify-content: center; }
-.modal-box { background: var(--bg-surface); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px; padding: 26px 30px; max-width: 440px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.75), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+.modal-box { background: var(--bg-surface); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px; padding: 26px 30px; max-width: 540px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.75), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
 .modal-title { font-family: 'Vazirmatn', sans-serif; font-weight: 700; color: var(--deadlock-orange); margin-bottom: 12px; font-size: 1.05rem; }
 .modal-body { color: var(--text-main); font-size: .95rem; line-height: 1.7; margin-bottom: 20px; white-space: pre-line; word-break: break-word; }
-.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-.modal-actions .btn-apply, .modal-actions .btn-reset { padding: 9px 22px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.modal-actions .btn-apply, .modal-actions .btn-reset { padding: 8px 18px; font-size: 0.85rem; }
+.modal-actions .btn-danger {
+  background: #dc2626 !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+.modal-actions .btn-danger:hover {
+  background: #b91c1c !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.45) !important;
+}
 
 /* --- Cyber Toast Notifications --- */
 #dlp-toast-container {
@@ -9371,9 +9382,9 @@ body:not(.lang-fa) .vip-mode-tab {
   justify-content: space-between;
   padding: 12px 18px;
   background: #0f172a;
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  box-shadow: none;
   flex-wrap: wrap;
   gap: 12px;
   -webkit-font-smoothing: antialiased !important;
@@ -9389,54 +9400,28 @@ body:not(.lang-fa) .vip-mode-tab {
 }
 
 .session-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #34d399;
+  display: none !important;
 }
 
 .session-pulse-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 10px #10b981;
-  animation: dotPulse 1.8s infinite;
-}
-
-@keyframes dotPulse {
-  0% { transform: scale(0.9); opacity: 0.7; }
-  50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 14px #10b981; }
-  100% { transform: scale(0.9); opacity: 0.7; }
+  display: none !important;
 }
 
 .session-mode-badge {
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  color: #38bdf8;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  display: none !important;
 }
 
 .session-mod-badge {
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  color: #fbbf24;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 6px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #fbbf24 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .session-lobby-badge, .lan-lobby-badge {
@@ -9476,10 +9461,11 @@ body:not(.lang-fa) .vip-mode-tab {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 6px 14px;
-  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+  padding: 6px 12px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
@@ -9488,21 +9474,21 @@ body:not(.lang-fa) .vip-mode-tab {
 }
 
 .session-code-pill:hover {
-  background: rgba(56, 189, 248, 0.18);
-  border-color: rgba(56, 189, 248, 0.6);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .session-pill-room-code {
-  background: rgba(14, 165, 233, 0.15);
-  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(15, 23, 42, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .session-pill-room-code:hover {
-  background: rgba(14, 165, 233, 0.25);
-  border-color: #38bdf8;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: none !important;
 }
 
 .session-code-label {
@@ -9524,16 +9510,16 @@ body:not(.lang-fa) .vip-mode-tab {
 
 .session-code-highlight {
   font-family: 'Consolas', 'Segoe UI', monospace;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
-  color: #38bdf8;
-  letter-spacing: 2.5px;
-  text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  color: #f8fafc !important;
+  letter-spacing: 2px;
+  text-shadow: none !important;
 }
 
 .pill-icon {
   font-size: 12px;
-  color: #38bdf8;
+  color: #94a3b8 !important;
 }
 
 .pill-copy-icon {
@@ -9551,10 +9537,11 @@ body:not(.lang-fa) .vip-mode-tab {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  padding: 6px 12px;
-  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+  padding: 6px 10px;
+  border-radius: 6px;
   color: #34d399;
   font-size: 12px;
   font-weight: 700;
@@ -9638,32 +9625,31 @@ body:not(.lang-fa) .vip-mode-tab {
 
 /* Mode Selection Cards */
 .session-mode-cards {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
 }
 
 .session-mode-option {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
   padding: 10px 14px;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .session-mode-option:hover {
-  background: rgba(56, 189, 248, 0.06);
-  border-color: rgba(56, 189, 248, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .session-mode-option.active {
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.5);
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.15);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  box-shadow: none;
 }
 
 .mode-opt-header {
@@ -10869,7 +10855,8 @@ body.lang-fa .apb-label {
   transform: translateY(-1px);
 }
 
-#btn-apply-fov {
+#btn-apply-fov,
+#btn-apply-fps {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
@@ -10884,25 +10871,12 @@ body.lang-fa .apb-label {
   transition: all 0.15s ease !important;
 }
 
-#btn-apply-fov:hover {
+#btn-apply-fov:hover,
+#btn-apply-fps:hover {
   background: transparent !important;
   color: #ffffff !important;
   text-shadow: 0 0 8px rgba(249, 115, 22, 0.6) !important;
   transform: translateY(-1px) !important;
-}
-
-#btn-apply-fps {
-  height: 22px !important;
-  min-height: 22px !important;
-  max-height: 22px !important;
-  padding: 0 10px !important;
-  font-size: 0.72rem !important;
-  font-weight: 700 !important;
-  border-radius: 4px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  box-sizing: border-box !important;
 }
 
 .fov-box-footer {

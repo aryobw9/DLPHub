@@ -1188,7 +1188,6 @@
                           <select id="vip-host-conn-mode" class="lan-select" onchange="onVipConnModeSelectChange(this.value)">
                             <option value="wintun" data-i18n="optConnMesh" selected>شبکه مش همتابه‌همتا (پیش‌فرض سریع)</option>
                             <option value="relay" data-i18n="optConnRelay">رله پرسرعت سرور داخلی (بدون درایور)</option>
-                            <option value="direct" data-i18n="optConnDirect">اتصال مستقیم IP (شبکه محلی دستی)</option>
                           </select>
                         </div>
 
@@ -1376,11 +1375,6 @@
               <!-- Session Top Bar -->
               <div class="session-top-bar">
                 <div class="session-meta-left">
-                  <div class="session-status-badge">
-                    <span class="session-pulse-dot"></span>
-                    <span id="session-status-title" data-i18n="sessionActiveTitle">اتاق متصل</span>
-                  </div>
-                  <span class="session-mode-badge" id="session-conn-mode-badge" data-i18n="badgeFastRelay">رله پرسرعت</span>
                   <span class="session-mod-badge" id="session-mod-mode-badge" data-i18n="optDeadworksBase">دد‌ورکس پایه</span>
                   <div class="session-lobby-badge" id="lan-lobby-badge" style="display:none;"></div>
                 </div>
@@ -1446,20 +1440,6 @@
                           <i class="fa-solid fa-gamepad btn-autojoin-icon"></i>
                           <span class="btn-autojoin-text" data-i18n="sessionDirectLaunchBtn">ورود به بازی ددلاک و اتصال خودکار</span>
                         </button>
-                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                          <button type="button" class="btn-reset btn-sm" id="btn-session-copy-code" onclick="copyLobbyCode()" style="flex:1; min-width:130px;">
-                            <i class="fa-solid fa-key" style="color:#38bdf8;"></i>
-                            <span data-i18n="sessionCopyLobbyCode">کپی کد لابی</span>
-                          </button>
-                          <button type="button" class="btn-reset btn-sm" onclick="copySessionTarget()" style="flex:1; min-width:130px;">
-                            <i class="fa-solid fa-terminal"></i>
-                            <span data-i18n="sessionCopyConsoleCmd">کپی دستور کنسول</span>
-                          </button>
-                          <button type="button" class="btn-reset btn-sm" onclick="copyClientShareCmd()" style="flex:1; min-width:130px;">
-                            <i class="fa-solid fa-share-nodes"></i>
-                            <span data-i18n="sessionCopyShareCmd">کپی لینک اتصال</span>
-                          </button>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -1482,7 +1462,6 @@
                           <i class="fa-solid fa-server"></i>
                           <span class="mode-opt-title" data-i18n="modeVanillaTitle">دد‌ورکس پایه</span>
                         </div>
-                        <div class="mode-opt-desc" data-i18n="modeVanillaDesc">سرور سورس ۲ سبک، بهینه‌سازی شده با دات‌نت ۱۰، تیک‌ریت پایدار، ابزار ادمین کامل.</div>
                       </label>
 
                       <label class="session-mode-option" id="opt-mode-cursed-arena" onclick="selectSessionModMode('cursed_arena')">
@@ -1491,7 +1470,6 @@
                           <i class="fa-solid fa-skull-crossbones" style="color:#ef4444"></i>
                           <span class="mode-opt-title" data-i18n="modeCursedArenaTitle">کرسد آرنا (دوئل)</span>
                         </div>
-                        <div class="mode-opt-desc" data-i18n="modeCursedArenaDesc">دوئل و بتل رویال در میدتاون با طوفان پلاسمای متحرک، هاد اختصاصی و مدهای متنوع.</div>
                       </label>
 
                       <label class="session-mode-option" id="opt-mode-ability-brawl" onclick="selectSessionModMode('ability_brawl')">
@@ -1500,7 +1478,6 @@
                           <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--deadlock-orange)"></i>
                           <span class="mode-opt-title" data-i18n="modeAbilityBrawlTitle">ماد درفت اسکیل</span>
                         </div>
-                        <div class="mode-opt-desc" data-i18n="modeAbilityBrawlDesc">سیستم درفت اسکیل‌های تصادفی با کلیدهای میانبر، تعویض هیرو و بالانس خودکار.</div>
                       </label>
 
                       <label class="session-mode-option" id="opt-mode-automatch" onclick="selectSessionModMode('automatch')">
@@ -1509,7 +1486,6 @@
                           <i class="fa-solid fa-users-gear" style="color:#10b981"></i>
                           <span class="mode-opt-title" data-i18n="modeAutoMatchTitle">ماد مسابقه تیمی ۶ به ۶</span>
                         </div>
-                        <div class="mode-opt-desc" data-i18n="modeAutoMatchDesc">مدیریت خودکار گرم‌کردن، آماده‌سازی تیم‌ها، شروع بازی و ریست راند.</div>
                       </label>
                     </div>
 
@@ -1517,11 +1493,7 @@
                     <div class="lan-form-row" style="margin-top:12px;">
                       <div class="lan-form-group" style="flex:1">
                         <label class="lan-label" data-i18n="lanMapLabel">انتخاب نقشه:</label>
-                        <select id="session-map-select" class="lan-select">
-                          <option value="dl_midtown" data-i18n="optMidtownMain">dl_midtown (نقشه اصلی)</option>
-                          <option value="dl_streets" data-i18n="optStreetsMap">dl_streets</option>
-                          <option value="dl_hideout" data-i18n="optHideoutPractice">dl_hideout (محیط تست/تمرین)</option>
-                        </select>
+                        <input type="text" id="session-map-select" class="lan-input" value="dl_midtown" placeholder="dl_midtown" dir="ltr" />
                       </div>
                       <div class="lan-form-group" style="flex:1">
                         <label class="lan-label" data-i18n="lanMaxPlayersLabel">حداکثر بازیکنان:</label>
@@ -1556,22 +1528,6 @@
                       <button type="button" class="btn-apply btn-glow-hero" id="btn-session-host-join" onclick="joinSessionSelfAction()" style="display:none;">
                         <i class="fa-solid fa-gamepad"></i>
                         <span data-i18n="sessionJoinSelf">ورود به سرور و اجرای بازی</span>
-                      </button>
-                    </div>
-
-                    <!-- Host Quick Share Actions (Invite Friends) -->
-                    <div class="session-share-bar" id="session-host-share-bar" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
-                      <button type="button" class="btn-reset btn-sm" id="btn-session-deadworks-copy-code" onclick="copyLobbyCode()" style="flex:1; min-width:120px;" data-tooltip="کپی کد ۶ رقمی لابی برای دوستان">
-                        <i class="fa-solid fa-key" style="color:#38bdf8;"></i>
-                        <span data-i18n="sessionCopyLobbyCode">کپی کد لابی</span>
-                      </button>
-                      <button type="button" class="btn-reset btn-sm" onclick="copyClientShareCmd()" style="flex:1; min-width:140px;" data-tooltip="کپی دستور اتصال اختصاصی برای دوستان">
-                        <i class="fa-solid fa-share-nodes" style="color:#34d399;"></i>
-                        <span data-i18n="sessionCopyShareCmd">کپی دستور اتصال برای دوستان</span>
-                      </button>
-                      <button type="button" class="btn-reset btn-sm" onclick="copySessionTarget()" style="flex:1; min-width:120px;" data-tooltip="کپی دستور کنسول میزبان">
-                        <i class="fa-solid fa-terminal"></i>
-                        <span data-i18n="sessionCopyConsoleCmd">کپی دستور کنسول</span>
                       </button>
                     </div>
 
@@ -2291,10 +2247,6 @@
                           <i class="fa-solid fa-bolt"></i>
                           <span data-i18n="vipRedeemBtn">فعال‌سازی کلید</span>
                         </button>
-                      </div>
-                      <div class="vip-hwid-row">
-                        <span class="vip-hwid-label" data-i18n="vipHwidLabel">شناسه سخت‌افزاری دستگاه:</span>
-                        <span class="vip-hwid-val" id="vip-hwid-display" onclick="copyHwid()" data-i18n="vipHwidLoading" dir="ltr" title="Click to copy">در حال دریافت...</span>
                       </div>
                     </div>
                   </div>
