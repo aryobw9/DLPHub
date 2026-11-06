@@ -11,6 +11,7 @@ pub struct Settings {
     pub better_breakables: bool, // pak03_dir.vpk (neon breakables & bats)
     pub higher_brightness: bool, // pak01_dir.vpk (daylock / midtown)
     pub reduce_clutter: bool,    // pak02_dir.vpk (reduce particle/visual clutter)
+    pub hero_potato: bool,       // pak33_dir.vpk (optional low-poly/potato hero models)
     pub fov: u32,              // per-user draft FOV in video.txt, max 90
     pub aspect_ratio: String,  // real number for gameinfo.gi r_aspectratio (e.g. "2.15")
     pub aspect_ratio_enabled: bool, // true = active in gameinfo.gi, false = disabled/commented
@@ -31,6 +32,7 @@ impl Default for Settings {
             better_breakables: false,
             higher_brightness: false,
             reduce_clutter: false,
+            hero_potato: false,
             fov: 90,
             aspect_ratio: "2.15".into(),
             aspect_ratio_enabled: true,
@@ -202,6 +204,7 @@ mod tests {
             better_breakables: true,
             higher_brightness: true,
             reduce_clutter: true,
+            hero_potato: true,
             fov: 110,
             aspect_ratio: "2.40".into(),
             aspect_ratio_enabled: true,
@@ -220,6 +223,7 @@ mod tests {
         assert!(s2.better_breakables);
         assert!(s2.higher_brightness);
         assert!(s2.reduce_clutter);
+        assert!(s2.hero_potato);
         assert_eq!(s2.aspect_ratio, "2.40");
         assert!(s2.aspect_ratio_enabled);
         assert!(s2.reduced_motion);

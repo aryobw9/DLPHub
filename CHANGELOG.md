@@ -4,6 +4,34 @@ All notable changes to **DLPHub** are documented in this file.
 
 ---
 
+## [0.1.6] - 2026-11-06
+
+[English](#english-016) | [فارسی](#فارسی-016)
+
+---
+
+<a name="english-016"></a>
+### 🌐 English
+
+#### 🚀 Highlights & New Features
+* **New Graphics Configuration Workflow:** Re-architected graphic and performance configuration presets with streamlined customization and real-time tier detection.
+* **User Authentication & Profile System:** Integrated user login, Steam / Deadlock profile sync, MMR stats display, and custom user session states.
+* **Full Mod & Preset Compatibility Update:** Updated and aligned all performance presets and internal VPK mods (including Potato graphics and Hero Potato) to ensure full compatibility with the latest Deadlock game patch.
+* **UI & Localization Refinements:** Cleaned up Persian localization terms (simplified Hero Potato label), refreshed settings UI, and resolved layout quirks.
+
+---
+
+<a name="فارسی-016"></a>
+### 🇮🇷 فارسی
+
+#### 🚀 تغییرات کلیدی و امکانات جدید
+* **شیوه جدید و پیشرفته تنظیم گرافیک:** بازطراحی کامل ساختار انتخاب و اعمال تنظیمات گرافیکی با رابط کاربری روان‌تر و هماهنگی دقیق‌تر با موتور بازی.
+* **سیستم ورود و پروفایل کاربری:** اضافه شدن بخش حساب کاربری، همگام‌سازی اطلاعات و استتس‌های ددلاک، وضعیت رنک/MMR و شخصی‌سازی پروفایل.
+* **بروزرسانی جامع تمامی مادها و پریست‌های گرافیکی:** هماهنگ‌سازی و آپدیت کامل تمام پکیج‌های VPK، پریست‌های بهینه‌سازی و حالت‌های ذغالی (Potato Mode و هیرو ذغالی) متناسب با آخرین آپدیت بازی ددلاک.
+* **بهبودهای ظاهری و ترجمه:** اصلاح و ساده‌سازی عبارات در نسخه فارسی (تغییر عنوان به «هیرو ذغالی»)، افزایش ارتفاع کارت‌های گرافیک برای جلوگیری از تداخل متن‌ها، رفع باگ‌های جزئی ظاهری و بهبود پایداری برنامه.
+
+---
+
 ## [0.1.4] - 2026-10-09
 
 [English](#english-014) | [فارسی](#فارسی-014)

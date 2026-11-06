@@ -27,8 +27,8 @@ pub struct PackageMeta {
 
 pub const OFFICIAL_SERVER_LOADER: PackageMeta = PackageMeta {
     filename: "server_loader.zip",
-    size_bytes: 5_709_059,
-    sha256: "33e1952d4597170e807bc47e833baf7aecaccca71bf8e4344f3505bddc919f2c",
+    size_bytes: 5_899_158,
+    sha256: "0c51bae66988b1c834ca1ebdee8043a210aaa08079a485fb53a4f689f1ae261f",
 };
 
 pub const OFFICIAL_CLIENT_BOOTSTRAP: PackageMeta = PackageMeta {
@@ -45,8 +45,8 @@ pub const OFFICIAL_CLIENT_ABILITY_BRAWL: PackageMeta = PackageMeta {
 
 pub const OFFICIAL_CLIENT_CURSED_ARENA: PackageMeta = PackageMeta {
     filename: "client_cursed_arena.zip",
-    size_bytes: 262_193,
-    sha256: "a1541de1c15513312a14c42159300a1b066bff1cb77f64c1bb1b3b15d256d33e",
+    size_bytes: 263_970,
+    sha256: "432c9e96612fa395a27129647cb8feb93a75304a75828e8415f38ce8df327ae4",
 };
 
 /// Returns the central storage directory alongside the executable: `<exe_dir>/DLPHubStorage`

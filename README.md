@@ -179,7 +179,7 @@ DLPHub is 100% open-source, safe, and transparent:
 
 ### مشخصات فایل
 - **نام فایل:** `DLPHub.exe` (Portable)
-- **نسخه:** `0.1.4 BETA`
+- **نسخه:** `0.1.6 BETA`
 - **مجوز نرم‌افزار:** GNU General Public License v3.0 (GPLv3)
 - **پیش‌نیاز:** ویندوز ۱۰ یا ۱۱ (۶۴ بیتی) + مایکروسافت WebView2
 - **توسعه‌دهنده:** [aryobw9](https://github.com/aryobw9)

@@ -1163,17 +1163,6 @@ pub const DNS_PROFILES_RAW: &[(&str, &str, &str, &str, &str, &str, &str, &str, &
         "10.202.10.102",
     ),
     (
-        "pishgaman",
-        "Pishgaman (پیشگامان)",
-        "پیشگامان (Pishgaman)",
-        "Pishgaman domestic gaming DNS with low latency",
-        "دی‌ان‌اس گیمینگ پیشگامان با تاخیر پایین شبکه داخلی",
-        "IR Gaming",
-        "گیمینگ داخلی",
-        "5.202.100.101",
-        "5.202.100.100",
-    ),
-    (
         "irancell",
         "Irancell (ایرانسل)",
         "ایرانسل (Irancell)",
@@ -1694,7 +1683,6 @@ pub fn apply_latency_tweaks(tweaks: &LatencyTweaksState, deadlock_path: Option<&
         script.push_str(
             "try {\n\
                  New-NetQosPolicy -Name 'DLPHub_Deadlock_QoS' -AppPathNameMatchCondition 'deadlock.exe' -DSCPAction 46 -NetworkProfile All -ErrorAction Stop ;\n\
-                 New-NetQosPolicy -Name 'DLPHub_Project8_QoS' -AppPathNameMatchCondition 'project8.exe' -DSCPAction 46 -NetworkProfile All -ErrorAction Stop ;\n\
                  New-NetQosPolicy -Name 'DLPHub_Citadel_QoS' -AppPathNameMatchCondition 'citadel.exe' -DSCPAction 46 -NetworkProfile All -ErrorAction Stop ;\n\
                  Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\QoS' -Name 'Do not use NLA' -Value '1' -ErrorAction SilentlyContinue ;\n\
              } catch {\n\
@@ -1705,7 +1693,6 @@ pub fn apply_latency_tweaks(tweaks: &LatencyTweaksState, deadlock_path: Option<&
         script.push_str(
             "try {\n\
                  Remove-NetQosPolicy -Name 'DLPHub_Deadlock_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
-                 Remove-NetQosPolicy -Name 'DLPHub_Project8_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
                  Remove-NetQosPolicy -Name 'DLPHub_Citadel_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
              } catch {}\n"
         );
@@ -1787,7 +1774,6 @@ pub fn revert_latency_tweaks(deadlock_path: Option<&str>) -> Result<String, Stri
          Start-Service -Name bits -ErrorAction SilentlyContinue ;\n\
          try {\n\
              Remove-NetQosPolicy -Name 'DLPHub_Deadlock_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
-             Remove-NetQosPolicy -Name 'DLPHub_Project8_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
              Remove-NetQosPolicy -Name 'DLPHub_Citadel_QoS' -Confirm:$false -ErrorAction SilentlyContinue ;\n\
          } catch {} ;\n\
          Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile' -Name 'NetworkThrottlingIndex' -Value 10 -Type DWord -ErrorAction SilentlyContinue ;\n\

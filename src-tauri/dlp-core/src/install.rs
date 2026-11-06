@@ -16,7 +16,6 @@ pub enum Mode {
     Potato,
     T1Mods,
     T2Mods,
-    RussianPotato,
 }
 
 impl Mode {
@@ -25,7 +24,7 @@ impl Mode {
             Mode::T1 | Mode::T1Mods => "t1",
             Mode::T2 | Mode::T2Mods => "t2",
             Mode::T3 => "t3",
-            Mode::Potato | Mode::RussianPotato => "potato",
+            Mode::Potato => "potato",
         }
     }
     pub fn video_dir(self) -> &'static str {
@@ -33,6 +32,11 @@ impl Mode {
     }
     pub fn addon_lists(self, s: &crate::settings::Settings) -> (String, String) {
         let mut allowed: Vec<&str> = Vec::new();
+        if self == Mode::T2Mods {
+            allowed.push("pak04_dir.vpk");
+            allowed.push("pak05_dir.vpk");
+            allowed.push("pak06_dir.vpk");
+        }
         if s.higher_brightness {
             allowed.push("pak01_dir.vpk");
         }
@@ -44,11 +48,23 @@ impl Mode {
         }
         if self == Mode::Potato {
             allowed.push("pak31_dir.vpk");
+            allowed.push("pak04_dir.vpk");
+            allowed.push("pak05_dir.vpk");
+            allowed.push("pak06_dir.vpk");
+            if s.hero_potato {
+                allowed.push("pak33_dir.vpk");
+            }
         }
-        if self == Mode::RussianPotato {
-            allowed.push("pak30_dir.vpk");
-        }
-        let all_known = ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak30_dir.vpk", "pak31_dir.vpk"];
+        let all_known = [
+            "pak01_dir.vpk",
+            "pak02_dir.vpk",
+            "pak03_dir.vpk",
+            "pak04_dir.vpk",
+            "pak05_dir.vpk",
+            "pak06_dir.vpk",
+            "pak31_dir.vpk",
+            "pak33_dir.vpk",
+        ];
         let mut excluded: Vec<&str> = Vec::new();
         for k in all_known {
             if !allowed.contains(&k) {
@@ -335,7 +351,6 @@ mod tests {
         std::fs::write(addons_dir.join("pak01_dir.vpk"), b"MOCK-01").unwrap();
         std::fs::write(addons_dir.join("pak02_dir.vpk"), b"MOCK-02").unwrap();
         std::fs::write(addons_dir.join("pak03_dir.vpk"), b"MOCK-03").unwrap();
-        std::fs::write(addons_dir.join("pak30_dir.vpk"), b"MOCK-30").unwrap();
         std::fs::write(addons_dir.join("pak31_dir.vpk"), b"MOCK-31").unwrap();
         (cit, data, pkg)
     }
@@ -422,24 +437,11 @@ mod tests {
         assert!(gi.contains("\"r_aspectratio\"\t\t\t\t\t\t\"2.49\""), "gi: {gi}");
         let vpks: Vec<String> = std::fs::read_dir(cit.join("addons")).unwrap().flatten()
             .map(|e| e.file_name().to_string_lossy().into_owned()).collect();
-        assert_eq!(vpks.len(), 1, "Potato must install pak95_dir.vpk");
-        assert_eq!(vpks[0], "pak95_dir.vpk");
+        assert_eq!(vpks.len(), 1, "Potato must install pak96_dir.vpk");
+        assert_eq!(vpks[0], "pak96_dir.vpk");
         crate::backup::rm_ro(cit.parent().unwrap().parent().unwrap());
     }
 
-    #[test]
-    fn sandbox_russian_potato() {
-        let (cit, data, pkg) = sandbox("rus_pot");
-        let deadlock = cit.parent().unwrap().parent().unwrap().to_path_buf();
-        install(Mode::RussianPotato, 90, deadlock.to_str().unwrap(), &pkg, &data).unwrap();
-        let gi = std::fs::read_to_string(cit.join("gameinfo.gi")).unwrap();
-        assert!(gi.contains("\"r_aspectratio\"\t\t\t\t\t\t\"2.15\""), "gi: {gi}");
-        let vpks: Vec<String> = std::fs::read_dir(cit.join("addons")).unwrap().flatten()
-            .map(|e| e.file_name().to_string_lossy().into_owned()).collect();
-        assert_eq!(vpks.len(), 1, "Russian Potato must install pak90_dir.vpk");
-        assert_eq!(vpks[0], "pak90_dir.vpk");
-        crate::backup::rm_ro(cit.parent().unwrap().parent().unwrap());
-    }
 
     #[test]
     fn sandbox_revert_first_then_reapply() {

@@ -30,8 +30,8 @@ pub const OFFICIAL_MODS: &[ModMeta] = &[
         filename: "pak02_dir.vpk",
         display_name_fa: "کاهش شلوغی محیط",
         display_name_en: "Reduce Clutter",
-        size_bytes: 549_372,
-        sha256: "e5ad72b3ae74d85799e2dc95a715932625adc66037328dc976a7a53ce2029f62",
+        size_bytes: 5_593_087,
+        sha256: "774a68d473ef38bbd212ce68669fc1cce716236b4a8fd38b4f0c897cf758a9dc",
     },
     ModMeta {
         filename: "pak03_dir.vpk",
@@ -41,18 +41,39 @@ pub const OFFICIAL_MODS: &[ModMeta] = &[
         sha256: "65e676367df25968a809401bebd63de5d28ff255722f022b922262972118f23a",
     },
     ModMeta {
-        filename: "pak30_dir.vpk",
-        display_name_fa: "گرافیک فوق سبک ذغالی روس",
-        display_name_en: "Russian Potato Mode",
-        size_bytes: 125_160_379,
-        sha256: "5e15bc1e76df19d5e05ffbea5d51335d63795dc41689e525b88f27405bdb9dcd",
+        filename: "pak04_dir.vpk",
+        display_name_fa: "اصلاحات ضروری (Essential Fixes)",
+        display_name_en: "Essential Fixes (Level 2)",
+        size_bytes: 2_123_337,
+        sha256: "9915f861f2f90aedf88da39368772000ada526b39b637e6dd148f2d51c926f48",
+    },
+    ModMeta {
+        filename: "pak05_dir.vpk",
+        display_name_fa: "حذف عناصر اضافه (Anti Clutter)",
+        display_name_en: "Anti Clutter (Level 2)",
+        size_bytes: 8_066_673,
+        sha256: "54f185301a674c0d0105b7d404a20b35a070d355e21a8a9cd39d3022ad3e0f89",
+    },
+    ModMeta {
+        filename: "pak06_dir.vpk",
+        display_name_fa: "اصلاح پورتال دورمن (Doorman Portal Fix)",
+        display_name_en: "Doorman Portal Fix (Level 2 and 3)",
+        size_bytes: 21_683,
+        sha256: "95a3f96dafd193a97fd714658f9bcda77f91f18b496fa2dc67362a295aa3b685",
     },
     ModMeta {
         filename: "pak31_dir.vpk",
         display_name_fa: "گرافیک ذغالی استاندارد",
         display_name_en: "Potato Graphics",
-        size_bytes: 9_347_647,
-        sha256: "cb47a5fafa33d6510e2318c35cc7fa5d2a054bfb9e3809468e9db1711b0b9f78",
+        size_bytes: 4_135_302,
+        sha256: "a469bd7980a88f11baab52ee4166104dcc16204b268fe269d112c829cec40c61",
+    },
+    ModMeta {
+        filename: "pak33_dir.vpk",
+        display_name_fa: "هیرو ذغالی",
+        display_name_en: "Hero Potato",
+        size_bytes: 5_714_638,
+        sha256: "5d2aa2d721525a20da4b5971da4c65047a2e609ec42bee5c92c0d3919a5d0517",
     },
 ];
 
@@ -322,7 +343,6 @@ mod tests {
     fn test_find_mod() {
         assert!(find_mod("pak01_dir.vpk").is_some());
         assert!(find_mod("PAK01_DIR.VPK").is_some());
-        assert!(find_mod("pak30_dir.vpk").is_some());
         assert!(find_mod("pak99_dir.vpk").is_none());
         assert!(find_mod("../malicious.exe").is_none());
     }

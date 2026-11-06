@@ -1,7 +1,7 @@
 // Port of guard_game.ps1: abort if Deadlock-related process is running (it
 // would overwrite our files on exit). DLPB_NOGUARD=1 bypasses (sandbox tests —
 // same idea as console DDBOOST_NOGUARD).
-pub const GUARD_NAMES: [&str; 3] = ["project8", "deadlock", "deadlock-mod-manager"];
+pub const GUARD_NAMES: [&str; 2] = ["deadlock", "deadlock-mod-manager"];
 
 fn guarded_name(name: &str) -> bool {
     let lower = name.to_ascii_lowercase();
@@ -31,7 +31,7 @@ pub fn game_running() -> Vec<String> {
 mod tests {
     #[test]
     fn windows_executable_names_match_guard() {
-        for name in ["Deadlock.EXE", "project8.exe", "deadlock-mod-manager.exe", "deadlock"] {
+        for name in ["Deadlock.EXE", "deadlock.exe", "deadlock-mod-manager.exe", "deadlock"] {
             assert!(super::guarded_name(name), "Windows executable must be recognized: {name}");
         }
         assert!(!super::guarded_name("deadlock-helper.exe"));

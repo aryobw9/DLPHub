@@ -58,7 +58,7 @@ pub async fn install_mode(
         "T1" => install::Mode::T1,
         "T2" => install::Mode::T2,
         "T3" => install::Mode::T3,
-        "POTATO" | "RUSSIAN_POTATO" => install::Mode::Potato,
+        "POTATO" => install::Mode::Potato,
         "T1MODS" => install::Mode::T1Mods,
         "T2MODS" => install::Mode::T2Mods,
         other => return Err(format!("unknown mode: {other}")),
@@ -124,16 +124,25 @@ pub async fn apply_perf_optimization_cmd(
     // Check which VPKs are required based on level
     let mut required_addons: Vec<&str> = Vec::new();
     if req_mut.level == 2 {
-        // Level 2: Cpu + Gpu Optimization (gameinfo.gi + video.txt + mods)
-        required_addons.push("pak01_dir.vpk");
-        required_addons.push("pak02_dir.vpk");
-        required_addons.push("pak03_dir.vpk");
+        // Level 2: Cpu + Gpu Optimization (Level 2 mods: Essential Fixes, Anti Clutter, Doorman Fix)
+        required_addons.push("pak04_dir.vpk");
+        required_addons.push("pak05_dir.vpk");
+        required_addons.push("pak06_dir.vpk");
+        if req_mut.higher_brightness { required_addons.push("pak01_dir.vpk"); }
+        if req_mut.reduce_clutter { required_addons.push("pak02_dir.vpk"); }
+        if req_mut.better_breakables { required_addons.push("pak03_dir.vpk"); }
     } else if req_mut.level >= 3 {
-        // Level 3: Potato Mode (pak31 downscaled textures + mods)
+        // Level 3: Potato Mode (pak31 downscaled textures + optional hero potato + level 2 mods)
         required_addons.push("pak31_dir.vpk");
-        required_addons.push("pak01_dir.vpk");
-        required_addons.push("pak02_dir.vpk");
-        required_addons.push("pak03_dir.vpk");
+        if req_mut.hero_potato {
+            required_addons.push("pak33_dir.vpk");
+        }
+        required_addons.push("pak04_dir.vpk");
+        required_addons.push("pak05_dir.vpk");
+        required_addons.push("pak06_dir.vpk");
+        if req_mut.higher_brightness { required_addons.push("pak01_dir.vpk"); }
+        if req_mut.reduce_clutter { required_addons.push("pak02_dir.vpk"); }
+        if req_mut.better_breakables { required_addons.push("pak03_dir.vpk"); }
     }
 
     if !required_addons.is_empty() {

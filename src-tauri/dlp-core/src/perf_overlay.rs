@@ -58,6 +58,7 @@ pub struct OptimizationRequest {
     pub better_breakables: bool,
     pub higher_brightness: bool,
     pub reduce_clutter: bool,
+    pub hero_potato: bool,
     pub deadlock_path: String,
 }
 
@@ -502,26 +503,29 @@ pub fn apply_optimization_flow(
 
     let (only, exclude) = if req.level == 1 {
         // Level 1: Cpu Optimization (only gameinfo.gi) -> NO addons/mods
-        ("".to_string(), "pak01_dir.vpk,pak02_dir.vpk,pak03_dir.vpk,pak30_dir.vpk,pak31_dir.vpk".to_string())
+        ("".to_string(), "pak01_dir.vpk,pak02_dir.vpk,pak03_dir.vpk,pak04_dir.vpk,pak05_dir.vpk,pak06_dir.vpk,pak31_dir.vpk,pak33_dir.vpk".to_string())
     } else if req.level == 2 {
-        // Level 2: Cpu + Gpu Optimization (gameinfo.gi + video.txt + mods)
+        // Level 2: Cpu + Gpu Optimization (Level 2 mods: Essential Fixes, Anti Clutter, Doorman Fix)
         let mut allowed = Vec::new();
-        allowed.push("pak01_dir.vpk");
-        allowed.push("pak02_dir.vpk");
-        allowed.push("pak03_dir.vpk");
-        let all = ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak30_dir.vpk", "pak31_dir.vpk"];
-        let excluded: Vec<&str> = all.iter().copied().filter(|k| !allowed.contains(k)).collect();
-        (allowed.join(","), excluded.join(","))
-    } else if req.level == 4 {
-        // Level 4: Russian Potato Mode (pak30 texture downscaler + mods)
-        let allowed = vec!["pak30_dir.vpk", "pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk"];
-        let all = ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak30_dir.vpk", "pak31_dir.vpk"];
+        allowed.push("pak04_dir.vpk");
+        allowed.push("pak05_dir.vpk");
+        allowed.push("pak06_dir.vpk");
+        if req.higher_brightness { allowed.push("pak01_dir.vpk"); }
+        if req.reduce_clutter { allowed.push("pak02_dir.vpk"); }
+        if req.better_breakables { allowed.push("pak03_dir.vpk"); }
+        let all = ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak04_dir.vpk", "pak05_dir.vpk", "pak06_dir.vpk", "pak31_dir.vpk", "pak33_dir.vpk"];
         let excluded: Vec<&str> = all.iter().copied().filter(|k| !allowed.contains(k)).collect();
         (allowed.join(","), excluded.join(","))
     } else {
-        // Level 3: Potato Mode (pak31 downscaled textures + mods)
-        let allowed = vec!["pak31_dir.vpk", "pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk"];
-        let all = ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak30_dir.vpk", "pak31_dir.vpk"];
+        // Level 3: Potato Mode (pak31 downscaled textures + optional pak33 hero potato + level 2 mods)
+        let mut allowed = vec!["pak31_dir.vpk", "pak04_dir.vpk", "pak05_dir.vpk", "pak06_dir.vpk"];
+        if req.hero_potato {
+            allowed.push("pak33_dir.vpk");
+        }
+        if req.higher_brightness { allowed.push("pak01_dir.vpk"); }
+        if req.reduce_clutter { allowed.push("pak02_dir.vpk"); }
+        if req.better_breakables { allowed.push("pak03_dir.vpk"); }
+        let all = ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk", "pak04_dir.vpk", "pak05_dir.vpk", "pak06_dir.vpk", "pak31_dir.vpk", "pak33_dir.vpk"];
         let excluded: Vec<&str> = all.iter().copied().filter(|k| !allowed.contains(k)).collect();
         (allowed.join(","), excluded.join(","))
     };
@@ -545,6 +549,7 @@ pub fn apply_optimization_flow(
     s.better_breakables = req.better_breakables;
     s.higher_brightness = req.higher_brightness;
     s.reduce_clutter = req.reduce_clutter;
+    s.hero_potato = req.hero_potato;
     let _ = crate::settings::save(&s);
 
     Ok(log)
@@ -737,6 +742,7 @@ mod tests {
             better_breakables: true,
             higher_brightness: false,
             reduce_clutter: false,
+            hero_potato: false,
             deadlock_path: "".to_string(),
         };
 

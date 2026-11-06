@@ -47,6 +47,9 @@ src-tauri/*.py
 !README.md
 !CHANGELOG.md
 !RELEASE_NOTES.md
+!AGENTS.md
+!.agents/
+!.agents/**
 docs/
 
 # Tools, helper scripts & previews

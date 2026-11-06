@@ -186,8 +186,8 @@ function applyLang() {
   if (typeof renderDrawer === 'function') {
     renderDrawer();
   }
-  if (typeof renderUserProfile === 'function') {
-    renderUserProfile();
+  if (typeof updateProfileUI === 'function') {
+    updateProfileUI();
   }
   if (typeof renderFriendsList === 'function') {
     renderFriendsList();
@@ -280,6 +280,7 @@ async function boot() {
   state.betterBreakables = !!s.better_breakables;
   state.higherBrightness = !!s.higher_brightness;
   state.reduceClutter = !!s.reduce_clutter;
+  state.heroPotato = !!s.hero_potato;
   state.fpsMax = s.fps_max;
   state.customAutoexec = s.custom_autoexec || '';
   state.renderer = s.renderer || 'default';
@@ -350,6 +351,9 @@ function syncSettingsToUi() {
 
   const swClutter = document.getElementById('sw-reduce-clutter');
   if (swClutter) swClutter.checked = !!state.reduceClutter;
+
+  const swHeroPotato = document.getElementById('sw-hero-potato');
+  if (swHeroPotato) swHeroPotato.checked = !!state.heroPotato;
 
   
   const swRedMotion = document.getElementById('sw-reduced-motion');
@@ -979,7 +983,7 @@ async function doInstall() {
         preset_id: perfState.activePresetId,
         preset_name: preset.name,
         entries: resolvedEntries,
-        video_settings: preset.videoSettings || [],
+        video_settings: preset.videoSettings || preset.video_settings || [],
         include_engine_sections: !!perfState.includeEngineSections,
         fov: state.fov,
         aspect_ratio: state.aspectRatio || '2.15',
@@ -990,6 +994,7 @@ async function doInstall() {
         better_breakables: !!state.betterBreakables,
         higher_brightness: !!state.higherBrightness,
         reduce_clutter: !!state.reduceClutter,
+        hero_potato: !!state.heroPotato,
         deadlock_path: state.gamePath,
       }
     });
@@ -1369,6 +1374,7 @@ async function doResetSettings() {
     state.betterBreakables = !!s.better_breakables;
     state.higherBrightness = !!s.higher_brightness;
     state.reduceClutter = !!s.reduce_clutter;
+  state.heroPotato = !!s.hero_potato;
     state.customAutoexec = s.custom_autoexec;
     state.renderer = s.renderer || 'default';
 
@@ -2496,7 +2502,7 @@ function dnsCardHtml(p) {
   const name = state.lang === 'fa' ? (p.name_fa || p.name) : p.name;
   const desc = state.lang === 'fa' ? (p.desc_fa || p.desc) : p.desc;
   const tag = state.lang === 'fa' ? (p.tag_fa || p.tag) : p.tag;
-  const isIr = p.id.includes('radar') || p.id.includes('electro') || p.id.includes('shecan') || p.id.includes('403') || p.id.includes('begzar') || p.id.includes('shelter') || p.id.includes('beshkan') || p.id.includes('pishgaman') || p.id.includes('irancell') || p.id.includes('mci');
+  const isIr = p.id.includes('radar') || p.id.includes('electro') || p.id.includes('shecan') || p.id.includes('403') || p.id.includes('begzar') || p.id.includes('shelter') || p.id.includes('beshkan') || p.id.includes('irancell') || p.id.includes('mci');
   const isActive = !!p.is_active;
   const pingVal = p.ping_ms !== null && p.ping_ms !== undefined ? `${p.ping_ms} ms` : '—';
 
@@ -3389,35 +3395,18 @@ async function doSmartOptimize() {
 
   if (progWrap && progBar && progPct && progTitle) {
     progWrap.style.display = 'flex';
-    progBar.style.width = '15%';
-    progPct.textContent = '15%';
+    progBar.style.width = '25%';
+    progPct.textContent = '25%';
     progTitle.textContent = state.lang === 'fa' ? 'در حال پایش و سنجش پینگ سرورها...' : 'Measuring cluster latencies...';
   }
 
   try {
-    if (!state.valveClusters || state.valveClusters.length === 0 || !state.dnsProfiles) {
+    if (!state.valveClusters || state.valveClusters.length === 0) {
       if (progBar && progPct) {
-        progBar.style.width = '30%';
-        progPct.textContent = '30%';
+        progBar.style.width = '45%';
+        progPct.textContent = '45%';
       }
       await refreshLatencySuite(true);
-    }
-
-    if (progBar && progPct && progTitle) {
-      progBar.style.width = '50%';
-      progPct.textContent = '50%';
-      progTitle.textContent = state.lang === 'fa' ? 'در حال فعال‌سازی بهترین دی‌ان‌اس ضد تحریم...' : 'Activating optimal anti-sanction DNS...';
-    }
-
-    // 1. Find Best DNS (lowest ping)
-    const onlineDns = [...(state.dnsProfiles || [])].sort((a, b) => (a.ping_ms || 9999) - (b.ping_ms || 9999));
-    const bestDns = onlineDns.length ? onlineDns[0] : null;
-
-    if (bestDns) {
-      await call('apply_dns_profile', { id: bestDns.id });
-      for (const p of state.dnsProfiles) {
-        p.is_active = p.id === bestDns.id;
-      }
     }
 
     if (progBar && progPct && progTitle) {
@@ -3426,7 +3415,7 @@ async function doSmartOptimize() {
       progTitle.textContent = state.lang === 'fa' ? 'در حال کانفیگ فایروال برای سرورهای کم‌پینگ و هم‌منطقه...' : 'Configuring firewall for optimal regional clusters...';
     }
 
-    // 2. Find Optimal Servers (within 15ms of lowest ping + metro cohesion)
+    // Find Optimal Servers (within 15ms of lowest ping + metro cohesion)
     const optimalIds = getOptimalServerIds(state.valveClusters);
     await call('apply_top5_clusters', { top5Ids: optimalIds });
 
@@ -3436,20 +3425,18 @@ async function doSmartOptimize() {
     }
 
     renderServerGrid();
-    renderDnsGrid();
 
     if (progBar && progPct && progTitle) {
       progBar.style.width = '100%';
       progPct.textContent = '100%';
-      progTitle.textContent = state.lang === 'fa' ? 'بهینه‌سازی هوشمند شبکه با موفقیت اعمال شد!' : 'Smart network optimization completed successfully!';
+      progTitle.textContent = state.lang === 'fa' ? 'مسیریابی هوشمند سرورها با موفقیت اعمال شد!' : 'Optimal cluster routing applied successfully!';
     }
 
-    const dnsName = bestDns ? (state.lang === 'fa' ? bestDns.name_fa : bestDns.name) : 'DNS';
     const srvNames = optimalIds.map((id) => id.toUpperCase()).join(', ');
-    showToast(t('smartOptimizeToast').replace('{servers}', srvNames).replace('{dns}', dnsName), 'success');
+    showToast(t('smartOptimizeToast').replace('{servers}', srvNames), 'success');
   } catch (err) {
     if (progBar) progBar.style.background = '#ef4444';
-    if (progTitle) progTitle.textContent = state.lang === 'fa' ? 'خطا در بهینه‌سازی شبکه' : 'Smart Optimization Error';
+    if (progTitle) progTitle.textContent = state.lang === 'fa' ? 'خطا در بهینه‌سازی سرورها' : 'Cluster Optimization Error';
     showAppErrorModal(err, 'SmartOptimize');
   } finally {
     setTimeout(() => {
@@ -4002,6 +3989,9 @@ function init() {
     updateMaximizedState();
     setupCustomTooltips();
     initPerfSystem();
+    if (typeof loadUserProfile === 'function') {
+      loadUserProfile();
+    }
     window.__animateStyle = !!document.querySelector('link[href*="animate.min.css"]');
     if (window.__animateStyle) {
       document.querySelectorAll('.cards-deck .pro-card').forEach((card, i) => {
@@ -4065,6 +4055,17 @@ function init() {
       swClutter.onchange = (e) => {
         state.reduceClutter = e.target.checked;
         call('set_settings', { patch: { reduce_clutter: e.target.checked } }).catch(() => {});
+      };
+    }
+
+    const swHeroPotato = document.getElementById('sw-hero-potato');
+    if (swHeroPotato) {
+      swHeroPotato.onchange = (e) => {
+        state.heroPotato = e.target.checked;
+        if (e.target.checked && state.optLevel !== 3) {
+          selectOptLevel(3);
+        }
+        call('set_settings', { patch: { hero_potato: e.target.checked } }).catch(() => {});
       };
     }
 
@@ -4210,18 +4211,24 @@ const lanState = {
 
 function getSavedNickname() {
   try {
-    return localStorage.getItem('dlp_lan_nickname') || 'Player';
+    return localStorage.getItem('dlp_nickname') || localStorage.getItem('dlp_lan_nickname') || localStorage.getItem('vip_nickname') || 'Player';
   } catch (_) {
     return 'Player';
   }
 }
 
 function saveNickname(nick) {
-  const clean = (nick || 'Player').trim().slice(0, 16);
+  const clean = (nick || 'Player').trim().slice(0, 20);
   try {
+    localStorage.setItem('dlp_nickname', clean);
     localStorage.setItem('dlp_lan_nickname', clean);
+    localStorage.setItem('vip_nickname', clean);
+    if (typeof userProfile !== 'undefined' && userProfile) {
+      userProfile.nickname = clean;
+      saveUserProfile();
+    }
   } catch (_) {}
-  const ids = ['lan-host-nickname', 'lan-client-nickname', 'vip-host-nickname', 'vip-join-nickname'];
+  const ids = ['lan-host-nickname', 'lan-client-nickname', 'vip-host-nickname', 'vip-join-nickname', 'vip-client-nickname', 'inp-host-nickname', 'inp-client-nickname'];
   for (const id of ids) {
     const el = document.getElementById(id);
     if (el && el.value !== clean) {
@@ -5903,7 +5910,7 @@ window.addEventListener('unhandledrejection', (e) => console.warn('[unhandledrej
 window.perfState = {
   catalog: null,
   activeLevel: 2,
-  activePresetId: 'sqooky-max-fps',
+  activePresetId: 'optilock-fps',
   includeEngineSections: false,
   userOverrides: {},
   editorFilter: 'all',
@@ -5944,8 +5951,7 @@ function populatePresetSelect() {
   for (const p of perfState.catalog.presets) {
     const opt = document.createElement('option');
     opt.value = p.id;
-    const tierTag = (p.tier || 'balanced').toUpperCase();
-    opt.textContent = `${p.name} [${tierTag}]`;
+    opt.textContent = p.name;
     sel.appendChild(opt);
   }
   sel.value = perfState.activePresetId;
@@ -5957,11 +5963,11 @@ function updatePresetDropdownLang() {
   const customLabel = document.getElementById('apb-custom-select-label');
   // Keep English config names intact in both languages (no Farsi translations)
   const activeDict = {
-    'sqooky-max-fps': "Sqooky's Max FPS (Recommended)",
+    'sqooky-max-fps': "Sqooky's Max FPS",
     'dmm-clean': 'High Graphics',
     'optilock-potato': 'PotatoLock',
-    'optilock-fps': 'OptiLock FPS',
-    'optilock-ultra-potato': 'Ultra PotatoLock',
+    'optilock-fps': 'OptiLock FPS (Recommended)',
+    'optilock-ultra-potato': 'OptiLock Ultra Potato (Recommended)',
     'optimizationlock': 'OptimizationLock (Sqooky)',
     'eskay': "Eskay's Config",
     'kaizu-min-spec': "Kaizuchaneru's Minimum Spec"
@@ -5980,7 +5986,7 @@ function updatePresetDropdownLang() {
       span.textContent = activeDict[val];
     }
   });
-  const curVal = (sel ? sel.value : null) || (typeof perfState !== 'undefined' ? perfState.activePresetId : 'sqooky-max-fps');
+  const curVal = (sel ? sel.value : null) || (typeof perfState !== 'undefined' ? perfState.activePresetId : 'optilock-fps');
   if (customLabel && activeDict[curVal]) {
     customLabel.textContent = activeDict[curVal];
   }
@@ -6017,10 +6023,12 @@ function selectOptLevel(lvl, triggerAnimation = true) {
     if (perfState.activePresetId === 'optilock-ultra-potato' || perfState.activePresetId === 'optilock-potato') {
       setPreset('dmm-clean');
     }
+  } else if (perfState.activeLevel === 2) {
+    if (perfState.activePresetId === 'optilock-ultra-potato' || perfState.activePresetId === 'optilock-potato' || perfState.activePresetId === 'dmm-clean' || !perfState.activePresetId) {
+      setPreset('optilock-fps');
+    }
   } else if (perfState.activeLevel === 3) {
     setPreset('optilock-ultra-potato');
-  } else if (!perfState.activePresetId || perfState.activePresetId === 'dmm-clean') {
-    setPreset('sqooky-max-fps');
   } else {
     updatePresetStatsDisplay();
   }
@@ -6030,6 +6038,24 @@ function setPreset(presetId) {
   perfState.activePresetId = presetId;
   const sel = document.getElementById('perf-preset-select');
   if (sel) sel.value = presetId;
+
+  // Sync custom dropdown UI (label and active checkmark)
+  const label = document.getElementById('apb-custom-select-label');
+  const targetOpt = document.querySelector(`.apb-custom-option[data-value="${presetId}"]`);
+  if (targetOpt) {
+    document.querySelectorAll('.apb-custom-option').forEach(opt => {
+      opt.classList.remove('selected');
+      const check = opt.querySelector('.apb-custom-option-check');
+      if (check) check.remove();
+    });
+    targetOpt.classList.add('selected');
+    const checkIcon = document.createElement('i');
+    checkIcon.className = 'fa-solid fa-check apb-custom-option-check';
+    targetOpt.appendChild(checkIcon);
+    const span = targetOpt.querySelector('span');
+    if (label && span) label.textContent = span.textContent;
+  }
+
   updatePresetStatsDisplay();
   if (perfState.isDrawerOpen) {
     renderDrawer();
@@ -6266,12 +6292,12 @@ function renderDrawer() {
 
   const isFa = state.lang === 'fa' || document.documentElement.lang === 'fa';
   const PRESET_FA_NAMES = {
-    'optilock-fps': 'OptiLock FPS',
+    'optilock-fps': 'OptiLock FPS (Recommended)',
+    'optilock-ultra-potato': 'OptiLock Ultra Potato (Recommended)',
     'dmm-clean': 'High Graphics',
     'optimizationlock': 'OptimizationLock (Sqooky)',
-    'sqooky-max-fps': "Sqooky's Max FPS (Recommended)",
+    'sqooky-max-fps': "Sqooky's Max FPS",
     'optilock-potato': 'PotatoLock',
-    'optilock-ultra-potato': 'Ultra PotatoLock',
     'eskay': "Eskay's Config",
     'kaizu-min-spec': "Kaizuchaneru's Minimum Spec",
     'none': 'Vanilla Default'
@@ -6293,8 +6319,7 @@ function renderDrawer() {
     titleEl.title = `${dispName} (by ${p.author || 'Community'} · ${p.license || 'GPL-3.0'})`;
   }
   if (tierPill) {
-    tierPill.textContent = isFa ? (TIER_FA_NAMES[p.tier] || (p.tier || 'BALANCED').toUpperCase()) : (p.tier || 'BALANCED').toUpperCase();
-    tierPill.className = `drawer-tier-pill tier-${p.tier || 'balanced'}`;
+    tierPill.style.display = 'none';
   }
   const statsPill = document.getElementById('drawer-stats-pill');
   if (statsPill) {
@@ -7117,27 +7142,32 @@ function loadUserProfile() {
     const raw = localStorage.getItem('dlp_user_profile');
     if (raw) {
       userProfile = JSON.parse(raw);
-    } else {
-      userProfile = {
-        is_guest: true,
-        nickname: getSavedNickname() || 'Player',
-        friend_code: 'DLP-GUEST',
-        ts_uid: null,
-        role: 'player',
-        mmr: 2000,
-        matches_count: 0,
-        wins_count: 0
-      };
     }
   } catch (e) {
     console.error('Failed to parse user profile:', e);
   }
+
+  // Ensure nickname is synced with any saved nickname across localStorage keys
+  const savedNick = localStorage.getItem('dlp_nickname') || localStorage.getItem('dlp_lan_nickname') || localStorage.getItem('vip_nickname');
+  if (savedNick && savedNick !== 'Player' && savedNick !== 'Host') {
+    userProfile.nickname = savedNick;
+    state.vipNickname = savedNick;
+  }
+  if (!userProfile.nickname) {
+    userProfile.nickname = 'Player';
+  }
+
   updateProfileUI();
 }
 
 function saveUserProfile() {
   try {
     localStorage.setItem('dlp_user_profile', JSON.stringify(userProfile));
+    if (userProfile.nickname && userProfile.nickname !== 'Player') {
+      localStorage.setItem('dlp_nickname', userProfile.nickname);
+      localStorage.setItem('dlp_lan_nickname', userProfile.nickname);
+      localStorage.setItem('vip_nickname', userProfile.nickname);
+    }
   } catch (e) {
     console.error('Failed to save user profile:', e);
   }
@@ -7150,7 +7180,7 @@ function startInlineNicknameEdit() {
   const saveBtn = document.getElementById('btn-profile-save-icon');
 
   if (!inputEl || !nameEl) return;
-  const current = userProfile.nickname || (state.lang === 'fa' ? 'مهمان' : 'Player');
+  const current = (userProfile.nickname && userProfile.nickname !== 'Player') ? userProfile.nickname : '';
   inputEl.value = current;
   nameEl.style.display = 'none';
   inputEl.style.display = 'inline-block';
@@ -7233,13 +7263,14 @@ function saveInlineNicknameEdit() {
   state.vipNickname = raw;
   try {
     localStorage.setItem('dlp_nickname', raw);
+    localStorage.setItem('dlp_lan_nickname', raw);
     localStorage.setItem('vip_nickname', raw);
   } catch (e) {}
 
   saveUserProfile();
   updateProfileUI();
 
-  ['vip-host-nickname', 'vip-join-nickname', 'inp-host-nickname', 'inp-client-nickname'].forEach(id => {
+  ['vip-host-nickname', 'vip-join-nickname', 'vip-client-nickname', 'inp-host-nickname', 'inp-client-nickname'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = raw;
   });
@@ -7272,14 +7303,15 @@ function updateProfileUI() {
   const pMmr = document.getElementById('pstat-mmr');
   const pAuthBtnText = document.getElementById('btn-profile-auth-text');
 
+  const hasCustomNick = userProfile.nickname && userProfile.nickname !== 'Player' && userProfile.nickname !== 'Host';
+  const displayName = hasCustomNick ? userProfile.nickname : (state.lang === 'fa' ? 'مهمان' : 'Guest');
+
   if (userProfile.is_guest) {
-    const guestWord = state.lang === 'fa' ? 'مهمان' : 'Guest';
-    const guestNick = userProfile.nickname || guestWord;
-    if (nickEl) nickEl.textContent = `${guestWord} (${guestNick})`;
+    if (nickEl) nickEl.textContent = displayName;
     if (tsTag) tsTag.classList.remove('verified');
     if (tsLabel) tsLabel.textContent = (state.lang === 'fa' ? 'متصل نشده' : 'Not Linked');
     if (statusDot) { statusDot.classList.remove('online'); }
-    if (pCardName) pCardName.textContent = `${guestWord} (${guestNick})`;
+    if (pCardName) pCardName.textContent = displayName;
     if (pCardCode) pCardCode.textContent = 'DLP-GUEST';
     if (pTsLabel) pTsLabel.textContent = (state.lang === 'fa' ? 'حساب متصل نیست' : 'Not Linked');
     if (myCodeDrawer) myCodeDrawer.textContent = 'DLP-GUEST';
@@ -7373,7 +7405,16 @@ function selectAuthOption(opt) {
 
   if (opt === 'teamspeak' || opt === 'ts') {
     switchAuthMethod('cmd');
-    requestNewAuthCode();
+    stopAuthPolling();
+    currentAuthCode = null;
+    const cmdText = document.getElementById('auth-cmd-text');
+    const statusText = document.getElementById('auth-status-text');
+    if (cmdText) cmdText.textContent = '!hub ------';
+    if (statusText) {
+      statusText.textContent = state.lang === 'fa' 
+        ? 'روی «دریافت کد جدید» کلیک کنید تا کد احراز هویت برای شما تولید شود.' 
+        : "Click 'New Code' to generate an OTP code.";
+    }
   } else {
     stopAuthPolling();
   }
@@ -7407,8 +7448,15 @@ function switchAuthMethod(method) {
   }
 }
 
+let isRequestingAuthCode = false;
+let authPollAttempts = 0;
+const MAX_AUTH_POLL_ATTEMPTS = 35; // ~120s max polling to protect VPS resources
+
 async function requestNewAuthCode() {
+  if (isRequestingAuthCode) return;
+  isRequestingAuthCode = true;
   stopAuthPolling();
+
   const cmdText = document.getElementById('auth-cmd-text');
   const statusText = document.getElementById('auth-status-text');
   if (cmdText) cmdText.textContent = '!hub ......';
@@ -7425,20 +7473,38 @@ async function requestNewAuthCode() {
   } catch (err) {
     if (cmdText) cmdText.textContent = '!hub 123456';
     if (statusText) statusText.textContent = (state.lang === 'fa' ? 'خطا در ارتباط با سرور VPS.' : 'VPS connection error.');
+  } finally {
+    isRequestingAuthCode = false;
   }
 }
 
 function startAuthPolling(code) {
   stopAuthPolling();
+  authPollAttempts = 0;
   authPollingTimer = setInterval(async () => {
+    authPollAttempts++;
+    if (authPollAttempts > MAX_AUTH_POLL_ATTEMPTS) {
+      stopAuthPolling();
+      const statusText = document.getElementById('auth-status-text');
+      if (statusText) statusText.textContent = (state.lang === 'fa' ? 'مهلت کد به پایان رسید. جهت دریافت کد جدید کلیک فرمایید.' : 'Code expired. Click to generate a new code.');
+      return;
+    }
+
     try {
       const res = await fetch(`${VPS_API_BASE}/api/auth/ts/check-status/${code}`);
       if (!res.ok) return;
       const data = await res.json();
+      if (data.expired) {
+        stopAuthPolling();
+        const statusText = document.getElementById('auth-status-text');
+        if (statusText) statusText.textContent = (state.lang === 'fa' ? 'مهلت کد به پایان رسید.' : 'Code expired.');
+        return;
+      }
       if (data.verified && data.user) {
         stopAuthPolling();
         userProfile = {
           ...data.user,
+          auth_token: data.auth_token || userProfile?.auth_token || null,
           is_guest: false
         };
         saveUserProfile();
@@ -7448,7 +7514,7 @@ function startAuthPolling(code) {
         refreshFriendsList();
       }
     } catch (_) {}
-  }, 2500);
+  }, 3500);
 }
 
 function stopAuthPolling() {
@@ -7456,6 +7522,7 @@ function stopAuthPolling() {
     clearInterval(authPollingTimer);
     authPollingTimer = null;
   }
+  authPollAttempts = 0;
 }
 
 let pokeCooldownTimer = null;
@@ -7508,7 +7575,11 @@ async function checkAuthCodeNow() {
       const data = await res.json();
       if (data.verified && data.user) {
         stopAuthPolling();
-        userProfile = { ...data.user, is_guest: false };
+        userProfile = {
+          ...data.user,
+          auth_token: data.auth_token || userProfile?.auth_token || null,
+          is_guest: false
+        };
         saveUserProfile();
         updateProfileUI();
         closeAuthModal();
@@ -7608,6 +7679,7 @@ async function verifyPokeOtpAction() {
     if (res.ok && data.success && data.user) {
       userProfile = {
         ...data.user,
+        auth_token: data.auth_token || userProfile?.auth_token || null,
         is_guest: false
       };
       saveUserProfile();
@@ -7649,7 +7721,7 @@ function openFriendsDrawer() {
   drawer.classList.add('open');
   if (wrapper) wrapper.classList.add('side-panel-open');
   updateScale();
-  refreshFriendsList();
+  // Friends feature temporarily in Coming Soon mode
 }
 
 function closeFriendsDrawer() {
@@ -7969,11 +8041,14 @@ async function loadMatchHistory() {
     if (res.ok) {
       const data = await res.json();
       matchHistoryData = data.matches || [];
-      renderMatchHistory('all');
+    } else {
+      matchHistoryData = [];
     }
   } catch (e) {
     console.error('Failed to load match history:', e);
+    matchHistoryData = [];
   }
+  renderMatchHistory('all');
 }
 
 function filterMatchHistory(filter) {
@@ -8013,7 +8088,7 @@ function renderMatchHistory(filter = 'all') {
     if (!sc && m.scorecard_json) {
       try { sc = JSON.parse(m.scorecard_json); } catch (_) {}
     }
-    if (!sc) sc = getDefaultSampleScorecard();
+    if (!sc) return;
 
     const players = sc.players || [];
     const team1Players = players.filter(p => (p.team || '').toUpperCase().includes('HIDDEN') || p.team_id === 0);
@@ -8026,13 +8101,19 @@ function renderMatchHistory(filter = 'all') {
     const winnerName = isHkWin ? 'HIDDEN KING' : 'ARCH MOTHER';
     const winnerClass = isHkWin ? 'winner-hk' : 'winner-am';
 
-    const team1Icons = team1Players.map(p =>
-      `<img src="${getHeroImageUrl(p.hero_id, p.hero)}" class="match-hero-avatar-icon" alt="${p.hero}" title="${p.player} (${p.hero})" onerror="handleHeroImgError(this, '${p.hero}')" />`
-    ).join('');
+    const formatPlayerHeroItem = p => {
+      const pName = p.player || 'Player';
+      const hName = p.hero || 'Hero';
+      return `
+        <div class="match-player-hero-item" title="${pName} (${hName})">
+          <img src="${getHeroImageUrl(p.hero_id, p.hero)}" class="match-hero-avatar-icon" alt="${hName}" onerror="handleHeroImgError(this, '${hName}')" />
+          <span class="match-player-name">${pName}</span>
+        </div>
+      `;
+    };
 
-    const team2Icons = team2Players.map(p =>
-      `<img src="${getHeroImageUrl(p.hero_id, p.hero)}" class="match-hero-avatar-icon" alt="${p.hero}" title="${p.player} (${p.hero})" onerror="handleHeroImgError(this, '${p.hero}')" />`
-    ).join('');
+    const team1Icons = team1Players.map(formatPlayerHeroItem).join('');
+    const team2Icons = team2Players.map(formatPlayerHeroItem).join('');
 
     const card = document.createElement('div');
     card.className = 'match-card-row simplified-match-card';
@@ -8071,11 +8152,15 @@ async function openMatchDpiView(matchId) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     currentDpiMatch = data;
-    renderDpiScorecard(data.scorecard || getDefaultSampleScorecard());
+    if (data.scorecard) {
+      renderDpiScorecard(data.scorecard);
+    } else {
+      throw new Error('Scorecard missing');
+    }
   } catch (err) {
     console.error('Failed to load match DPI details:', err);
-    currentDpiMatch = { match_code: 'QP6BG' };
-    renderDpiScorecard(getDefaultSampleScorecard());
+    showToast(state.lang === 'fa' ? 'خطا در بارگذاری جزئیات مسابقه از سرور پایگاه‌داده' : 'Failed to load match details from server database', 'error');
+    backToMatchHistory();
   }
 }
 
@@ -8443,7 +8528,16 @@ function selectAuthProvider(provider) {
       tsContainer.style.display = 'block';
     }
     switchAuthMethod('cmd');
-    requestNewAuthCode();
+    stopAuthPolling();
+    currentAuthCode = null;
+    const cmdText = document.getElementById('auth-cmd-text');
+    const statusText = document.getElementById('auth-status-text');
+    if (cmdText) cmdText.textContent = '!hub ------';
+    if (statusText) {
+      statusText.textContent = state.lang === 'fa' 
+        ? 'روی «دریافت کد جدید» کلیک کنید تا کد احراز هویت برای شما تولید شود.' 
+        : "Click 'New Code' to generate an OTP code.";
+    }
   }
 }
 
@@ -8507,10 +8601,14 @@ async function adminDeleteLobby(roomCode) {
     return;
   }
   const caller = ((state.vipNickname || state.user?.nickname || userProfile?.nickname || '') + '').trim();
+  const headers = { 'Content-Type': 'application/json' };
+  if (userProfile?.auth_token) {
+    headers['X-User-Token'] = userProfile.auth_token;
+  }
   try {
     const res = await fetch(`${VIP_VPS_HTTP}/api/app-admins/delete-lobby`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ caller, room_code: roomCode })
     });
     const data = await res.json();
@@ -8528,10 +8626,14 @@ window.adminDeleteLobby = adminDeleteLobby;
 
 async function toggleAppAdmin(targetNickname, makeAdmin) {
   const caller = ((state.vipNickname || state.user?.nickname || userProfile?.nickname || '') + '').trim();
+  const headers = { 'Content-Type': 'application/json' };
+  if (userProfile?.auth_token) {
+    headers['X-User-Token'] = userProfile.auth_token;
+  }
   try {
     const res = await fetch(`${VIP_VPS_HTTP}/api/app-admins/toggle`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ caller, target: targetNickname, make_admin: makeAdmin })
     });
     const data = await res.json();
