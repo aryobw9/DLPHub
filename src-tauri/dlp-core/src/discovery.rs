@@ -174,6 +174,7 @@ mod tests {
 
     #[cfg(windows)]
     #[test]
+	#[ignore = "requires local Deadlock installation"]
     fn find_game_smoke_this_machine() {
         // Aryo's box has a real Deadlock install; smoke test only.
         let f = find_game();
