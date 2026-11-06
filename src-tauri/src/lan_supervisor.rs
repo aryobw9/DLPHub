@@ -828,18 +828,7 @@ pub fn launch_deadlock_client(ip: &str, port: u16) -> Result<(), String> {
 
 /// Check if Deadlock client process is currently running
 pub fn is_deadlock_running() -> bool {
-    #[cfg(windows)]
-    {
-        let output = Command::new("tasklist")
-            .args(["/FI", "IMAGENAME eq deadlock.exe", "/NH"])
-            .creation_flags(CREATE_NO_WINDOW)
-            .output();
-        if let Ok(out) = output {
-            let s = String::from_utf8_lossy(&out.stdout);
-            return s.to_lowercase().contains("deadlock.exe");
-        }
-    }
-    false
+    !dlp_core::guard::game_running().is_empty()
 }
 
 /// Activates and brings the Deadlock game window to the foreground

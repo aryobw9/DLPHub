@@ -301,7 +301,7 @@ async function boot() {
 
   try {
     if (await call('running_from_pkg')) {
-      showModal(t('guardTitle'), t('tempPkgTitle'), [{ label: t('ok') }]);
+      showModal(t('warningTitle') || 'هشدار', t('tempPkgTitle'), [{ label: t('ok') }]);
     }
   } catch (_) {}
   try {
@@ -1007,7 +1007,16 @@ async function doInstall() {
     document.getElementById('step-log').innerHTML = '';
     stepLine(String(e), 'skip');
     const msg = String(e).includes('NeedsAdmin') ? t('needsAdmin') : String(e);
-    showModal(t('guardTitle'), msg, [{ label: t('ok') }]);
+    const errStr = String(e);
+    let title = t('applyErrorTitle') || 'خطا در اعمال بهینه‌سازی';
+    if (errStr.includes('NeedsAdmin')) {
+      title = t('applyErrorTitle') || 'خطا در اعمال بهینه‌سازی';
+    } else if (errStr.includes('game running') || errStr.includes('close Deadlock')) {
+      title = t('guardTitle');
+    } else if (errStr.includes('Server returned HTTP') || errStr.includes('Download failed') || errStr.includes('Network') || errStr.includes('SHA-256 integrity') || errStr.includes('Connection')) {
+      title = t('downloadErrorTitle') || 'خطا در دانلود مادها';
+    }
+    showModal(title, msg, [{ label: t('ok') }]);
   } finally {
     clearInterval(reassuranceTimer);
     setBusyCursor(false, 'graphic');

@@ -192,71 +192,198 @@ pub async fn download_single_mod(
     let target_path = cache_dir.join(meta.filename);
     let tmp_path = cache_dir.join(format!("{}.download.tmp", meta.filename));
 
-    let _ = std::fs::remove_file(&tmp_path);
-
-    let client = reqwest::Client::builder()
-        .no_proxy()
-        .timeout(std::time::Duration::from_secs(300))
-        .build()
-        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
-
-    let url = format!("{}/api/mods/download/{}", DEFAULT_MODS_API, meta.filename);
-
-    let mut response = client.get(&url)
-        .send()
-        .await
-        .map_err(|e| format!("Failed to start download from {url}: {e}"))?;
-
-    if !response.status().is_success() {
-        return Err(format!("Server returned HTTP {} for {}", response.status(), meta.filename));
-    }
-
-    let mut file = tokio::fs::File::create(&tmp_path)
-        .await
-        .map_err(|e| format!("Failed to create temporary file {tmp_path:?}: {e}"))?;
-
-    let mut downloaded: u64 = 0;
-    let total_bytes = meta.size_bytes;
-    let start_time = Instant::now();
-    let mut last_emit = Instant::now();
-
-    use tokio::io::AsyncWriteExt;
-
-    while let Some(chunk) = response.chunk().await.map_err(|e| format!("Network read error: {e}"))? {
-        file.write_all(&chunk)
-            .await
-            .map_err(|e| format!("Disk write error: {e}"))?;
-
-        downloaded += chunk.len() as u64;
-
-        if last_emit.elapsed().as_millis() >= 150 || downloaded == total_bytes {
-            last_emit = Instant::now();
-            let elapsed_sec = start_time.elapsed().as_secs_f64().max(0.001);
-            let speed_kbps = ((downloaded as f64 / 1024.0) / elapsed_sec) as u64;
-            let percent = if total_bytes > 0 {
-                ((downloaded as f64 / total_bytes as f64) * 100.0).min(100.0) as u8
-            } else {
-                0
-            };
-
-            if let Some(app) = app_handle {
-                let evt = ModDownloadProgressEvent {
-                    filename: meta.filename.to_string(),
-                    display_name_fa: meta.display_name_fa.to_string(),
-                    display_name_en: meta.display_name_en.to_string(),
-                    current_bytes: downloaded,
-                    total_bytes,
-                    percent,
-                    speed_kbps,
-                    status: "downloading".to_string(),
-                };
-                let _ = app.emit("mod-download-progress", evt);
+    // If tmp already exists and is already the full size, check hash
+    if tmp_path.is_file() {
+        if let Ok(meta_file) = tmp_path.metadata() {
+            if meta_file.len() == meta.size_bytes && verify_file_sha256(&tmp_path, meta.sha256) {
+                let _ = std::fs::remove_file(&target_path);
+                std::fs::rename(&tmp_path, &target_path)
+                    .map_err(|e| format!("Failed to move verified mod to {target_path:?}: {e}"))?;
+                if let Some(app) = app_handle {
+                    let _ = app.emit("mod-download-progress", ModDownloadProgressEvent {
+                        filename: meta.filename.to_string(),
+                        display_name_fa: meta.display_name_fa.to_string(),
+                        display_name_en: meta.display_name_en.to_string(),
+                        current_bytes: meta.size_bytes,
+                        total_bytes: meta.size_bytes,
+                        percent: 100,
+                        speed_kbps: 0,
+                        status: "completed".to_string(),
+                    });
+                }
+                return Ok(());
+            } else if meta_file.len() > meta.size_bytes {
+                let _ = std::fs::remove_file(&tmp_path);
             }
         }
     }
 
-    file.flush().await.map_err(|e| format!("Disk flush error: {e}"))?;
-    drop(file);
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .connect_timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+
+    let url = format!("{}/api/mods/download/{}", DEFAULT_MODS_API, meta.filename);
+    let total_bytes = meta.size_bytes;
+
+    const MAX_RETRIES: usize = 5;
+    let mut retry_count = 0;
+    let mut last_error = String::new();
+
+    use tokio::io::AsyncWriteExt;
+
+    while retry_count < MAX_RETRIES {
+        let mut existing_bytes: u64 = 0;
+        if tmp_path.is_file() {
+            if let Ok(m) = tmp_path.metadata() {
+                existing_bytes = m.len();
+            }
+        }
+
+        if existing_bytes >= total_bytes {
+            break;
+        }
+
+        let mut req_builder = client.get(&url);
+        if existing_bytes > 0 {
+            req_builder = req_builder.header(reqwest::header::RANGE, format!("bytes={existing_bytes}-"));
+        }
+
+        let response_res = tokio::time::timeout(
+            std::time::Duration::from_secs(20),
+            req_builder.send()
+        ).await;
+
+        let response = match response_res {
+            Ok(Ok(resp)) => resp,
+            Ok(Err(e)) => {
+                last_error = format!("Connection error to {url}: {e}");
+                retry_count += 1;
+                tokio::time::sleep(std::time::Duration::from_millis(1000 * retry_count as u64)).await;
+                continue;
+            }
+            Err(_) => {
+                last_error = format!("Connection timed out connecting to {url}");
+                retry_count += 1;
+                tokio::time::sleep(std::time::Duration::from_millis(1000 * retry_count as u64)).await;
+                continue;
+            }
+        };
+
+        let status = response.status();
+        if status == reqwest::StatusCode::RANGE_NOT_SATISFIABLE {
+            let _ = std::fs::remove_file(&tmp_path);
+            retry_count += 1;
+            continue;
+        }
+
+        if !status.is_success() {
+            return Err(format!("Server returned HTTP {status} for {}", meta.filename));
+        }
+
+        let is_partial = status == reqwest::StatusCode::PARTIAL_CONTENT;
+
+        let mut file = if is_partial && existing_bytes > 0 {
+            tokio::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&tmp_path)
+                .await
+                .map_err(|e| format!("Failed to open temporary file {tmp_path:?}: {e}"))?
+        } else {
+            existing_bytes = 0;
+            tokio::fs::OpenOptions::new()
+                .create(true)
+                .write(true)
+                .truncate(true)
+                .open(&tmp_path)
+                .await
+                .map_err(|e| format!("Failed to create temporary file {tmp_path:?}: {e}"))?
+        };
+
+        let mut downloaded = existing_bytes;
+        let mut response = response;
+        let mut last_emit = Instant::now();
+        let mut window_start = Instant::now();
+        let mut window_bytes: u64 = 0;
+        let mut speed_kbps: u64 = 0;
+        let mut stream_interrupted = false;
+
+        loop {
+            let chunk_res = tokio::time::timeout(
+                std::time::Duration::from_secs(35),
+                response.chunk()
+            ).await;
+
+            match chunk_res {
+                Ok(Ok(Some(chunk))) => {
+                    if let Err(e) = file.write_all(&chunk).await {
+                        let _ = file.flush().await;
+                        return Err(format!("Disk write error: {e}"));
+                    }
+                    downloaded += chunk.len() as u64;
+                    window_bytes += chunk.len() as u64;
+
+                    if last_emit.elapsed().as_millis() >= 150 || downloaded == total_bytes {
+                        let window_elapsed = window_start.elapsed().as_secs_f64();
+                        if window_elapsed >= 0.5 {
+                            speed_kbps = ((window_bytes as f64 / 1024.0) / window_elapsed) as u64;
+                            window_start = Instant::now();
+                            window_bytes = 0;
+                        }
+                        last_emit = Instant::now();
+                        let percent = if total_bytes > 0 {
+                            ((downloaded as f64 / total_bytes as f64) * 100.0).min(100.0) as u8
+                        } else {
+                            0
+                        };
+
+                        if let Some(app) = app_handle {
+                            let evt = ModDownloadProgressEvent {
+                                filename: meta.filename.to_string(),
+                                display_name_fa: meta.display_name_fa.to_string(),
+                                display_name_en: meta.display_name_en.to_string(),
+                                current_bytes: downloaded,
+                                total_bytes,
+                                percent,
+                                speed_kbps,
+                                status: "downloading".to_string(),
+                            };
+                            let _ = app.emit("mod-download-progress", evt);
+                        }
+                    }
+                }
+                Ok(Ok(None)) => {
+                    break;
+                }
+                Ok(Err(e)) => {
+                    last_error = format!("Network read error: {e}");
+                    stream_interrupted = true;
+                    break;
+                }
+                Err(_) => {
+                    last_error = "Network stream idle timeout (no data for 35s)".to_string();
+                    stream_interrupted = true;
+                    break;
+                }
+            }
+        }
+
+        let _ = file.flush().await;
+        drop(file);
+
+        if !stream_interrupted && downloaded >= total_bytes {
+            break;
+        }
+
+        retry_count += 1;
+        tokio::time::sleep(std::time::Duration::from_millis(1000 * retry_count as u64)).await;
+    }
+
+    if !tmp_path.is_file() {
+        return Err(format!("Download failed after {MAX_RETRIES} attempts: {last_error}"));
+    }
 
     // Cryptographic SHA-256 Verification
     if let Some(app) = app_handle {
@@ -264,7 +391,7 @@ pub async fn download_single_mod(
             filename: meta.filename.to_string(),
             display_name_fa: meta.display_name_fa.to_string(),
             display_name_en: meta.display_name_en.to_string(),
-            current_bytes: downloaded,
+            current_bytes: total_bytes,
             total_bytes,
             percent: 100,
             speed_kbps: 0,
@@ -279,7 +406,7 @@ pub async fn download_single_mod(
                 filename: meta.filename.to_string(),
                 display_name_fa: meta.display_name_fa.to_string(),
                 display_name_en: meta.display_name_en.to_string(),
-                current_bytes: downloaded,
+                current_bytes: total_bytes,
                 total_bytes,
                 percent: 100,
                 speed_kbps: 0,
@@ -302,7 +429,7 @@ pub async fn download_single_mod(
             filename: meta.filename.to_string(),
             display_name_fa: meta.display_name_fa.to_string(),
             display_name_en: meta.display_name_en.to_string(),
-            current_bytes: downloaded,
+            current_bytes: total_bytes,
             total_bytes,
             percent: 100,
             speed_kbps: 0,
