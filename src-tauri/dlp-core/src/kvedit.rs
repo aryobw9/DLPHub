@@ -148,45 +148,6 @@ pub fn set_fov(gi_content: &str, ar: &str) -> String {
     set_aspect_ratio(gi_content, Some(ar))
 }
 
-/// patch_gameinfo_options:
-/// Updates gameinfo.gi directly for user settings:
-/// 1) "r_aspectratio" -> ar (or comments it out if None)
-/// 2) "cloth_sim_on_tick" -> "0" if stop_cloth_anim else "1"
-/// 3) "cl_ragdoll_limit" -> "0" if ragdoll_fade else "-1"
-pub fn patch_gameinfo_options(
-    gi_content: &str,
-    ar: Option<&str>,
-    stop_cloth_anim: bool,
-    ragdoll_fade: bool,
-) -> String {
-    let with_ar = set_aspect_ratio(gi_content, ar);
-    let mut out = String::with_capacity(with_ar.len());
-
-    let cloth_val = if stop_cloth_anim { "0" } else { "1" };
-    let ragdoll_val = if ragdoll_fade { "0" } else { "-1" };
-
-    for line in strip_bom(&with_ar).split_inclusive('\n') {
-        let t = line.trim_start();
-        if t.starts_with("\"cloth_sim_on_tick\"") || t.starts_with("cloth_sim_on_tick") {
-            let indent = &line[..line.len() - t.len()];
-            out.push_str(indent);
-            out.push_str(&format!("\"cloth_sim_on_tick\"\t\t\t\t\t\t\"{}\"", cloth_val));
-            if line.ends_with('\n') {
-                out.push('\n');
-            }
-        } else if t.starts_with("\"cl_ragdoll_limit\"") || t.starts_with("cl_ragdoll_limit") {
-            let indent = &line[..line.len() - t.len()];
-            out.push_str(indent);
-            out.push_str(&format!("\"cl_ragdoll_limit\"\t\t\t\t\t\t\"{}\"", ragdoll_val));
-            if line.ends_with('\n') {
-                out.push('\n');
-            }
-        } else {
-            out.push_str(line);
-        }
-    }
-    out
-}
 
 /// Managed autoexec block. File = user's own content untouched, plus one marked
 /// block we own. enabled=false removes the block; user content always preserved.
@@ -447,19 +408,6 @@ mod tests {
         assert!(out.contains("\tfps_max 165\n"));
     }
 
-    #[test]
-    fn gameinfo_patch_options_test() {
-        let gi = "\t\t\"cloth_sim_on_tick\"\t\t\"1\"\n\t\t\"cl_ragdoll_limit\"\t\t\"-1\"\n\t\t\"r_aspectratio\"\t\t\"2.15\"\n";
-        let patched = patch_gameinfo_options(gi, Some("2.40"), true, true);
-        assert!(patched.contains("\"cloth_sim_on_tick\"\t\t\t\t\t\t\"0\""));
-        assert!(patched.contains("\"cl_ragdoll_limit\"\t\t\t\t\t\t\"0\""));
-        assert!(patched.contains("\"r_aspectratio\"\t\t\t\t\t\t\"2.40\""));
-
-        let patched_off = patch_gameinfo_options(gi, None, false, false);
-        assert!(patched_off.contains("\"cloth_sim_on_tick\"\t\t\t\t\t\t\"1\""));
-        assert!(patched_off.contains("\"cl_ragdoll_limit\"\t\t\t\t\t\t\"-1\""));
-        assert!(patched_off.contains("// \"r_aspectratio\"\t\t\t\t\t\t\"disabled\""));
-    }
 
     #[test]
     fn patch_video_kv_replaces_keys() {

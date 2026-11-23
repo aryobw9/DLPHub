@@ -7,8 +7,6 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tauri::Emitter;
 
-pub const DEFAULT_MODS_API: &str = "http://5.57.32.52:48080";
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModMeta {
     pub filename: &'static str,
@@ -79,6 +77,72 @@ pub const OFFICIAL_MODS: &[ModMeta] = &[
 
 pub fn find_mod(filename: &str) -> Option<&'static ModMeta> {
     OFFICIAL_MODS.iter().find(|m| m.filename.eq_ignore_ascii_case(filename))
+}
+
+/// Marker the UI matches on so a missing bundle is reported as
+/// "not available" instead of as a generic HTTP error.
+const BUNDLE_UNAVAILABLE_MARKER: &str = "MOD_BUNDLE_UNAVAILABLE";
+
+fn bundle_label(meta: &ModMeta) -> String {
+    format!("{} ({})", meta.display_name_en, meta.filename)
+}
+
+/// Probes every required bundle before any transfer starts, so room prep fails
+/// immediately with a clear message instead of dying on a 404 halfway through
+/// the download loop. Bundles whose hosts never answered are skipped: that is a
+/// connection problem, not a missing-file problem.
+async fn find_unavailable_bundles(required: &[&str]) -> Vec<String> {
+    let Ok(client) = reqwest::Client::builder()
+        .no_proxy()
+        .connect_timeout(std::time::Duration::from_secs(6))
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+    else {
+        return Vec::new();
+    };
+    let candidates = crate::lan_vip::ordered_candidates();
+    let mut missing = Vec::new();
+
+    for &fname in required {
+        // `find_mod` already rejects blank and unknown names.
+        let Some(meta) = find_mod(fname.trim()) else { continue };
+        if is_mod_cached(meta.filename) {
+            continue;
+        }
+
+        let mut probes = 0usize;
+        let mut available = false;
+        for base in &candidates {
+            let url = format!("{}/api/mods/download/{}", base.trim_end_matches('/'), meta.filename);
+            // The coordinator only routes GET (HEAD answers 405), so probe with
+            // a one-byte Range request: 200/206 means present, 404 means the
+            // file was never uploaded to that node.
+            if let Ok(resp) = client
+                .get(&url)
+                .header(reqwest::header::RANGE, "bytes=0-0")
+                .send()
+                .await
+            {
+                probes += 1;
+                if resp.status().is_success() {
+                    available = true;
+                    break;
+                }
+            }
+        }
+        if !available && probes == 0 {
+            // Nothing answered at all: that is a connectivity problem, not a
+            // missing bundle. Stop probing so the user gets the real error fast.
+            return Vec::new();
+        }
+        // Only a bundle every endpoint actively denied is reported missing; a
+        // silent endpoint falls through to the normal download path so the user
+        // sees that error instead.
+        if !available && probes == candidates.len() {
+            missing.push(bundle_label(meta));
+        }
+    }
+    missing
 }
 
 pub fn get_cache_dir() -> PathBuf {
@@ -220,20 +284,37 @@ pub async fn download_single_mod(
 
     let client = reqwest::Client::builder()
         .no_proxy()
-        .connect_timeout(std::time::Duration::from_secs(15))
+        .connect_timeout(std::time::Duration::from_secs(6))
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
 
-    let url = format!("{}/api/mods/download/{}", DEFAULT_MODS_API, meta.filename);
     let total_bytes = meta.size_bytes;
 
-    const MAX_RETRIES: usize = 5;
+    const MAX_RETRIES: usize = 6;
     let mut retry_count = 0;
     let mut last_error = String::new();
 
+    // Every failure inside the loop is recoverable: record why, then retry on
+    // the next endpoint after a short backoff (a partial file resumes via Range).
+    macro_rules! retry {
+        ($($arg:tt)*) => {{
+            last_error = format!($($arg)*);
+            eprintln!("[Mod Cache] {last_error}, attempting fallback...");
+            retry_count += 1;
+            tokio::time::sleep(std::time::Duration::from_millis(500 * retry_count as u64)).await;
+            continue;
+        }};
+    }
+
     use tokio::io::AsyncWriteExt;
 
+    let candidates = crate::lan_vip::ordered_candidates();
+    let mut winning_base = None;
+
     while retry_count < MAX_RETRIES {
+        let current_base = &candidates[retry_count % candidates.len()];
+        let url = format!("{}/api/mods/download/{}", current_base.trim_end_matches('/'), meta.filename);
+
         let mut existing_bytes: u64 = 0;
         if tmp_path.is_file() {
             if let Ok(m) = tmp_path.metadata() {
@@ -241,7 +322,13 @@ pub async fn download_single_mod(
             }
         }
 
-        if existing_bytes >= total_bytes {
+        if existing_bytes > total_bytes {
+            // Leftover from an older bundle revision: restart from scratch.
+            let _ = std::fs::remove_file(&tmp_path);
+            existing_bytes = 0;
+        }
+        if existing_bytes == total_bytes {
+            winning_base = Some(current_base.clone());
             break;
         }
 
@@ -257,29 +344,26 @@ pub async fn download_single_mod(
 
         let response = match response_res {
             Ok(Ok(resp)) => resp,
-            Ok(Err(e)) => {
-                last_error = format!("Connection error to {url}: {e}");
-                retry_count += 1;
-                tokio::time::sleep(std::time::Duration::from_millis(1000 * retry_count as u64)).await;
-                continue;
-            }
-            Err(_) => {
-                last_error = format!("Connection timed out connecting to {url}");
-                retry_count += 1;
-                tokio::time::sleep(std::time::Duration::from_millis(1000 * retry_count as u64)).await;
-                continue;
-            }
+            Ok(Err(e)) => retry!("Connection error to {url}: {e}"),
+            Err(_) => retry!("Connection timed out connecting to {url}"),
         };
 
         let status = response.status();
         if status == reqwest::StatusCode::RANGE_NOT_SATISFIABLE {
             let _ = std::fs::remove_file(&tmp_path);
-            retry_count += 1;
-            continue;
+            retry!("Server rejected the resume range for {url}");
         }
 
+        if status == reqwest::StatusCode::NOT_FOUND {
+            retry!(
+                "{BUNDLE_UNAVAILABLE_MARKER}|Mod bundle '{label}' is not available on the server (HTTP 404 from {url})",
+                label = bundle_label(meta)
+            );
+        }
+
+        // Any other refusal may be specific to this node, so try the other one.
         if !status.is_success() {
-            return Err(format!("Server returned HTTP {status} for {}", meta.filename));
+            retry!("Server returned HTTP {status} from {url}");
         }
 
         let is_partial = status == reqwest::StatusCode::PARTIAL_CONTENT;
@@ -374,6 +458,7 @@ pub async fn download_single_mod(
         drop(file);
 
         if !stream_interrupted && downloaded >= total_bytes {
+            winning_base = Some(current_base.clone());
             break;
         }
 
@@ -383,6 +468,18 @@ pub async fn download_single_mod(
 
     if !tmp_path.is_file() {
         return Err(format!("Download failed after {MAX_RETRIES} attempts: {last_error}"));
+    }
+
+    // A slow link can exhaust the retries while the file is still partial. Keep
+    // the `.download.tmp` so the next run resumes with a Range request instead
+    // of hashing the partial bytes and reporting the bundle as corrupt.
+    if let Ok(m) = tmp_path.metadata() {
+        if m.len() != total_bytes {
+            return Err(format!(
+                "Download incomplete after {MAX_RETRIES} attempts ({} of {total_bytes} bytes): {last_error}. Partial file kept for resume.",
+                m.len()
+            ));
+        }
     }
 
     // Cryptographic SHA-256 Verification
@@ -419,6 +516,10 @@ pub async fn download_single_mod(
         ));
     }
 
+    if let Some(base) = winning_base {
+        crate::lan_vip::mark_vip_api_success(&base);
+    }
+
     // Atomic Move (On Windows ensure existing destination is removed first)
     let _ = std::fs::remove_file(&target_path);
     std::fs::rename(&tmp_path, &target_path)
@@ -445,6 +546,18 @@ pub async fn ensure_mods_cached(
     app_handle: Option<&tauri::AppHandle>,
 ) -> Result<PathBuf, String> {
     let cache_dir = get_cache_dir();
+
+    // Fail before touching anything if the coordinator never got the bundles.
+    let missing = find_unavailable_bundles(required_filenames).await;
+    if !missing.is_empty() {
+        return Err(format!(
+            "{BUNDLE_UNAVAILABLE_MARKER}|Mod bundle not available on the server: {}. \
+             The coordinator is missing these files, so no room or game files were changed. \
+             Ask the host to upload them, or use an unmodded room.",
+            missing.join(", ")
+        ));
+    }
+
     for &fname in required_filenames {
         let clean = fname.trim();
         if clean.is_empty() {

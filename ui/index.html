@@ -12,191 +12,8 @@
   <link rel="stylesheet" href="vendor/fontawesome/css/regular.min.css" />
   <link rel="stylesheet" href="vendor/fontawesome/css/brands.min.css" />
   <link rel="stylesheet" href="vendor/animate.css/animate.min.css" />
-  <link rel="stylesheet" href="style.css?v=54" />
-  <style id="dlp-app-enhancements">
-    :root, html, body {
-      color-scheme: dark !important;
-    }
-
-    /* Universal Dark Mode styling for native select elements */
-    select, select option, select optgroup {
-      color-scheme: dark !important;
-      background-color: #0a101b !important;
-      background: #0a101b !important;
-      color: #f8fafc !important;
-      border-color: rgba(249, 115, 22, 0.4) !important;
-    }
-
-    /* Cyber Custom Dropdown Component for Engine Config */
-    .apb-select-wrap {
-      position: relative !important;
-    }
-
-    .apb-custom-select-trigger {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(14, 23, 38, 0.85);
-      border: 1px solid rgba(249, 115, 22, 0.35);
-      border-radius: 6px;
-      color: #ffedd5;
-      font-family: 'Rajdhani', 'Vazirmatn', sans-serif;
-      font-size: 0.84rem;
-      font-weight: 700;
-      padding: 3px 10px;
-      cursor: pointer;
-      user-select: none;
-      transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-      box-shadow: 0 0 8px rgba(249, 115, 22, 0.15);
-    }
-
-    .apb-custom-select-trigger:hover,
-    .apb-custom-select-trigger.is-open {
-      border-color: var(--deadlock-orange);
-      background: rgba(22, 34, 55, 0.95);
-      box-shadow: 0 0 14px rgba(249, 115, 22, 0.35);
-      color: #ffffff;
-    }
-
-    .apb-custom-chevron {
-      font-size: 10px;
-      color: var(--deadlock-orange);
-      transition: transform 0.2s ease;
-    }
-
-    .apb-custom-select-trigger.is-open .apb-custom-chevron {
-      transform: rotate(180deg);
-    }
-
-    .apb-custom-options-menu {
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      min-width: 220px;
-      max-width: 260px;
-      width: max-content;
-      background: #090e17;
-      border: 1px solid rgba(249, 115, 22, 0.45);
-      border-radius: 8px;
-      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.95), 0 0 20px rgba(249, 115, 22, 0.25);
-      z-index: 99999;
-      padding: 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      animation: animate__fadeIn 0.15s ease;
-      max-height: 280px;
-      overflow-y: auto;
-    }
-
-    .apb-custom-option {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      border-radius: 5px;
-      color: #cbd5e1;
-      font-family: 'Rajdhani', 'Vazirmatn', sans-serif;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background-color 0.12s ease, color 0.12s ease;
-    }
-
-    .apb-custom-option:hover {
-      background: rgba(249, 115, 22, 0.18);
-      color: #ffffff;
-      border-left: 3px solid var(--deadlock-orange);
-      padding-left: 9px;
-    }
-
-    .apb-custom-option.selected {
-      background: rgba(249, 115, 22, 0.25);
-      color: #ffedd5;
-      font-weight: 700;
-      border-left: 3px solid var(--deadlock-orange);
-    }
-
-    .apb-custom-option-check {
-      color: var(--deadlock-orange);
-      font-size: 11px;
-    }
-
-    /* Strict Focus Visible Ring */
-    :focus-visible {
-      outline: 2px solid var(--deadlock-cyan) !important;
-      outline-offset: 2px !important;
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.6) !important;
-    }
-    button:focus:not(:focus-visible),
-    [role="button"]:focus:not(:focus-visible),
-    .pro-card:focus:not(:focus-visible),
-    .opt-level-card:focus:not(:focus-visible) {
-      outline: none !important;
-    }
-
-    /* Tabular Numerals */
-    .fov-val-chip,
-    .fps-val-badge,
-    .ar-real-input,
-    .renderer-pill,
-    .pill-val,
-    .latency-progress-pct,
-    .ping-val,
-    .fov-bound,
-    .tabular-num,
-    .apb-stats-chip,
-    .level-num,
-    .drawer-stats-pill {
-      font-variant-numeric: tabular-nums !important;
-      font-feature-settings: "tnum" 1 !important;
-    }
-
-    /* Cyber Revert Confirmation Modal */
-    .revert-confirm-modal-box {
-      width: 480px;
-      max-width: 92vw;
-      background: radial-gradient(circle at 50% 0%, #151d2c 0%, #0c121e 100%);
-      border: 1px solid rgba(249, 115, 22, 0.4);
-      box-shadow: 0 0 30px rgba(0,0,0,0.85), 0 0 20px rgba(249, 115, 22, 0.25);
-      border-radius: var(--radius);
-      padding: 24px;
-      animation: animate__fadeIn 0.2s ease;
-    }
-    .revert-modal-icon-badge {
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      background: rgba(249, 115, 22, 0.15);
-      border: 1px solid var(--deadlock-orange);
-      color: var(--deadlock-orange);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.3rem;
-      box-shadow: 0 0 14px var(--deadlock-orange-glow);
-      margin-bottom: 14px;
-    }
-    .revert-modal-title {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: var(--text-main);
-      margin-bottom: 8px;
-    }
-    .revert-modal-desc {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      line-height: 1.5;
-      margin-bottom: 20px;
-    }
-    .revert-modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-  </style>
-
-</head>
+  <link rel="stylesheet" href="style.css?v=59" />
+  </head>
 <body>
   <div class="ambient-glow">
     <div class="glow-blue"></div>
@@ -381,7 +198,6 @@
                   <span class="level-badge badge-safe"><i class="fa-solid fa-microchip"></i> <span data-i18n="badgeCpu">CPU</span></span>
                 </div>
                 <div class="level-name" data-i18n="level1Name">High Graphics</div>
-                <div class="level-desc" data-i18n="level1Desc">only gameinfo.gi · 0% visual risk</div>
                 <div class="level-features">
                   <span class="level-feat active" data-i18n="featGameInfo">GameInfo</span>
                   <span class="level-feat inactive" data-i18n="featVideo">Video</span>
@@ -397,7 +213,6 @@
                   <span class="level-badge badge-balanced"><i class="fa-solid fa-bolt"></i> <span data-i18n="badgeCpuGpu">CPU + GPU</span></span>
                 </div>
                 <div class="level-name" data-i18n="level2Name">Recommended</div>
-                <div class="level-desc" data-i18n="level2Desc">gameinfo.gi + video.txt + mods</div>
                 <div class="level-features">
                   <span class="level-feat active" data-i18n="featGameInfo">GameInfo</span>
                   <span class="level-feat active" data-i18n="featVideo">Video</span>
@@ -413,7 +228,6 @@
                   <span class="level-badge badge-potato"><i class="fa-solid fa-fire"></i> <span data-i18n="badgePotato">POTATO</span></span>
                 </div>
                 <div class="level-name" data-i18n="level3Name">PotatoLock</div>
-                <div class="level-desc" data-i18n="level3Desc">Maximum frames for low-end PCs</div>
                 <div class="level-features level-features-split">
                   <div class="level-features-left">
                     <span class="level-feat active" data-i18n="featGameInfo">GameInfo</span>
@@ -1011,49 +825,30 @@
       </div> <!-- Close panel-latency -->
         <div class="panel" id="panel-advanced" style="display:none">
           <div class="advanced-grid">
-            <div class="adv-col adv-col-actions">
-              <div class="adv-card adv-danger adv-revert-only">
-                <button class="btn-reset btn-danger" id="btn-revert-vanilla" onclick="doRevertVanilla()">
-                  <i class="fa-solid fa-triangle-exclamation" style="font-size:16px;color:#ef4444"></i>
+                        <div class="adv-col adv-col-actions">
+              <div class="adv-actions-vertical">
+                <button class="btn-reset btn-danger-action" id="btn-revert-vanilla" onclick="doRevertVanilla()">
+                  <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444"></i>
                   <span data-i18n="btnRevertVanilla">بازگردانی تمام تغییرات</span>
                 </button>
-              </div>
-              <div class="adv-card adv-match-card">
-                <button class="btn-apply btn-sync-match" id="btn-sync-match" onclick="doSyncMatch()">
-                  <div class="sync-btn-content">
-                    <i class="fa-solid fa-trophy" id="icon-sync-match" style="font-size:15px;color:var(--deadlock-orange)"></i>
-                    <span id="btn-sync-match-text" data-i18n="btnSyncMatch">ثبت آخرین مسابقه (Sync Match)</span>
-                  </div>
-                  <div class="sync-btn-actions">
-                    <span class="match-help-icon" id="match-help-icon" data-i18n-tooltip="matchSyncHelp" onclick="event.stopPropagation(); showMatchHelp();">
-                      <i class="fa-solid fa-circle-question"></i>
-                    </span>
-                    <span class="match-sync-badge badge-idle" id="match-sync-badge" data-i18n="matchSyncBadgeReady">READY</span>
-                  </div>
+                <button class="btn-reset" id="btn-select-game-path" onclick="doSelectGameLocation()">
+                  <i class="fa-solid fa-folder-open" style="color:var(--deadlock-cyan)"></i>
+                  <span data-i18n="btnSelectGamePath">تغییر مسیر بازی</span>
                 </button>
-              </div>
-              <div class="adv-card adv-update-card">
-                <button class="btn-apply btn-check-updates" id="btn-check-updates" onclick="checkForUpdates()">
-                  <i class="fa-solid fa-arrows-rotate" style="font-size:15px;color:var(--deadlock-cyan)"></i>
+                <button class="btn-reset" id="btn-check-updates" onclick="checkForUpdates()">
+                  <i class="fa-solid fa-arrows-rotate" style="color:var(--deadlock-cyan)"></i>
                   <span data-i18n="btnCheckUpdates">بروزرسانی اپ</span>
                 </button>
-              </div>
-              <div class="adv-card adv-motion-card">
-                <div class="adv-card-header">
-                  <div class="adv-card-title-group">
-                    <i class="fa-solid fa-battery-half" style="font-size:15px;color:var(--deadlock-cyan)"></i>
-                    <span class="adv-card-title" data-i18n="reducedMotionTitle">REDUCED MOTION (LAPTOP / BATTERY)</span>
+                <div class="adv-actions-row-toggle" id="row-reduced-motion" onclick="toggleReducedMotionFromRow(event)">
+                  <div class="adv-toggle-info">
+                    <i class="fa-solid fa-battery-half" style="color:var(--deadlock-cyan)"></i>
+                    <span class="adv-toggle-label" data-i18n="reducedMotionTitle">REDUCED MOTION (LAPTOP / BATTERY)</span>
                   </div>
-                  <label class="neon-checkbox" style="margin:0" data-tooltip="Disable custom mouse and heavy animations">
+                  <label class="neon-checkbox" style="margin:0" onclick="event.stopPropagation()">
                     <input type="checkbox" id="sw-reduced-motion" onchange="toggleReducedMotion(this.checked)" />
                     <span class="neon-checkbox-box"></span>
                   </label>
                 </div>
-                <div class="adv-card-desc" data-i18n="reducedMotionDesc">
-                  Disables custom flame cursor and heavy animations for low-end / battery laptops.
-                </div>
-              </div>
-              <div class="adv-card adv-actions-row">
                 <button class="btn-reset" id="btn-reset-settings" onclick="doResetSettings()">
                   <i class="fa-solid fa-rotate-left" style="color:var(--deadlock-cyan)"></i>
                   <span data-i18n="btnResetSettings">ریست تنظیمات برنامه</span>
@@ -1102,21 +897,7 @@
           </div>
         </div>
         <div class="panel" id="panel-lan" style="display:none">
-          <div class="coming-soon-container">
-            <div class="coming-soon-card">
-              <div class="coming-soon-icon-ring">
-                <i class="fa-solid fa-network-wired"></i>
-              </div>
-              <h2 class="coming-soon-title" data-i18n="lanComingSoonTitle">Coming Soon...</h2>
-              <p class="coming-soon-desc" data-i18n="lanComingSoonDesc">Deadlock LAN & Mesh Lobby features are undergoing major enhancements and will be available in an upcoming update.</p>
-              <div class="coming-soon-badge">
-                <i class="fa-solid fa-screwdriver-wrench"></i>
-                <span data-i18n="inDevelopment">UNDER DEVELOPMENT</span>
-              </div>
-            </div>
-          </div>
-          <div class="lan-container" style="display:none !important;">
-
+          <div class="lan-container">
 
             <div id="lan-lobby-browser" class="lan-lobby-browser">
               <div class="lan-mode-nav-tabs">
@@ -1130,9 +911,43 @@
                 </button>
               </div>
               <div class="lan-card unified-lan-card" id="vip-lan-card">
-                
+                <!-- VIP Locked Card (Shown when user is NOT VIP) -->
+                <div class="vip-locked-card" id="vip-locked-card" style="display:none;">
+                  <div class="vip-locked-icon-ring">
+                    <i class="fa-solid fa-crown"></i>
+                  </div>
+                  <h2 class="vip-locked-title" data-i18n="vipLockedTitle">اشتراک VIP ددلاک الزامی است</h2>
+                  <p class="vip-locked-desc" data-i18n="vipLockedDesc">
+                    سرورهای اختصاصی مش و لابی‌های سرور ایران ویژه کاربران VIP می‌باشد. برای دسترسی به این بخش، لطفاً کلید لایسنس خود را فعال کنید.
+                  </p>
 
-                <!-- Unified Lobby Controls -->
+                  <div class="vip-locked-hwid-box">
+                    <span class="vip-locked-hwid-label" data-i18n="vipHwidLabel">شناسه سخت‌افزاری شما (HWID):</span>
+                    <div class="vip-locked-hwid-row">
+                      <code id="vip-lan-hwid-display">Loading...</code>
+                      <button type="button" class="btn-copy-code" onclick="copyVipHwid()" data-tooltip="کپی HWID">
+                        <i class="fa-solid fa-copy"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="vip-locked-activation-box">
+                    <input type="text" id="vip-lan-key-input" class="lan-input" placeholder="DLP-VIP-XXXX-XXXX-XXXX" maxlength="36" dir="ltr" onkeydown="if(event.key==='Enter') redeemLanVipKeyAction()" />
+                    <button type="button" class="btn-apply btn-sm" id="btn-vip-lan-redeem" onclick="redeemLanVipKeyAction()">
+                      <i class="fa-solid fa-key"></i>
+                      <span data-i18n="vipActivateBtn">فعالسازی VIP</span>
+                    </button>
+                  </div>
+
+                  <div class="vip-locked-fallback-action">
+                    <button type="button" class="btn-secondary btn-sm" onclick="switchLanMode('direct')">
+                      <i class="fa-solid fa-ethernet"></i>
+                      <span data-i18n="switchToDirectLan">استفاده از شبکه محلی رایگان (Direct LAN)</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Unified Lobby Controls (Shown when user IS VIP) -->
                 <div class="vip-mesh-controls" id="vip-mesh-controls">
                   <!-- Role Choice (Host vs Join) -->
                   <div class="vip-role-choice">
@@ -1611,7 +1426,12 @@
                         <i class="fa-solid fa-users" style="color:gold"></i>
                         <span class="session-card-title" data-i18n="sessionRosterTitle">بازیکنان متصل به سرور و لابی</span>
                       </div>
-                      <span class="session-badge-counter" id="session-player-count">1 <span data-i18n="playerWord">بازیکن</span></span>
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <button type="button" class="btn-roster-unban-trigger" id="btn-roster-unban-prompt" onclick="promptUnbanPeer()" title="Unban Player" data-i18n-title="unbanPlayer" style="display:none;">
+                          <i class="fa-solid fa-user-check"></i> <span data-i18n="unbanPlayer">رفع مسدودی</span>
+                        </button>
+                        <span class="session-badge-counter" id="session-player-count">1 <span data-i18n="playerWord">بازیکن</span></span>
+                      </div>
                     </div>
 
                     <div class="session-roster-list" id="session-roster-list">
@@ -1722,8 +1542,8 @@
           </div>
         </div>
 
-        <!-- Segmented Tabs (Hidden in Coming Soon) -->
-        <div class="perf-drawer-tabs" style="display:none !important;">
+        <!-- Segmented Tabs -->
+        <div class="perf-drawer-tabs">
           <button type="button" class="perf-drawer-tab active" id="tab-btn-friends-all" onclick="switchFriendsTab('all')">
             <i class="fa-solid fa-user-group"></i> <span data-i18n="allFriends">همه دوستان</span>
           </button>
@@ -1738,23 +1558,8 @@
 
       <!-- Drawer Body -->
       <div class="perf-drawer-body">
-        <!-- Friends Coming Soon Banner -->
-        <div class="coming-soon-container" style="padding: 60px 20px;">
-          <div class="coming-soon-card">
-            <div class="coming-soon-icon-ring">
-              <i class="fa-solid fa-user-group"></i>
-            </div>
-            <h2 class="coming-soon-title" data-i18n="friendsComingSoonTitle">Coming Soon...</h2>
-            <p class="coming-soon-desc" data-i18n="friendsComingSoonDesc">Friends & TeamSpeak party features are currently under development.</p>
-            <div class="coming-soon-badge">
-              <i class="fa-solid fa-clock"></i>
-              <span data-i18n="inDevelopment">UNDER DEVELOPMENT</span>
-            </div>
-          </div>
-        </div>
-        <!-- Tab 1 & 2: Friends List & Filters (Completely wrapped & hidden) -->
-        <div id="friends-tab-panes-wrapper" style="display:none !important;">
-        <div class="drawer-tab-pane" id="pane-friends-list" style="display:none !important;">
+        <!-- Tab 1 & 2: Friends List & Filters -->
+        <div class="drawer-tab-pane active" id="pane-friends-list" style="display:block;">
           <div class="editor-controls-sticky">
             <div class="editor-search-bar">
               <i class="fa-solid fa-magnifying-glass"></i>
@@ -1799,7 +1604,6 @@
             </div>
             <div id="friend-add-feedback" style="margin-top:8px; font-size:12px; display:none;"></div>
           </div>
-        </div>
         </div>
       </div>
     </aside>
@@ -1931,7 +1735,7 @@
     </div>
   </div>
   <div class="app-version-badge" id="app-version-badge" dir="ltr">
-    <span class="ver-tag" id="app-ver-tag">v0.1.6 <span class="ver-beta">BETA</span></span>
+    <span class="ver-tag" id="app-ver-tag">v0.1.7 <span class="ver-beta">BETA</span></span>
     <span class="ver-sep">•</span>
     <span class="ver-by">by <span class="ver-author">aryobw9</span></span>
   </div>
@@ -1956,7 +1760,7 @@
             <div class="error-modal-subtitle" id="error-dialog-subtitle" data-i18n="errDialogSubtitle">Windows Service Conflict</div>
           </div>
         </div>
-        <button class="doorman-close-btn" onclick="closeErrorModal()" title="Close">&times;</button>
+        <button class="app-modal-close-btn doorman-close-btn" onclick="closeErrorModal()" title="Close">&times;</button>
       </div>
 
       <div class="error-modal-body-content">
@@ -2011,53 +1815,23 @@
       </div>
     </div>
   </div>
-  <div class="modal-overlay" id="modal-doorman-test" style="display:none">
-    <div class="modal-box doorman-test-modal-box">
-      <div class="doorman-modal-header">
-        <div class="doorman-modal-title-group">
-          <i class="fa-solid fa-flask" style="color:var(--deadlock-cyan);font-size:16px;"></i>
-          <span class="doorman-modal-title" data-i18n="doormanModalTitle">Doorman Ult Bug Diagnostic (Temp)</span>
-        </div>
-        <button class="doorman-close-btn" id="btn-close-doorman-modal" onclick="closeDoormanModal()">&times;</button>
-      </div>
-      <div class="doorman-modal-desc" data-i18n="doormanModalDesc">
-        Toggle each candidate ConVar 1-by-1 to identify which option hides the Doorman ultimate return indicator.
-      </div>
-      <div class="doorman-toggles-list" id="doorman-toggles-list"></div>
-      <div class="doorman-modal-status" id="doorman-modal-status" style="display:none;"></div>
-      <div class="doorman-modal-actions">
-        <div class="doorman-quick-buttons">
-          <button class="btn-reset btn-sm" id="btn-reset-t1-cvars" onclick="setAllDoormanToggles('t1')">
-            <span data-i18n="btnResetT1">Reset to T1 (Original)</span>
-          </button>
-          <button class="btn-reset btn-sm" id="btn-set-safe-cvars" onclick="setAllDoormanToggles('safe')">
-            <span data-i18n="btnSetSafe">Set All to Safe (Fixed)</span>
-          </button>
-        </div>
-        <button class="btn-apply btn-sm doorman-btn-apply" id="btn-apply-doorman-test" onclick="applyDoormanTestStates()">
-          <i class="fa-solid fa-bolt"></i>
-          <span data-i18n="btnApplyDoorman">Apply to Deadlock Now</span>
-        </button>
-      </div>
-    </div>
-  </div>
   <!-- Modal: Save Custom Preset -->
   <div class="modal-overlay" id="modal-save-preset" style="display:none">
     <div class="modal-box preset-modal-box">
-      <div class="doorman-modal-header">
-        <div class="doorman-modal-title-group">
+      <div class="app-modal-header doorman-modal-header">
+        <div class="app-modal-title-group doorman-modal-title-group">
           <i class="fa-solid fa-floppy-disk" style="color:var(--deadlock-cyan);font-size:16px;"></i>
-          <span class="doorman-modal-title" data-i18n="modalPresetTitle">ذخیره پروفایل شخصی</span>
+          <span class="app-modal-title doorman-modal-title" data-i18n="modalPresetTitle">ذخیره پروفایل شخصی</span>
         </div>
-        <button class="doorman-close-btn" onclick="closeSavePresetModal()">&times;</button>
+        <button class="app-modal-close-btn doorman-close-btn" onclick="closeSavePresetModal()">&times;</button>
       </div>
-      <div class="doorman-modal-desc" data-i18n="modalPresetDesc">
+      <div class="app-modal-desc doorman-modal-desc" data-i18n="modalPresetDesc">
         یک نام برای وضعیت انتخاب سرورهای فعلی وارد کنید:
       </div>
       <div class="preset-modal-body" style="padding: 12px 0 16px 0;">
         <input type="text" id="input-preset-name" class="preset-name-input" placeholder="مثلاً: سرورهای پینگ زیر ۹۰" maxlength="32" onkeydown="if(event.key==='Enter')confirmSavePreset()" />
       </div>
-      <div class="doorman-modal-actions" style="justify-content: flex-end; gap: 8px;">
+      <div class="app-modal-actions doorman-modal-actions" style="justify-content: flex-end; gap: 8px;">
         <button class="btn-reset btn-sm" onclick="closeSavePresetModal()">
           <span data-i18n="btnCancel">انصراف</span>
         </button>
@@ -2273,6 +2047,10 @@
                     <div class="vip-act-desc" data-i18n="vipActDesc">
                       جهت اتصال به رله و مش فوق سریع سرورهای ایران با پینگ تک رقمی، کلید لایسنس VIP خود را وارد کنید.
                     </div>
+                    <div class="vip-account-hint" id="vip-account-hint" style="display:none; font-size:12px; color:#f59e0b; margin-bottom:8px;">
+                      <i class="fa-solid fa-user-lock"></i>
+                      <span data-i18n="vipSignInHint">اشتراک VIP به حساب TeamSpeak شما متصل است؛ ابتدا وارد شوید.</span>
+                    </div>
                     <div class="vip-act-form">
                       <div class="vip-act-input-row">
                         <input type="text" id="vip-key-input" class="vip-key-input" placeholder="DLP-VIP-XXXX-XXXX-XXXX" maxlength="36" dir="ltr" autocomplete="off" spellcheck="false" />
@@ -2300,6 +2078,7 @@
                       </button>
                     </div>
                   </div>
+                  <div class="vip-devices-list" id="vip-devices-list"></div>
                   <div class="vip-extend-box" id="vip-extend-box" style="display:none;">
                     <div class="vip-act-input-row">
                       <input type="text" id="vip-extend-key-input" class="vip-key-input" placeholder="DLP-VIP-XXXX-XXXX-XXXX" maxlength="36" dir="ltr" autocomplete="off" spellcheck="false" />
@@ -2369,6 +2148,51 @@
     </div>
   </div>
 
+  <!-- Modal: Select Game Location -->
+  <div class="modal-overlay" id="modal-select-game-path" style="display:none" role="dialog" aria-modal="true" aria-labelledby="select-path-modal-title" onclick="if(event.target===this)closeSelectGameLocationModal()">
+    <div class="modal-box select-path-modal-box">
+      <div class="app-modal-header doorman-modal-header">
+        <div class="app-modal-title-group doorman-modal-title-group">
+          <div class="select-path-icon-badge" aria-hidden="true">
+            <i class="fa-solid fa-folder-open"></i>
+          </div>
+          <div class="select-path-title-wrap">
+            <span class="app-modal-title doorman-modal-title" id="select-path-modal-title" data-i18n="selectGameLocationTitle">انتخاب مسیر بازی ددلاک</span>
+            <span class="select-path-modal-sub" data-i18n="selectGameLocationSub">تنظیم یا تغییر پوشه اصلی بازی</span>
+          </div>
+        </div>
+        <button type="button" class="app-modal-close-btn doorman-close-btn" onclick="closeSelectGameLocationModal()">&times;</button>
+      </div>
+
+      <div class="select-path-modal-body">
+        <div class="select-path-current-wrap">
+          <span class="select-path-current-label" data-i18n="currentGameLocation">مسیر فعلی بازی:</span>
+          <code class="select-path-current-val tabular-num" id="select-path-current-display">---</code>
+        </div>
+        <div class="select-path-desc" data-i18n="selectGameLocationDesc">
+          مسیر پوشه بازی Deadlock را مشخص کنید (پوشه‌ای که شامل پوشه game\citadel است):
+        </div>
+        <div class="select-path-input-row">
+          <input type="text" id="input-select-game-path" class="path-input select-path-input" placeholder="e.g. D:\SteamLibrary\steamapps\common\Deadlock" dir="ltr" aria-label="Deadlock Game Directory" onkeydown="if(event.key==='Enter')confirmSelectGameLocation()" />
+          <button type="button" class="btn-reset btn-sm select-path-browse-btn" id="btn-browse-game-path" onclick="browseGameLocationInModal()">
+            <i class="fa-solid fa-folder-open" style="color:var(--deadlock-cyan)"></i>
+            <span data-i18n="pickFolder">انتخاب پوشه</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="app-modal-actions doorman-modal-actions" style="justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn-reset btn-sm" onclick="closeSelectGameLocationModal()">
+          <span data-i18n="btnCancel">انصراف</span>
+        </button>
+        <button type="button" class="btn-apply btn-sm" id="btn-confirm-game-path" onclick="confirmSelectGameLocation()">
+          <i class="fa-solid fa-check"></i>
+          <span data-i18n="confirmPath">استفاده از این پوشه</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Confirm Revert to Vanilla -->
   <div class="modal-overlay" id="modal-confirm-revert" style="display:none" role="dialog" aria-modal="true" aria-labelledby="revert-dialog-title">
     <div class="modal-box revert-confirm-modal-box">
@@ -2429,7 +2253,7 @@
             if (cmd === 'get_settings') {
               return { lang: 'fa', fov: 90, aspect_ratio: '2.15', mode: 'T2', fps_max: 0, renderer: 'default' };
             }
-            if (cmd === 'get_app_version') return '0.1.6';
+            if (cmd === 'get_app_version') return '0.1.7';
             if (cmd === 'running_from_pkg') return false;
             if (cmd === 'check_for_updates') return null;
             if (cmd === 'check_admin_status') return true;
@@ -2554,7 +2378,6 @@
     });
   </script>
 
-  <script src="vendor/motion/motion.js"></script>
   <script src="i18n/fa.js"></script>
   <script src="i18n/en.js"></script>
   <script src="i18n/convar_fa_catalog.js"></script>

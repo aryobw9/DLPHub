@@ -1,3 +1,10 @@
+# DLPHub v0.1.7
+
+## What's Changed
+- Migration to the new Server
+
+---
+
 # DLPHub v0.1.6
 
 ## What's Changed

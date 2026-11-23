@@ -208,113 +208,169 @@ pub async fn ensure_server_loader_available(app_handle: Option<&tauri::AppHandle
     }
 
     // 2. Download clean official server loader package from VPS
-    let vps_url = format!("{}/api/server-loader/download", crate::lan_vip::DEFAULT_VIP_API);
-    println!("[Storage] Downloading clean server_loader package from {vps_url}...");
-
-    if let Some(app) = app_handle {
-        let _ = app.emit("server-loader-progress", ServerLoaderProgressEvent {
-            current_bytes: 0,
-            total_bytes: 2_720_000,
-            percent: 0,
-            speed_kbps: 0,
-            status: "downloading".to_string(),
-        });
-    }
-
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(std::time::Duration::from_secs(6))
         .timeout(std::time::Duration::from_secs(180))
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
 
-    let mut response = client.get(&vps_url)
-        .send()
-        .await
-        .map_err(|e| format!("Failed to connect to VPS at {vps_url}: {e}"))?;
+    let mut last_error = String::new();
+    let mut downloaded_ok = false;
+    let candidates = crate::lan_vip::ordered_candidates();
 
-    if !response.status().is_success() {
-        return Err(format!("VPS returned HTTP {} for server_loader.zip", response.status()));
-    }
+    for (idx, api_base) in candidates.iter().enumerate() {
+        let vps_url = format!("{}/api/server-loader/download", api_base.trim_end_matches('/'));
+        println!("[Storage] Downloading clean server_loader package from {vps_url}...");
 
-    let total_bytes = response.content_length().unwrap_or(3_000_000);
-    let tmp_zip = loader_dir.join("server_loader.download.tmp");
-    let _ = std::fs::remove_file(&tmp_zip);
+        if let Some(app) = app_handle {
+            let _ = app.emit("server-loader-progress", ServerLoaderProgressEvent {
+                current_bytes: 0,
+                total_bytes: 2_720_000,
+                percent: 0,
+                speed_kbps: 0,
+                status: "downloading".to_string(),
+            });
+        }
 
-    let mut file = tokio::fs::File::create(&tmp_zip)
-        .await
-        .map_err(|e| format!("Failed to create temporary file {tmp_zip:?}: {e}"))?;
+        let resp_res = client.get(&vps_url).send().await;
+        let mut response = match resp_res {
+            Ok(r) => {
+                let status = r.status();
+                if (status.is_server_error() || status == reqwest::StatusCode::GATEWAY_TIMEOUT)
+                    && idx + 1 < candidates.len()
+                {
+                    last_error = format!("VPS returned HTTP {status} from {vps_url}");
+                    continue;
+                }
+                r
+            }
+            Err(e) => {
+                last_error = format!("Failed to connect to VPS at {vps_url}: {e}");
+                continue;
+            }
+        };
 
-    use tokio::io::AsyncWriteExt;
-    let mut downloaded: u64 = 0;
-    let start_time = Instant::now();
-    let mut last_emit = Instant::now();
+        if !response.status().is_success() {
+            last_error = format!("VPS returned HTTP {} for server_loader.zip", response.status());
+            if idx + 1 < candidates.len() {
+                continue;
+            }
+            return Err(last_error);
+        }
 
-    while let Some(chunk) = response.chunk().await.map_err(|e| format!("Network read error: {e}"))? {
-        file.write_all(&chunk)
-            .await
-            .map_err(|e| format!("Disk write error: {e}"))?;
+        let total_bytes = response.content_length().unwrap_or(3_000_000);
+        let tmp_zip = loader_dir.join("server_loader.download.tmp");
+        let _ = std::fs::remove_file(&tmp_zip);
 
-        downloaded += chunk.len() as u64;
+        let mut file = match tokio::fs::File::create(&tmp_zip).await {
+            Ok(f) => f,
+            Err(e) => return Err(format!("Failed to create temporary file {tmp_zip:?}: {e}")),
+        };
 
-        if last_emit.elapsed().as_millis() >= 150 || downloaded == total_bytes {
-            last_emit = Instant::now();
-            let elapsed_sec = start_time.elapsed().as_secs_f64().max(0.001);
-            let speed_kbps = ((downloaded as f64 / 1024.0) / elapsed_sec) as u64;
-            let percent = if total_bytes > 0 {
-                ((downloaded as f64 / total_bytes as f64) * 100.0).min(100.0) as u8
-            } else {
-                0
-            };
+        use tokio::io::AsyncWriteExt;
+        let mut downloaded: u64 = 0;
+        let start_time = Instant::now();
+        let mut last_emit = Instant::now();
+        let mut stream_failed = false;
 
-            if let Some(app) = app_handle {
-                let evt = ServerLoaderProgressEvent {
-                    current_bytes: downloaded,
-                    total_bytes,
-                    percent,
-                    speed_kbps,
-                    status: "downloading".to_string(),
+        while let Some(chunk) = match response.chunk().await {
+            Ok(c) => c,
+            Err(e) => {
+                last_error = format!("Network read error: {e}");
+                stream_failed = true;
+                None
+            }
+        } {
+            if let Err(e) = file.write_all(&chunk).await {
+                let _ = file.flush().await;
+                return Err(format!("Disk write error: {e}"));
+            }
+
+            downloaded += chunk.len() as u64;
+
+            if last_emit.elapsed().as_millis() >= 150 || downloaded == total_bytes {
+                last_emit = Instant::now();
+                let elapsed_sec = start_time.elapsed().as_secs_f64().max(0.001);
+                let speed_kbps = ((downloaded as f64 / 1024.0) / elapsed_sec) as u64;
+                let percent = if total_bytes > 0 {
+                    ((downloaded as f64 / total_bytes as f64) * 100.0).min(100.0) as u8
+                } else {
+                    0
                 };
-                let _ = app.emit("server-loader-progress", evt);
+
+                if let Some(app) = app_handle {
+                    let evt = ServerLoaderProgressEvent {
+                        current_bytes: downloaded,
+                        total_bytes,
+                        percent,
+                        speed_kbps,
+                        status: "downloading".to_string(),
+                    };
+                    let _ = app.emit("server-loader-progress", evt);
+                }
             }
         }
-    }
 
-    file.flush().await.map_err(|e| format!("Disk flush error: {e}"))?;
-    drop(file);
+        let _ = file.flush().await;
+        drop(file);
 
-    // Cryptographic SHA-256 integrity verification
-    if !crate::mod_cache::verify_file_sha256(&tmp_zip, OFFICIAL_SERVER_LOADER.sha256) {
+        if stream_failed {
+            let _ = std::fs::remove_file(&tmp_zip);
+            continue;
+        }
+
+        // Cryptographic SHA-256 integrity verification
+        if !crate::mod_cache::verify_file_sha256(&tmp_zip, OFFICIAL_SERVER_LOADER.sha256) {
+            let _ = std::fs::remove_file(&tmp_zip);
+            last_error = "SHA-256 cryptographic verification failed for server_loader.zip. Download rejected for security.".to_string();
+            continue;
+        }
+
+        // Extract zip
+        let zip_file = match File::open(&tmp_zip) {
+            Ok(f) => f,
+            Err(e) => return Err(format!("Open zip failed: {e}")),
+        };
+        let mut archive = match zip::ZipArchive::new(BufReader::new(zip_file)) {
+            Ok(a) => a,
+            Err(e) => return Err(format!("Corrupt zip archive: {e}")),
+        };
+
+        if let Err(e) = archive.extract(&loader_dir) {
+            let _ = std::fs::remove_file(&tmp_zip);
+            return Err(format!("Failed to extract server loader: {e}"));
+        }
+
         let _ = std::fs::remove_file(&tmp_zip);
+
+        crate::lan_vip::mark_vip_api_success(api_base);
+
         if let Some(app) = app_handle {
             let _ = app.emit("server-loader-progress", ServerLoaderProgressEvent {
                 current_bytes: downloaded,
                 total_bytes,
                 percent: 100,
                 speed_kbps: 0,
+                status: "completed".to_string(),
+            });
+        }
+
+        downloaded_ok = true;
+        break;
+    }
+
+    if !downloaded_ok {
+        if let Some(app) = app_handle {
+            let _ = app.emit("server-loader-progress", ServerLoaderProgressEvent {
+                current_bytes: 0,
+                total_bytes: 0,
+                percent: 100,
+                speed_kbps: 0,
                 status: "error".to_string(),
             });
         }
-        return Err("SHA-256 cryptographic verification failed for server_loader.zip. Download rejected for security.".into());
-    }
-
-    // Extract zip
-    let zip_file = File::open(&tmp_zip).map_err(|e| format!("Open zip failed: {e}"))?;
-    let mut archive = zip::ZipArchive::new(BufReader::new(zip_file))
-        .map_err(|e| format!("Corrupt zip archive: {e}"))?;
-
-    archive.extract(&loader_dir)
-        .map_err(|e| format!("Failed to extract server loader: {e}"))?;
-
-    let _ = std::fs::remove_file(&tmp_zip);
-
-    if let Some(app) = app_handle {
-        let _ = app.emit("server-loader-progress", ServerLoaderProgressEvent {
-            current_bytes: downloaded,
-            total_bytes,
-            percent: 100,
-            speed_kbps: 0,
-            status: "completed".to_string(),
-        });
+        return Err(last_error);
     }
 
     Ok(loader_dir)
@@ -330,43 +386,105 @@ pub async fn ensure_client_bootstrap_available(_app_handle: Option<&tauri::AppHa
     let boot_dir = target_vpk.parent().unwrap();
     let _ = std::fs::create_dir_all(boot_dir);
 
-    let vps_url = format!("{}/api/deadworks/client-bootstrap/download", crate::lan_vip::DEFAULT_VIP_API);
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(std::time::Duration::from_secs(6))
         .timeout(std::time::Duration::from_secs(60))
         .build()
         .map_err(|e| format!("HTTP client error: {e}"))?;
 
-    let mut response = client.get(&vps_url).send().await
-        .map_err(|e| format!("Failed to reach VPS at {vps_url}: {e}"))?;
+    let mut last_error = String::new();
+    let mut downloaded_ok = false;
+    let candidates = crate::lan_vip::ordered_candidates();
 
-    if !response.status().is_success() {
-        return Err(format!("VPS returned HTTP {} for client bootstrap", response.status()));
-    }
+    for (idx, api_base) in candidates.iter().enumerate() {
+        let vps_url = format!("{}/api/deadworks/client-bootstrap/download", api_base.trim_end_matches('/'));
+        let resp_res = client.get(&vps_url).send().await;
+        let mut response = match resp_res {
+            Ok(r) => {
+                let status = r.status();
+                if (status.is_server_error() || status == reqwest::StatusCode::GATEWAY_TIMEOUT)
+                    && idx + 1 < candidates.len()
+                {
+                    last_error = format!("VPS returned HTTP {status} from {vps_url}");
+                    continue;
+                }
+                r
+            }
+            Err(e) => {
+                last_error = format!("Failed to reach VPS at {vps_url}: {e}");
+                continue;
+            }
+        };
 
-    let tmp_zip = boot_dir.join("bootstrap.download.tmp");
-    let mut file = tokio::fs::File::create(&tmp_zip).await.map_err(|e| e.to_string())?;
+        if !response.status().is_success() {
+            last_error = format!("VPS returned HTTP {} for client bootstrap", response.status());
+            if idx + 1 < candidates.len() {
+                continue;
+            }
+            return Err(last_error);
+        }
 
-    use tokio::io::AsyncWriteExt;
-    while let Some(chunk) = response.chunk().await.map_err(|e| e.to_string())? {
-        file.write_all(&chunk).await.map_err(|e| e.to_string())?;
-    }
-    file.flush().await.map_err(|e| e.to_string())?;
-    drop(file);
+        let tmp_zip = boot_dir.join("bootstrap.download.tmp");
+        let mut file = match tokio::fs::File::create(&tmp_zip).await {
+            Ok(f) => f,
+            Err(e) => return Err(e.to_string()),
+        };
 
-    // Cryptographic SHA-256 integrity verification
-    if !crate::mod_cache::verify_file_sha256(&tmp_zip, OFFICIAL_CLIENT_BOOTSTRAP.sha256) {
+        use tokio::io::AsyncWriteExt;
+        let mut stream_failed = false;
+        while let Some(chunk) = match response.chunk().await {
+            Ok(c) => c,
+            Err(_) => {
+                stream_failed = true;
+                None
+            }
+        } {
+            if let Err(e) = file.write_all(&chunk).await {
+                let _ = file.flush().await;
+                return Err(e.to_string());
+            }
+        }
+        let _ = file.flush().await;
+        drop(file);
+
+        if stream_failed {
+            let _ = std::fs::remove_file(&tmp_zip);
+            continue;
+        }
+
+        // Cryptographic SHA-256 integrity verification
+        if !crate::mod_cache::verify_file_sha256(&tmp_zip, OFFICIAL_CLIENT_BOOTSTRAP.sha256) {
+            let _ = std::fs::remove_file(&tmp_zip);
+            last_error = "SHA-256 cryptographic verification failed for client_bootstrap.zip. Download rejected for security.".into();
+            continue;
+        }
+
+        let zip_file = match File::open(&tmp_zip) {
+            Ok(f) => f,
+            Err(e) => return Err(e.to_string()),
+        };
+        let mut archive = match zip::ZipArchive::new(BufReader::new(zip_file)) {
+            Ok(a) => a,
+            Err(e) => return Err(e.to_string()),
+        };
+        if let Err(e) = archive.extract(boot_dir) {
+            let _ = std::fs::remove_file(&tmp_zip);
+            return Err(e.to_string());
+        }
         let _ = std::fs::remove_file(&tmp_zip);
-        return Err("SHA-256 cryptographic verification failed for client_bootstrap.zip. Download rejected for security.".into());
+
+        if !target_vpk.is_file() {
+            return Err("Bootstrap extraction did not produce pak01_dir.vpk".into());
+        }
+
+        crate::lan_vip::mark_vip_api_success(api_base);
+        downloaded_ok = true;
+        break;
     }
 
-    let zip_file = File::open(&tmp_zip).map_err(|e| e.to_string())?;
-    let mut archive = zip::ZipArchive::new(BufReader::new(zip_file)).map_err(|e| e.to_string())?;
-    archive.extract(boot_dir).map_err(|e| e.to_string())?;
-    let _ = std::fs::remove_file(&tmp_zip);
-
-    if !target_vpk.is_file() {
-        return Err("Bootstrap extraction did not produce pak01_dir.vpk".into());
+    if !downloaded_ok {
+        return Err(last_error);
     }
 
     Ok(target_vpk)
@@ -408,43 +526,105 @@ pub async fn ensure_client_addon_available(mode: &str, _app_handle: Option<&taur
         return Err(format!("Unknown or unauthorized addon requested: '{clean_mode}'"));
     };
 
-    let vps_url = format!("{}/api/deadworks/client-addon/{clean_mode}/download", crate::lan_vip::DEFAULT_VIP_API);
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(std::time::Duration::from_secs(6))
         .timeout(std::time::Duration::from_secs(60))
         .build()
         .map_err(|e| format!("HTTP client error: {e}"))?;
 
-    let mut response = client.get(&vps_url).send().await
-        .map_err(|e| format!("Failed to reach VPS at {vps_url}: {e}"))?;
+    let mut last_error = String::new();
+    let mut downloaded_ok = false;
+    let candidates = crate::lan_vip::ordered_candidates();
 
-    if !response.status().is_success() {
-        return Err(format!("VPS returned HTTP {} for addon {clean_mode}", response.status()));
-    }
+    for (idx, api_base) in candidates.iter().enumerate() {
+        let vps_url = format!("{}/api/deadworks/client-addon/{clean_mode}/download", api_base.trim_end_matches('/'));
+        let resp_res = client.get(&vps_url).send().await;
+        let mut response = match resp_res {
+            Ok(r) => {
+                let status = r.status();
+                if (status.is_server_error() || status == reqwest::StatusCode::GATEWAY_TIMEOUT)
+                    && idx + 1 < candidates.len()
+                {
+                    last_error = format!("VPS returned HTTP {status} from {vps_url}");
+                    continue;
+                }
+                r
+            }
+            Err(e) => {
+                last_error = format!("Failed to reach VPS at {vps_url}: {e}");
+                continue;
+            }
+        };
 
-    let tmp_zip = addon_dir.join("addon.download.tmp");
-    let mut file = tokio::fs::File::create(&tmp_zip).await.map_err(|e| e.to_string())?;
+        if !response.status().is_success() {
+            last_error = format!("VPS returned HTTP {} for addon {clean_mode}", response.status());
+            if idx + 1 < candidates.len() {
+                continue;
+            }
+            return Err(last_error);
+        }
 
-    use tokio::io::AsyncWriteExt;
-    while let Some(chunk) = response.chunk().await.map_err(|e| e.to_string())? {
-        file.write_all(&chunk).await.map_err(|e| e.to_string())?;
-    }
-    file.flush().await.map_err(|e| e.to_string())?;
-    drop(file);
+        let tmp_zip = addon_dir.join("addon.download.tmp");
+        let mut file = match tokio::fs::File::create(&tmp_zip).await {
+            Ok(f) => f,
+            Err(e) => return Err(e.to_string()),
+        };
 
-    // Cryptographic SHA-256 integrity verification
-    if !crate::mod_cache::verify_file_sha256(&tmp_zip, expected_hash) {
+        use tokio::io::AsyncWriteExt;
+        let mut stream_failed = false;
+        while let Some(chunk) = match response.chunk().await {
+            Ok(c) => c,
+            Err(_) => {
+                stream_failed = true;
+                None
+            }
+        } {
+            if let Err(e) = file.write_all(&chunk).await {
+                let _ = file.flush().await;
+                return Err(e.to_string());
+            }
+        }
+        let _ = file.flush().await;
+        drop(file);
+
+        if stream_failed {
+            let _ = std::fs::remove_file(&tmp_zip);
+            continue;
+        }
+
+        // Cryptographic SHA-256 integrity verification
+        if !crate::mod_cache::verify_file_sha256(&tmp_zip, expected_hash) {
+            let _ = std::fs::remove_file(&tmp_zip);
+            last_error = format!("SHA-256 cryptographic verification failed for addon {clean_mode}. Download rejected for security.");
+            continue;
+        }
+
+        let zip_file = match File::open(&tmp_zip) {
+            Ok(f) => f,
+            Err(e) => return Err(e.to_string()),
+        };
+        let mut archive = match zip::ZipArchive::new(BufReader::new(zip_file)) {
+            Ok(a) => a,
+            Err(e) => return Err(e.to_string()),
+        };
+        if let Err(e) = archive.extract(addon_dir) {
+            let _ = std::fs::remove_file(&tmp_zip);
+            return Err(e.to_string());
+        }
         let _ = std::fs::remove_file(&tmp_zip);
-        return Err(format!("SHA-256 cryptographic verification failed for addon {clean_mode}. Download rejected for security."));
+
+        if !target_vpk.is_file() {
+            return Err(format!("Addon extraction did not produce {:?} for {clean_mode}", target_vpk.file_name().unwrap_or_default()));
+        }
+
+        crate::lan_vip::mark_vip_api_success(api_base);
+        downloaded_ok = true;
+        break;
     }
 
-    let zip_file = File::open(&tmp_zip).map_err(|e| e.to_string())?;
-    let mut archive = zip::ZipArchive::new(BufReader::new(zip_file)).map_err(|e| e.to_string())?;
-    archive.extract(addon_dir).map_err(|e| e.to_string())?;
-    let _ = std::fs::remove_file(&tmp_zip);
-
-    if !target_vpk.is_file() {
-        return Err(format!("Addon extraction did not produce {:?} for {clean_mode}", target_vpk.file_name().unwrap_or_default()));
+    if !downloaded_ok {
+        return Err(last_error);
     }
 
     Ok(target_vpk)

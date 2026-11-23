@@ -1,5 +1,5 @@
 // DLPHub Pure In-Process TUN Adapter & High-Speed UDP Packet Forwarder
-// Connects to the Iranian VPS UDP Packet Multiplexer on 5.57.32.52:48000
+// Connects to the Iranian VPS UDP Packet Multiplexer on 92.42.207.96:48000
 // Zero external binaries, zero sidecars, zero background daemons.
 
 use std::net::{IpAddr, SocketAddr, UdpSocket};
@@ -13,7 +13,9 @@ use std::time::Duration;
 use std::os::windows::process::CommandExt;
 
 const WINTUN_DLL_BYTES: &[u8] = include_bytes!("../bin/x86_64-pc-windows-msvc/wintun.dll");
-const VPS_UDP_ADDR: &str = "5.57.32.52:48000";
+/// Default VPS UDP packet-switch endpoint, used only when the coordinator
+/// response does not advertise `udp_server` / `vps_ip` + `vps_udp_port`.
+pub const DEFAULT_VPS_UDP: &str = "92.42.207.96:48000";
 
 const MAGIC_BYTES: &[u8; 4] = b"DLP1";
 const TYPE_HANDSHAKE: u8 = 0x01;
@@ -23,6 +25,7 @@ const TYPE_LEAVE: u8 = 0x04;
 pub struct LanEngineHandle {
     stop_flag: Arc<AtomicBool>,
     socket: Arc<UdpSocket>,
+    server_addr: SocketAddr,
     session: Arc<wintun::Session>,
     _adapter: Arc<wintun::Adapter>,
     _wintun: Arc<wintun::Wintun>,
@@ -49,9 +52,7 @@ impl LanEngineHandle {
         if vip_octets.len() == 4 {
             leave[9..13].copy_from_slice(&vip_octets);
         }
-        if let Ok(server_addr) = VPS_UDP_ADDR.parse::<SocketAddr>() {
-            let _ = self.socket.send_to(&leave, server_addr);
-        }
+        let _ = self.socket.send_to(&leave, self.server_addr);
 
         // Gracefully join worker threads before session or adapter drop
         for h in self.threads.drain(..) {
@@ -90,8 +91,19 @@ pub fn is_wintun_available() -> bool {
     ensure_wintun_dll().is_ok()
 }
 
-pub fn start_lan_engine(room_token: u32, virtual_ip: &str, subnet_mask: &str) -> Result<(), String> {
+pub fn start_lan_engine(
+    room_token: u32,
+    virtual_ip: &str,
+    subnet_mask: &str,
+    udp_server: &str,
+) -> Result<(), String> {
     stop_lan_engine();
+
+    // Endpoint advertised by the room coordinator (supports a moved/replaced VPS).
+    let server_addr: SocketAddr = udp_server
+        .trim()
+        .parse()
+        .map_err(|e| format!("Invalid VPS UDP endpoint '{udp_server}': {e}"))?;
 
     let dll_path = ensure_wintun_dll()?;
     let wintun = Arc::new(unsafe { wintun::load_from_path(&dll_path) }
@@ -251,7 +263,6 @@ pub fn start_lan_engine(room_token: u32, virtual_ip: &str, subnet_mask: &str) ->
         UdpSocket::bind("0.0.0.0:0").map_err(|e| format!("Failed to bind UDP socket: {e}"))?,
     );
     socket.set_read_timeout(Some(Duration::from_millis(500))).ok();
-    let server_addr: SocketAddr = VPS_UDP_ADDR.parse::<SocketAddr>().map_err(|e| e.to_string())?;
 
     let stop_flag = Arc::new(AtomicBool::new(false));
     let token_bytes = room_token.to_be_bytes();
@@ -365,6 +376,7 @@ pub fn start_lan_engine(room_token: u32, virtual_ip: &str, subnet_mask: &str) ->
     *CURRENT_HANDLE.lock().unwrap() = Some(LanEngineHandle {
         stop_flag,
         socket,
+        server_addr,
         session,
         _adapter: adapter,
         _wintun: wintun,

@@ -1,12 +1,10 @@
 {
   "name": "dlphub",
   "private": true,
-  "version": "0.1.6",
+  "version": "0.1.7",
   "type": "module",
   "scripts": {
     "tauri": "tauri",
-    "predev": "python src-tauri/build_payload.py",
-    "prebuild": "python src-tauri/build_payload.py",
     "dev": "tauri dev",
     "build": "tauri build"
   },
@@ -17,8 +15,7 @@
     "@fortawesome/fontawesome-free": "^7.3.1",
     "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tauri-apps/plugin-opener": "^2.5.5",
-    "animate.css": "^4.1.1",
-    "motion": "^13.2.0"
+    "animate.css": "^4.1.1"
   },
   "license": "GPL-3.0-only"
 }

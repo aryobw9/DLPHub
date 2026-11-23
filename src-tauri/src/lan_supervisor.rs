@@ -1045,6 +1045,14 @@ pub fn restore_gameinfo_vanilla(deadlock_dir: &Path) -> Result<(), String> {
 
 /// Prepares client files for joining a Deadworks or modded match (downloads on-demand & stages)
 pub async fn prepare_modded_client(mode: &str) -> Result<(), String> {
+    // "none" / empty = unmodded room: never deploy Deadworks assets or patch
+    // gameinfo.gi, otherwise a vanilla lobby would still be forced into mod mode.
+    let requested = mode.trim().to_lowercase();
+    if requested.is_empty() || requested == "none" {
+        println!("[lan_supervisor] Unmodded room requested; skipping modded client staging.");
+        return Ok(());
+    }
+
     let found = dlp_core::discovery::find_game()
         .ok_or_else(|| "Deadlock installation folder not found".to_string())?;
     let deadlock_root = Path::new(&found.deadlock);
@@ -1142,42 +1150,6 @@ pub async fn setup_host_server_environment(mode: &str) -> Result<(), String> {
     Ok(())
 }
 
-#[allow(dead_code)]
-pub fn ensure_vanilla_clean(deadlock_dir: &Path) {
-    let _ = restore_gameinfo_vanilla(deadlock_dir);
-}
-
-#[allow(dead_code)]
-pub fn ensure_client_bootstrap(deadlock_dir: &Path) {
-    let _ = backup_and_patch_gameinfo(deadlock_dir);
-}
-
-#[allow(dead_code)]
-pub async fn deploy_modded_server_loader(
-    deadlock_dir: &str,
-    _config: &LanHostConfig,
-) -> Result<(), String> {
-    let _ = restore_gameinfo_vanilla(Path::new(deadlock_dir));
-    Ok(())
-}
-
-#[allow(dead_code)]
-fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), String> {
-    if !src.is_dir() {
-        return Ok(());
-    }
-    std::fs::create_dir_all(dst).map_err(|e| e.to_string())?;
-    for entry in std::fs::read_dir(src).map_err(|e| e.to_string())?.flatten() {
-        let path = entry.path();
-        let target = dst.join(entry.file_name());
-        if path.is_dir() {
-            copy_dir_recursive(&path, &target)?;
-        } else {
-            let _ = std::fs::copy(&path, &target);
-        }
-    }
-    Ok(())
-}
 
 fn ensure_lan_firewall_rules(exe_path: &Path, public_port: u16, internal_port: u16) {
     #[cfg(windows)]

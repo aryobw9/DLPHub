@@ -1,5 +1,4 @@
 mod commands;
-mod deadlock_sync;
 mod hwid;
 mod lan_proxy;
 mod lan_query;
@@ -113,7 +112,6 @@ pub fn run() {
             commands::pick_game,
             commands::detect_tier_cmd,
             commands::check_running,
-            commands::install_mode,
             commands::do_backup_cmd,
             commands::list_backups,
             commands::delete_backup_cmd,
@@ -125,7 +123,6 @@ pub fn run() {
             commands::get_diagnostics,
             commands::launch_game,
             commands::running_from_pkg,
-            commands::ping_valve_servers,
             commands::check_admin_status,
             commands::check_firewall_status,
             commands::enable_firewall_cmd,
@@ -150,15 +147,10 @@ pub fn run() {
             commands::open_logs_folder,
             commands::log_client_error,
             commands::get_app_version,
-            commands::get_cvar_test_states,
-            commands::apply_cvar_test_states,
-            deadlock_sync::sync_last_match,
-            deadlock_sync::get_last_match_id,
             commands::get_lan_local_ips,
             commands::start_lan_server,
             commands::stop_lan_server,
             commands::get_lan_server_status,
-            commands::connect_lan_client,
             commands::list_lan_matches,
             commands::get_lan_match_metadata,
             commands::send_lan_server_command,
@@ -180,9 +172,10 @@ pub fn run() {
             commands::auto_join_deadlock_cmd,
             commands::check_deadworks_env_cmd,
             commands::check_vip_binaries_cmd,
-            commands::launch_deadlock_target_cmd,
             commands::redeem_vip_key_cmd,
             commands::check_vip_status_cmd,
+            commands::list_vip_devices_cmd,
+            commands::unbind_vip_device_cmd,
             commands::get_machine_hwid_cmd,
             commands::get_mod_cache_status_cmd,
             commands::clear_mod_cache_cmd,
@@ -191,8 +184,6 @@ pub fn run() {
             commands::detect_perf_optimization_cmd,
             commands::apply_fov_only_cmd,
             commands::apply_fps_only_cmd,
-            commands::get_storage_path_cmd,
-            commands::ensure_server_loader_cmd,
         ])
         ;
 

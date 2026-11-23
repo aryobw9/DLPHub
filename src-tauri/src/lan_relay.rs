@@ -2,14 +2,14 @@
 // Provides zero-driver, zero-admin, zero-network-adapter connection to Iranian VPS relay
 //
 // Host Mode:
-// - Communicates with VPS on `5.57.32.52:<relay_port>`
+// - Communicates with VPS on `92.42.207.96:<relay_port>`
 // - Demultiplexes incoming packets by 2-byte client_id into local virtual UDP sockets on 127.0.0.1
 // - Sends game packets to local dedicated server on 127.0.0.1:27005 (or 27015)
 // - Streams dedicated server responses back to VPS tagged with client_id
 //
 // Client Mode:
 // - Listens on 127.0.0.1:<local_port> (default 27016)
-// - Streams Deadlock packets to VPS on `5.57.32.52:<relay_port>`
+// - Streams Deadlock packets to VPS on `92.42.207.96:<relay_port>`
 // - Streams VPS responses back to Deadlock client on 127.0.0.1:27016
 
 use std::collections::HashMap;
@@ -26,10 +26,6 @@ const MAGIC_RELAY_CLIENT: &[u8] = b"DLPC";
 static RELAY_RUNNING: AtomicBool = AtomicBool::new(false);
 static RELAY_SESSION_STOP: std::sync::Mutex<Option<Arc<AtomicBool>>> = std::sync::Mutex::new(None);
 
-#[allow(dead_code)]
-pub fn is_relay_active() -> bool {
-    RELAY_RUNNING.load(Ordering::SeqCst)
-}
 
 pub fn stop_relay() {
     if let Some(stop_sig) = RELAY_SESSION_STOP.lock().unwrap().take() {

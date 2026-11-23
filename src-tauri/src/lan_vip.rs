@@ -1,17 +1,147 @@
 // DLPHub Pure In-House LAN VIP Module
-// Connects to the Iranian VPS Coordinator REST API on http://5.57.32.52:48080
+// Connects to the Iranian VPS Coordinator REST API on https://deadlockpersian.com
 // Coordinates room sessions and manages network engines (Relay Mode & Wintun Mode).
 // Zero-Trust Security: Enforces Hardware-Bound Cryptographic VIP Session Tokens.
 
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::Duration;
 
 use crate::hwid::get_machine_hwid;
-use crate::lan_engine::{is_wintun_available, start_lan_engine, stop_lan_engine};
+use crate::lan_engine::{is_wintun_available, start_lan_engine, stop_lan_engine, DEFAULT_VPS_UDP};
 use crate::lan_relay::{start_client_relay, start_host_relay, stop_relay};
 use crate::lan_supervisor::stop_dedicated_server;
 
-pub const DEFAULT_VIP_API: &str = "http://5.57.32.52:48080";
+pub const DEFAULT_VIP_API: &str = "https://deadlockpersian.com";
+pub const FALLBACK_VIP_API: &str = "http://92.42.207.96:48080";
+
+static ACTIVE_API_INDEX: AtomicUsize = AtomicUsize::new(0);
+static LAST_FALLBACK_TS: AtomicU64 = AtomicU64::new(0);
+
+// Cooldown to retry HTTPS primary after falling back to HTTP (in seconds)
+const HTTPS_RETRY_INTERVAL_SECS: u64 = 60;
+
+fn current_timestamp_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+pub fn mark_vip_api_success(api_base: &str) {
+    let trimmed = api_base.trim_end_matches('/');
+    if trimmed.eq_ignore_ascii_case(FALLBACK_VIP_API) {
+        ACTIVE_API_INDEX.store(1, Ordering::Relaxed);
+        LAST_FALLBACK_TS.store(current_timestamp_secs(), Ordering::Relaxed);
+    } else if trimmed.eq_ignore_ascii_case(DEFAULT_VIP_API) {
+        ACTIVE_API_INDEX.store(0, Ordering::Relaxed);
+    }
+}
+
+pub fn get_active_vip_api() -> &'static str {
+    if ACTIVE_API_INDEX.load(Ordering::Relaxed) == 1 {
+        let last_fallback = LAST_FALLBACK_TS.load(Ordering::Relaxed);
+        let now = current_timestamp_secs();
+        if now.saturating_sub(last_fallback) >= HTTPS_RETRY_INTERVAL_SECS {
+            // Periodic retry of HTTPS primary
+            ACTIVE_API_INDEX.store(0, Ordering::Relaxed);
+            DEFAULT_VIP_API
+        } else {
+            FALLBACK_VIP_API
+        }
+    } else {
+        DEFAULT_VIP_API
+    }
+}
+
+pub fn ordered_candidates() -> Vec<String> {
+    let active = get_active_vip_api();
+    let other = if active == DEFAULT_VIP_API { FALLBACK_VIP_API } else { DEFAULT_VIP_API };
+    vec![active.to_string(), other.to_string()]
+}
+
+pub fn get_vip_api_candidates(custom_api_url: Option<&str>) -> Vec<String> {
+    if let Some(custom) = custom_api_url.map(|s| s.trim()).filter(|s| !s.is_empty()) {
+        let trimmed = custom.trim_end_matches('/');
+        if trimmed.eq_ignore_ascii_case(DEFAULT_VIP_API) {
+            ordered_candidates()
+        } else if trimmed.eq_ignore_ascii_case(FALLBACK_VIP_API) {
+            vec![FALLBACK_VIP_API.to_string(), DEFAULT_VIP_API.to_string()]
+        } else {
+            // Explicit developer/custom URL: do not fall back to production endpoint
+            vec![trimmed.to_string()]
+        }
+    } else {
+        ordered_candidates()
+    }
+}
+
+/// VIP is account-bound: every privileged call must carry the TeamSpeak session token.
+fn require_account_token(token: Option<String>) -> Result<String, String> {
+    token
+        .map(|t| t.trim().to_string())
+        .filter(|t| !t.is_empty())
+        .ok_or_else(|| "SIGN_IN_REQUIRED: sign in with TeamSpeak to use VIP".to_string())
+}
+
+fn account_header(token: Option<&str>) -> Option<Vec<(String, String)>> {
+    token
+        .map(|t| t.trim())
+        .filter(|t| !t.is_empty())
+        .map(|t| vec![("X-User-Token".to_string(), t.to_string())])
+}
+
+async fn execute_vip_request(
+    client: &reqwest::Client,
+    candidates: &[String],
+    method: reqwest::Method,
+    path: &str,
+    body: Option<&serde_json::Value>,
+    headers: Option<&[(String, String)]>,
+    is_idempotent: bool,
+) -> Result<reqwest::Response, String> {
+    let mut last_error = String::new();
+    for (idx, api_base) in candidates.iter().enumerate() {
+        let url = format!("{}/{}", api_base.trim_end_matches('/'), path.trim_start_matches('/'));
+        let mut req = client.request(method.clone(), &url);
+        if let Some(h_list) = headers {
+            for (k, v) in h_list {
+                req = req.header(k.as_str(), v.as_str());
+            }
+        }
+        if let Some(b) = body {
+            req = req.json(b);
+        }
+
+        let resp_res = req.send().await;
+        let resp = match resp_res {
+            Ok(r) => {
+                let status = r.status();
+                if (status.is_server_error() || status == reqwest::StatusCode::GATEWAY_TIMEOUT)
+                    && idx + 1 < candidates.len()
+                {
+                    eprintln!("[VIP API] HTTP {status} from {url}, trying fallback...");
+                    last_error = format!("HTTP {status} from {url}");
+                    continue;
+                }
+                r
+            }
+            Err(e) => {
+                eprintln!("[VIP API] Request to {url} failed ({e})");
+                last_error = format!("Failed to reach VIP Coordinator at {url}: {e}");
+                if (e.is_connect() || is_idempotent) && idx + 1 < candidates.len() {
+                    eprintln!("[VIP API] Attempting fallback endpoint...");
+                    continue;
+                }
+                return Err(last_error);
+            }
+        };
+
+        mark_vip_api_success(api_base);
+        return Ok(resp);
+    }
+    Err(last_error)
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct VipSession {
@@ -30,11 +160,26 @@ pub struct VipRedeemResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VipDevice {
+    pub hwid: String,
+    pub label: Option<String>,
+    pub first_seen: Option<f64>,
+    pub last_seen: Option<f64>,
+    pub is_current: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VipStatusResponse {
     pub is_vip: bool,
     pub days_remaining: Option<f64>,
     pub vip_until: Option<f64>,
     pub hwid: String,
+    #[serde(default)]
+    pub devices: Vec<VipDevice>,
+    pub device_cap: Option<usize>,
+    pub unbind_available_at: Option<f64>,
+    #[serde(default)]
+    pub sign_in_required: bool,
     pub error: Option<String>,
 }
 
@@ -100,6 +245,25 @@ pub struct VipRoomStatus {
     pub error: Option<String>,
 }
 
+/// UDP packet-switch endpoint advertised by the coordinator, with a legacy
+/// fallback so older servers that omit it keep working.
+pub fn resolve_vps_udp(data: &serde_json::Value) -> String {
+    if let Some(s) = data["udp_server"].as_str() {
+        let s = s.trim();
+        if !s.is_empty() {
+            return s.to_string();
+        }
+    }
+    if let Some(ip) = data["vps_ip"].as_str() {
+        let ip = ip.trim();
+        if !ip.is_empty() {
+            let port = data["vps_udp_port"].as_u64().unwrap_or(48000);
+            return format!("{ip}:{port}");
+        }
+    }
+    DEFAULT_VPS_UDP.to_string()
+}
+
 fn get_session_file() -> std::path::PathBuf {
     dlp_core::settings::data_dir().join("vip_session.json")
 }
@@ -133,10 +297,14 @@ pub async fn redeem_vip_license(
     custom_api_url: Option<String>,
     license_key: String,
     nickname: Option<String>,
+    account_token: Option<String>,
 ) -> Result<VipRedeemResponse, String> {
-    let api_base = custom_api_url.filter(|u| !u.trim().is_empty()).unwrap_or_else(|| DEFAULT_VIP_API.to_string());
+    let token = require_account_token(account_token)?;
+    let headers = account_header(Some(token.as_str()));
+    let candidates = get_vip_api_candidates(custom_api_url.as_deref());
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(8))
         .build()
         .map_err(|e| e.to_string())?;
@@ -144,17 +312,13 @@ pub async fn redeem_vip_license(
     let hwid = get_machine_hwid();
     let clean_key = license_key.trim().to_uppercase();
     let nick = nickname.unwrap_or_else(|| "Player".to_string());
-
-    let url = format!("{}/api/vip/redeem", api_base.trim_end_matches('/'));
     let body = serde_json::json!({
         "license_key": clean_key,
         "hwid": hwid,
         "nickname": nick
     });
 
-    let resp = client.post(&url).json(&body).send().await
-        .map_err(|e| format!("Failed to reach VIP Coordinator at {url}: {e}"))?;
-
+    let resp = execute_vip_request(&client, &candidates, reqwest::Method::POST, "/api/vip/redeem", Some(&body), headers.as_deref(), false).await?;
     let data: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
     if !data["success"].as_bool().unwrap_or(false) {
         let err_msg = data["detail"].as_str()
@@ -163,14 +327,13 @@ pub async fn redeem_vip_license(
         return Err(err_msg.to_string());
     }
 
-    let vip_token = data["vip_token"].as_str().map(|s| s.to_string());
     let vip_until = data["vip_until"].as_f64();
     let days_remaining = data["days_remaining"].as_f64();
     let message = data["message"].as_str().map(|s| s.to_string());
 
-    // Save session locally
+    // Cache only the expiry: the entitlement lives on the account, not on this machine.
     let sess = VipSession {
-        vip_token,
+        vip_token: None,
         vip_until,
         last_key: Some(clean_key),
     };
@@ -188,10 +351,13 @@ pub async fn redeem_vip_license(
 /// Check live VIP License validity with VPS Coordinator
 pub async fn check_vip_license_status(
     custom_api_url: Option<String>,
+    account_token: Option<String>,
 ) -> Result<VipStatusResponse, String> {
-    let api_base = custom_api_url.filter(|u| !u.trim().is_empty()).unwrap_or_else(|| DEFAULT_VIP_API.to_string());
+    let headers = account_header(account_token.as_deref());
+    let candidates = get_vip_api_candidates(custom_api_url.as_deref());
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(Duration::from_secs(3))
         .timeout(Duration::from_secs(5))
         .build()
         .map_err(|e| e.to_string())?;
@@ -199,17 +365,15 @@ pub async fn check_vip_license_status(
     let hwid = get_machine_hwid();
     let sess = load_vip_session();
 
-    let url = format!("{}/api/vip/check", api_base.trim_end_matches('/'));
     let body = serde_json::json!({
-        "hwid": hwid,
-        "vip_token": sess.vip_token
+        "hwid": hwid
     });
 
-    let resp = match client.post(&url).json(&body).send().await {
+    let resp = match execute_vip_request(&client, &candidates, reqwest::Method::POST, "/api/vip/check", Some(&body), headers.as_deref(), true).await {
         Ok(r) => r,
         Err(_) => {
-            // Offline fallback: check local unexpired timestamp if token exists
-            if let (Some(_), Some(until)) = (sess.vip_token, sess.vip_until) {
+            // Offline fallback: only what the last successful check cached.
+            if let Some(until) = sess.vip_until {
                 let now = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or_default()
@@ -219,7 +383,11 @@ pub async fn check_vip_license_status(
                         is_vip: true,
                         days_remaining: Some(((until - now) / 86400.0 * 10.0).round() / 10.0),
                         vip_until: Some(until),
-                        hwid,
+                        hwid: hwid.clone(),
+                        devices: Vec::new(),
+                        device_cap: None,
+                        unbind_available_at: None,
+                        sign_in_required: false,
                         error: None,
                     });
                 }
@@ -228,7 +396,11 @@ pub async fn check_vip_license_status(
                 is_vip: false,
                 days_remaining: None,
                 vip_until: None,
-                hwid,
+                hwid: hwid.clone(),
+                devices: Vec::new(),
+                device_cap: None,
+                unbind_available_at: None,
+                sign_in_required: false,
                 error: Some("Unable to reach verification server".to_string()),
             });
         }
@@ -239,14 +411,22 @@ pub async fn check_vip_license_status(
     let days_remaining = data["days_remaining"].as_f64();
     let vip_until = data["vip_until"].as_f64();
 
-    // If server refreshed or provided valid token, update local cache
+    let devices: Vec<VipDevice> = data["devices"]
+        .as_array()
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| serde_json::from_value::<VipDevice>(v.clone()).ok())
+                .collect()
+        })
+        .unwrap_or_default();
+    let device_cap = data["device_cap"].as_u64().map(|n| n as usize);
+    let unbind_available_at = data["unbind_available_at"].as_f64();
+    let sign_in_required = data["reason"].as_str() == Some("SIGN_IN_REQUIRED");
+
     if is_vip {
-        if let Some(new_token) = data["vip_token"].as_str() {
-            let mut updated_sess = sess;
-            updated_sess.vip_token = Some(new_token.to_string());
-            updated_sess.vip_until = vip_until;
-            save_vip_session(&updated_sess);
-        }
+        let mut updated_sess = sess;
+        updated_sess.vip_until = vip_until;
+        save_vip_session(&updated_sess);
     }
 
     Ok(VipStatusResponse {
@@ -254,9 +434,14 @@ pub async fn check_vip_license_status(
         days_remaining,
         vip_until,
         hwid,
+        devices,
+        device_cap,
+        unbind_available_at,
+        sign_in_required,
         error: None,
     })
 }
+
 
 pub async fn create_vip_room(
     custom_api_url: Option<String>,
@@ -269,22 +454,20 @@ pub async fn create_vip_room(
     is_hidden: Option<bool>,
     password: Option<String>,
     max_players: Option<usize>,
+    account_token: Option<String>,
 ) -> Result<VipCreateResponse, String> {
     let hwid = get_machine_hwid();
-    let sess = load_vip_session();
+    let token = require_account_token(account_token)?;
+    let headers = account_header(Some(token.as_str()));
 
-    let token = sess.vip_token.ok_or_else(|| {
-        "VIP subscription required. Please activate your VIP license key first.".to_string()
-    })?;
-
-    let api_base = custom_api_url.filter(|u| !u.trim().is_empty()).unwrap_or_else(|| DEFAULT_VIP_API.to_string());
+    let candidates = get_vip_api_candidates(custom_api_url.as_deref());
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(8))
         .build()
         .map_err(|e| e.to_string())?;
 
-    let url = format!("{}/api/room/create", api_base.trim_end_matches('/'));
     let clean_nick = if nickname.trim().is_empty() { "Host" } else { nickname.trim() };
     let clean_mode = mode.as_deref().unwrap_or("relay").trim().to_lowercase();
     let clean_is_modded = is_modded.unwrap_or(true);
@@ -303,8 +486,7 @@ pub async fn create_vip_room(
         "enable_sdr": clean_enable_sdr,
         "is_hidden": clean_is_hidden,
         "max_players": clean_max_players,
-        "hwid": hwid,
-        "vip_token": token
+        "hwid": hwid
     });
     if let Some(rn) = clean_room_name {
         body["room_name"] = serde_json::Value::String(rn);
@@ -313,9 +495,7 @@ pub async fn create_vip_room(
         body["password"] = serde_json::Value::String(pwd);
     }
 
-    let resp = client.post(&url).json(&body).send().await
-        .map_err(|e| format!("Failed to reach Coordinator at {url}: {e}"))?;
-
+    let resp = execute_vip_request(&client, &candidates, reqwest::Method::POST, "/api/room/create", Some(&body), headers.as_deref(), false).await?;
     let data: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
     if !data["success"].as_bool().unwrap_or(false) {
         let err_msg = data["detail"].as_str()
@@ -330,13 +510,17 @@ pub async fn create_vip_room(
     let vip = data["virtual_ip"].as_str().or_else(|| data["vip"].as_str()).unwrap_or("10.10.1.1");
     let mask = data["subnet_mask"].as_str().or_else(|| data["netmask"].as_str()).unwrap_or("255.255.255.0");
     let relay_port = data["relay_port"].as_u64().unwrap_or(28001) as u16;
-    let relay_target = data["relay_target"].as_str().unwrap_or("5.57.32.52:28001").to_string();
+    let relay_target = data["relay_target"].as_str().map(|s| s.to_string()).unwrap_or_else(|| {
+        let vps_ip = data["vps_ip"].as_str().unwrap_or("92.42.207.96");
+        format!("{vps_ip}:{relay_port}")
+    });
+    let udp_server = resolve_vps_udp(&data);
 
     let (host_connect_cmd, client_connect_cmd) = if actual_mode == "relay" {
         start_host_relay(room_token, relay_target, 27005).await?;
         ("connect localhost:27005".to_string(), "connect localhost:27016".to_string())
     } else {
-        start_lan_engine(room_token, vip, mask)?;
+        start_lan_engine(room_token, vip, mask, &udp_server)?;
         (format!("connect {vip}:27005"), format!("connect {vip}:27005"))
     };
 
@@ -369,37 +553,32 @@ pub async fn join_vip_room(
     room_code: String,
     nickname: String,
     password: Option<String>,
+    account_token: Option<String>,
 ) -> Result<VipJoinResponse, String> {
     let hwid = get_machine_hwid();
-    let sess = load_vip_session();
+    let token = require_account_token(account_token)?;
+    let headers = account_header(Some(token.as_str()));
 
-    let token = sess.vip_token.ok_or_else(|| {
-        "VIP subscription required. Please activate your VIP license key first.".to_string()
-    })?;
-
-    let api_base = custom_api_url.filter(|u| !u.trim().is_empty()).unwrap_or_else(|| DEFAULT_VIP_API.to_string());
+    let candidates = get_vip_api_candidates(custom_api_url.as_deref());
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(8))
         .build()
         .map_err(|e| e.to_string())?;
 
-    let url = format!("{}/api/room/join", api_base.trim_end_matches('/'));
     let clean_nick = if nickname.trim().is_empty() { "Player" } else { nickname.trim() };
     let clean_password = password.filter(|p| !p.trim().is_empty());
     let mut body = serde_json::json!({
         "room_code": room_code.trim(),
         "nickname": clean_nick,
-        "hwid": hwid,
-        "vip_token": token
+        "hwid": hwid
     });
     if let Some(pwd) = clean_password {
         body["password"] = serde_json::Value::String(pwd);
     }
 
-    let resp = client.post(&url).json(&body).send().await
-        .map_err(|e| format!("Failed to join room at {url}: {e}"))?;
-
+    let resp = execute_vip_request(&client, &candidates, reqwest::Method::POST, "/api/room/join", Some(&body), headers.as_deref(), false).await?;
     let data: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
     if !data["success"].as_bool().unwrap_or(false) {
         let err_msg = data["detail"].as_str()
@@ -413,7 +592,12 @@ pub async fn join_vip_room(
     let vip = data["virtual_ip"].as_str().or_else(|| data["vip"].as_str()).unwrap_or("10.10.1.2");
     let mask = data["subnet_mask"].as_str().or_else(|| data["netmask"].as_str()).unwrap_or("255.255.255.0");
     let host_vip = data["host_vip"].as_str().or_else(|| data["host_ip"].as_str()).unwrap_or("10.10.1.1").to_string();
-    let relay_target = data["relay_target"].as_str().unwrap_or("5.57.32.52:28001").to_string();
+    let relay_port = data["relay_port"].as_u64().unwrap_or(28001) as u16;
+    let relay_target = data["relay_target"].as_str().map(|s| s.to_string()).unwrap_or_else(|| {
+        let vps_ip = data["vps_ip"].as_str().unwrap_or("92.42.207.96");
+        format!("{vps_ip}:{relay_port}")
+    });
+    let udp_server = resolve_vps_udp(&data);
     let is_modded = data["is_modded"].as_bool().unwrap_or(false);
     let mod_mode = data["mod_mode"].as_str().unwrap_or("vanilla").to_string();
     let enable_sdr = data["enable_sdr"].as_bool().unwrap_or(false);
@@ -422,7 +606,7 @@ pub async fn join_vip_room(
         start_client_relay(room_token, clean_nick.to_string(), relay_target, 27016).await?;
         "connect localhost:27016".to_string()
     } else {
-        start_lan_engine(room_token, vip, mask)?;
+        start_lan_engine(room_token, vip, mask, &udp_server)?;
         format!("connect {host_vip}:27005")
     };
 
@@ -455,15 +639,16 @@ pub async fn get_vip_room_status(
     custom_api_url: Option<String>,
     room_code: String,
 ) -> Result<VipRoomStatus, String> {
-    let api_base = custom_api_url.filter(|u| !u.trim().is_empty()).unwrap_or_else(|| DEFAULT_VIP_API.to_string());
+    let candidates = get_vip_api_candidates(custom_api_url.as_deref());
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(Duration::from_secs(3))
         .timeout(Duration::from_secs(5))
         .build()
         .map_err(|e| e.to_string())?;
 
-    let url = format!("{}/api/room/status/{}", api_base.trim_end_matches('/'), room_code.trim());
-    let resp = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    let path = format!("/api/room/status/{}", room_code.trim());
+    let resp = execute_vip_request(&client, &candidates, reqwest::Method::GET, &path, None, None, true).await?;
     let status: VipRoomStatus = resp.json().await.map_err(|e| e.to_string())?;
     Ok(status)
 }
@@ -471,21 +656,30 @@ pub async fn get_vip_room_status(
 pub async fn leave_vip_room(
     custom_api_url: Option<String>,
     room_code: String,
+    account_token: Option<String>,
 ) -> Result<(), String> {
-    let api_base = custom_api_url.filter(|u| !u.trim().is_empty()).unwrap_or_else(|| DEFAULT_VIP_API.to_string());
+    let candidates = get_vip_api_candidates(custom_api_url.as_deref());
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(Duration::from_secs(3))
         .timeout(Duration::from_secs(5))
         .build()
         .map_err(|e| e.to_string())?;
 
-    let hwid = get_machine_hwid();
-    let url = format!("{}/api/room/{}", api_base.trim_end_matches('/'), room_code.trim());
-    let mut req = client.delete(&url);
-    if !hwid.is_empty() {
-        req = req.header("X-HWID", hwid);
-    }
-    let _ = req.send().await;
+    // The host proves control with the account session; a bare HWID is public and
+    // must never authorise closing a room.
+    let token = require_account_token(account_token)?;
+    let headers = account_header(Some(token.as_str()));
+    let path = format!("/api/room/{}", room_code.trim());
+    let _ = execute_vip_request(
+        &client,
+        &candidates,
+        reqwest::Method::DELETE,
+        &path,
+        None,
+        headers.as_deref(),
+        true,
+    ).await;
 
     stop_relay();
     stop_lan_engine();
@@ -502,27 +696,30 @@ pub async fn kick_vip_peer(
     custom_api_url: Option<String>,
     room_code: String,
     peer_name: String,
+    account_token: Option<String>,
 ) -> Result<(), String> {
-    let hwid = get_machine_hwid();
-    let sess = load_vip_session();
-    let token = sess.vip_token.unwrap_or_default();
+    let token = require_account_token(account_token)?;
+    let headers = account_header(Some(token.as_str()));
 
-    let api_base = custom_api_url.filter(|u| !u.trim().is_empty()).unwrap_or_else(|| DEFAULT_VIP_API.to_string());
+    let candidates = get_vip_api_candidates(custom_api_url.as_deref());
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(Duration::from_secs(3))
         .timeout(Duration::from_secs(5))
         .build()
         .map_err(|e| e.to_string())?;
 
-    let url = format!("{}/api/room/{}/kick", api_base.trim_end_matches('/'), room_code.trim());
+    let path = format!("/api/room/{}/kick", room_code.trim());
     let body = serde_json::json!({
-        "hwid": hwid,
-        "vip_token": token,
         "target_nickname": peer_name.trim(),
     });
-    let resp = client.post(&url).json(&body).send().await.map_err(|e| e.to_string())?;
+    let resp = execute_vip_request(&client, &candidates, reqwest::Method::POST, &path, Some(&body), headers.as_deref(), false).await?;
     if !resp.status().is_success() {
         return Err(format!("Kick failed with status {}", resp.status()));
+    }
+    let data: serde_json::Value = resp.json().await.unwrap_or_default();
+    if data["success"].as_bool() == Some(false) {
+        return Err(data["message"].as_str().unwrap_or("Kick failed").to_string());
     }
     Ok(())
 }
@@ -531,27 +728,30 @@ pub async fn ban_vip_peer(
     custom_api_url: Option<String>,
     room_code: String,
     peer_name: String,
+    account_token: Option<String>,
 ) -> Result<(), String> {
-    let hwid = get_machine_hwid();
-    let sess = load_vip_session();
-    let token = sess.vip_token.unwrap_or_default();
+    let token = require_account_token(account_token)?;
+    let headers = account_header(Some(token.as_str()));
 
-    let api_base = custom_api_url.filter(|u| !u.trim().is_empty()).unwrap_or_else(|| DEFAULT_VIP_API.to_string());
+    let candidates = get_vip_api_candidates(custom_api_url.as_deref());
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(Duration::from_secs(3))
         .timeout(Duration::from_secs(5))
         .build()
         .map_err(|e| e.to_string())?;
 
-    let url = format!("{}/api/room/{}/ban", api_base.trim_end_matches('/'), room_code.trim());
+    let path = format!("/api/room/{}/ban", room_code.trim());
     let body = serde_json::json!({
-        "hwid": hwid,
-        "vip_token": token,
         "target_nickname": peer_name.trim(),
     });
-    let resp = client.post(&url).json(&body).send().await.map_err(|e| e.to_string())?;
+    let resp = execute_vip_request(&client, &candidates, reqwest::Method::POST, &path, Some(&body), headers.as_deref(), false).await?;
     if !resp.status().is_success() {
         return Err(format!("Ban failed with status {}", resp.status()));
+    }
+    let data: serde_json::Value = resp.json().await.unwrap_or_default();
+    if data["success"].as_bool() == Some(false) {
+        return Err(data["message"].as_str().unwrap_or("Ban failed").to_string());
     }
     Ok(())
 }
@@ -560,27 +760,102 @@ pub async fn unban_vip_peer(
     custom_api_url: Option<String>,
     room_code: String,
     peer_name: String,
+    account_token: Option<String>,
 ) -> Result<(), String> {
-    let hwid = get_machine_hwid();
-    let sess = load_vip_session();
-    let token = sess.vip_token.unwrap_or_default();
+    let token = require_account_token(account_token)?;
+    let headers = account_header(Some(token.as_str()));
 
-    let api_base = custom_api_url.filter(|u| !u.trim().is_empty()).unwrap_or_else(|| DEFAULT_VIP_API.to_string());
+    let candidates = get_vip_api_candidates(custom_api_url.as_deref());
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(Duration::from_secs(3))
         .timeout(Duration::from_secs(5))
         .build()
         .map_err(|e| e.to_string())?;
 
-    let url = format!("{}/api/room/{}/unban", api_base.trim_end_matches('/'), room_code.trim());
+    let path = format!("/api/room/{}/unban", room_code.trim());
     let body = serde_json::json!({
-        "hwid": hwid,
-        "vip_token": token,
         "target_nickname": peer_name.trim(),
     });
-    let resp = client.post(&url).json(&body).send().await.map_err(|e| e.to_string())?;
+    let resp = execute_vip_request(&client, &candidates, reqwest::Method::POST, &path, Some(&body), headers.as_deref(), false).await?;
     if !resp.status().is_success() {
         return Err(format!("Unban failed with status {}", resp.status()));
+    }
+    let data: serde_json::Value = resp.json().await.unwrap_or_default();
+    if data["success"].as_bool() == Some(false) {
+        return Err(data["message"].as_str().unwrap_or("Unban failed").to_string());
+    }
+    Ok(())
+}
+
+/// Bound devices for the signed-in account (the HWID seats).
+pub async fn list_vip_devices(
+    custom_api_url: Option<String>,
+    account_token: Option<String>,
+) -> Result<Vec<VipDevice>, String> {
+    let token = require_account_token(account_token)?;
+    let headers = account_header(Some(token.as_str()));
+    let candidates = get_vip_api_candidates(custom_api_url.as_deref());
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .connect_timeout(Duration::from_secs(3))
+        .timeout(Duration::from_secs(5))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let resp = execute_vip_request(
+        &client,
+        &candidates,
+        reqwest::Method::GET,
+        "/api/account/devices",
+        None,
+        headers.as_deref(),
+        true,
+    )
+    .await?;
+    let data: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+    Ok(data["devices"]
+        .as_array()
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| serde_json::from_value::<VipDevice>(v.clone()).ok())
+                .collect()
+        })
+        .unwrap_or_default())
+}
+
+pub async fn unbind_vip_device(
+    custom_api_url: Option<String>,
+    hwid: String,
+    account_token: Option<String>,
+) -> Result<(), String> {
+    let token = require_account_token(account_token)?;
+    let headers = account_header(Some(token.as_str()));
+    let candidates = get_vip_api_candidates(custom_api_url.as_deref());
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .connect_timeout(Duration::from_secs(3))
+        .timeout(Duration::from_secs(5))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let path = format!("/api/account/devices/{}/unbind", hwid.trim());
+    let resp = execute_vip_request(
+        &client,
+        &candidates,
+        reqwest::Method::POST,
+        &path,
+        None,
+        headers.as_deref(),
+        false,
+    )
+    .await?;
+    if !resp.status().is_success() {
+        let data: serde_json::Value = resp.json().await.unwrap_or_default();
+        return Err(data["detail"]
+            .as_str()
+            .unwrap_or("Failed to unbind device")
+            .to_string());
     }
     Ok(())
 }
@@ -603,15 +878,15 @@ pub struct VipRoomSummary {
 pub async fn list_vip_rooms(
     custom_api_url: Option<String>,
 ) -> Result<Vec<VipRoomSummary>, String> {
-    let api_base = custom_api_url.filter(|u| !u.trim().is_empty()).unwrap_or_else(|| DEFAULT_VIP_API.to_string());
+    let candidates = get_vip_api_candidates(custom_api_url.as_deref());
     let client = reqwest::Client::builder()
         .no_proxy()
+        .connect_timeout(Duration::from_secs(3))
         .timeout(Duration::from_secs(4))
         .build()
         .map_err(|e| e.to_string())?;
 
-    let url = format!("{}/api/room/list", api_base.trim_end_matches('/'));
-    let resp = match client.get(&url).send().await {
+    let resp = match execute_vip_request(&client, &candidates, reqwest::Method::GET, "/api/room/list", None, None, true).await {
         Ok(r) => r,
         Err(_) => return Ok(Vec::new()),
     };
@@ -628,3 +903,35 @@ pub async fn list_vip_rooms(
 
     Ok(results)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_candidate_ordering_and_pinning() {
+        // Reset to default
+        mark_vip_api_success(DEFAULT_VIP_API);
+        assert_eq!(get_active_vip_api(), DEFAULT_VIP_API);
+        let list1 = get_vip_api_candidates(None);
+        assert_eq!(list1[0], DEFAULT_VIP_API);
+        assert_eq!(list1[1], FALLBACK_VIP_API);
+
+        // Switch to fallback
+        mark_vip_api_success(FALLBACK_VIP_API);
+        assert_eq!(get_active_vip_api(), FALLBACK_VIP_API);
+        let list2 = get_vip_api_candidates(None);
+        assert_eq!(list2[0], FALLBACK_VIP_API);
+        assert_eq!(list2[1], DEFAULT_VIP_API);
+
+        // Custom URL override: should only contain the custom endpoint
+        let custom = get_vip_api_candidates(Some("http://127.0.0.1:8080"));
+        assert_eq!(custom.len(), 1);
+        assert_eq!(custom[0], "http://127.0.0.1:8080");
+
+        // Reset back to primary
+        mark_vip_api_success(DEFAULT_VIP_API);
+    }
+}
+
+

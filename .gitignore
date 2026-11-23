@@ -47,9 +47,6 @@ src-tauri/*.py
 !README.md
 !CHANGELOG.md
 !RELEASE_NOTES.md
-!AGENTS.md
-!.agents/
-!.agents/**
 docs/
 
 # Tools, helper scripts & previews
@@ -79,3 +76,7 @@ admin_console/
 *.pem
 *key*.txt
 admin_config.json
+
+# VPS coordinator data & secrets
+vps_data/
+

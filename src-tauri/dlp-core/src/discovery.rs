@@ -95,9 +95,56 @@ pub fn find_game() -> Option<Found> {
 }
 
 /// Manual folder picker: validate `<path>\game\citadel` exists.
+/// Resilient to trailing separators and user picking either the Deadlock root,
+/// the `game` folder, or the `game\citadel` folder.
 pub fn validate_manual(path: &str) -> Option<Found> {
-    let cit = Path::new(path).join("game").join("citadel");
-    cit.is_dir().then(|| Found { deadlock: path.to_string(), owned: true })
+    let raw = path.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    let trimmed = raw.trim_end_matches(['/', '\\']);
+    // Preserve trailing backslash for Windows drive roots like "D:" -> "D:\"
+    let owned_path;
+    let clean = if trimmed.len() == 2 && trimmed.as_bytes()[1] == b':' {
+        owned_path = format!("{trimmed}\\");
+        &owned_path
+    } else if trimmed.is_empty() {
+        raw
+    } else {
+        trimmed
+    };
+
+    let p = Path::new(clean);
+    if p.join("game").join("citadel").is_dir() {
+        return Some(Found { deadlock: clean.to_string(), owned: true });
+    }
+    if p.file_name().map_or(false, |n| n.eq_ignore_ascii_case("game")) && p.join("citadel").is_dir() {
+        if let Some(parent) = p.parent() {
+            let parent_str = parent.to_string_lossy();
+            let parent_clean = if parent_str.len() == 2 && parent_str.as_bytes()[1] == b':' {
+                format!("{parent_str}\\")
+            } else {
+                parent_str.into_owned()
+            };
+            return Some(Found { deadlock: parent_clean, owned: true });
+        }
+    }
+    if p.file_name().map_or(false, |n| n.eq_ignore_ascii_case("citadel")) {
+        if let Some(game_dir) = p.parent() {
+            if game_dir.file_name().map_or(false, |n| n.eq_ignore_ascii_case("game")) {
+                if let Some(root) = game_dir.parent() {
+                    let root_str = root.to_string_lossy();
+                    let root_clean = if root_str.len() == 2 && root_str.as_bytes()[1] == b':' {
+                        format!("{root_str}\\")
+                    } else {
+                        root_str.into_owned()
+                    };
+                    return Some(Found { deadlock: root_clean, owned: true });
+                }
+            }
+        }
+    }
+    None
 }
 
 #[cfg(test)]
@@ -168,6 +215,9 @@ mod tests {
         std::fs::create_dir_all(tmp.join("game").join("citadel")).unwrap();
         let p = tmp.to_string_lossy().into_owned();
         assert!(validate_manual(&p).is_some());
+        assert!(validate_manual(&format!("{p}\\")).is_some());
+        assert_eq!(validate_manual(&format!("{p}\\game")).unwrap().deadlock, p);
+        assert_eq!(validate_manual(&format!("{p}\\game\\citadel")).unwrap().deadlock, p);
         assert!(validate_manual(p.replace("dlpb_disc_manual", "dlpb_nope").as_str()).is_none());
         let _ = std::fs::remove_dir_all(&tmp);
     }

@@ -44,64 +44,6 @@ pub fn check_running() -> Vec<String> {
     guard::game_running()
 }
 
-// ---------- install ----------
-#[tauri::command]
-pub async fn install_mode(
-    app: tauri::AppHandle,
-    mode: String,
-    fov: Option<u32>,
-    aspect_ratio: Option<String>,
-    aspect_ratio_enabled: Option<bool>,
-    path: String,
-) -> Result<Vec<install::StepLog>, String> {
-    let m = match mode.as_str() {
-        "T1" => install::Mode::T1,
-        "T2" => install::Mode::T2,
-        "T3" => install::Mode::T3,
-        "POTATO" => install::Mode::Potato,
-        "T1MODS" => install::Mode::T1Mods,
-        "T2MODS" => install::Mode::T2Mods,
-        other => return Err(format!("unknown mode: {other}")),
-    };
-
-    let mut s = settings::load();
-    if let Some(f) = fov {
-        s.fov = f.min(90);
-    }
-    if let Some(ar) = aspect_ratio {
-        s.aspect_ratio = ar;
-    }
-    if let Some(are) = aspect_ratio_enabled {
-        s.aspect_ratio_enabled = are;
-    }
-    let _ = settings::save(&s);
-
-    let (only, _) = m.addon_lists(&s);
-    let required_addons: Vec<&str> = only
-        .split(',')
-        .map(str::trim)
-        .filter(|x| !x.is_empty())
-        .collect();
-
-    // 1. Download & verify required mods if not cached yet
-    if !required_addons.is_empty() {
-        crate::mod_cache::ensure_mods_cached(&required_addons, Some(&app)).await?;
-    }
-
-    let cache_dir = crate::mod_cache::get_cache_dir();
-
-    // 2. Run blocking install with verified cache directory
-    tauri::async_runtime::spawn_blocking(move || {
-        let deadlock = resolve_path(&path)?;
-        let pkg = payload::extract_cached().map_err(|e| e.to_string())?;
-        let data = settings::data_dir();
-
-        install::install_with_addons(m, s.fov, &deadlock, &pkg, &cache_dir, &data)
-    })
-    .await
-    .map_err(|e| e.to_string())?
-}
-
 #[tauri::command]
 pub fn get_mod_cache_status_cmd() -> Vec<crate::mod_cache::ModStatusDto> {
     crate::mod_cache::get_all_mod_statuses()
@@ -324,7 +266,6 @@ pub async fn revert_original_cmd(path: String) -> Result<RestoreReportDto, Strin
 #[derive(Serialize)]
 pub struct SettingsDto {
     pub lang: String,
-    pub unlocked: bool,
     pub last_path: Option<String>,
     pub better_breakables: bool,
     pub higher_brightness: bool,
@@ -344,7 +285,6 @@ impl From<settings::Settings> for SettingsDto {
     fn from(s: settings::Settings) -> Self {
         SettingsDto {
             lang: s.lang,
-            unlocked: s.unlocked,
             last_path: s.last_path,
             better_breakables: s.better_breakables,
             higher_brightness: s.higher_brightness,
@@ -365,7 +305,6 @@ impl From<settings::Settings> for SettingsDto {
 #[derive(Deserialize)]
 pub struct SettingsPatch {
     pub lang: Option<String>,
-    pub unlock_code: Option<String>,
     pub last_path: Option<String>,
     pub better_breakables: Option<bool>,
     pub higher_brightness: Option<bool>,
@@ -381,16 +320,6 @@ pub struct SettingsPatch {
     pub ragdoll_fade: Option<bool>,
 }
 
-fn verify_vip_code(input: &str) -> bool {
-    let trimmed = input.trim();
-    if trimmed.is_empty() {
-        return false;
-    }
-    let digest = detect::md5_hex(trimmed.as_bytes());
-    let expected = std::env::var("DLPHUB_VIP_HASH").unwrap_or_else(|_| "e2fc714c4727ee9395f324cd2e7f331f".to_string());
-    digest.eq_ignore_ascii_case(&expected)
-}
-
 #[tauri::command]
 pub fn get_settings() -> SettingsDto {
     settings::load().into()
@@ -404,12 +333,6 @@ pub fn set_settings(patch: SettingsPatch) -> Result<SettingsDto, String> {
             return Err("lang must be fa or en".into());
         }
         s.lang = lang;
-    }
-    if let Some(code) = patch.unlock_code {
-        if !verify_vip_code(&code) {
-            return Err("invalid unlock code".into());
-        }
-        s.unlocked = true;
     }
     if let Some(p) = patch.last_path {
         s.last_path = if p.trim().is_empty() { None } else { Some(p) };
@@ -467,8 +390,8 @@ pub fn get_diagnostics() -> String {
     diag.push_str(&format!("Log Path: {:?}\n", dlp_core::logger::log_path(&data_dir)));
 
     let s = settings::load();
-    diag.push_str(&format!("Settings: lang={}, unlocked={}, last_path={:?}, fov={}, aspect_ratio={}, aspect_ratio_enabled={}, reduced_motion={}, fps_max={:?}, better_breakables={}, higher_brightness={}, reduce_clutter={}, stop_cloth_anim={}, ragdoll_fade={}\n",
-        s.lang, s.unlocked, s.last_path, s.fov, s.aspect_ratio, s.aspect_ratio_enabled, s.reduced_motion, s.fps_max, s.better_breakables, s.higher_brightness, s.reduce_clutter, s.stop_cloth_anim, s.ragdoll_fade
+    diag.push_str(&format!("Settings: lang={}, last_path={:?}, fov={}, aspect_ratio={}, aspect_ratio_enabled={}, reduced_motion={}, fps_max={:?}, better_breakables={}, higher_brightness={}, reduce_clutter={}, stop_cloth_anim={}, ragdoll_fade={}\n",
+        s.lang, s.last_path, s.fov, s.aspect_ratio, s.aspect_ratio_enabled, s.reduced_motion, s.fps_max, s.better_breakables, s.higher_brightness, s.reduce_clutter, s.stop_cloth_anim, s.ragdoll_fade
     ));
 
     let vram_bytes = detect::detect_vram_bytes();
@@ -632,230 +555,6 @@ pub fn running_from_pkg() -> bool {
         }
     }
     false
-}
-
-// ---------- valve ping ----------
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ServerPing {
-    pub id: String,
-    pub name: String,
-    pub name_fa: String,
-    pub region: String,
-    pub region_fa: String,
-    pub ip: String,
-    pub ping_ms: Option<u32>,
-    // real-sample telemetry (up to 20 ICMP probes per relay)
-    pub samples: Vec<u32>,
-    pub avg_ms: Option<u32>,
-    pub jitter_ms: Option<u32>,     // mean absolute deviation of samples
-    pub loss_pct: f32,              // 0.0 - 100.0
-    pub stability: Option<u8>,      // 0-100 score = 100 - jitter/avg blend
-}
-
-impl ServerPing {
-    fn from_def(s: &ValveServerDef) -> Self {
-        ServerPing {
-            id: s.id.to_string(),
-            name: s.name.to_string(),
-            name_fa: s.name_fa.to_string(),
-            region: s.region.to_string(),
-            region_fa: s.region_fa.to_string(),
-            ip: s.ip.to_string(),
-            ping_ms: None,
-            samples: vec![],
-            avg_ms: None,
-            jitter_ms: None,
-            loss_pct: 100.0,
-            stability: None,
-        }
-    }
-}
-
-#[derive(Clone)]
-struct ValveServerDef {
-    id: &'static str,
-    name: &'static str,
-    name_fa: &'static str,
-    region: &'static str,
-    region_fa: &'static str,
-    ip: &'static str,
-}
-
-const VALVE_SERVERS: &[ValveServerDef] = &[
-    ValveServerDef {
-        id: "fra",
-        name: "Frankfurt",
-        name_fa: "فرانکفورت (آلمان)",
-        region: "Europe West",
-        region_fa: "غرب اروپا",
-        ip: "155.133.226.68",
-    },
-    ValveServerDef {
-        id: "vie",
-        name: "Vienna",
-        name_fa: "وین (اتریش)",
-        region: "Europe East",
-        region_fa: "شرق اروپا",
-        ip: "146.66.155.66",
-    },
-    ValveServerDef {
-        id: "dxb",
-        name: "Dubai",
-        name_fa: "دبی (امارات)",
-        region: "Middle East",
-        region_fa: "خاورمیانه",
-        ip: "185.25.183.163",
-    },
-    ValveServerDef {
-        id: "sto",
-        name: "Stockholm",
-        name_fa: "استکهلم (سوئد)",
-        region: "Europe North",
-        region_fa: "شمال اروپا",
-        ip: "162.254.198.41",
-    },
-    ValveServerDef {
-        id: "waw",
-        name: "Warsaw",
-        name_fa: "ورشو (لهستان)",
-        region: "Europe Central",
-        region_fa: "مرکز اروپا",
-        ip: "155.133.230.98",
-    },
-    ValveServerDef {
-        id: "ams",
-        name: "Amsterdam",
-        name_fa: "آمستردام (هلند)",
-        region: "Europe West",
-        region_fa: "غرب اروپا",
-        ip: "155.133.248.36",
-    },
-    ValveServerDef {
-        id: "lhr",
-        name: "London",
-        name_fa: "لندن (انگلیس)",
-        region: "Europe West",
-        region_fa: "غرب اروپا",
-        ip: "162.254.197.37",
-    },
-    ValveServerDef {
-        id: "iad",
-        name: "US East",
-        name_fa: "شرق آمریکا (ویرجینیا)",
-        region: "North America",
-        region_fa: "آمریکای شمالی",
-        ip: "162.254.192.67",
-    },
-];
-
-fn ping_single_ip(ip: &str, timeout_ms: u32) -> Option<u32> {
-    use std::process::Command;
-    #[cfg(windows)]
-    use std::os::windows::process::CommandExt;
-
-    let mut cmd = Command::new("ping");
-    cmd.args(["-n", "1", "-w", &timeout_ms.to_string(), ip]);
-
-    #[cfg(windows)]
-    cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW: prevent CMD window flash
-
-    let output = cmd.output().ok()?;
-    let text = String::from_utf8_lossy(&output.stdout);
-
-    if text.contains("time<1ms") || text.contains("time<") {
-        return Some(1);
-    }
-    if let Some(pos) = text.find("time=") {
-        let rest = &text[pos + 5..];
-        let num_str: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
-        if let Ok(ms) = num_str.parse::<u32>() {
-            return Some(ms);
-        }
-    }
-    if let Some(pos) = text.find("Average = ") {
-        let rest = &text[pos + 10..];
-        let num_str: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
-        if let Ok(ms) = num_str.parse::<u32>() {
-            return Some(ms);
-        }
-    }
-    for word in text.split_whitespace() {
-        if let Some(stripped) = word.strip_suffix("ms") {
-            let digits: String = stripped.chars().filter(|c| c.is_ascii_digit()).collect();
-            if let Ok(ms) = digits.parse::<u32>() {
-                if ms > 0 && ms < 2000 {
-                    return Some(ms);
-                }
-            }
-        }
-    }
-    None
-}
-
-#[tauri::command]
-pub async fn ping_valve_servers() -> Result<Vec<ServerPing>, String> {
-    use std::sync::mpsc;
-    use std::thread;
-
-    let (tx, rx) = mpsc::channel();
-    let mut handles = vec![];
-
-    const SAMPLES: u32 = 10;
-    for s in VALVE_SERVERS {
-        let tx = tx.clone();
-        let s = s.clone();
-        handles.push(thread::spawn(move || {
-            let mut p = ServerPing::from_def(&s);
-            let mut probes: Vec<u32> = vec![];
-            for i in 0..SAMPLES {
-                if let Some(ms) = ping_single_ip(s.ip, 1500) {
-                    probes.push(ms);
-                }
-                // Space probes ~150ms apart so ICMP rate-limiting and queue
-                // bursts don't distort consecutive samples.
-                if i + 1 < SAMPLES {
-                    std::thread::sleep(std::time::Duration::from_millis(130));
-                }
-            }
-            p.loss_pct = ((SAMPLES - probes.len() as u32) as f32 / SAMPLES as f32) * 100.0;
-            if !probes.is_empty() {
-                // Drop the first reply (ARP/route warmup) when we have spares.
-                let used: Vec<u32> = if probes.len() > 2 { probes[1..].to_vec() } else { probes.clone() };
-                let mut sorted = used.clone();
-                sorted.sort_unstable();
-                // Trimmed mean: cut top/bottom 20% -> realistic avg, resists spikes.
-                let trim = (sorted.len() as f32 * 0.2).floor() as usize;
-                let core = if sorted.len() > trim * 2 { sorted[trim..sorted.len() - trim].to_vec() } else { sorted.clone() };
-                let n = core.len() as f32;
-                let avg = core.iter().map(|&x| x as f32).sum::<f32>() / n;
-                // Jitter: standard deviation of the trimmed set (IETF RFC 3550 style).
-                let var = core.iter().map(|&x| (x as f32 - avg).powi(2)).sum::<f32>() / n;
-                let jitter = var.sqrt();
-                p.avg_ms = Some(avg.round() as u32);
-                p.jitter_ms = Some(jitter.round() as u32);
-                p.ping_ms = probes.iter().min().copied(); // best sample = connectable RTT
-                p.samples = probes;
-                let jitter_ratio = if avg > 0.0 { jitter / avg } else { 1.0 };
-                let score = (100.0 - (jitter_ratio * 140.0) - (p.loss_pct * 0.8)).round().clamp(0.0, 100.0);
-                p.stability = Some(score as u8);
-            } else {
-                p.samples = probes;
-            }
-            let _ = tx.send(p);
-        }));
-    }
-    drop(tx);
-
-    let mut results = vec![];
-    for ping_res in rx {
-        results.push(ping_res);
-    }
-    for h in handles {
-        let _ = h.join();
-    }
-
-    results.sort_by_key(|r| r.ping_ms.unwrap_or(9999));
-    Ok(results)
 }
 
 // ---------- Latency & Server Picker Commands ----------
@@ -1071,178 +770,6 @@ pub async fn revert_latency_tweaks_cmd() -> Result<String, String> {
     .map_err(|e| e.to_string())?
 }
 
-// ---------- Doorman Visual Debug / Test ConVars ----------
-const TEST_CVAR_KEYS: [&str; 10] = [
-    "cl_ragdoll_limit",
-    "g_ragdoll_maxcount",
-    "g_ragdoll_important_maxcount",
-    "cl_disable_ragdolls",
-    "r_particle_model_new8",
-    "r_size_cull_threshold",
-    "r_physics_particle_op_spawn_scale",
-    "r_citadel_npr_outlines_max_dist",
-    "r_drawmodeldecals",
-    "cl_simulate_dormant_entities",
-];
-
-fn extract_cvar_value(content: &str, key: &str) -> Option<String> {
-    for line in content.lines() {
-        let line_clean = if let Some(idx) = line.find("//") {
-            &line[..idx]
-        } else {
-            line
-        };
-        let t = line_clean.trim();
-        if t.is_empty() {
-            continue;
-        }
-        let mut tokens = t.split_whitespace();
-        if let Some(first) = tokens.next() {
-            let first_clean = first.trim_matches('"');
-            if first_clean.eq_ignore_ascii_case(key) {
-                if let Some(second) = tokens.next() {
-                    return Some(second.trim_matches('"').to_string());
-                }
-            }
-        }
-    }
-    None
-}
-
-#[tauri::command]
-pub fn get_cvar_test_states() -> Result<std::collections::HashMap<String, String>, String> {
-    let s = settings::load();
-    let deadlock_path = s.last_path.ok_or_else(|| "Deadlock folder not set in settings".to_string())?;
-    let gi_path = std::path::Path::new(&deadlock_path).join("game").join("citadel").join("gameinfo.gi");
-    if !gi_path.exists() {
-        return Err(format!("gameinfo.gi not found at {:?}", gi_path));
-    }
-    let content = std::fs::read_to_string(&gi_path).map_err(|e| format!("read gameinfo.gi: {e}"))?;
-
-    let mut map = std::collections::HashMap::new();
-    for &k in &TEST_CVAR_KEYS {
-        let val = extract_cvar_value(&content, k).unwrap_or_else(|| "default".to_string());
-        map.insert(k.to_string(), val);
-    }
-    Ok(map)
-}
-
-#[tauri::command]
-pub fn apply_cvar_test_states(states: std::collections::HashMap<String, String>) -> Result<String, String> {
-    let s = settings::load();
-    let deadlock_path = s.last_path.ok_or_else(|| "Deadlock folder not set in settings".to_string())?;
-    let citadel_dir = std::path::Path::new(&deadlock_path).join("game").join("citadel");
-    let gi_path = citadel_dir.join("gameinfo.gi");
-    if !gi_path.exists() {
-        return Err(format!("gameinfo.gi not found at {:?}", gi_path));
-    }
-    let content = std::fs::read_to_string(&gi_path).map_err(|e| format!("read gameinfo.gi: {e}"))?;
-
-    let mut new_lines = Vec::new();
-    let mut found_keys = std::collections::HashSet::new();
-
-    for line in content.lines() {
-        let mut replaced = false;
-        let mut comment = "";
-        let mut content_part = line;
-        if let Some(idx) = line.find("//") {
-            comment = &line[idx..];
-            content_part = &line[..idx];
-        }
-
-        let tokens: Vec<&str> = content_part.split_whitespace().collect();
-        if tokens.len() >= 2 {
-            let k = tokens[0].trim_matches('"');
-            for (test_k, test_v) in &states {
-                if k.eq_ignore_ascii_case(test_k) {
-                    let lead = &line[..line.len() - line.trim_start().len()];
-                    let sep = if comment.is_empty() { "" } else { "\t" };
-                    let new_line = format!("{}{tokens_0} {test_v}{sep}{comment}", lead, tokens_0 = tokens[0]);
-                    new_lines.push(new_line);
-                    found_keys.insert(test_k.clone());
-                    replaced = true;
-                    break;
-                }
-            }
-        }
-        if !replaced {
-            new_lines.push(line.to_string());
-        }
-    }
-
-    // Insert any missing keys into ConVars block
-    let missing_keys: Vec<_> = states.keys().filter(|k| !found_keys.contains(*k)).collect();
-    if !missing_keys.is_empty() {
-        let mut in_convars = false;
-        let mut brace_depth = 0;
-        let mut insert_idx = None;
-
-        for (idx, l) in new_lines.iter().enumerate() {
-            if l.contains("ConVars") && !l.trim().starts_with("//") {
-                in_convars = true;
-            }
-            if in_convars {
-                brace_depth += l.matches('{').count() as i32 - l.matches('}').count() as i32;
-                if brace_depth == 0 && new_lines[..=idx].iter().any(|s| s.contains('{')) {
-                    insert_idx = Some(idx);
-                    break;
-                }
-            }
-        }
-
-        if let Some(idx) = insert_idx {
-            for k in missing_keys {
-                let v = &states[k];
-                new_lines.insert(idx, format!("\t\t\"{k}\"\t\t\"{v}\""));
-            }
-        }
-    }
-
-    let mut gi_out = new_lines.join("\r\n");
-    if !gi_out.ends_with("\r\n") {
-        gi_out.push_str("\r\n");
-    }
-    std::fs::write(&gi_path, gi_out).map_err(|e| format!("write gameinfo.gi: {e}"))?;
-
-    // Also update cfg/autoexec.cfg with DLP TEST BLOCK
-    let cfg_dir = citadel_dir.join("cfg");
-    let ae_path = cfg_dir.join("autoexec.cfg");
-    let mut ae_content = if ae_path.exists() {
-        std::fs::read_to_string(&ae_path).unwrap_or_default()
-    } else {
-        String::new()
-    };
-
-    let start_tag = "// DLP TEST BLOCK START";
-    let end_tag = "// DLP TEST BLOCK END";
-
-    let mut test_block = String::new();
-    test_block.push_str(start_tag);
-    test_block.push('\n');
-    for (k, v) in &states {
-        test_block.push_str(&format!("\t{} \"{}\"\n", k, v));
-    }
-    test_block.push_str(end_tag);
-
-    if let (Some(s_idx), Some(e_idx)) = (ae_content.find(start_tag), ae_content.find(end_tag)) {
-        if s_idx <= e_idx {
-            let after = &ae_content[e_idx + end_tag.len()..];
-            let before = &ae_content[..s_idx];
-            ae_content = format!("{}{}{}", before, test_block, after);
-        }
-    } else {
-        if !ae_content.is_empty() && !ae_content.ends_with('\n') {
-            ae_content.push('\n');
-        }
-        ae_content.push_str(&test_block);
-        ae_content.push('\n');
-    }
-
-    let _ = std::fs::create_dir_all(&cfg_dir);
-    std::fs::write(&ae_path, ae_content).map_err(|e| format!("write autoexec.cfg: {e}"))?;
-
-    Ok("Applied to gameinfo.gi & autoexec.cfg successfully!".to_string())
-}
 
 // ---------- LAN Connection ----------
 use crate::lan_supervisor::{self, LanHostConfig, LanServerStatus, LocalIpInfo};
@@ -1269,10 +796,6 @@ pub fn get_lan_server_status() -> LanServerStatus {
     lan_supervisor::get_server_status()
 }
 
-#[tauri::command]
-pub fn connect_lan_client(ip: String, port: u16) -> Result<(), String> {
-    lan_supervisor::launch_deadlock_client(&ip, port)
-}
 
 #[tauri::command]
 pub fn list_lan_matches() -> Vec<String> {
@@ -1316,8 +839,9 @@ pub async fn create_vip_room_cmd(
     is_hidden: Option<bool>,
     password: Option<String>,
     max_players: Option<usize>,
+    account_token: Option<String>,
 ) -> Result<VipCreateResponse, String> {
-    lan_vip::create_vip_room(api_url, nickname, mode, is_modded, mod_mode, enable_sdr, room_name, is_hidden, password, max_players).await
+    lan_vip::create_vip_room(api_url, nickname, mode, is_modded, mod_mode, enable_sdr, room_name, is_hidden, password, max_players, account_token).await
 }
 
 #[tauri::command]
@@ -1326,8 +850,9 @@ pub async fn join_vip_room_cmd(
     room_code: String,
     nickname: String,
     password: Option<String>,
+    account_token: Option<String>,
 ) -> Result<VipJoinResponse, String> {
-    lan_vip::join_vip_room(api_url, room_code, nickname, password).await
+    lan_vip::join_vip_room(api_url, room_code, nickname, password, account_token).await
 }
 
 #[tauri::command]
@@ -1342,8 +867,9 @@ pub async fn get_vip_room_status_cmd(
 pub async fn leave_vip_room_cmd(
     api_url: Option<String>,
     room_code: String,
+    account_token: Option<String>,
 ) -> Result<(), String> {
-    lan_vip::leave_vip_room(api_url, room_code).await
+    lan_vip::leave_vip_room(api_url, room_code, account_token).await
 }
 
 #[tauri::command]
@@ -1351,8 +877,9 @@ pub async fn kick_vip_peer_cmd(
     api_url: Option<String>,
     room_code: String,
     peer_name: String,
+    account_token: Option<String>,
 ) -> Result<(), String> {
-    lan_vip::kick_vip_peer(api_url, room_code, peer_name).await
+    lan_vip::kick_vip_peer(api_url, room_code, peer_name, account_token).await
 }
 
 #[tauri::command]
@@ -1360,8 +887,9 @@ pub async fn ban_vip_peer_cmd(
     api_url: Option<String>,
     room_code: String,
     peer_name: String,
+    account_token: Option<String>,
 ) -> Result<(), String> {
-    lan_vip::ban_vip_peer(api_url, room_code, peer_name).await
+    lan_vip::ban_vip_peer(api_url, room_code, peer_name, account_token).await
 }
 
 #[tauri::command]
@@ -1369,8 +897,26 @@ pub async fn unban_vip_peer_cmd(
     api_url: Option<String>,
     room_code: String,
     peer_name: String,
+    account_token: Option<String>,
 ) -> Result<(), String> {
-    lan_vip::unban_vip_peer(api_url, room_code, peer_name).await
+    lan_vip::unban_vip_peer(api_url, room_code, peer_name, account_token).await
+}
+
+#[tauri::command]
+pub async fn list_vip_devices_cmd(
+    api_url: Option<String>,
+    account_token: Option<String>,
+) -> Result<Vec<lan_vip::VipDevice>, String> {
+    lan_vip::list_vip_devices(api_url, account_token).await
+}
+
+#[tauri::command]
+pub async fn unbind_vip_device_cmd(
+    api_url: Option<String>,
+    hwid: String,
+    account_token: Option<String>,
+) -> Result<(), String> {
+    lan_vip::unbind_vip_device(api_url, hwid, account_token).await
 }
 
 #[tauri::command]
@@ -1456,25 +1002,23 @@ pub fn check_vip_binaries_cmd() -> bool {
     lan_vip::check_vip_binaries_installed()
 }
 
-#[tauri::command]
-pub fn launch_deadlock_target_cmd(target: String) -> Result<(), String> {
-    lan_supervisor::launch_deadlock_target(&target)
-}
 
 #[tauri::command]
 pub async fn redeem_vip_key_cmd(
     api_url: Option<String>,
     key: String,
     nickname: Option<String>,
+    account_token: Option<String>,
 ) -> Result<VipRedeemResponse, String> {
-    lan_vip::redeem_vip_license(api_url, key, nickname).await
+    lan_vip::redeem_vip_license(api_url, key, nickname, account_token).await
 }
 
 #[tauri::command]
 pub async fn check_vip_status_cmd(
     api_url: Option<String>,
+    account_token: Option<String>,
 ) -> Result<VipStatusResponse, String> {
-    lan_vip::check_vip_license_status(api_url).await
+    lan_vip::check_vip_license_status(api_url, account_token).await
 }
 
 #[tauri::command]
@@ -1482,16 +1026,5 @@ pub fn get_machine_hwid_cmd() -> String {
     crate::hwid::get_machine_hwid()
 }
 
-#[tauri::command]
-pub fn get_storage_path_cmd() -> String {
-    crate::storage::get_storage_dir().to_string_lossy().to_string()
-}
-
-#[tauri::command]
-pub async fn ensure_server_loader_cmd(app: tauri::AppHandle) -> Result<bool, String> {
-    crate::storage::ensure_server_loader_available(Some(&app))
-        .await
-        .map(|_| true)
-}
 
 

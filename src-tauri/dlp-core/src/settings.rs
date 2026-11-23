@@ -6,7 +6,6 @@ use std::path::PathBuf;
 #[serde(default)]
 pub struct Settings {
     pub lang: String,     // "fa" | "en"
-    pub unlocked: bool,   // tester TEMP modes unlocked
     pub last_path: Option<String>,
     pub better_breakables: bool, // pak03_dir.vpk (neon breakables & bats)
     pub higher_brightness: bool, // pak01_dir.vpk (daylock / midtown)
@@ -27,7 +26,6 @@ impl Default for Settings {
     fn default() -> Self {
         Settings {
             lang: "fa".into(),
-            unlocked: false,
             last_path: None,
             better_breakables: false,
             higher_brightness: false,
@@ -183,7 +181,6 @@ mod tests {
         crate::backup::rm_ro(&tmp);
         let s = load_from(&tmp);
         assert_eq!(s.lang, "fa");
-        assert!(!s.unlocked);
         assert!(s.last_path.is_none());
         assert!(!s.better_breakables);
         assert!(!s.higher_brightness);
@@ -199,7 +196,6 @@ mod tests {
         crate::backup::rm_ro(&tmp);
         let s = Settings {
             lang: "en".into(),
-            unlocked: true,
             last_path: Some("D:\\SteamLibrary\\steamapps\\common\\Deadlock".into()),
             better_breakables: true,
             higher_brightness: true,
@@ -218,7 +214,6 @@ mod tests {
         save_to(&tmp, &s).unwrap();
         let s2 = load_from(&tmp);
         assert_eq!(s2.lang, "en");
-        assert!(s2.unlocked);
         assert_eq!(s2.last_path.as_deref(), Some("D:\\SteamLibrary\\steamapps\\common\\Deadlock"));
         assert!(s2.better_breakables);
         assert!(s2.higher_brightness);

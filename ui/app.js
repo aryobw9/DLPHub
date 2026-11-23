@@ -15,13 +15,32 @@ function getInvoke() {
   return null;
 }
 
-function call(cmd, args) {
+// Mod bundles are fetched from the VPS and can exceed 100 MB on a slow domestic
+// link. The Rust side streams progress events and resumes partial files, so the
+// IPC promise must outlive the transfer instead of rejecting at the 25s default
+// while the download keeps running in the background.
+const MOD_DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
+
+function call(cmd, args, customTimeoutMs) {
   const inv = getInvoke();
   if (!inv) {
     console.warn('[IPC WARNING] invoke not available, command:', cmd);
     return Promise.reject(new Error('tauri ipc not ready'));
   }
-  const timeoutMs = 25000;
+  let timeoutMs = 25000;
+  if (typeof customTimeoutMs === 'number' && customTimeoutMs > 0) {
+    timeoutMs = customTimeoutMs;
+  } else if (args && typeof args.durationSecs === 'number') {
+    timeoutMs = Math.max(30000, (args.durationSecs + 20) * 1000);
+  } else if (args && typeof args.duration_secs === 'number') {
+    timeoutMs = Math.max(30000, (args.duration_secs + 20) * 1000);
+  } else if (cmd && typeof cmd === 'string' && cmd.startsWith('deep_benchmark_')) {
+    timeoutMs = 60000;
+  } else if (cmd === 'verify_game_files' || cmd === 'backup_restore' || cmd === 'backup_auto_create') {
+    timeoutMs = 60000;
+  } else if (cmd === 'plugin:dialog|open' || (typeof cmd === 'string' && cmd.startsWith('plugin:dialog'))) {
+    timeoutMs = 600000;
+  }
   return Promise.race([
     inv(cmd, args),
     new Promise((_, reject) =>
@@ -46,7 +65,6 @@ function escapeHtml(str) {
 // ---------- state ----------
 const state = {
   lang: 'fa',
-  unlocked: false,
   lastPath: null,
   gamePath: null,
   fov: 90,
@@ -137,29 +155,14 @@ function applyLang() {
 
   
   refreshRunning();
-  const u = document.getElementById('unlock-input');
   const p = document.getElementById('path-input');
   const lbl = document.getElementById('lang-label');
   if (lbl) lbl.textContent = t('langToggle');
-  if (u) u.placeholder = t('unlockPlaceholder');
   if (p) p.placeholder = t('pathPlaceholder');
   renderBackups();
   renderModCacheList();
   renderActiveBadge();
-  if (state.lastMatchId) {
-    const textEl = document.getElementById('btn-sync-match-text');
-    if (textEl) textEl.textContent = `${t('btnCopyMatch')} (#${state.lastMatchId})`;
-    const badge = document.getElementById('match-sync-badge');
-    if (badge) {
-      badge.className = 'match-sync-badge badge-success';
-      badge.textContent = `#${state.lastMatchId}`;
-    }
-  } else {
-    const badge = document.getElementById('match-sync-badge');
-    if (badge && !badge.classList.contains('badge-syncing')) {
-      badge.textContent = t('matchSyncBadgeReady');
-    }
-  }
+
   if (typeof updateLatencyHeroPills === 'function') {
     updateLatencyHeroPills();
   }
@@ -198,7 +201,6 @@ function applyLang() {
 
   if (!isLangSwitching) {
     setTimeout(() => {
-      updateRendererGlider();
       updateFpsGlider();
     }, 20);
   }
@@ -228,13 +230,11 @@ function setLang(targetLang) {
     document.body.classList.add('lang-revealing', transitionClass);
 
     setTimeout(() => {
-      updateRendererGlider();
       updateFpsGlider();
     }, 500);
 
     setTimeout(() => {
       document.body.classList.remove('lang-revealing', 'to-fa', 'to-en');
-      updateRendererGlider();
       updateFpsGlider();
       if (btnToggle) btnToggle.style.pointerEvents = '';
       isLangSwitching = false;
@@ -247,7 +247,6 @@ function toggleLang() {
 }
 
 window.addEventListener('resize', () => {
-  updateRendererGlider();
   updateFpsGlider();
   initArInputInteractions();
 });
@@ -276,7 +275,7 @@ async function boot() {
   let s = {};
   try { s = await call('get_settings'); } catch (e) { console.warn('[boot] get_settings failed:', e); }
   state.lang = s.lang || 'fa';
-  state.unlocked = !!s.unlocked;
+  state.lastPath = s.last_path || null;
   state.betterBreakables = !!s.better_breakables;
   state.higherBrightness = !!s.higher_brightness;
   state.reduceClutter = !!s.reduce_clutter;
@@ -296,8 +295,6 @@ async function boot() {
   toggleAspectRatio(state.aspectRatioEnabled, false);
   selectCardByKey('graphic');
   checkAdminStatus().catch(() => {});
-
-  if (state.unlocked) showTesterModes();
 
   try {
     if (await call('running_from_pkg')) {
@@ -372,27 +369,8 @@ function syncSettingsToUi() {
   });
   if (typeof updateFpsBadge === 'function') updateFpsBadge(fps);
 
-  const renderer = state.renderer || 'default';
-  document.querySelectorAll('#renderer-radio-group .renderer-pill').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.renderer === renderer);
-  });
-  updateRendererGlider();
   updateFpsGlider();
   initArInputInteractions();
-}
-
-function updateRendererGlider() {
-  const group = document.getElementById('renderer-radio-group');
-  const glider = document.getElementById('renderer-glider');
-  if (!group || !glider) return;
-  const activeBtn = group.querySelector('.renderer-pill.active');
-  if (!activeBtn) {
-    glider.style.opacity = '0';
-    return;
-  }
-  glider.style.opacity = '1';
-  glider.style.width = `${activeBtn.offsetWidth}px`;
-  glider.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
 }
 
 function updateFpsGlider() {
@@ -441,15 +419,6 @@ function selectFps(val) {
     updateFpsGlider();
     call('set_settings', { patch: { fps_max: num } }).catch(() => {});
   }
-}
-
-function selectRenderer(mode) {
-  state.renderer = mode;
-  document.querySelectorAll('#renderer-radio-group .renderer-pill').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.renderer === mode);
-  });
-  updateRendererGlider();
-  call('set_settings', { patch: { renderer: mode } }).catch(() => {});
 }
 
 async function copyToClipboard(text) {
@@ -920,6 +889,15 @@ function toggleReducedMotion(enabled) {
   }
 }
 
+function toggleReducedMotionFromRow(e) {
+  const sw = document.getElementById('sw-reduced-motion');
+  if (sw && e.target !== sw && !e.target.closest('.neon-checkbox')) {
+    sw.checked = !sw.checked;
+    toggleReducedMotion(sw.checked);
+  }
+}
+window.toggleReducedMotionFromRow = toggleReducedMotionFromRow;
+
 function setBusyCursor(on, tabKey) {
   state.busyTab = on ? (tabKey || state.activeTab || 'global') : null;
   try {
@@ -997,7 +975,7 @@ async function doInstall() {
         hero_potato: !!state.heroPotato,
         deadlock_path: state.gamePath,
       }
-    });
+    }, MOD_DOWNLOAD_TIMEOUT_MS);
     clearInterval(reassuranceTimer);
     document.getElementById('step-log').innerHTML = '';
     for (const l of log) stepLine(`[${l.step}] ${l.detail} ${l.skipped ? '— ' + t('stepSkip') : '— ' + t('stepDone')}`, l.skipped ? 'skip' : 'ok');
@@ -1005,15 +983,17 @@ async function doInstall() {
   } catch (e) {
     clearInterval(reassuranceTimer);
     document.getElementById('step-log').innerHTML = '';
-    stepLine(String(e), 'skip');
-    const msg = String(e).includes('NeedsAdmin') ? t('needsAdmin') : String(e);
     const errStr = String(e);
+    const bundleDetail = bundleUnavailableDetail(errStr);
+    const cleanErr = bundleDetail || errStr;
+    stepLine(cleanErr, 'skip');
+    const msg = errStr.includes('NeedsAdmin') ? t('needsAdmin') : cleanErr;
     let title = t('applyErrorTitle') || 'خطا در اعمال بهینه‌سازی';
     if (errStr.includes('NeedsAdmin')) {
       title = t('applyErrorTitle') || 'خطا در اعمال بهینه‌سازی';
     } else if (errStr.includes('game running') || errStr.includes('close Deadlock')) {
       title = t('guardTitle');
-    } else if (errStr.includes('Server returned HTTP') || errStr.includes('Download failed') || errStr.includes('Network') || errStr.includes('SHA-256 integrity') || errStr.includes('Connection')) {
+    } else if (bundleDetail || errStr.includes('Server returned HTTP') || errStr.includes('Download failed') || errStr.includes('Network') || errStr.includes('SHA-256 integrity') || errStr.includes('Connection')) {
       title = t('downloadErrorTitle') || 'خطا در دانلود مادها';
     }
     showModal(title, msg, [{ label: t('ok') }]);
@@ -1063,7 +1043,7 @@ async function renderBackups() {
   for (const b of items) {
     const n = b.name;
     const row = document.createElement('div');
-    row.className = 'backup-row';
+    row.className = 'backup-row backup-item';
 
     const info = document.createElement('div');
     info.className = 'backup-meta';
@@ -1097,7 +1077,9 @@ async function renderBackups() {
 
     const btnRestore = document.createElement('button');
     btnRestore.className = 'btn-apply btn-restore';
-    btnRestore.textContent = t('restore');
+    const btnRestoreSpan = document.createElement('span');
+    btnRestoreSpan.textContent = t('restore');
+    btnRestore.appendChild(btnRestoreSpan);
     btnRestore.onclick = async () => {
       try {
         const running = await call('check_running');
@@ -1172,18 +1154,10 @@ async function renderModCacheList() {
   const isFa = state.lang === 'fa';
   for (const m of items) {
     const row = document.createElement('div');
-    row.className = 'mod-cache-row';
+    row.className = 'mod-cache-row mod-cache-item';
 
     const info = document.createElement('div');
     info.className = 'mod-cache-meta';
-
-    const statusDot = document.createElement('span');
-    statusDot.className = 'mod-cache-dot';
-    statusDot.style.background = m.is_cached ? 'var(--deadlock-green)' : 'var(--text-muted)';
-    if (m.is_cached) {
-      statusDot.style.boxShadow = '0 0 6px rgba(34, 197, 94, 0.45)';
-    }
-    info.appendChild(statusDot);
 
     const name = document.createElement('span');
     name.className = 'mod-cache-title';
@@ -1205,15 +1179,13 @@ async function renderModCacheList() {
 
     const badge = document.createElement('span');
     badge.className = 'mod-cache-badge';
+    badge.style.background = 'transparent';
+    badge.style.border = 'none';
     if (m.is_cached) {
-      badge.style.background = 'rgba(34, 197, 94, 0.15)';
       badge.style.color = 'var(--deadlock-green)';
-      badge.style.border = '1px solid rgba(34, 197, 94, 0.3)';
       badge.textContent = isFa ? 'ذخیره شده' : 'Cached';
     } else {
-      badge.style.background = 'rgba(255, 255, 255, 0.05)';
       badge.style.color = 'var(--text-muted)';
-      badge.style.border = '1px solid rgba(255, 255, 255, 0.1)';
       badge.textContent = isFa ? 'دانلود نشده' : 'Not Cached';
     }
 
@@ -1375,7 +1347,6 @@ async function doResetSettings() {
   try {
     const s = await call('reset_settings_cmd');
     state.lang = s.lang;
-    state.unlocked = s.unlocked;
     state.fov = s.fov || 90;
     state.aspectRatio = s.aspect_ratio || '2.15';
     state.aspectRatioEnabled = s.aspect_ratio_enabled !== false;
@@ -1402,6 +1373,147 @@ async function doResetSettings() {
   }
 }
 
+// ---------- select game location modal & controller ----------
+function openSelectGameLocationModal() {
+  const overlay = document.getElementById('modal-select-game-path');
+  if (!overlay) return;
+  const currentVal = document.getElementById('select-path-current-display');
+  const input = document.getElementById('input-select-game-path');
+  const currentPath = state.gamePath || state.lastPath || '';
+  if (currentVal) {
+    currentVal.textContent = currentPath || t('noGameSelected') || '---';
+    currentVal.title = currentPath || '';
+  }
+  if (input) {
+    input.value = currentPath;
+  }
+  overlay.style.display = 'flex';
+  if (input) {
+    setTimeout(() => {
+      try {
+        input.focus();
+        if (input.select) input.select();
+      } catch (_) {}
+    }, 50);
+  }
+}
+
+function closeSelectGameLocationModal() {
+  const overlay = document.getElementById('modal-select-game-path');
+  if (overlay) overlay.style.display = 'none';
+}
+
+async function browseGameLocationInModal() {
+  const btn = document.getElementById('btn-browse-game-path');
+  const input = document.getElementById('input-select-game-path');
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.style.pointerEvents = 'none';
+    }
+    setBusyCursor(true, 'advanced');
+
+    let dir = null;
+    const dlg = (window.__TAURI__ && window.__TAURI__.dialog) || window.__TAURI_PLUGIN_DIALOG__;
+    const title = t('selectGameLocation') || t('locate') || 'Select Deadlock Game Folder';
+    const defaultPath = (input && input.value.trim()) || state.gamePath || state.lastPath || undefined;
+
+    if (dlg && typeof dlg.open === 'function') {
+      dir = await dlg.open({ directory: true, multiple: false, defaultPath, title });
+    } else {
+      dir = await call('plugin:dialog|open', { options: { directory: true, multiple: false, defaultPath, title } }, 600000);
+    }
+
+    if (!dir) return; // User cancelled
+
+    let selectedPath = dir;
+    if (Array.isArray(selectedPath)) selectedPath = selectedPath[0];
+    if (selectedPath && typeof selectedPath === 'object' && typeof selectedPath.path === 'string') {
+      selectedPath = selectedPath.path;
+    }
+    if (typeof selectedPath === 'string' && selectedPath.trim()) {
+      if (input) input.value = selectedPath.trim();
+    }
+  } catch (err) {
+    console.error('[browseGameLocationInModal failed]', err);
+    showToast(t('gameLocationError'), 'error');
+  } finally {
+    setBusyCursor(false, 'advanced');
+    if (btn) {
+      btn.disabled = false;
+      btn.style.pointerEvents = '';
+    }
+  }
+}
+
+async function confirmSelectGameLocation() {
+  const input = document.getElementById('input-select-game-path');
+  const btnConfirm = document.getElementById('btn-confirm-game-path');
+  const rawPath = input ? input.value.trim() : '';
+
+  if (!rawPath) {
+    showToast(t('gameLocationInvalid'), 'error');
+    if (input) input.focus();
+    return;
+  }
+
+  // Preserve drive roots like "D:\" while cleaning standard paths
+  let cleanPath = rawPath;
+  if (/^[a-zA-Z]:[\\/]*$/.test(cleanPath)) {
+    cleanPath = cleanPath.slice(0, 2).toUpperCase() + '\\';
+  } else {
+    cleanPath = cleanPath.replace(/[\\/]+$/, '');
+  }
+
+  try {
+    if (btnConfirm) {
+      btnConfirm.disabled = true;
+      btnConfirm.style.pointerEvents = 'none';
+    }
+    setBusyCursor(true, 'advanced');
+
+    const ok = await call('pick_game', { path: cleanPath });
+    if (ok && ok.deadlock) {
+      state.gamePath = ok.deadlock;
+      state.lastPath = ok.deadlock;
+      await call('set_settings', { patch: { last_path: ok.deadlock } }).catch((err) => {
+        console.warn('[confirmSelectGameLocation set_settings failed]', err);
+      });
+
+      const nogame = document.getElementById('nogame-panel');
+      if (nogame) nogame.style.display = 'none';
+      const mainUi = document.getElementById('main-ui');
+      if (mainUi) mainUi.style.display = 'block';
+      const pInput = document.getElementById('path-input');
+      if (pInput) pInput.value = ok.deadlock;
+
+      await updateDetectBadge();
+      await refreshRunning();
+      if (typeof renderBackups === 'function') renderBackups();
+      if (typeof renderModCacheList === 'function') renderModCacheList();
+
+      closeSelectGameLocationModal();
+      showToast(t('gameLocationUpdated'), 'success');
+    } else {
+      showToast(t('gameLocationInvalid'), 'error');
+      if (input) input.focus();
+    }
+  } catch (err) {
+    console.error('[confirmSelectGameLocation failed]', err);
+    showToast(t('gameLocationError'), 'error');
+  } finally {
+    setBusyCursor(false, 'advanced');
+    if (btnConfirm) {
+      btnConfirm.disabled = false;
+      btnConfirm.style.pointerEvents = '';
+    }
+  }
+}
+
+function doSelectGameLocation() {
+  openSelectGameLocationModal();
+}
+
 async function doCopyDiagnostics() {
   try {
     const diag = await call('get_diagnostics');
@@ -1421,95 +1533,7 @@ async function doCopyDiagnostics() {
   }
 }
 
-// ---------- custom match sync ----------
-async function doSyncMatch() {
-  const btn = document.getElementById('btn-sync-match');
-  const icon = document.getElementById('icon-sync-match');
-  const badge = document.getElementById('match-sync-badge');
-  const textEl = document.getElementById('btn-sync-match-text');
 
-  // If match was already detected, clicking again copies the match ID
-  if (state.lastMatchId) {
-    await doCopyMatchId();
-    return;
-  }
-
-  if (btn) btn.disabled = true;
-  if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
-  if (badge) {
-    badge.className = 'match-sync-badge badge-syncing';
-    badge.textContent = t('matchSyncBadgeSyncing') || 'SYNCING...';
-  }
-
-  try {
-    const res = await call('sync_last_match', { customEndpoint: null, customToken: null });
-    if (res && res.success) {
-      state.lastMatchId = res.match_id;
-      if (badge) {
-        badge.className = 'match-sync-badge badge-success';
-        badge.textContent = `#${res.match_id}`;
-      }
-      if (textEl) {
-        textEl.textContent = `${t('btnCopyMatch')} (#${res.match_id})`;
-      }
-      showModal(t('matchSyncTitle') || 'CUSTOM MATCH SYNC', res.message, [
-        { label: t('btnCopyMatch') || 'Copy Match ID', value: true, kind: 'apply' },
-        { label: t('ok') || 'OK', value: false },
-      ]).then((copy) => {
-        if (copy) doCopyMatchId();
-      });
-    } else {
-      if (badge) {
-        badge.className = 'match-sync-badge badge-error';
-        badge.textContent = t('matchSyncBadgeFailed') || 'ERROR';
-      }
-      showModal(t('matchSyncTitle') || 'CUSTOM MATCH SYNC', (res && res.message) ? res.message : 'Match sync failed.', [{ label: t('ok') || 'OK' }]);
-    }
-  } catch (err) {
-    if (badge) {
-      badge.className = 'match-sync-badge badge-error';
-      badge.textContent = t('matchSyncBadgeFailed') || 'FAILED';
-    }
-    showModal(t('matchSyncTitle') || 'CUSTOM MATCH SYNC', String(err), [{ label: t('ok') || 'OK' }]);
-  } finally {
-    if (btn) btn.disabled = false;
-    if (icon) icon.className = 'fa-solid fa-trophy';
-  }
-}
-
-async function doCopyMatchId() {
-  if (!state.lastMatchId) return;
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(state.lastMatchId);
-    } else {
-      const ta = document.createElement('textarea');
-      ta.value = state.lastMatchId;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    }
-    const badge = document.getElementById('match-sync-badge');
-    if (badge) {
-      const orig = badge.textContent;
-      badge.textContent = t('matchSyncBadgeCopied') || 'COPIED!';
-      setTimeout(() => { badge.textContent = `#${state.lastMatchId}` || orig; }, 1800);
-    }
-  } catch (err) {
-    console.error('Failed to copy match ID:', err);
-  }
-}
-
-function showMatchHelp() {
-  showModal(t('matchHelpTitle') || 'DEADLOCK MATCH ID GUIDE', t('matchHelpBody') || 'Guide', [
-    { label: t('ok') || 'OK', kind: 'apply' },
-  ]);
-}
-
-window.doSyncMatch = doSyncMatch;
-window.doCopyMatchId = doCopyMatchId;
-window.showMatchHelp = showMatchHelp;
 
 // ---------- revert vanilla ----------
 async function doRevertVanilla() {
@@ -1552,29 +1576,6 @@ async function doRevertVanilla() {
   }
   setBusyCursor(false, 'advanced');
   if (btn) btn.disabled = false;
-}
-
-// ---------- tester unlock ----------
-function showTesterModes() {
-  const l = document.getElementById('tester-locked');
-  const m = document.getElementById('tester-modes');
-  if (l) l.style.display = 'none';
-  if (m) m.style.display = 'flex';
-  const vipCard = document.getElementById('vip-lan-card');
-  if (vipCard) vipCard.style.display = 'flex';
-}
-
-async function doUnlock() {
-  const inp = document.getElementById('unlock-input');
-  if (!inp) return;
-  const code = inp.value;
-  try {
-    await call('set_settings', { patch: { unlock_code: code } });
-    state.unlocked = true;
-    showTesterModes();
-  } catch (e) {
-    showModal(t('testerTitle'), t('unlockBad'), [{ label: t('ok') }]);
-  }
 }
 
 // ---------- launch ----------
@@ -1620,6 +1621,65 @@ function showModal(title, body, actions) {
       act.appendChild(b);
     }
     overlay.style.display = 'flex';
+  });
+}
+
+function showPromptModal(title, body, placeholder = '') {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('modal');
+    if (!overlay) {
+      resolve(null);
+      return;
+    }
+    const titleEl = document.getElementById('modal-title');
+    if (titleEl) titleEl.textContent = title;
+    const bodyEl = document.getElementById('modal-body');
+    bodyEl.innerHTML = '';
+    if (body) {
+      const p = document.createElement('div');
+      p.style.marginBottom = '12px';
+      p.textContent = body;
+      bodyEl.appendChild(p);
+    }
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'path-input';
+    inp.style.width = '100%';
+    inp.style.boxSizing = 'border-box';
+    inp.placeholder = placeholder;
+    bodyEl.appendChild(inp);
+
+    const act = document.getElementById('modal-actions');
+    act.innerHTML = '';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn-reset';
+    cancelBtn.textContent = (typeof t === 'function' && t('cancel')) || 'Cancel';
+    cancelBtn.onclick = () => {
+      overlay.style.display = 'none';
+      bodyEl.innerHTML = '';
+      resolve(null);
+    };
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'btn-apply';
+    confirmBtn.textContent = (typeof t === 'function' && t('ok')) || 'OK';
+    confirmBtn.onclick = () => {
+      const val = inp.value.trim();
+      overlay.style.display = 'none';
+      bodyEl.innerHTML = '';
+      resolve(val);
+    };
+
+    inp.onkeydown = (e) => {
+      if (e.key === 'Enter') confirmBtn.click();
+      if (e.key === 'Escape') cancelBtn.click();
+    };
+
+    act.appendChild(cancelBtn);
+    act.appendChild(confirmBtn);
+    overlay.style.display = 'flex';
+    setTimeout(() => inp.focus(), 50);
   });
 }
 
@@ -2036,238 +2096,6 @@ async function openLogsFolder() {
 }
 window.showToast = showToast;
 
-// ---------- Doorman Ult Diagnostic Modal ----------
-const DOORMAN_TEST_CVARS = [
-  {
-    key: 'cl_ragdoll_limit',
-    labelEn: 'Ragdoll Limit (Doorman Fix)',
-    labelFa: 'محدودیت رگ‌دال (فیکس محو شدن آلتیمیت)',
-    descEn: 'Setting to 0/1 causes Doorman ult indicator to slowly fade away! Set to -1 to fix.',
-    descFa: 'تنظیم روی 0 یا 1 باعث می‌شود نشانگر آلتیمیت دورمن آرام‌آرام محو شود! روی 1- بگذارید.',
-    safeVal: '-1',
-    buggyVal: '0'
-  },
-  {
-    key: 'g_ragdoll_maxcount',
-    labelEn: 'Max Ragdoll Count',
-    labelFa: 'حداکثر تعداد رگ‌دال در بازی',
-    descEn: 'Controls total simultaneous ragdolls in the world (T1 sets to 0)',
-    descFa: 'حداکثر تعداد رگ‌دال‌های همزمان در صحنه (T1 روی 0 می‌گذارد)',
-    safeVal: '-1',
-    buggyVal: '0'
-  },
-  {
-    key: 'g_ragdoll_important_maxcount',
-    labelEn: 'Important Ragdoll Count',
-    labelFa: 'تعداد رگ‌دال‌های مهم (هیروها)',
-    descEn: 'Limits important entity ragdolls like hero corpses and ult clones',
-    descFa: 'تعداد رگ‌دال‌های مهم مثل جنازه هیرو و کلون نشانگر توانایی',
-    safeVal: '-1',
-    buggyVal: '0'
-  },
-  {
-    key: 'cl_disable_ragdolls',
-    labelEn: 'Disable Ragdolls',
-    labelFa: 'غیرفعال‌سازی کامل رگ‌دال‌ها',
-    descEn: 'If enabled (1), completely kills hero ragdolls and Doorman clone',
-    descFa: 'اگر فعال (1) باشد، رگ‌دال‌ها و کلون نشانگر دورمن را کلاً حذف می‌کند',
-    safeVal: '0',
-    buggyVal: '1'
-  },
-  {
-    key: 'r_particle_model_new8',
-    labelEn: '3D Particle Models',
-    labelFa: 'مدل‌های سه‌بعدی ذرات (Particle Models)',
-    descEn: 'Disables newer 3D models instanced inside particle systems',
-    descFa: 'مدل‌های سه‌بعدی ساخته‌شده درون سیستم پارتیکل را غیرفعال می‌کند',
-    safeVal: '1',
-    buggyVal: '0'
-  },
-  {
-    key: 'r_size_cull_threshold',
-    labelEn: 'Screen Size Culling',
-    labelFa: 'حذف آبجکت‌ها بر اساس اندازه تصویر (Size Cull)',
-    descEn: 'Aggressively culls/hides objects & meshes taking <1.2% of screen',
-    descFa: 'آبجکت‌ها و افکت‌های کوچکتر از ۱.۲ درصد صفحه را کلاً مخفی می‌کند',
-    safeVal: '0',
-    buggyVal: '1.2'
-  },
-  {
-    key: 'r_physics_particle_op_spawn_scale',
-    labelEn: 'Physics Particles Spawn',
-    labelFa: 'اسپاون ذرات مبتنی بر فیزیک',
-    descEn: 'Prevents physics-based particle operator from spawning',
-    descFa: 'از ساخت و تولید پارتیکل‌های دارای محاسبات فیزیک جلوگیری می‌کند',
-    safeVal: '1',
-    buggyVal: '0'
-  },
-  {
-    key: 'r_citadel_npr_outlines_max_dist',
-    labelEn: 'Outlines Max Distance',
-    labelFa: 'حداکثر برد خطوط دور هیروها (Outlines)',
-    descEn: 'Limits hero/marker outlines rendering distance to 600 units (~15m)',
-    descFa: 'رندر خطوط و هایلایت دور هیرو را به فاصله ۶۰۰ یونیت محدود می‌کند',
-    safeVal: '0',
-    buggyVal: '600'
-  },
-  {
-    key: 'r_drawmodeldecals',
-    labelEn: 'Model Decals',
-    labelFa: 'دکال‌های روی مدل‌ها (Model Decals)',
-    descEn: 'Disables decals projected on models/ground surfaces',
-    descFa: 'رندر دکال‌ها و نشانه‌های افکت روی مدل‌ها را غیرفعال می‌کند',
-    safeVal: '1',
-    buggyVal: '0'
-  },
-  {
-    key: 'cl_simulate_dormant_entities',
-    labelEn: 'Dormant Entities Simulation',
-    labelFa: 'شبیه‌سازی انتیتی‌های دور (Dormant)',
-    descEn: 'Stops simulating/updating entities when out of direct sight',
-    descFa: 'شبیه‌سازی و آپدیت کاراکترهایی که دور هستند یا تلپورت شدند را قطع می‌کند',
-    safeVal: '1',
-    buggyVal: '0'
-  }
-];
-
-let doormanTestState = {};
-
-window.openDoormanModal = async function() {
-  const overlay = document.getElementById('modal-doorman-test');
-  if (!overlay) return;
-  const statusEl = document.getElementById('doorman-modal-status');
-  if (statusEl) statusEl.style.display = 'none';
-
-  overlay.style.display = 'flex';
-
-  try {
-    const states = await call('get_cvar_test_states');
-    if (states && typeof states === 'object') {
-      doormanTestState = { ...states };
-    }
-  } catch (e) {
-    console.warn('[doorman-test] failed to load live states:', e);
-  }
-
-  for (const item of DOORMAN_TEST_CVARS) {
-    if (doormanTestState[item.key] === undefined || doormanTestState[item.key] === 'default') {
-      doormanTestState[item.key] = item.buggyVal;
-    }
-  }
-
-  renderDoormanToggles();
-};
-
-window.closeDoormanModal = function() {
-  const overlay = document.getElementById('modal-doorman-test');
-  if (overlay) overlay.style.display = 'none';
-};
-
-window.renderDoormanToggles = function() {
-  const list = document.getElementById('doorman-toggles-list');
-  if (!list) return;
-  const isFa = document.body.classList.contains('lang-fa');
-  const t = window.I18N && window.I18N[isFa ? 'fa' : 'en'] ? window.I18N[isFa ? 'fa' : 'en'] : {};
-
-  list.innerHTML = '';
-  for (const item of DOORMAN_TEST_CVARS) {
-    const currentVal = doormanTestState[item.key] !== undefined ? String(doormanTestState[item.key]) : item.buggyVal;
-    const isSafe = currentVal === item.safeVal;
-
-    const card = document.createElement('div');
-    card.className = 'doorman-toggle-card' + (isSafe ? ' is-active' : '');
-
-    const info = document.createElement('div');
-    info.className = 'doorman-card-info';
-
-    const top = document.createElement('div');
-    top.className = 'doorman-card-top';
-
-    const key = document.createElement('span');
-    key.className = 'doorman-card-key';
-    key.textContent = item.key;
-
-    const lbl = document.createElement('span');
-    lbl.className = 'doorman-card-label';
-    lbl.textContent = isFa ? item.labelFa : item.labelEn;
-
-    top.appendChild(key);
-    top.appendChild(lbl);
-
-    const desc = document.createElement('div');
-    desc.className = 'doorman-card-detail';
-    desc.textContent = isFa ? item.descFa : item.descEn;
-
-    info.appendChild(top);
-    info.appendChild(desc);
-
-    const ctrl = document.createElement('div');
-    ctrl.className = 'doorman-card-control';
-
-    const valTag = document.createElement('span');
-    valTag.className = 'doorman-state-val ' + (isSafe ? 'is-fixed' : 'is-buggy');
-    valTag.textContent = `${currentVal} (${isSafe ? (t.cvarSafeFixed || 'Fixed') : (t.cvarBuggyT1 || 'T1')})`;
-
-    const swWrap = document.createElement('label');
-    swWrap.className = 'switch-toggle';
-    const chk = document.createElement('input');
-    chk.type = 'checkbox';
-    chk.checked = isSafe;
-    chk.onchange = (e) => {
-      doormanTestState[item.key] = e.target.checked ? item.safeVal : item.buggyVal;
-      renderDoormanToggles();
-    };
-    const slider = document.createElement('span');
-    slider.className = 'slider-toggle';
-
-    swWrap.appendChild(chk);
-    swWrap.appendChild(slider);
-
-    ctrl.appendChild(valTag);
-    ctrl.appendChild(swWrap);
-
-    card.appendChild(info);
-    card.appendChild(ctrl);
-    list.appendChild(card);
-  }
-};
-
-window.setAllDoormanToggles = function(preset) {
-  for (const item of DOORMAN_TEST_CVARS) {
-    doormanTestState[item.key] = preset === 'safe' ? item.safeVal : item.buggyVal;
-  }
-  renderDoormanToggles();
-};
-
-window.applyDoormanTestStates = async function() {
-  const btn = document.getElementById('btn-apply-doorman-test');
-  const statusEl = document.getElementById('doorman-modal-status');
-  const isFa = document.body.classList.contains('lang-fa');
-  const t = window.I18N && window.I18N[isFa ? 'fa' : 'en'] ? window.I18N[isFa ? 'fa' : 'en'] : {};
-
-  if (btn) btn.disabled = true;
-  if (statusEl) {
-    statusEl.style.display = 'none';
-  }
-
-  try {
-    const res = await call('apply_cvar_test_states', { states: doormanTestState });
-    if (statusEl) {
-      statusEl.style.display = 'block';
-      statusEl.className = 'doorman-modal-status';
-      statusEl.textContent = t.doormanAppliedMsg || res;
-    }
-  } catch (err) {
-    if (statusEl) {
-      statusEl.style.display = 'block';
-      statusEl.className = 'doorman-modal-status is-error';
-      statusEl.textContent = (t.doormanErrorMsg || 'Error: ') + err;
-    }
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-};
-
 // ---------- FOV & ASPECT RATIO ----------
 function setVideoFov(v, persistSetting = true) {
   const num = typeof v === 'number' ? v : Number(v) || 90;
@@ -2377,13 +2205,6 @@ function qualityState(s) {
   if (ms <= 135 && loss <= 5) return 'stable';
   if (ms <= 175 && loss <= 10) return 'stable';
   return 'unstable';
-}
-
-function scoreLabel(score) {
-  if (score >= 90) return { label: 'routeExcellent', cls: 'st-excellent' };
-  if (score >= 75) return { label: 'routeStable', cls: 'st-stable' };
-  if (score >= 55) return { label: 'routeUnstable', cls: 'st-unstable' };
-  return { label: 'routePoor', cls: 'st-poor' };
 }
 
 function routeLabel(state) {
@@ -3642,17 +3463,6 @@ function startAgoTicker() {
   }, 1000);
 }
 
-function renderMeteorsHtml(count = 16) {
-  let html = '';
-  for (let i = 0; i < count; i++) {
-    const left = ((i * 53) % 100) + '%';
-    const delay = (((i * 37) % 60) / 10).toFixed(1) + 's';
-    const duration = (2.5 + ((i * 17) % 40) / 10).toFixed(1) + 's';
-    html += `<span class="vf-meteor" style="left:${left};animation-duration:${duration};animation-delay:${delay};"><span class="vf-meteor-head"></span></span>`;
-  }
-  return html;
-}
-
 // Backward-compatibility alias
 function renderValvePings(pings) {
   if (typeof renderServerGrid === 'function') {
@@ -3754,7 +3564,6 @@ function selectCardByKey(tabKey) {
   }
   if (tabKey === 'graphic') {
     setTimeout(() => {
-      updateRendererGlider();
       updateFpsGlider();
     }, 380);
   }
@@ -3913,10 +3722,13 @@ window.confirmPath = confirmPath;
 window.doInstall = doInstall;
 window.doBackupNow = doBackupNow;
 window.doRevertVanilla = doRevertVanilla;
-window.doUnlock = doUnlock;
+window.doSelectGameLocation = doSelectGameLocation;
+window.openSelectGameLocationModal = openSelectGameLocationModal;
+window.closeSelectGameLocationModal = closeSelectGameLocationModal;
+window.browseGameLocationInModal = browseGameLocationInModal;
+window.confirmSelectGameLocation = confirmSelectGameLocation;
 window.doResetSettings = doResetSettings;
 window.doCopyDiagnostics = doCopyDiagnostics;
-window.selectRenderer = selectRenderer;
 window.setFov = setFov;
 window.setVideoFov = setVideoFov;
 window.setAspectRatio = setAspectRatio;
@@ -4036,8 +3848,8 @@ function init() {
     if (btnBackup) btnBackup.onclick = doBackupNow;
     const btnRevert = document.getElementById('btn-revert-vanilla');
     if (btnRevert) btnRevert.onclick = doRevertVanilla;
-    const btnUnlock = document.getElementById('btn-unlock');
-    if (btnUnlock) btnUnlock.onclick = doUnlock;
+    const btnSelectPath = document.getElementById('btn-select-game-path');
+    if (btnSelectPath) btnSelectPath.onclick = doSelectGameLocation;
     const btnResetSettings = document.getElementById('btn-reset-settings');
     if (btnResetSettings) btnResetSettings.onclick = doResetSettings;
     const btnCopyDiag = document.getElementById('btn-copy-diag');
@@ -4132,12 +3944,6 @@ function init() {
       card.addEventListener('click', () => selectCardByKey(key));
     });
 
-    const doormanModal = document.getElementById('modal-doorman-test');
-    if (doormanModal) {
-      doormanModal.addEventListener('click', (e) => {
-        if (e.target === doormanModal) closeDoormanModal();
-      });
-    }
     const presetModal = document.getElementById('modal-save-preset');
     if (presetModal) {
       presetModal.addEventListener('click', (e) => {
@@ -4146,8 +3952,8 @@ function init() {
     }
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        closeDoormanModal();
         closeSavePresetModal();
+        closeSelectGameLocationModal();
       }
     });
 
@@ -4216,7 +4022,47 @@ const lanState = {
   vipUntil: null,
   vipDaysRemaining: null,
   hwid: null,
+  vipDevices: [],
+  vipDeviceCap: null,
+  vipSignInRequired: false,
 };
+
+// VIP is account-bound: every VIP call carries the TeamSpeak session token.
+function vipAccountToken() {
+  return (typeof userProfile !== 'undefined' && userProfile && userProfile.auth_token)
+    ? userProfile.auth_token
+    : null;
+}
+
+function vipFriendlyError(err) {
+  const msg = String(err || '');
+  if (msg.includes('SIGN_IN_REQUIRED')) {
+    return state.lang === 'fa'
+      ? 'برای استفاده از VIP ابتدا با TeamSpeak وارد شوید.'
+      : 'Sign in with TeamSpeak first to use VIP.';
+  }
+  if (msg.includes('VIP_REQUIRED')) {
+    return state.lang === 'fa'
+      ? 'این حساب اشتراک VIP فعال ندارد.'
+      : 'This account has no active VIP subscription.';
+  }
+  if (msg.includes('DEVICE_CAP_REACHED')) {
+    return state.lang === 'fa'
+      ? 'این حساب به سقف دستگاه‌های مجاز رسیده است. یک دستگاه را آزاد کنید.'
+      : 'This account reached its device limit. Unbind one device first.';
+  }
+  if (msg.includes('HWID_ALREADY_BOUND')) {
+    return state.lang === 'fa'
+      ? 'این دستگاه به حساب دیگری متصل است.'
+      : 'This device is already linked to another account.';
+  }
+  if (msg.includes('UNBIND_COOLDOWN')) {
+    return state.lang === 'fa'
+      ? 'تغییر دستگاه فقط هر ۳۰ روز یک بار مجاز است.'
+      : 'One device change is allowed every 30 days.';
+  }
+  return msg;
+}
 
 function getSavedNickname() {
   try {
@@ -4283,10 +4129,13 @@ async function initVipLicense() {
       hwidEl.textContent = hwid;
     }
 
-    const res = await call('check_vip_status_cmd', { apiUrl: null });
+    const res = await call('check_vip_status_cmd', { apiUrl: null, accountToken: vipAccountToken() });
     lanState.isVip = !!res.is_vip;
     lanState.vipUntil = res.vip_until;
     lanState.vipDaysRemaining = res.days_remaining;
+    lanState.vipDevices = res.devices || [];
+    lanState.vipDeviceCap = res.device_cap || null;
+    lanState.vipSignInRequired = !!res.sign_in_required;
 
     updateVipLicenseUI();
   } catch (err) {
@@ -4299,12 +4148,18 @@ function updateVipLicenseUI() {
   const actBox = document.getElementById('vip-activation-box');
   const statusBar = document.getElementById('vip-status-bar');
   const meshControls = document.getElementById('vip-mesh-controls');
+  const vipLockedCard = document.getElementById('vip-locked-card');
   const remainingEl = document.getElementById('vip-status-remaining');
   const extendBox = document.getElementById('vip-extend-box');
+  const hwidLanEl = document.getElementById('vip-lan-hwid-display');
 
-  if (meshControls) meshControls.style.display = 'block';
+  if (hwidLanEl && lanState.hwid) {
+    hwidLanEl.textContent = lanState.hwid;
+  }
 
   if (lanState.isVip) {
+    if (vipLockedCard) vipLockedCard.style.display = 'none';
+    if (meshControls) meshControls.style.display = 'block';
     if (actBox) actBox.style.display = 'none';
     if (statusBar) statusBar.style.display = 'flex';
 
@@ -4318,11 +4173,92 @@ function updateVipLicenseUI() {
       }
     }
   } else {
+    if (vipLockedCard) vipLockedCard.style.display = 'flex';
+    if (meshControls) meshControls.style.display = 'none';
     if (actBox) actBox.style.display = 'flex';
     if (statusBar) statusBar.style.display = 'none';
     if (extendBox) extendBox.style.display = 'none';
   }
+
+  renderVipDevices();
+
+  const hintEl = document.getElementById('vip-account-hint');
+  if (hintEl) {
+    hintEl.style.display = (!lanState.isVip && !vipAccountToken()) ? 'block' : 'none';
+  }
 }
+
+function renderVipDevices() {
+  const host = document.getElementById('vip-devices-list');
+  if (!host) return;
+  if (!lanState.vipDevices || lanState.vipDevices.length === 0) {
+    host.innerHTML = `<span class="vip-device-empty">${state.lang === 'fa' ? 'دستگاهی ثبت نشده است.' : 'No devices bound yet.'}</span>`;
+    return;
+  }
+  const cap = lanState.vipDeviceCap || lanState.vipDevices.length;
+  const rows = lanState.vipDevices.map((d) => {
+    const short = (d.hwid || '').replace(/^HWID-/, '').slice(0, 10);
+    const current = d.is_current ? ` <span class="vip-device-current">${state.lang === 'fa' ? '(این دستگاه)' : '(this PC)'}</span>` : '';
+    return `<div class="vip-device-row"><code dir="ltr">${short}</code>${current}</div>`;
+  }).join('');
+  host.innerHTML = `<div class="vip-device-head">${state.lang === 'fa' ? 'دستگاه‌ها' : 'Devices'}: ${lanState.vipDevices.length}/${cap}</div>${rows}`;
+}
+
+async function unbindVipDeviceAction(hwid) {
+  try {
+    await call('unbind_vip_device_cmd', { apiUrl: null, hwid, accountToken: vipAccountToken() });
+    await initVipLicense();
+    showToast(state.lang === 'fa' ? 'دستگاه آزاد شد.' : 'Device unbound.', 'success');
+  } catch (err) {
+    showToast(vipFriendlyError(err), 'error');
+  }
+}
+window.unbindVipDeviceAction = unbindVipDeviceAction;
+
+async function redeemLanVipKeyAction() {
+  const input = document.getElementById('vip-lan-key-input');
+  const btn = document.getElementById('btn-vip-lan-redeem');
+  if (!input || !input.value.trim()) {
+    showModal(t('vipActTitle'), state.lang === 'fa' ? 'لطفاً کلید لایسنس VIP را وارد کنید.' : 'Please enter your VIP license key.', [{ label: t('ok') }]);
+    return;
+  }
+
+  const key = input.value.trim().toUpperCase();
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await call('redeem_vip_key_cmd', { apiUrl: null, key, nickname: null, accountToken: vipAccountToken() });
+    if (res.success) {
+      input.value = '';
+      await initVipLicense();
+      showModal(
+        t('vipActTitle'),
+        state.lang === 'fa'
+          ? `اشتراک VIP با موفقیت فعال شد! (${(res.days_remaining || 0).toFixed(1)} روز اعتبار)`
+          : `VIP subscription activated successfully! (${(res.days_remaining || 0).toFixed(1)} days validity)`,
+        [{ label: t('ok') }]
+      );
+    }
+  } catch (err) {
+    showModal(t('vipActTitle'), `${t('vipRedeemError')}${vipFriendlyError(err)}`, [{ label: t('ok') }]);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+window.redeemLanVipKeyAction = redeemLanVipKeyAction;
+
+async function copyVipHwid() {
+  if (!lanState.hwid) return;
+  await copyToClipboard(lanState.hwid);
+  const el = document.getElementById('vip-lan-hwid-display');
+  if (el) {
+    el.textContent = state.lang === 'fa' ? 'کپی شد!' : 'Copied!';
+    setTimeout(() => {
+      if (lanState.hwid) el.textContent = lanState.hwid;
+    }, 1800);
+  }
+}
+window.copyVipHwid = copyVipHwid;
 
 function onVipModModeChange(mode) {
   console.log('[LAN] Mod mode selected:', mode);
@@ -4347,7 +4283,7 @@ async function redeemVipKeyAction() {
   if (btn) btn.disabled = true;
 
   try {
-    const res = await call('redeem_vip_key_cmd', { apiUrl: null, key, nickname: null });
+    const res = await call('redeem_vip_key_cmd', { apiUrl: null, key, nickname: null, accountToken: vipAccountToken() });
     if (res.success) {
       input.value = '';
       await initVipLicense();
@@ -4360,7 +4296,7 @@ async function redeemVipKeyAction() {
       );
     }
   } catch (err) {
-    showModal(t('vipActTitle'), `${t('vipRedeemError')}${err}`, [{ label: t('ok') }]);
+    showModal(t('vipActTitle'), `${t('vipRedeemError')}${vipFriendlyError(err)}`, [{ label: t('ok') }]);
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -4375,7 +4311,7 @@ async function redeemVipExtendKeyAction() {
   if (btn) btn.disabled = true;
 
   try {
-    const res = await call('redeem_vip_key_cmd', { apiUrl: null, key, nickname: null });
+    const res = await call('redeem_vip_key_cmd', { apiUrl: null, key, nickname: null, accountToken: vipAccountToken() });
     if (res.success) {
       input.value = '';
       const extendBox = document.getElementById('vip-extend-box');
@@ -4390,7 +4326,7 @@ async function redeemVipExtendKeyAction() {
       );
     }
   } catch (err) {
-    showModal(t('vipActTitle'), `${t('vipRedeemError')}${err}`, [{ label: t('ok') }]);
+    showModal(t('vipActTitle'), `${t('vipRedeemError')}${vipFriendlyError(err)}`, [{ label: t('ok') }]);
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -4799,6 +4735,26 @@ async function enterActiveSession(role, opts) {
   startSessionRosterPolling();
 }
 
+// Returns the detail text when the failure is the backend's "bundle missing" marker.
+function bundleUnavailableDetail(errOrStr) {
+  const raw = String((errOrStr && errOrStr.message) || errOrStr || '');
+  if (!raw.includes('MOD_BUNDLE_UNAVAILABLE')) return null;
+  return raw.split('MOD_BUNDLE_UNAVAILABLE|').pop().trim();
+}
+
+function showPrepFailure(err) {
+  const detail = bundleUnavailableDetail(err);
+  if (detail) {
+    showModal(
+      state.lang === 'fa' ? 'بسته ماد روی سرور موجود نیست' : 'Mod Bundle Not Available',
+      detail,
+      [{ label: t('ok') }]
+    );
+    return;
+  }
+  showToast(String((err && err.message) || err || ''), 'error');
+}
+
 async function checkAndPrepareClientEnvironment(mode) {
   if (sessionState.skipDeadworks || mode === 'none') return;
   try {
@@ -4811,12 +4767,13 @@ async function checkAndPrepareClientEnvironment(mode) {
 
     if (needsPrep) {
       showToast(state.lang === 'fa' ? 'در حال بررسی و آماده‌سازی فایل‌های ماد کلاینت...' : 'Preparing client mod files...', 'info');
-      await call('prepare_modded_client_cmd', { mode });
+      await call('prepare_modded_client_cmd', { mode }, MOD_DOWNLOAD_TIMEOUT_MS);
       const updatedEnv = await call('check_deadworks_env_cmd');
       updateChecklistUI(updatedEnv);
     }
   } catch (err) {
     console.warn('[client-prep] error:', err);
+    showPrepFailure(err);
   }
 }
 
@@ -4848,7 +4805,7 @@ async function leaveActiveSessionAction() {
 
   if (sessionState.roomCode) {
     try {
-      await call('leave_vip_room_cmd', { apiUrl: null, roomCode: sessionState.roomCode });
+      await call('leave_vip_room_cmd', { apiUrl: null, roomCode: sessionState.roomCode, accountToken: vipAccountToken() });
     } catch (_) {}
   }
 
@@ -5191,6 +5148,11 @@ async function updateSessionRoster() {
   if (!sessionState.active) return;
   const rosterContainer = document.getElementById('session-roster-list');
   const countBadge = document.getElementById('session-player-count');
+  const unbanBtn = document.getElementById('btn-roster-unban-prompt');
+  if (unbanBtn) {
+    const isMeHost = sessionState.role === 'host' || sessionState.isHost;
+    unbanBtn.style.display = (isMeHost && sessionState.roomCode) ? 'inline-flex' : 'none';
+  }
 
   // Watchdog check for host dedicated server
   if (sessionState.role === 'host' && sessionState.isServerRunning) {
@@ -5264,7 +5226,7 @@ async function updateSessionRoster() {
 async function kickSessionPeer(peerName) {
   if (!sessionState.roomCode) return;
   try {
-    await call('kick_vip_peer_cmd', { apiUrl: null, roomCode: sessionState.roomCode, peerName });
+    await call('kick_vip_peer_cmd', { apiUrl: null, roomCode: sessionState.roomCode, peerName, accountToken: vipAccountToken() });
     showToast(state.lang === 'fa' ? `بازیکن ${peerName} اخراج شد.` : `Player ${peerName} kicked.`, 'warning');
     setTimeout(updateSessionRoster, 500);
   } catch (err) {
@@ -5275,12 +5237,38 @@ async function kickSessionPeer(peerName) {
 async function banSessionPeer(peerName) {
   if (!sessionState.roomCode) return;
   try {
-    await call('ban_vip_peer_cmd', { apiUrl: null, roomCode: sessionState.roomCode, peerName });
+    await call('ban_vip_peer_cmd', { apiUrl: null, roomCode: sessionState.roomCode, peerName, accountToken: vipAccountToken() });
     showToast(state.lang === 'fa' ? `بازیکن ${peerName} از اتاق مسدود شد.` : `Player ${peerName} banned from room.`, 'error');
     setTimeout(updateSessionRoster, 500);
   } catch (err) {
     showToast(`Ban failed: ${err}`, 'error');
   }
+}
+
+async function unbanSessionPeer(peerName) {
+  if (!sessionState.roomCode || !peerName) return;
+  try {
+    await call('unban_vip_peer_cmd', { apiUrl: null, roomCode: sessionState.roomCode, peerName, accountToken: vipAccountToken() });
+    showToast(state.lang === 'fa' ? `مسدودیت بازیکن ${peerName} لغو شد.` : `Player ${peerName} unbanned from room.`, 'info');
+    setTimeout(updateSessionRoster, 500);
+  } catch (err) {
+    showToast(`Unban failed: ${err}`, 'error');
+  }
+}
+
+async function promptUnbanPeer() {
+  const isMeHost = sessionState.role === 'host' || sessionState.isHost;
+  if (!isMeHost) {
+    showToast(state.lang === 'fa' ? 'فقط میزبان اتاق می‌تواند بازیکنان را از مسدودی خارج کند.' : 'Only room host can unban players.', 'warning');
+    return;
+  }
+  const peerName = await showPromptModal(
+    state.lang === 'fa' ? 'رفع مسدودیت بازیکن' : 'Unban Player',
+    state.lang === 'fa' ? 'نام کاربری بازیکنی که می‌خواهید رفع مسدودیت شود را وارد کنید:' : 'Enter the nickname of the player to unban:',
+    state.lang === 'fa' ? 'نام بازیکن...' : 'Player nickname...'
+  );
+  if (!peerName || !peerName.trim()) return;
+  await unbanSessionPeer(peerName.trim());
 }
 
 async function checkIsGameRunning() {
@@ -5515,6 +5503,15 @@ window.setVipConnectionMode = function(mode) {
 };
 
 async function createVipRoomAction() {
+  if (!lanState.isVip) {
+    showModal(
+      state.lang === 'fa' ? 'اشتراک VIP الزامی است' : 'VIP Required',
+      t('vipRequiredModalMsg'),
+      [{ label: t('ok') }]
+    );
+    updateVipLicenseUI();
+    return;
+  }
   const nickname = document.getElementById('vip-host-nickname')?.value?.trim() || getSavedNickname();
   saveNickname(nickname);
   const modSelect = document.getElementById('vip-host-mod-mode');
@@ -5562,6 +5559,7 @@ async function createVipRoomAction() {
       isHidden: isHidden,
       password: password,
       maxPlayers: maxPlayers,
+      accountToken: vipAccountToken(),
     });
     if (res.success && res.room_code) {
       lanState.vipRoomCode = res.room_code;
@@ -5613,6 +5611,15 @@ async function createVipRoomAction() {
 }
 
 async function joinVipRoomAction() {
+  if (!lanState.isVip) {
+    showModal(
+      state.lang === 'fa' ? 'اشتراک VIP الزامی است' : 'VIP Required',
+      t('vipRequiredModalMsg'),
+      [{ label: t('ok') }]
+    );
+    updateVipLicenseUI();
+    return;
+  }
   const code = document.getElementById('vip-join-code')?.value?.trim();
   const nickname = document.getElementById('vip-join-nickname')?.value?.trim() || getSavedNickname();
   saveNickname(nickname);
@@ -5627,7 +5634,7 @@ async function joinVipRoomAction() {
   const password = document.getElementById('vip-join-password')?.value?.trim() || null;
 
   try {
-    const res = await call('join_vip_room_cmd', { apiUrl: null, roomCode: code, nickname, password });
+    const res = await call('join_vip_room_cmd', { apiUrl: null, roomCode: code, nickname, password, accountToken: vipAccountToken() });
     if (res.success) {
       lanState.vipRoomCode = code;
       lanState.vipHostIp = res.host_ip || '10.10.1.1';
@@ -5647,7 +5654,7 @@ async function joinVipRoomAction() {
       });
     }
   } catch (err) {
-    showModal(t('vipLanTitle'), `خطا در ورود به اتاق: ${err}`, [{ label: t('ok') }]);
+    showModal(t('vipLanTitle'), `خطا در ورود به اتاق: ${vipFriendlyError(err)}`, [{ label: t('ok') }]);
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -5892,6 +5899,8 @@ window.joinSessionSelfAction = joinSessionSelfAction;
 window.sendAdminCmd = sendAdminCmd;
 window.kickSessionPeer = kickSessionPeer;
 window.banSessionPeer = banSessionPeer;
+window.unbanSessionPeer = unbanSessionPeer;
+window.promptUnbanPeer = promptUnbanPeer;
 window.refreshVipLobbiesList = refreshVipLobbiesList;
 window.selectAndJoinVipLobby = selectAndJoinVipLobby;
 
@@ -7124,7 +7133,128 @@ window.initArInputInteractions = initArInputInteractions;
 // DLPHUB ACCOUNT, TWO-WAY TS AUTH, FRIENDS DRAWER & DPI ENGINE
 // ============================================================
 
-const VPS_API_BASE = 'http://5.57.32.52:48080';
+// Dual-Endpoint automatic fallback strategy for Iran domestic network survivability:
+// Primary: https://deadlockpersian.com (official SSL domain)
+// Fallback: http://92.42.207.96:48080 (direct IP for DNS blackout / censorship survivability)
+const VPS_PRIMARY_API = 'https://deadlockpersian.com';
+const VPS_FALLBACK_API = 'http://92.42.207.96:48080';
+let VPS_API_BASE = VPS_PRIMARY_API;
+let VIP_VPS_HTTP = VPS_API_BASE; // define VIP_VPS_HTTP for backwards compatibility
+let lastFallbackSwitchTime = 0;
+const HTTPS_RETRY_INTERVAL_MS = 60000;
+
+function getActiveVpsBase() {
+  if (VPS_API_BASE === VPS_FALLBACK_API) {
+    if (Date.now() - lastFallbackSwitchTime >= HTTPS_RETRY_INTERVAL_MS) {
+      // Cooldown elapsed: periodically retry official HTTPS primary endpoint
+      VPS_API_BASE = VPS_PRIMARY_API;
+      VIP_VPS_HTTP = VPS_PRIMARY_API;
+      window.VPS_API_BASE = VPS_PRIMARY_API;
+      window.VIP_VPS_HTTP = VPS_PRIMARY_API;
+      return VPS_PRIMARY_API;
+    }
+    return VPS_FALLBACK_API;
+  }
+  return VPS_PRIMARY_API;
+}
+
+async function vpsFetch(inputPathOrUrl, options = {}) {
+  let path = inputPathOrUrl;
+  if (path.startsWith(VPS_PRIMARY_API)) {
+    path = path.slice(VPS_PRIMARY_API.length);
+  } else if (path.startsWith(VPS_FALLBACK_API)) {
+    path = path.slice(VPS_FALLBACK_API.length);
+  } else if (/^https?:\/\/[^/]+/i.test(path)) {
+    path = path.replace(/^https?:\/\/[^/]+/i, '');
+  }
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+
+  // Determine order: prioritize HTTPS periodic retry
+  const activeBase = getActiveVpsBase();
+  const primaryCandidate = activeBase;
+  const secondaryCandidate = (activeBase === VPS_PRIMARY_API) ? VPS_FALLBACK_API : VPS_PRIMARY_API;
+  const candidates = [primaryCandidate, secondaryCandidate];
+
+  let lastError = null;
+  const method = (options.method || 'GET').toUpperCase();
+  const isIdempotent = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+
+  for (let i = 0; i < candidates.length; i++) {
+    const base = candidates[i];
+    const fullUrl = `${base}${path}`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 7000);
+
+    // Compose caller signal with internal timeout so timeouts are never bypassed
+    let compositeSignal = controller.signal;
+    if (options.signal) {
+      if (typeof AbortSignal.any === 'function') {
+        compositeSignal = AbortSignal.any([options.signal, controller.signal]);
+      } else {
+        if (options.signal.aborted) {
+          controller.abort();
+        } else {
+          options.signal.addEventListener('abort', () => controller.abort(), { once: true });
+        }
+      }
+    }
+
+    const fetchOptions = {
+      ...options,
+      signal: compositeSignal
+    };
+
+    try {
+      const res = await fetch(fullUrl, fetchOptions);
+      clearTimeout(timeoutId);
+
+      // If server or gateway error on domain, fall back immediately to IP
+      if (res.status >= 500 && res.status <= 599 && i + 1 < candidates.length) {
+        console.warn(`[VPS API] HTTP ${res.status} from ${fullUrl}, falling back to ${candidates[i + 1]}`);
+        continue;
+      }
+
+      // Successful connection: update active base if changed
+      if (VPS_API_BASE !== base) {
+        console.log(`[VPS API] Active endpoint switched to: ${base}`);
+        VPS_API_BASE = base;
+        VIP_VPS_HTTP = base;
+        window.VPS_API_BASE = base;
+        window.VIP_VPS_HTTP = base;
+      }
+      if (base === VPS_FALLBACK_API) {
+        lastFallbackSwitchTime = Date.now();
+      } else {
+        lastFallbackSwitchTime = 0;
+      }
+      return res;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      lastError = err;
+      console.warn(`[VPS API] Request to ${fullUrl} failed (${err.name}: ${err.message})`);
+
+      // For non-idempotent mutations, if aborted by timeout (not network disconnect),
+      // avoid blind duplicate execution on fallback.
+      if (!isIdempotent && err.name === 'AbortError' && (!options.signal || !options.signal.aborted)) {
+        throw new Error(`Request to ${fullUrl} timed out waiting for server response`);
+      }
+
+      if (i + 1 < candidates.length) {
+        console.warn(`[VPS API] Trying fallback candidate: ${candidates[i + 1]}...`);
+        continue;
+      }
+    }
+  }
+
+  throw lastError || new Error('All VPS API endpoints unreachable');
+}
+
+window.vpsFetch = vpsFetch;
+window.VPS_API_BASE = VPS_API_BASE;
+window.VIP_VPS_HTTP = VIP_VPS_HTTP;
 
 let userProfile = {
   is_guest: true,
@@ -7472,7 +7602,7 @@ async function requestNewAuthCode() {
   if (statusText) statusText.textContent = (state.lang === 'fa' ? 'در حال دریافت کد از سرور...' : 'Fetching code...');
 
   try {
-    const res = await fetch(`${VPS_API_BASE}/api/auth/ts/request-code`, { method: 'POST' });
+    const res = await vpsFetch('/api/auth/ts/request-code', { method: 'POST' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     currentAuthCode = data.code;
@@ -7500,7 +7630,7 @@ function startAuthPolling(code) {
     }
 
     try {
-      const res = await fetch(`${VPS_API_BASE}/api/auth/ts/check-status/${code}`);
+      const res = await vpsFetch(`/api/auth/ts/check-status/${code}`);
       if (!res.ok) return;
       const data = await res.json();
       if (data.expired) {
@@ -7579,7 +7709,7 @@ async function checkAuthCodeNow() {
   const statusText = document.getElementById('auth-status-text');
   if (statusText) statusText.textContent = state.lang === 'fa' ? 'در حال بررسی وضعیت تایید...' : 'Checking verification status...';
   try {
-    const res = await fetch(`${VPS_API_BASE}/api/auth/ts/check-status/${currentAuthCode}`);
+    const res = await vpsFetch(`/api/auth/ts/check-status/${currentAuthCode}`);
     if (res.ok) {
       const data = await res.json();
       if (data.verified && data.user) {
@@ -7639,7 +7769,7 @@ async function sendPokeOtpRequest() {
   if (sendBtn) sendBtn.disabled = true;
 
   try {
-    const res = await fetch(`${VPS_API_BASE}/api/auth/ts/poke-otp`, {
+    const res = await vpsFetch('/api/auth/ts/poke-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query })
@@ -7679,7 +7809,7 @@ async function verifyPokeOtpAction() {
   }
 
   try {
-    const res = await fetch(`${VPS_API_BASE}/api/auth/ts/verify-otp`, {
+    const res = await vpsFetch('/api/auth/ts/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code })
@@ -7730,7 +7860,9 @@ function openFriendsDrawer() {
   drawer.classList.add('open');
   if (wrapper) wrapper.classList.add('side-panel-open');
   updateScale();
-  // Friends feature temporarily in Coming Soon mode
+
+  switchFriendsTab('all');
+  refreshFriendsList();
 }
 
 function closeFriendsDrawer() {
@@ -7793,7 +7925,7 @@ async function refreshFriendsList() {
   }
 
   try {
-    const res = await fetch(`${VPS_API_BASE}/api/friends/list?uid=${encodeURIComponent(userProfile.ts_uid)}`);
+    const res = await vpsFetch(`/api/friends/list?uid=${encodeURIComponent(userProfile.ts_uid)}`);
     if (res.ok) {
       const data = await res.json();
       friendsData = data.friends || [];
@@ -7963,7 +8095,7 @@ async function executeAddFriend() {
   }
 
   try {
-    const res = await fetch(`${VPS_API_BASE}/api/friends/add`, {
+    const res = await vpsFetch('/api/friends/add', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_uid: userProfile.ts_uid, target })
@@ -7999,7 +8131,7 @@ async function removeFriendAction(friendUid) {
   }
 
   try {
-    const res = await fetch(`${VPS_API_BASE}/api/friends/remove`, {
+    const res = await vpsFetch('/api/friends/remove', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_uid: userProfile.ts_uid, friend_uid: friendUid })
@@ -8044,9 +8176,132 @@ function closeProfileModal() {
   if (modal) modal.style.display = 'none';
 }
 
+const HERO_ASSET_NAMES = {
+  1: 'Infernus',
+  2: 'Seven',
+  3: 'Vindicta',
+  4: 'LadyGeist',
+  6: 'Abrams',
+  7: 'Wraith',
+  8: 'McGinnis',
+  10: 'Paradox',
+  11: 'Dynamo',
+  12: 'Kelvin',
+  13: 'Haze',
+  14: 'Holliday',
+  15: 'Bebop',
+  16: 'GreyTalon',
+  18: 'Mo',
+  19: 'Shiv',
+  20: 'Ivy',
+  25: 'Warden',
+  27: 'Yamato',
+  31: 'Lash',
+  35: 'Viscous',
+  48: 'Mirage',
+  50: 'Vyper',
+  52: 'Pocket',
+  60: 'Sinclair',
+  66: 'Victor',
+  67: 'Paige',
+  76: 'Graves',
+  78: 'Deadman_Danny',
+  81: 'Celeste',
+  84: 'RatKing',
+  87: 'Nurse_Harrow',
+};
+
+function formatLanScorecard(meta, matchId) {
+  if (!meta) return null;
+  const parsed = typeof meta === 'string' ? JSON.parse(meta) : meta;
+  if (parsed.scorecard && Array.isArray(parsed.scorecard.players)) {
+    return {
+      match_id: String(matchId),
+      match_code: parsed.match_code || String(matchId),
+      winning_team: (parsed.winning_team || parsed.scorecard.winner_team || '').toUpperCase().includes('HIDDEN') ? 'HiddenKing' : 'ArchMother',
+      scorecard: parsed.scorecard
+    };
+  }
+
+  const info = parsed.match_info || parsed;
+  const isHk = (info.winning_team === 0 || info.winning_team === 2 || String(info.winning_team || '').toUpperCase().includes('HIDDEN') || String(info.winner_team || '').toUpperCase().includes('HIDDEN'));
+
+  const durSec = info.duration_s || 0;
+  const durMin = Math.floor(durSec / 60);
+  const durRemSec = durSec % 60;
+  const durStr = durSec > 0 ? `${durMin}:${String(durRemSec).padStart(2, '0')}` : '--:--';
+
+  const startTime = info.start_time ? new Date(info.start_time * 1000) : new Date();
+  const dateStr = startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const rawPlayers = Array.isArray(info.players) ? info.players : [];
+  const sortedPlayers = [...rawPlayers].sort((a, b) => (b.net_worth || 0) - (a.net_worth || 0));
+
+  const totalKillsTeamHk = rawPlayers.filter(p => p.team === 2 || p.team === 0 || String(p.team || '').toUpperCase().includes('HIDDEN')).reduce((sum, p) => sum + (p.kills || 0), 0);
+  const totalKillsTeamAm = rawPlayers.filter(p => p.team === 3 || p.team === 1 || String(p.team || '').toUpperCase().includes('ARCH')).reduce((sum, p) => sum + (p.kills || 0), 0);
+
+  const players = sortedPlayers.map((p, idx) => {
+    const isPlayerHk = (p.team === 2 || p.team === 0 || String(p.team || '').toUpperCase().includes('HIDDEN'));
+    const heroName = HERO_ASSET_NAMES[p.hero_id] || p.hero || `Hero ${p.hero_id || 'Unknown'}`;
+    const kills = p.kills || 0;
+    const deaths = p.deaths || 0;
+    const assists = p.assists || 0;
+    const souls = p.net_worth || p.souls || 0;
+    const stats = p.stats || {};
+    const damage = stats.hero_damage || p.damage || 0;
+    const objDamage = stats.objective_damage || p.obj_damage || p.objective_damage || 0;
+    const healing = stats.hero_healing || stats.self_healing || p.healing || 0;
+
+    const teamKills = isPlayerHk ? totalKillsTeamHk : totalKillsTeamAm;
+    const kpVal = teamKills > 0 ? (((kills + assists) / teamKills) * 100).toFixed(1) + '%' : '—';
+
+    const kdaRatio = deaths > 0 ? (kills + assists) / deaths : (kills + assists);
+    const scoreVal = (Math.min(99.9, Math.max(25.0, 40 + (kdaRatio * 6) + (souls / 1500)))).toFixed(1);
+    const grade = scoreVal >= 80 ? 'A' : scoreVal >= 65 ? '+B' : scoreVal >= 50 ? 'B' : scoreVal >= 40 ? 'C' : 'D';
+    const mmrDelta = typeof p.mmr_delta === 'string' ? p.mmr_delta : (typeof p.mmr_delta === 'number' ? (p.mmr_delta >= 0 ? `+${p.mmr_delta} MMR` : `${p.mmr_delta} MMR`) : (isHk === isPlayerHk ? 'Victory' : 'Defeat'));
+
+    return {
+      rank: idx + 1,
+      player: p.name || `Player #${p.account_id || p.player_slot || idx + 1}`,
+      hero: heroName,
+      hero_id: p.hero_id || 1,
+      team: isPlayerHk ? 'HIDDEN KING' : 'ARCH MOTHER',
+      mmr_delta: mmrDelta,
+      score: scoreVal,
+      grade: grade,
+      kills: kills,
+      deaths: deaths,
+      assists: assists,
+      souls: souls,
+      damage: damage,
+      obj_damage: objDamage,
+      healing: healing,
+      kp: kpVal
+    };
+  });
+
+  const scorecard = {
+    title: `LAN Custom Match #${matchId}`,
+    status: isHk ? 'MATCH COMPLETED (Victory - Hidden King)' : 'MATCH COMPLETED (Victory - Arch Mother)',
+    match_num: `LAN #${matchId}`,
+    match_code: parsed.match_code || String(matchId),
+    date: dateStr,
+    duration: durStr,
+    winner_team: isHk ? 'HIDDEN KING' : 'ARCH MOTHER',
+    players: players
+  };
+
+  return {
+    match_id: String(matchId),
+    match_code: parsed.match_code || String(matchId),
+    winning_team: isHk ? 'HiddenKing' : 'ArchMother',
+    scorecard: scorecard
+  };
+}
+
 async function loadMatchHistory() {
   try {
-    const res = await fetch(`${VPS_API_BASE}/api/matches/history`);
+    const res = await vpsFetch('/api/matches/history');
     if (res.ok) {
       const data = await res.json();
       matchHistoryData = data.matches || [];
@@ -8057,6 +8312,33 @@ async function loadMatchHistory() {
     console.error('Failed to load match history:', e);
     matchHistoryData = [];
   }
+
+  // Enrich with local LAN match metadata from list_lan_matches / get_lan_match_metadata
+  try {
+    const localMatchIds = await call('list_lan_matches');
+    if (Array.isArray(localMatchIds)) {
+      const existingIds = new Set(matchHistoryData.map(m => String(m.match_id)));
+      const missingIds = localMatchIds.map(String).filter(id => !existingIds.has(id));
+      if (missingIds.length > 0) {
+        const results = await Promise.all(
+          missingIds.map(async (strId) => {
+            try {
+              const rawMeta = await call('get_lan_match_metadata', { matchId: strId });
+              return rawMeta ? formatLanScorecard(rawMeta, strId) : null;
+            } catch (_) {
+              return null;
+            }
+          })
+        );
+        for (const formatted of results) {
+          if (formatted) {
+            matchHistoryData.push(formatted);
+          }
+        }
+      }
+    }
+  } catch (_) {}
+
   renderMatchHistory('all');
 }
 
@@ -8157,15 +8439,25 @@ async function openMatchDpiView(matchId) {
   if (dpiView) dpiView.style.display = 'block';
 
   try {
-    const res = await fetch(`${VPS_API_BASE}/api/matches/${matchId}/details`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    currentDpiMatch = data;
-    if (data.scorecard) {
-      renderDpiScorecard(data.scorecard);
-    } else {
+    let data = null;
+    try {
+      const res = await vpsFetch(`/api/matches/${matchId}/details`);
+      if (res.ok) data = await res.json();
+    } catch (_) {}
+
+    if (!data || !data.scorecard) {
+      const rawMeta = await call('get_lan_match_metadata', { matchId: String(matchId) });
+      if (rawMeta) {
+        data = formatLanScorecard(rawMeta, matchId);
+      }
+    }
+
+    if (!data || !data.scorecard) {
       throw new Error('Scorecard missing');
     }
+
+    currentDpiMatch = data;
+    renderDpiScorecard(data.scorecard);
   } catch (err) {
     console.error('Failed to load match DPI details:', err);
     showToast(state.lang === 'fa' ? 'خطا در بارگذاری جزئیات مسابقه از سرور پایگاه‌داده' : 'Failed to load match details from server database', 'error');
@@ -8186,42 +8478,6 @@ function copyDpiMatchCode() {
     showToast(state.lang === 'fa' ? `کد مسابقه '${code}' کپی شد!` : `Match code '${code}' copied!`, 'info');
   }).catch(() => {});
 }
-
-
-const HERO_ASSET_NAMES = {
-  1: 'Infernus',
-  2: 'Seven',
-  3: 'Vindicta',
-  4: 'LadyGeist',
-  6: 'Abrams',
-  7: 'Wraith',
-  8: 'McGinnis',
-  10: 'Paradox',
-  11: 'Dynamo',
-  12: 'Kelvin',
-  13: 'Haze',
-  14: 'Holliday',
-  15: 'Bebop',
-  16: 'GreyTalon',
-  18: 'Mo',
-  19: 'Shiv',
-  20: 'Ivy',
-  25: 'Warden',
-  27: 'Yamato',
-  31: 'Lash',
-  35: 'Viscous',
-  48: 'Mirage',
-  50: 'Vyper',
-  52: 'Pocket',
-  60: 'Sinclair',
-  66: 'Victor',
-  67: 'Paige',
-  76: 'Graves',
-  78: 'Deadman_Danny',
-  81: 'Celeste',
-  84: 'RatKing',
-  87: 'Nurse_Harrow',
-};
 
 function handleHeroImgError(img, heroName) {
   if (!img) return;
@@ -8352,7 +8608,7 @@ function renderDpiScorecard(sc) {
 
   players.forEach((p, idx) => {
     const rankNum = p.rank || idx + 1;
-    const isHiddenKing = p.team === 'HIDDEN KING';
+    const isHiddenKing = (p.team || '').toUpperCase().includes('HIDDEN');
     const isMvp = rankNum === 1;
     const isKeyPlayer = rankNum === 2 || p.player === losingKpPlayerName;
 
@@ -8380,7 +8636,7 @@ function renderDpiScorecard(sc) {
     const healClass = (heal === maxHealing && maxHealing > 0) ? 'stat-highlight' : '';
     const kpClass = (kpNum === maxKp && maxKp > 0) ? 'stat-highlight' : '';
 
-    const mmrIsPositive = p.mmr_delta && p.mmr_delta.startsWith('+');
+    const mmrIsPositive = p.mmr_delta && (p.mmr_delta.startsWith('+') || p.mmr_delta.toLowerCase().includes('win') || p.mmr_delta.toLowerCase().includes('victory'));
     const teamClass = isHiddenKing ? 'team-hidden-king' : 'team-arch-mother';
 
     const tr = document.createElement('tr');
@@ -8569,6 +8825,7 @@ window.switchLanMode = function(mode) {
     if (directCard) directCard.style.display = 'none';
     if (tabVip) tabVip.classList.add('active');
     if (tabDirect) tabDirect.classList.remove('active');
+    updateVipLicenseUI();
   }
 };
 
@@ -8592,7 +8849,7 @@ window.isSuperAdmin = isSuperAdmin;
 
 async function fetchAppAdmins() {
   try {
-    const res = await fetch(`${VIP_VPS_HTTP}/api/app-admins/list`);
+    const res = await vpsFetch('/api/app-admins/list');
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.admins)) {
@@ -8615,7 +8872,7 @@ async function adminDeleteLobby(roomCode) {
     headers['X-User-Token'] = userProfile.auth_token;
   }
   try {
-    const res = await fetch(`${VIP_VPS_HTTP}/api/app-admins/delete-lobby`, {
+    const res = await vpsFetch('/api/app-admins/delete-lobby', {
       method: 'POST',
       headers,
       body: JSON.stringify({ caller, room_code: roomCode })
@@ -8640,7 +8897,7 @@ async function toggleAppAdmin(targetNickname, makeAdmin) {
     headers['X-User-Token'] = userProfile.auth_token;
   }
   try {
-    const res = await fetch(`${VIP_VPS_HTTP}/api/app-admins/toggle`, {
+    const res = await vpsFetch('/api/app-admins/toggle', {
       method: 'POST',
       headers,
       body: JSON.stringify({ caller, target: targetNickname, make_admin: makeAdmin })
