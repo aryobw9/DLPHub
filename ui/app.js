@@ -7925,7 +7925,9 @@ async function refreshFriendsList() {
   }
 
   try {
-    const res = await vpsFetch(`/api/friends/list?uid=${encodeURIComponent(userProfile.ts_uid)}`);
+    const res = await vpsFetch('/api/friends/list', {
+      headers: { 'X-User-Token': userProfile.auth_token }
+    });
     if (res.ok) {
       const data = await res.json();
       friendsData = data.friends || [];
@@ -8097,8 +8099,8 @@ async function executeAddFriend() {
   try {
     const res = await vpsFetch('/api/friends/add', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_uid: userProfile.ts_uid, target })
+      headers: { 'Content-Type': 'application/json', 'X-User-Token': userProfile.auth_token },
+      body: JSON.stringify({ target })
     });
     const data = await res.json();
     if (res.ok && data.success) {
@@ -8133,8 +8135,8 @@ async function removeFriendAction(friendUid) {
   try {
     const res = await vpsFetch('/api/friends/remove', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_uid: userProfile.ts_uid, friend_uid: friendUid })
+      headers: { 'Content-Type': 'application/json', 'X-User-Token': userProfile.auth_token },
+      body: JSON.stringify({ friend_uid: friendUid })
     });
     if (res.ok) {
       friendsData = friendsData.filter(f => f.ts_uid !== friendUid);
@@ -8301,7 +8303,9 @@ function formatLanScorecard(meta, matchId) {
 
 async function loadMatchHistory() {
   try {
-    const res = await vpsFetch('/api/matches/history');
+    const res = await vpsFetch('/api/matches/history', {
+      headers: userProfile.auth_token ? { 'X-User-Token': userProfile.auth_token } : {}
+    });
     if (res.ok) {
       const data = await res.json();
       matchHistoryData = data.matches || [];
@@ -8441,7 +8445,9 @@ async function openMatchDpiView(matchId) {
   try {
     let data = null;
     try {
-      const res = await vpsFetch(`/api/matches/${matchId}/details`);
+      const res = await vpsFetch(`/api/matches/${matchId}/details`, {
+        headers: userProfile.auth_token ? { 'X-User-Token': userProfile.auth_token } : {}
+      });
       if (res.ok) data = await res.json();
     } catch (_) {}
 

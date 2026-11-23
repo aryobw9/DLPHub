@@ -145,7 +145,6 @@ async fn execute_vip_request(
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct VipSession {
-    pub vip_token: Option<String>,
     pub vip_until: Option<f64>,
     pub last_key: Option<String>,
 }
@@ -333,7 +332,6 @@ pub async fn redeem_vip_license(
 
     // Cache only the expiry: the entitlement lives on the account, not on this machine.
     let sess = VipSession {
-        vip_token: None,
         vip_until,
         last_key: Some(clean_key),
     };
