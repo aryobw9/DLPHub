@@ -320,7 +320,7 @@ async function boot() {
       if (up && up.should_update) {
         const go = await showModal(t('updateTitle'), `${t('updateAvailable')}: ${up.version}`, [
           { label: t('btnUpdateNow') || t('ok'), value: true, kind: 'apply' },
-          { label: t('guardCancel'), value: false },
+          { label: t('updateLater') || t('guardCancel'), value: false },
         ]);
         if (go) {
           const targetUrl = up.download_url || up.html_url || 'https://github.com/aryobw9/DLPHub/releases/latest';
@@ -805,7 +805,12 @@ function getCornerOrEdge(x, y) {
     updateCursorFollower(e.target, lastX, lastY);
 
     if (e.button === 0) {
-      const edge = getCornerOrEdge(e.clientX, e.clientY);
+      // The window buttons (and other controls) sit inside the top edge and
+      // corner resize zones. Starting a native resize drag there makes the
+      // OS grab the mouse and swallow the click, so skip the resize for
+      // anything interactive.
+      const onControl = e.target instanceof Element && !!e.target.closest('button, a, input, select, textarea, label, [role="button"], [onclick]');
+      const edge = onControl ? null : getCornerOrEdge(e.clientX, e.clientY);
       if (edge) {
         const RESIZE_DIR_NAMES = {
           n: 'North', s: 'South', e: 'East', w: 'West',
@@ -1302,7 +1307,7 @@ async function checkForUpdates() {
       const ver = update.version || '';
       const go = await showModal(t('updateTitle'), `${t('updateAvailable')}: ${ver}`, [
         { label: t('btnUpdateNow') || t('ok'), value: true, kind: 'apply' },
-        { label: t('guardCancel'), value: false },
+        { label: t('updateLater') || t('guardCancel'), value: false },
       ]);
       if (go) {
         const targetUrl = update.download_url || update.html_url || 'https://github.com/aryobw9/DLPHub/releases/latest';

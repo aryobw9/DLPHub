@@ -58,6 +58,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: DLPHub.exe
-          body: "Migration to the new Server"
+          body: "Bug fixes"
           draft: false
           prerelease: false

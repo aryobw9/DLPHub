@@ -737,7 +737,8 @@
       align-items: center !important;
       gap: 12px;
       margin-top: 0px !important;
-      padding: 0 4px !important;
+      margin-bottom: 10px !important;
+      padding: 0 14px !important;
       background: transparent !important;
       border: none !important;
       border-radius: 0 !important;
@@ -10651,15 +10652,29 @@ body.lang-fa #friends-side-drawer .perf-drawer-title {
 }
 
 #friends-side-drawer .perf-drawer-tab {
-  font-size: 0.85rem !important;
-  padding: 6px 12px !important;
-  gap: 7px !important;
+  flex: 1 1 auto !important;
+  font-size: 0.80rem !important;
+  padding: 6px 8px !important;
+  gap: 5px !important;
   border-radius: 6px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+#friends-side-drawer .perf-drawer-tab > i {
+  flex: 0 0 auto !important;
+}
+
+#friends-side-drawer .perf-drawer-tab > span {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
 }
 
 body.lang-fa #friends-side-drawer .perf-drawer-tab {
   font-family: 'Vazirmatn', sans-serif !important;
-  font-size: 0.85rem !important;
+  font-size: 0.80rem !important;
 }
 
 #friends-side-drawer .perf-drawer-tab.active {

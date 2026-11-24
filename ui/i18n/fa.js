@@ -115,6 +115,7 @@ window.I18N_FA = {
   supportNote: "در صورت بروز هرگونه مشکل، جهت پشتیبانی از طریق وبسایت یا تلگرام اقدام کنید",
   updateTitle: "بروزرسانی اپ",
   updateAvailable: "نسخه جدید در دسترس است",
+  updateLater: "بعداً",
   updateLatest: "شما از آخرین نسخه برنامه استفاده می‌کنید.",
   updateFailed: "خطا در اتصال، لطفاً بعداً تلاش کنید.",
   testerTitle: "حالت تست / VIP",

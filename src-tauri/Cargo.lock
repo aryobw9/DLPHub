@@ -911,7 +911,7 @@ dependencies = [
 
 [[package]]
 name = "dlp-core"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "dirs",
  "md-5",
@@ -924,7 +924,7 @@ dependencies = [
 
 [[package]]
 name = "dlpbooster"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "dlp-core",
  "open",

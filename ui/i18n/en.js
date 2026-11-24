@@ -118,6 +118,7 @@ window.I18N_EN = {
   supportNote: "If you have any problem contact us through our website or telegram",
   updateTitle: "Check for Updates",
   updateAvailable: "A new version is available",
+  updateLater: "Later",
   updateLatest: "You are running the latest version.",
   updateFailed: "Failed to connect to server. Please try again later.",
   testerTitle: "VIP/TEST MODE",
